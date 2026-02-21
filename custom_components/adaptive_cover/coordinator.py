@@ -287,43 +287,57 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         elev = cover_data.sun_data.solar_elevation[idx]
         return cover_data.calculate_percentage_at(azi, elev)
 
+    def _make_utc(self, time):
+        """Ensure a datetime is UTC-aware."""
+        if time is None:
+            return None
+        if time.tzinfo is None:
+            return time.replace(tzinfo=pytz.UTC)
+        return time
+
     def _compute_next_event(self, cover_data, start, end):
         """Find the next significant cover state change event."""
         now = dt.datetime.now(pytz.UTC)
+        tomorrow = dt.date.today() + dt.timedelta(days=1)
+        location = cover_data.sun_data.location
         events = []
 
         # Sun enters FOV
         if start is not None:
-            start_utc = start if start.tzinfo else start.replace(tzinfo=pytz.UTC)
+            start_utc = self._make_utc(start)
             if start_utc > now:
                 predicted_pos = self._predict_position_at_time(cover_data, start_utc)
                 events.append(("Sun enters window", start_utc, predicted_pos))
 
         # Sun leaves FOV
         if end is not None:
-            end_utc = end if end.tzinfo else end.replace(tzinfo=pytz.UTC)
+            end_utc = self._make_utc(end)
             if end_utc > now:
                 events.append(("Sun leaves window", end_utc, cover_data.h_def))
 
-        # Sunset + offset
+        # Sunset + offset (today, then tomorrow if past)
         try:
             sunset_raw = cover_data.sun_data.sunset()
-            sunset_utc = sunset_raw if sunset_raw.tzinfo else sunset_raw.replace(
-                tzinfo=pytz.UTC
-            )
+            sunset_utc = self._make_utc(sunset_raw)
             sunset_time = sunset_utc + dt.timedelta(minutes=cover_data.sunset_off)
+            if sunset_time <= now:
+                sunset_raw = location.sunset(tomorrow, local=False)
+                sunset_utc = self._make_utc(sunset_raw)
+                sunset_time = sunset_utc + dt.timedelta(minutes=cover_data.sunset_off)
             if sunset_time > now:
                 events.append(("Sunset + offset", sunset_time, cover_data.sunset_pos))
         except Exception:  # noqa: BLE001
             pass
 
-        # Sunrise + offset
+        # Sunrise + offset (today, then tomorrow if past)
         try:
             sunrise_raw = cover_data.sun_data.sunrise()
-            sunrise_utc = sunrise_raw if sunrise_raw.tzinfo else sunrise_raw.replace(
-                tzinfo=pytz.UTC
-            )
+            sunrise_utc = self._make_utc(sunrise_raw)
             sunrise_time = sunrise_utc + dt.timedelta(minutes=cover_data.sunrise_off)
+            if sunrise_time <= now:
+                sunrise_raw = location.sunrise(tomorrow, local=False)
+                sunrise_utc = self._make_utc(sunrise_raw)
+                sunrise_time = sunrise_utc + dt.timedelta(minutes=cover_data.sunrise_off)
             if sunrise_time > now:
                 events.append(("Sunrise + offset", sunrise_time, cover_data.h_def))
         except Exception:  # noqa: BLE001
@@ -331,9 +345,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
         # Configured end time
         if self._end_time is not None:
-            end_t = self._end_time
-            if hasattr(end_t, "tzinfo") and end_t.tzinfo is None:
-                end_t = end_t.replace(tzinfo=pytz.UTC)
+            end_t = self._make_utc(self._end_time)
             if end_t > now:
                 events.append((
                     "Configured end time",
