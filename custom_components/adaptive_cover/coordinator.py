@@ -410,6 +410,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         ):
             await self.async_timed_end_time()
 
+        # Capture flags before handlers reset them
+        had_cover_state_change = self.cover_state_change
+
         # Handle types of changes
         if self.state_change:
             await self.async_handle_state_change(state, options)
@@ -468,7 +471,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self._previous_state = state
 
         # Track manual override as a state change
-        if self.cover_state_change and self.manager.binary_cover_manual:
+        if had_cover_state_change and self.manager.binary_cover_manual:
             event = self.state_change_data
             if event and event.new_state:
                 if self._cover_type == "cover_tilt":
