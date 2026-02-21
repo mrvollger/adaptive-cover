@@ -347,7 +347,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self.logger.debug("Could not compute sunrise event", exc_info=True)
 
         # Configured end time (_end_time is naive local time from config)
-        if self._end_time is not None:
+        if self._end_time is not None and self._track_end_time:
             end_t = self._end_time
             if end_t.tzinfo is None:
                 local_tz = pytz.timezone(self.hass.config.time_zone)
@@ -475,20 +475,32 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             }
         self._previous_state = state
 
-        # Track manual override as a state change
-        if had_cover_state_change and self.manager.binary_cover_manual:
+        # Track cover state changes (manual or integration-initiated)
+        if had_cover_state_change and self.state_change_data:
             event = self.state_change_data
             if event and event.new_state:
-                if self._cover_type == "cover_tilt":
-                    manual_pos = event.new_state.attributes.get("current_tilt_position")
-                else:
-                    manual_pos = event.new_state.attributes.get("current_position")
-                if manual_pos is not None:
+                pos_attr = (
+                    "current_tilt_position"
+                    if self._cover_type == "cover_tilt"
+                    else "current_position"
+                )
+                new_pos = event.new_state.attributes.get(pos_attr)
+                old_pos = (
+                    event.old_state.attributes.get(pos_attr)
+                    if event.old_state
+                    else None
+                )
+                if new_pos is not None:
+                    change_reason = (
+                        "Manual override"
+                        if self.manager.binary_cover_manual
+                        else reason
+                    )
                     self._last_change_data = {
-                        "old_position": state,
-                        "new_position": manual_pos,
+                        "old_position": old_pos if old_pos is not None else state,
+                        "new_position": new_pos,
                         "time": dt.datetime.now(pytz.UTC),
-                        "reason": "Manual override",
+                        "reason": change_reason,
                     }
 
         return AdaptiveCoverData(
