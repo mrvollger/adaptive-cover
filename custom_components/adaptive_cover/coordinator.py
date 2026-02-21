@@ -35,6 +35,7 @@ from .calculation import (
     ClimateCoverData,
     ClimateCoverState,
     NormalCoverState,
+    get_state_reason,
 )
 from .const import (
     _LOGGER,
@@ -168,6 +169,13 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self._scheduled_time = dt.datetime.now()
 
         self._cached_options = None
+        self._previous_state = None
+        self._last_change_data = {
+            "old_position": None,
+            "new_position": None,
+            "time": None,
+            "reason": None,
+        }
 
     async def async_config_entry_first_refresh(self) -> None:
         """Config entry first refresh."""
@@ -268,6 +276,77 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         )
         self._scheduled_time = self._end_time
 
+    def _predict_position_at_time(self, cover_data, target_time):
+        """Predict cover position at a specific future time using sun data."""
+        times = cover_data.sun_data.times
+        # Find nearest time index
+        idx = times.get_indexer([target_time], method="nearest")[0]
+        if idx < 0 or idx >= len(times):
+            return cover_data.h_def
+        azi = cover_data.sun_data.solar_azimuth[idx]
+        elev = cover_data.sun_data.solar_elevation[idx]
+        return cover_data.calculate_percentage_at(azi, elev)
+
+    def _compute_next_event(self, cover_data, start, end):
+        """Find the next significant cover state change event."""
+        now = dt.datetime.now(pytz.UTC)
+        events = []
+
+        # Sun enters FOV
+        if start is not None:
+            start_utc = start if start.tzinfo else start.replace(tzinfo=pytz.UTC)
+            if start_utc > now:
+                predicted_pos = self._predict_position_at_time(cover_data, start_utc)
+                events.append(("Sun enters window", start_utc, predicted_pos))
+
+        # Sun leaves FOV
+        if end is not None:
+            end_utc = end if end.tzinfo else end.replace(tzinfo=pytz.UTC)
+            if end_utc > now:
+                events.append(("Sun leaves window", end_utc, cover_data.h_def))
+
+        # Sunset + offset
+        try:
+            sunset_raw = cover_data.sun_data.sunset()
+            sunset_utc = sunset_raw if sunset_raw.tzinfo else sunset_raw.replace(
+                tzinfo=pytz.UTC
+            )
+            sunset_time = sunset_utc + dt.timedelta(minutes=cover_data.sunset_off)
+            if sunset_time > now:
+                events.append(("Sunset + offset", sunset_time, cover_data.sunset_pos))
+        except Exception:  # noqa: BLE001
+            pass
+
+        # Sunrise + offset
+        try:
+            sunrise_raw = cover_data.sun_data.sunrise()
+            sunrise_utc = sunrise_raw if sunrise_raw.tzinfo else sunrise_raw.replace(
+                tzinfo=pytz.UTC
+            )
+            sunrise_time = sunrise_utc + dt.timedelta(minutes=cover_data.sunrise_off)
+            if sunrise_time > now:
+                events.append(("Sunrise + offset", sunrise_time, cover_data.h_def))
+        except Exception:  # noqa: BLE001
+            pass
+
+        # Configured end time
+        if self._end_time is not None:
+            end_t = self._end_time
+            if hasattr(end_t, "tzinfo") and end_t.tzinfo is None:
+                end_t = end_t.replace(tzinfo=pytz.UTC)
+            if end_t > now:
+                events.append((
+                    "Configured end time",
+                    end_t,
+                    self.config_entry.options.get(CONF_SUNSET_POS, cover_data.sunset_pos),
+                ))
+
+        if not events:
+            return None
+
+        events.sort(key=lambda e: e[1])
+        return events[0]
+
     async def _async_update_data(self) -> AdaptiveCoverData:
         self.logger.debug("Updating data")
         if self.first_refresh:
@@ -332,6 +411,33 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self.logger.debug("Sun start time: %s, Sun end time: %s", start, end)
         else:
             start, end = self._sun_start_time, self._sun_end_time
+        # Compute state reason
+        climate_data_for_reason = None
+        if self._climate_mode and self._switch_mode:
+            try:
+                climate_data_for_reason = ClimateCoverData(
+                    *self.get_climate_data(options)
+                )
+            except Exception:  # noqa: BLE001
+                climate_data_for_reason = None
+        reason = get_state_reason(cover_data, climate_data_for_reason)
+
+        # Compute next event
+        next_event = self._compute_next_event(cover_data, start, end)
+        next_event_name = next_event[0] if next_event else None
+        next_event_time = next_event[1] if next_event else None
+        next_event_pos = next_event[2] if next_event else None
+
+        # Track last state change
+        if self._previous_state is not None and self._previous_state != state:
+            self._last_change_data = {
+                "old_position": self._previous_state,
+                "new_position": state,
+                "time": dt.datetime.now(pytz.UTC),
+                "reason": reason,
+            }
+        self._previous_state = state
+
         return AdaptiveCoverData(
             climate_mode_toggle=self.switch_mode,
             states={
@@ -342,6 +448,14 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 "sun_motion": normal_cover.valid,
                 "manual_override": self.manager.binary_cover_manual,
                 "manual_list": self.manager.manual_controlled,
+                "state_reason": reason,
+                "next_change_event": next_event_name,
+                "next_change_time": next_event_time,
+                "next_change_position": next_event_pos,
+                "last_change_old": self._last_change_data["old_position"],
+                "last_change_new": self._last_change_data["new_position"],
+                "last_change_time": self._last_change_data["time"],
+                "last_change_reason": self._last_change_data["reason"],
             },
             attributes={
                 "default": options.get(CONF_DEFAULT_HEIGHT),

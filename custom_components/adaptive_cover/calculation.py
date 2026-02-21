@@ -16,6 +16,57 @@ from .sun import SunData
 from .config_context_adapter import ConfigContextAdapter
 
 
+def get_state_reason(cover, climate_data=None):
+    """Return human-readable reason for the cover's current position."""
+    if climate_data is not None:
+        return _get_climate_reason(cover, climate_data)
+
+    if cover.direct_sun_valid:
+        return f"Sun in window (azi {cover.sol_azi:.0f}\u00b0, elev {cover.sol_elev:.0f}\u00b0)"
+    if cover.sunset_valid:
+        return "Sunset position"
+    if cover.sol_elev < 0:
+        return "Sun below horizon"
+    if not cover.valid_elevation:
+        return f"Elevation {cover.sol_elev:.0f}\u00b0 outside configured range"
+    if cover.is_sun_in_blind_spot:
+        return "Sun in blind spot"
+    if not cover.valid:
+        return f"Sun outside field of view (gamma {cover.gamma:.0f}\u00b0)"
+    return "Default position"
+
+
+def _get_climate_reason(cover, climate_data):
+    """Return human-readable reason for climate mode position."""
+    if not climate_data.is_presence:
+        if cover.valid:
+            if climate_data.is_summer:
+                return "No presence, summer: blocking sun"
+            if climate_data.is_winter:
+                return "No presence, winter: maximizing sun"
+        return "No presence: default position"
+
+    is_summer = climate_data.is_summer
+    not_sunny = (
+        climate_data.lux
+        or climate_data.irradiance
+        or not climate_data.is_sunny
+    )
+
+    if not is_summer and not_sunny:
+        if climate_data.is_winter and cover.valid:
+            return "Winter mode: maximizing sun"
+        return "Not sunny weather: using default"
+
+    if is_summer and climate_data.transparent_blind:
+        return "Summer mode: blocking sun (transparent blind)"
+
+    if cover.direct_sun_valid:
+        return f"Climate mode: sun in window (azi {cover.sol_azi:.0f}\u00b0, elev {cover.sol_elev:.0f}\u00b0)"
+
+    return get_state_reason(cover)
+
+
 @dataclass
 class AdaptiveGeneralCover(ABC):
     """Collect common data."""
@@ -188,6 +239,15 @@ class AdaptiveGeneralCover(ABC):
     def direct_sun_valid(self) -> bool:
         """Check if sun is directly in front of window."""
         return (self.valid) & (not self.sunset_valid) & (not self.is_sun_in_blind_spot)
+
+    def calculate_percentage_at(self, azi, elev):
+        """Calculate percentage at a given solar position without side effects."""
+        orig_azi, orig_elev = self.sol_azi, self.sol_elev
+        self.sol_azi, self.sol_elev = azi, elev
+        try:
+            return round(NormalCoverState(self).get_state())
+        finally:
+            self.sol_azi, self.sol_elev = orig_azi, orig_elev
 
     @abstractmethod
     def calculate_position(self) -> float:

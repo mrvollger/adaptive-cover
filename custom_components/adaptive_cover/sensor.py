@@ -63,7 +63,13 @@ async def async_setup_entry(
     control = AdaptiveCoverControlSensorEntity(
         config_entry.entry_id, hass, config_entry, name, coordinator
     )
-    async_add_entities([sensor, start, end, control])
+    next_change = AdaptiveCoverNextChangeSensorEntity(
+        config_entry.entry_id, hass, config_entry, name, coordinator
+    )
+    last_change = AdaptiveCoverLastChangeSensorEntity(
+        config_entry.entry_id, hass, config_entry, name, coordinator
+    )
+    async_add_entities([sensor, start, end, control, next_change, last_change])
 
 
 class AdaptiveCoverSensorEntity(
@@ -249,6 +255,159 @@ class AdaptiveCoverControlSensorEntity(
     def native_value(self) -> str | None:
         """Handle when entity is added."""
         return self.data.states["control"]
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device info."""
+        return DeviceInfo(
+            entry_type=DeviceEntryType.SERVICE,
+            identifiers={(DOMAIN, self._device_id)},
+            name=self._device_name,
+        )
+
+
+class AdaptiveCoverNextChangeSensorEntity(
+    CoordinatorEntity[AdaptiveDataUpdateCoordinator], SensorEntity
+):
+    """Sensor showing the next predicted cover state change."""
+
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    _attr_icon = "mdi:crystal-ball"
+
+    def __init__(
+        self,
+        unique_id: str,
+        hass,
+        config_entry,
+        name: str,
+        coordinator: AdaptiveDataUpdateCoordinator,
+    ) -> None:
+        """Initialize adaptive_cover Next Change Sensor."""
+        super().__init__(coordinator=coordinator)
+        self.type = {
+            "cover_blind": "Vertical",
+            "cover_awning": "Horizontal",
+            "cover_tilt": "Tilt",
+        }
+        self.coordinator = coordinator
+        self.data = self.coordinator.data
+        self._sensor_name = "Next State Change"
+        self._attr_unique_id = f"{unique_id}_{self._sensor_name}"
+        self._device_id = unique_id
+        self.hass = hass
+        self.config_entry = config_entry
+        self._name = name
+        self._device_name = self.type[config_entry.data[CONF_SENSOR_TYPE]]
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        self.data = self.coordinator.data
+        self.async_write_ha_state()
+
+    @property
+    def name(self):
+        """Name of the entity."""
+        return f"{self._sensor_name} {self._name}"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return formatted string describing the next change."""
+        event = self.data.states.get("next_change_event")
+        time = self.data.states.get("next_change_time")
+        pos = self.data.states.get("next_change_position")
+        if event and time:
+            time_str = time.strftime("%H:%M")
+            return f"{event} at {time_str} \u2192 {pos}%"
+        return "No changes expected"
+
+    @property
+    def extra_state_attributes(self) -> Mapping[str, Any] | None:
+        """Return extra attributes."""
+        time = self.data.states.get("next_change_time")
+        return {
+            "event": self.data.states.get("next_change_event"),
+            "expected_time": time.isoformat() if time else None,
+            "expected_position": self.data.states.get("next_change_position"),
+            "current_reason": self.data.states.get("state_reason"),
+        }
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device info."""
+        return DeviceInfo(
+            entry_type=DeviceEntryType.SERVICE,
+            identifiers={(DOMAIN, self._device_id)},
+            name=self._device_name,
+        )
+
+
+class AdaptiveCoverLastChangeSensorEntity(
+    CoordinatorEntity[AdaptiveDataUpdateCoordinator], SensorEntity
+):
+    """Sensor showing the last cover state change reason."""
+
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    _attr_icon = "mdi:history"
+
+    def __init__(
+        self,
+        unique_id: str,
+        hass,
+        config_entry,
+        name: str,
+        coordinator: AdaptiveDataUpdateCoordinator,
+    ) -> None:
+        """Initialize adaptive_cover Last Change Sensor."""
+        super().__init__(coordinator=coordinator)
+        self.type = {
+            "cover_blind": "Vertical",
+            "cover_awning": "Horizontal",
+            "cover_tilt": "Tilt",
+        }
+        self.coordinator = coordinator
+        self.data = self.coordinator.data
+        self._sensor_name = "Last State Change"
+        self._attr_unique_id = f"{unique_id}_{self._sensor_name}"
+        self._device_id = unique_id
+        self.hass = hass
+        self.config_entry = config_entry
+        self._name = name
+        self._device_name = self.type[config_entry.data[CONF_SENSOR_TYPE]]
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        self.data = self.coordinator.data
+        self.async_write_ha_state()
+
+    @property
+    def name(self):
+        """Name of the entity."""
+        return f"{self._sensor_name} {self._name}"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return formatted string describing the last change."""
+        old = self.data.states.get("last_change_old")
+        new = self.data.states.get("last_change_new")
+        reason = self.data.states.get("last_change_reason")
+        if old is not None and new is not None:
+            return f"{old}% \u2192 {new}%: {reason}"
+        return "No changes recorded"
+
+    @property
+    def extra_state_attributes(self) -> Mapping[str, Any] | None:
+        """Return extra attributes."""
+        time = self.data.states.get("last_change_time")
+        return {
+            "old_position": self.data.states.get("last_change_old"),
+            "new_position": self.data.states.get("last_change_new"),
+            "changed_at": time.isoformat() if time else None,
+            "reason": self.data.states.get("last_change_reason"),
+        }
 
     @property
     def device_info(self) -> DeviceInfo:
