@@ -1,9 +1,11 @@
-![Version](https://img.shields.io/github/v/release/basbruss/adaptive-cover?style=for-the-badge)
+![Version](https://img.shields.io/github/v/release/mrvollger/adaptive-cover?style=for-the-badge)
 
 ![logo](https://github.com/basbruss/adaptive-cover/blob/main/images/logo.png#gh-light-mode-only)
 ![logo](https://github.com/basbruss/adaptive-cover/blob/main/images/dark_logo.png#gh-dark-mode-only)
 
-# Adaptive Cover
+# Adaptive Cover (MRV Fork)
+
+> **Fork notice:** This is a fork of [basbruss/adaptive-cover](https://github.com/basbruss/adaptive-cover) with additional features. Changes include "Next State Change" and "Last State Change Reason" sensors. To install via HACS, add `https://github.com/mrvollger/adaptive-cover` as a custom repository.
 
 This Custom-Integration provides sensors for vertical and horizontal blinds based on the sun's position by calculating the position to filter out direct sunlight.
 
@@ -60,7 +62,7 @@ This integration builds upon the template sensor from this forum post [Automatic
 
 ### HACS (Recommended)
 
-Add <https://github.com/basbruss/adaptive-cover> as custom repository to HACS.
+Add <https://github.com/mrvollger/adaptive-cover> as custom repository to HACS.
 Search and download Adaptive Cover within HACS.
 
 Restart Home-Assistant and add the integration.
@@ -261,6 +263,8 @@ These entities are always available:
 | `sensor.{type}_control_method_{name}` | `intermediate` | Indicates the active control strategy based on weather conditions. Options include `winter`, `summer`, and `intermediate` |
 | `sensor.{type}_start_sun_{name}` | | Shows the starting time when the sun enters the window's view, with an interval of every 5 minutes. |
 | `sensor.{type}_end_sun_{name}` | | Indicates the ending time when the sun exits the window's view, with an interval of every 5 minutes. |
+| `sensor.{type}_next_state_change_{name}` | | Predicts the next cover position change: event, time, and expected position |
+| `sensor.{type}_last_state_change_{name}` | | Records the most recent position change with old/new positions and reason |
 | `binary_sensor.{type}_manual_override_{name}` | `off` | Indicates if manual override is engaged for any blinds. |
 | `binary_sensor.{type}_sun_infront_{name}` | `off` | Indicates whether the sun is in front of the window within the designated field of view. |
 | `switch.{type}_toggle_control_{name}` | `on` | Activates the adaptive control feature. When enabled, blinds adjust based on calculated position, unless manually overridden. |
