@@ -241,11 +241,22 @@ class AdaptiveGeneralCover(ABC):
         return (self.valid) & (not self.sunset_valid) & (not self.is_sun_in_blind_spot)
 
     def calculate_percentage_at(self, azi, elev):
-        """Calculate percentage at a given solar position without side effects."""
+        """Calculate position at a future solar position using geometry only.
+
+        Bypasses sunset_valid/direct_sun_valid time-of-day checks since we're
+        predicting for a future time, not the current wall-clock time.
+        """
         orig_azi, orig_elev = self.sol_azi, self.sol_elev
         self.sol_azi, self.sol_elev = azi, elev
         try:
-            return round(NormalCoverState(self).get_state())
+            if self.valid and elev > 0:
+                result = np.clip(self.calculate_percentage(), 0, 100)
+                if self.apply_max_position and result > self.max_pos:
+                    return self.max_pos
+                if self.apply_min_position and result < self.min_pos:
+                    return self.min_pos
+                return round(result)
+            return int(self.h_def)
         finally:
             self.sol_azi, self.sol_elev = orig_azi, orig_elev
 

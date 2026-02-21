@@ -279,10 +279,13 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     def _predict_position_at_time(self, cover_data, target_time):
         """Predict cover position at a specific future time using sun data."""
         times = cover_data.sun_data.times
-        # Find nearest time index
-        idx = times.get_indexer([target_time], method="nearest")[0]
+        # Convert target_time to same timezone as sun data times for correct indexing
+        target_tz = target_time
+        if times.tz is not None and target_time.tzinfo is not None:
+            target_tz = target_time.astimezone(times.tz)
+        idx = times.get_indexer([target_tz], method="nearest")[0]
         if idx < 0 or idx >= len(times):
-            return cover_data.h_def
+            return int(cover_data.h_def)
         azi = cover_data.sun_data.solar_azimuth[idx]
         elev = cover_data.sun_data.solar_elevation[idx]
         return cover_data.calculate_percentage_at(azi, elev)
@@ -298,7 +301,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     def _compute_next_event(self, cover_data, start, end):
         """Find the next significant cover state change event."""
         now = dt.datetime.now(pytz.UTC)
-        tomorrow = dt.date.today() + dt.timedelta(days=1)
+        tomorrow = now.date() + dt.timedelta(days=1)
         location = cover_data.sun_data.location
         events = []
 
@@ -327,7 +330,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             if sunset_time > now:
                 events.append(("Sunset + offset", sunset_time, int(cover_data.sunset_pos)))
         except Exception:  # noqa: BLE001
-            pass
+            self.logger.debug("Could not compute sunset event", exc_info=True)
 
         # Sunrise + offset (today, then tomorrow if past)
         try:
@@ -341,11 +344,14 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             if sunrise_time > now:
                 events.append(("Sunrise + offset", sunrise_time, int(cover_data.h_def)))
         except Exception:  # noqa: BLE001
-            pass
+            self.logger.debug("Could not compute sunrise event", exc_info=True)
 
-        # Configured end time
+        # Configured end time (_end_time is naive local time from config)
         if self._end_time is not None:
-            end_t = self._make_utc(self._end_time)
+            end_t = self._end_time
+            if end_t.tzinfo is None:
+                local_tz = pytz.timezone(self.hass.config.time_zone)
+                end_t = local_tz.localize(end_t)
             if end_t > now:
                 events.append((
                     "Configured end time",
@@ -363,7 +369,6 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                         expire_time,
                         None,  # position will be the current computed state
                     ))
-                    break  # only need the earliest one
 
         if not events:
             return None
@@ -470,18 +475,18 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             }
         self._previous_state = state
 
-        # Track manual override as a state change
-        if had_cover_state_change and self.manager.binary_cover_manual:
+        # Track cover position changes (manual or otherwise)
+        if had_cover_state_change and self.state_change_data:
             event = self.state_change_data
-            if event and event.new_state:
+            if event.new_state:
                 if self._cover_type == "cover_tilt":
-                    manual_pos = event.new_state.attributes.get("current_tilt_position")
+                    actual_pos = event.new_state.attributes.get("current_tilt_position")
                 else:
-                    manual_pos = event.new_state.attributes.get("current_position")
-                if manual_pos is not None:
+                    actual_pos = event.new_state.attributes.get("current_position")
+                if actual_pos is not None and actual_pos != state:
                     self._last_change_data = {
                         "old_position": state,
-                        "new_position": manual_pos,
+                        "new_position": actual_pos,
                         "time": dt.datetime.now(pytz.UTC),
                         "reason": "Manual override",
                     }

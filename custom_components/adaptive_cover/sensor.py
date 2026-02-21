@@ -294,7 +294,7 @@ class AdaptiveCoverNextChangeSensorEntity(
         self.coordinator = coordinator
         self.data = self.coordinator.data
         self._sensor_name = "Next State Change"
-        self._attr_unique_id = f"{unique_id}_{self._sensor_name}"
+        self._attr_unique_id = f"{unique_id}_next_state_change"
         self._device_id = unique_id
         self.hass = hass
         self.config_entry = config_entry
@@ -373,7 +373,7 @@ class AdaptiveCoverLastChangeSensorEntity(
         self.coordinator = coordinator
         self.data = self.coordinator.data
         self._sensor_name = "Last State Change"
-        self._attr_unique_id = f"{unique_id}_{self._sensor_name}"
+        self._attr_unique_id = f"{unique_id}_last_state_change"
         self._device_id = unique_id
         self.hass = hass
         self.config_entry = config_entry
