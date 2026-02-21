@@ -313,7 +313,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         if end is not None:
             end_utc = self._make_utc(end)
             if end_utc > now:
-                events.append(("Sun leaves window", end_utc, cover_data.h_def))
+                events.append(("Sun leaves window", end_utc, int(cover_data.h_def)))
 
         # Sunset + offset (today, then tomorrow if past)
         try:
@@ -325,7 +325,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 sunset_utc = self._make_utc(sunset_raw)
                 sunset_time = sunset_utc + dt.timedelta(minutes=cover_data.sunset_off)
             if sunset_time > now:
-                events.append(("Sunset + offset", sunset_time, cover_data.sunset_pos))
+                events.append(("Sunset + offset", sunset_time, int(cover_data.sunset_pos)))
         except Exception:  # noqa: BLE001
             pass
 
@@ -339,7 +339,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 sunrise_utc = self._make_utc(sunrise_raw)
                 sunrise_time = sunrise_utc + dt.timedelta(minutes=cover_data.sunrise_off)
             if sunrise_time > now:
-                events.append(("Sunrise + offset", sunrise_time, cover_data.h_def))
+                events.append(("Sunrise + offset", sunrise_time, int(cover_data.h_def)))
         except Exception:  # noqa: BLE001
             pass
 

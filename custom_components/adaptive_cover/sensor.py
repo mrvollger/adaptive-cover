@@ -13,6 +13,7 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.util import dt as dt_util
 from homeassistant.helpers.device_registry import DeviceEntryType
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -318,17 +319,19 @@ class AdaptiveCoverNextChangeSensorEntity(
         time = self.data.states.get("next_change_time")
         pos = self.data.states.get("next_change_position")
         if event and time:
-            time_str = time.strftime("%H:%M")
-            return f"{event} at {time_str} \u2192 {pos}%"
+            local_time = dt_util.as_local(time)
+            time_str = local_time.strftime("%H:%M")
+            return f"{event} at {time_str} \u2192 {int(pos)}%"
         return "No changes expected"
 
     @property
     def extra_state_attributes(self) -> Mapping[str, Any] | None:
         """Return extra attributes."""
         time = self.data.states.get("next_change_time")
+        local_time = dt_util.as_local(time) if time else None
         return {
             "event": self.data.states.get("next_change_event"),
-            "expected_time": time.isoformat() if time else None,
+            "expected_time": local_time.isoformat() if local_time else None,
             "expected_position": self.data.states.get("next_change_position"),
             "current_reason": self.data.states.get("state_reason"),
         }
@@ -402,10 +405,11 @@ class AdaptiveCoverLastChangeSensorEntity(
     def extra_state_attributes(self) -> Mapping[str, Any] | None:
         """Return extra attributes."""
         time = self.data.states.get("last_change_time")
+        local_time = dt_util.as_local(time) if time else None
         return {
             "old_position": self.data.states.get("last_change_old"),
             "new_position": self.data.states.get("last_change_new"),
-            "changed_at": time.isoformat() if time else None,
+            "changed_at": local_time.isoformat() if local_time else None,
             "reason": self.data.states.get("last_change_reason"),
         }
 
