@@ -475,18 +475,18 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             }
         self._previous_state = state
 
-        # Track cover position changes (manual or otherwise)
-        if had_cover_state_change and self.state_change_data:
+        # Track manual override as a state change
+        if had_cover_state_change and self.manager.binary_cover_manual:
             event = self.state_change_data
-            if event.new_state:
+            if event and event.new_state:
                 if self._cover_type == "cover_tilt":
-                    actual_pos = event.new_state.attributes.get("current_tilt_position")
+                    manual_pos = event.new_state.attributes.get("current_tilt_position")
                 else:
-                    actual_pos = event.new_state.attributes.get("current_position")
-                if actual_pos is not None and actual_pos != state:
+                    manual_pos = event.new_state.attributes.get("current_position")
+                if manual_pos is not None:
                     self._last_change_data = {
                         "old_position": state,
-                        "new_position": actual_pos,
+                        "new_position": manual_pos,
                         "time": dt.datetime.now(pytz.UTC),
                         "reason": "Manual override",
                     }
