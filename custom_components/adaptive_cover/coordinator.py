@@ -353,6 +353,18 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     self.config_entry.options.get(CONF_SUNSET_POS, cover_data.sunset_pos),
                 ))
 
+        # Manual override expires
+        if self.manager.binary_cover_manual:
+            for entity_id, override_time in self.manager.manual_control_time.items():
+                expire_time = override_time + self.manager.reset_duration
+                if expire_time > now:
+                    events.append((
+                        "Manual override expires",
+                        expire_time,
+                        None,  # position will be the current computed state
+                    ))
+                    break  # only need the earliest one
+
         if not events:
             return None
 
@@ -433,14 +445,19 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             except Exception:  # noqa: BLE001
                 climate_data_for_reason = None
         reason = get_state_reason(cover_data, climate_data_for_reason)
+        if self.manager.binary_cover_manual:
+            reason = "Manual override"
 
         # Compute next event
         next_event = self._compute_next_event(cover_data, start, end)
         next_event_name = next_event[0] if next_event else None
         next_event_time = next_event[1] if next_event else None
         next_event_pos = next_event[2] if next_event else None
+        # For manual override expiry, the cover returns to the computed state
+        if next_event_pos is None and next_event_name:
+            next_event_pos = state
 
-        # Track last state change
+        # Track last state change (computed position changes)
         if self._previous_state is not None and self._previous_state != state:
             self._last_change_data = {
                 "old_position": self._previous_state,
@@ -449,6 +466,22 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 "reason": reason,
             }
         self._previous_state = state
+
+        # Track manual override as a state change
+        if self.cover_state_change and self.manager.binary_cover_manual:
+            event = self.state_change_data
+            if event and event.new_state:
+                if self._cover_type == "cover_tilt":
+                    manual_pos = event.new_state.attributes.get("current_tilt_position")
+                else:
+                    manual_pos = event.new_state.attributes.get("current_position")
+                if manual_pos is not None:
+                    self._last_change_data = {
+                        "old_position": state,
+                        "new_position": manual_pos,
+                        "time": dt.datetime.now(pytz.UTC),
+                        "reason": "Manual override",
+                    }
 
         return AdaptiveCoverData(
             climate_mode_toggle=self.switch_mode,
