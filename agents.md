@@ -187,7 +187,7 @@ Season is determined by comparing current temperature against configurable low/h
 
 ## Fork & Release Workflow
 
-This is a fork of [basbruss/adaptive-cover](https://github.com/basbruss/adaptive-cover) hosted at [mrvollger/adaptive-cover](https://github.com/mrvollger/adaptive-cover).
+This is a fork of [mrvollger/adaptive-cover](https://github.com/mrvollger/adaptive-cover) hosted at [mrvollger/adaptive-cover](https://github.com/mrvollger/adaptive-cover).
 
 ### Development
 

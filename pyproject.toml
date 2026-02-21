@@ -1,5 +1,5 @@
 [tool.poetry]
-authors = ["Bas Brussee"]
+authors = ["Mitchell R. Vollger"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Framework :: AsyncIO",
@@ -9,14 +9,14 @@ classifiers = [
   "Programming Language :: Python :: 3",
 ]
 description = "Adaptive Cover"
-documentation = "https://github.com/basbruss/adaptive-cover"
-homepage = "https://github.com/basbruss/adaptive-cover"
+documentation = "https://github.com/mrvollger/adaptive-cover"
+homepage = "https://github.com/mrvollger/adaptive-cover"
 license = "Passive Aggressive License"
-maintainers = ["Bas Brussee"]
+maintainers = ["Mitchell R. Vollger"]
 name = "adaptive_cover"
 packages = []
 readme = "README.md"
-repository = "https://github.com/basbruss/adaptive-cover"
+repository = "https://github.com/mrvollger/adaptive-cover"
 version = "0.0.0"
 
 [tool.poetry.dependencies]
@@ -31,12 +31,16 @@ pylint = "3.3.1"
 ruff = "0.9.1"
 
 [tool.poetry.urls]
-"Bug Tracker" = "https://github.com/basbruss/adaptive-cover/issues"
-Changelog = "https://github.com/basbruss/adaptive-cover/releases"
+"Bug Tracker" = "https://github.com/mrvollger/adaptive-cover/issues"
+Changelog = "https://github.com/mrvollger/adaptive-cover/releases"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
 requires = ["poetry-core"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
 
 [tool.ruff]
 ignore = [
