@@ -652,6 +652,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.new_list = options.get(CONF_INTERP_LIST_NEW)
 
     def _update_manager_and_covers(self):
+        self.manager.reset_duration = dt.timedelta(**self.manual_duration)
         self.manager.add_covers(self.entities)
         if not self._manual_toggle:
             for entity in self.manager.manual_controlled:
