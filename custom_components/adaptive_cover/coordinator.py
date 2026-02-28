@@ -653,8 +653,17 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
     def _update_manager_and_covers(self):
         self.manager.reset_duration = dt.timedelta(**self.manual_duration)
+        self.logger.debug(
+            "Manual override duration from config: %s → timedelta: %s",
+            self.manual_duration,
+            self.manager.reset_duration,
+        )
         self.manager.add_covers(self.entities)
         if not self._manual_toggle:
+            self.logger.debug(
+                "Manual toggle is %s (falsy), clearing all manual overrides",
+                self._manual_toggle,
+            )
             for entity in self.manager.manual_controlled:
                 self.manager.reset(entity)
 
