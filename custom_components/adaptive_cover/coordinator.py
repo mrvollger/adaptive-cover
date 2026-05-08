@@ -23,7 +23,6 @@ from homeassistant.core import (
     callback,
 )
 from homeassistant.helpers.event import async_track_point_in_time
-from homeassistant.helpers.template import state_attr
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .config_context_adapter import ConfigContextAdapter
@@ -100,7 +99,12 @@ from .const import (
     DOMAIN,
     LOGGER,
 )
-from .helpers import get_datetime_from_str, get_last_updated, get_safe_state
+from .helpers import (
+    get_datetime_from_str,
+    get_last_updated,
+    get_safe_attr,
+    get_safe_state,
+)
 
 
 @dataclass
@@ -757,8 +761,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     def _get_current_position(self, entity) -> int | None:
         """Get current position of cover."""
         if self._cover_type == "cover_tilt":
-            return state_attr(self.hass, entity, "current_tilt_position")
-        return state_attr(self.hass, entity, "current_position")
+            return get_safe_attr(self.hass, entity, "current_tilt_position")
+        return get_safe_attr(self.hass, entity, "current_position")
 
     def check_position(self, entity, state):
         """Check if position is different as state."""
@@ -812,8 +816,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     def pos_sun(self):
         """Fetch information for sun position."""
         return [
-            state_attr(self.hass, "sun.sun", "azimuth"),
-            state_attr(self.hass, "sun.sun", "elevation"),
+            get_safe_attr(self.hass, "sun.sun", "azimuth"),
+            get_safe_attr(self.hass, "sun.sun", "elevation"),
         ]
 
     def common_data(self, options):
