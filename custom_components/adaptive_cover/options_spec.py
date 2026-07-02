@@ -144,7 +144,7 @@ DEFAULT_OPTIONS: dict = {
 
 
 def add_entry_schema() -> vol.Schema:
-    """Schema for the add_entry service: identity + any changeable option."""
+    """Build the add_entry service schema: identity + any changeable option."""
     schema: dict = {
         vol.Required("name"): str,
         vol.Required("covers"): [str],
