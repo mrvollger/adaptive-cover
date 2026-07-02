@@ -24,7 +24,7 @@ from homeassistant.core import (
     State,
     callback,
 )
-from homeassistant.helpers.event import async_track_point_in_time
+from homeassistant.helpers.event import async_call_later, async_track_point_in_time
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .config_context_adapter import ConfigContextAdapter
@@ -189,6 +189,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.target_call_time: dict[str, dt.datetime] = {}
         self._our_context_ids: deque[str] = deque(maxlen=64)
         self._sun_table = None
+        self._poll_cancels: dict[str, object] = {}
         self.ignore_intermediate_states = self.config_entry.options.get(
             CONF_MANUAL_IGNORE_INTERMEDIATE, False
         )
@@ -954,6 +955,39 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             await self.hass.services.async_call(
                 COVER_DOMAIN, service, service_data, context=ctx
             )
+            self._schedule_arrival_poll(entity)
+
+    def _schedule_arrival_poll(self, entity) -> None:
+        """Force a device poll if no landing report arrives in time.
+
+        Zigbee shades drop attribute reports; without this the entity can
+        sit 'closing' at a stale position for minutes, freezing manual
+        detection and the dashboard alike.
+        """
+        if (cancel := self._poll_cancels.pop(entity, None)) is not None:
+            cancel()
+
+        async def _poll_if_silent(_now) -> None:
+            self._poll_cancels.pop(entity, None)
+            if not self.wait_for_target.get(entity):
+                return  # arrived; nothing to do
+            self.logger.debug(
+                "No landing report from %s; forcing a state poll", entity
+            )
+            try:
+                await self.hass.services.async_call(
+                    "homeassistant",
+                    "update_entity",
+                    {ATTR_ENTITY_ID: entity},
+                )
+            except Exception:  # noqa: BLE001 - poll is best-effort
+                self.logger.debug("Forced poll failed for %s", entity)
+
+        self._poll_cancels[entity] = async_call_later(
+            self.hass,
+            self.TARGET_TIMEOUT.total_seconds() + 5,
+            _poll_if_silent,
+        )
 
     def record_move_provenance(
         self, entity, position, source: str, reason: str | None = None
