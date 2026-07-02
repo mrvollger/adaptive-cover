@@ -274,9 +274,14 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         ):
             self.process_entity_state_change()
             return
-        # Foreign event. Update the travel latch first (tolerance/expiry);
-        # if the cover is still mid-travel this is a device position echo:
-        # skip the full refresh so bursts don't queue-storm the pipeline.
+        # A change carrying a user id is a HUMAN act (dashboard click,
+        # user-run service): it always counts as manual - clear any travel
+        # window so it can never be swallowed as a motor echo.
+        if event.context is not None and event.context.user_id is not None:
+            self.wait_for_target[entity_id] = False
+        # Foreign event. Update the travel latch (tolerance/expiry); if the
+        # cover is still mid-travel this is a device position echo: skip
+        # the full refresh so bursts don't queue-storm the pipeline.
         self.process_entity_state_change()
         if self.wait_for_target.get(entity_id):
             return
@@ -804,6 +809,15 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         """
         if self.manager.is_cover_manual(entity):
             return "manual_override"
+        if self.wait_for_target.get(entity):
+            sent_at = self.target_call_time.get(entity)
+            if (
+                sent_at is not None
+                and dt.datetime.now(dt.UTC) - sent_at <= self.TARGET_TIMEOUT
+            ):
+                # One command in flight is enough; never stack re-sends.
+                return "awaiting_target"
+            self.wait_for_target[entity] = False
         if not self.check_adaptive_time:
             return "outside_time_window"
         if not self.check_position_delta(entity, state, options):
