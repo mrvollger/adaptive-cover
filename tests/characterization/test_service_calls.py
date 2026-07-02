@@ -219,6 +219,7 @@ def test_regression_bbca2e9_predict_position_timezone():
 
     coord = object.__new__(AdaptiveDataUpdateCoordinator)
     coord.logger = logger
+    coord._sun_table = None
 
     # Local noon expressed in UTC: 2026-03-20 12:00 MDT == 18:00 UTC.
     target_utc = pd.Timestamp("2026-03-20 18:00", tz="UTC").to_pydatetime()
