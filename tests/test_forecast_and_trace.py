@@ -6,7 +6,6 @@ import datetime as dt
 
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
-    async_mock_service,
 )
 
 from custom_components.adaptive_cover.const import (

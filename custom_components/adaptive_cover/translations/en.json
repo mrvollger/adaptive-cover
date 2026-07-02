@@ -246,12 +246,12 @@
     "step": {
       "init": {
         "menu_options": {
-          "automation": "Modify Automation Configuration",
-          "blind": "Fine-tune Blind Settings",
-          "climate": "Edit Climate Configuration",
-          "weather": "Edit Weather Configuration",
-          "blind_spot": "Setup Blindspot",
-          "interp": "Range Adjustment"
+          "automation": "Timing, quiet hours & manual override",
+          "blind": "Window & overhang geometry",
+          "climate": "Climate & comfort sensors",
+          "weather": "Weather conditions",
+          "blind_spot": "Blind spot (obstruction)",
+          "interp": "Position interpolation"
         }
       },
       "automation": {

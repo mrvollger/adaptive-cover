@@ -2,7 +2,6 @@
 
 from datetime import datetime
 
-import pytest
 
 from custom_components.adaptive_cover.engine import (
     ClimateInputs,

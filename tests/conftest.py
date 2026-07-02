@@ -1,6 +1,6 @@
 """Shared fixtures for adaptive_cover tests."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
@@ -71,15 +71,15 @@ def auto_enable_custom_integrations(enable_custom_integrations):
 def mock_sun_data():
     """Mock SunData to avoid needing real astral location config."""
     # Use UTC-based dates to avoid local/UTC date mismatch with datetime.utcnow()
-    now_utc = datetime.now(timezone.utc)
+    now_utc = datetime.now(UTC)
     tomorrow = now_utc + timedelta(days=1)
     yesterday = now_utc - timedelta(days=1)
     mock_instance = MagicMock()
     mock_instance.sunset.return_value = datetime(
-        tomorrow.year, tomorrow.month, tomorrow.day, 23, 59, 59, tzinfo=timezone.utc
+        tomorrow.year, tomorrow.month, tomorrow.day, 23, 59, 59, tzinfo=UTC
     )
     mock_instance.sunrise.return_value = datetime(
-        yesterday.year, yesterday.month, yesterday.day, 0, 0, 1, tzinfo=timezone.utc
+        yesterday.year, yesterday.month, yesterday.day, 0, 0, 1, tzinfo=UTC
     )
     # Provide solar data for solar_times() method
     today = now_utc.date()
