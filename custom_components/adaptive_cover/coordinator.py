@@ -610,6 +610,17 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     for entity in self.entities
                     if (line := self._format_last_move(entity)) is not None
                 },
+                "sun": {
+                    "azimuth": cover_data.sol_azi,
+                    "elevation": cover_data.sol_elev,
+                    "gamma": cover_data.gamma,
+                    "in_fov": bool(cover_data.valid),
+                    "window_azimuth": cover_data.win_azi,
+                    "fov_left": cover_data.fov_left,
+                    "fov_right": cover_data.fov_right,
+                    "min_elevation": cover_data.min_elevation,
+                    "max_elevation": cover_data.max_elevation,
+                },
             },
         )
 

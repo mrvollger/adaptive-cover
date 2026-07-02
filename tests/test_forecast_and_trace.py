@@ -112,3 +112,15 @@ async def test_get_forecast_service_by_title(hass, mock_sun_entity):
         return_response=True,
     )
     assert isinstance(response["forecast"], list)
+
+
+async def test_sun_geometry_attribute(hass, mock_sun_entity):
+    """The sun attribute block feeds the sky-compass card."""
+    coordinator = await _setup(hass, _entry(hass))
+    sun = coordinator.data.attributes["sun"]
+    assert sun["azimuth"] == 180.0
+    assert sun["elevation"] == 45.0
+    assert sun["gamma"] == 0.0
+    assert sun["in_fov"] is True
+    assert sun["window_azimuth"] == 180
+    assert sun["fov_left"] == 90 and sun["fov_right"] == 90
