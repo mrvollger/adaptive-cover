@@ -14,16 +14,12 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.util import dt as dt_util
-from homeassistant.helpers.device_registry import DeviceEntryType
-from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import (
-    CONF_SENSOR_TYPE,
-    DOMAIN,
-)
+from .const import DOMAIN
 from .coordinator import AdaptiveDataUpdateCoordinator
+from .entity_shared import adaptive_cover_device_info
 
 
 async def async_setup_entry(
@@ -94,11 +90,6 @@ class AdaptiveCoverSensorEntity(
     ) -> None:
         """Initialize adaptive_cover Sensor."""
         super().__init__(coordinator=coordinator)
-        self.type = {
-            "cover_blind": "Vertical",
-            "cover_awning": "Horizontal",
-            "cover_tilt": "Tilt",
-        }
         self.coordinator = coordinator
         self.data = self.coordinator.data
         self._sensor_name = "Cover Position"
@@ -106,8 +97,8 @@ class AdaptiveCoverSensorEntity(
         self.hass = hass
         self.config_entry = config_entry
         self._name = name
-        self._device_name = self.type[self.config_entry.data[CONF_SENSOR_TYPE]]
         self._device_id = unique_id
+        self._attr_device_info = adaptive_cover_device_info(config_entry)
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -118,21 +109,12 @@ class AdaptiveCoverSensorEntity(
     @property
     def name(self):
         """Name of the entity."""
-        return f"{self._sensor_name} {self._name}"
+        return self._sensor_name
 
     @property
     def native_value(self) -> str | None:
         """Handle when entity is added."""
         return self.data.states["state"]
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device info."""
-        return DeviceInfo(
-            entry_type=DeviceEntryType.SERVICE,
-            identifiers={(DOMAIN, self._device_id)},
-            name=self._device_name,
-        )
 
     @property
     def extra_state_attributes(self) -> Mapping[str, Any] | None:  # noqa: D102
@@ -161,11 +143,6 @@ class AdaptiveCoverTimeSensorEntity(
     ) -> None:
         """Initialize adaptive_cover Sensor."""
         super().__init__(coordinator=coordinator)
-        self.type = {
-            "cover_blind": "Vertical",
-            "cover_awning": "Horizontal",
-            "cover_tilt": "Tilt",
-        }
         self._attr_icon = icon
         self.key = key
         self.coordinator = coordinator
@@ -177,7 +154,7 @@ class AdaptiveCoverTimeSensorEntity(
         self._name = name
         self._cover_type = self.config_entry.data["sensor_type"]
         self._sensor_name = sensor_name
-        self._device_name = self.type[config_entry.data[CONF_SENSOR_TYPE]]
+        self._attr_device_info = adaptive_cover_device_info(config_entry)
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -188,21 +165,12 @@ class AdaptiveCoverTimeSensorEntity(
     @property
     def name(self):
         """Name of the entity."""
-        return f"{self._sensor_name} {self._name}"
+        return self._sensor_name
 
     @property
     def native_value(self) -> str | None:
         """Handle when entity is added."""
         return self.data.states[self.key]
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device info."""
-        return DeviceInfo(
-            entry_type=DeviceEntryType.SERVICE,
-            identifiers={(DOMAIN, self._device_id)},
-            name=self._device_name,
-        )
 
 
 class AdaptiveCoverControlSensorEntity(
@@ -224,11 +192,6 @@ class AdaptiveCoverControlSensorEntity(
     ) -> None:
         """Initialize adaptive_cover Sensor."""
         super().__init__(coordinator=coordinator)
-        self.type = {
-            "cover_blind": "Vertical",
-            "cover_awning": "Horizontal",
-            "cover_tilt": "Tilt",
-        }
         self.coordinator = coordinator
         self.data = self.coordinator.data
         self._sensor_name = "Control Method"
@@ -239,7 +202,7 @@ class AdaptiveCoverControlSensorEntity(
         self.config_entry = config_entry
         self._name = name
         self._cover_type = self.config_entry.data["sensor_type"]
-        self._device_name = self.type[config_entry.data[CONF_SENSOR_TYPE]]
+        self._attr_device_info = adaptive_cover_device_info(config_entry)
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -250,21 +213,12 @@ class AdaptiveCoverControlSensorEntity(
     @property
     def name(self):
         """Name of the entity."""
-        return f"{self._sensor_name} {self._name}"
+        return self._sensor_name
 
     @property
     def native_value(self) -> str | None:
         """Handle when entity is added."""
         return self.data.states["control"]
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device info."""
-        return DeviceInfo(
-            entry_type=DeviceEntryType.SERVICE,
-            identifiers={(DOMAIN, self._device_id)},
-            name=self._device_name,
-        )
 
 
 class AdaptiveCoverNextChangeSensorEntity(
@@ -286,11 +240,6 @@ class AdaptiveCoverNextChangeSensorEntity(
     ) -> None:
         """Initialize adaptive_cover Next Change Sensor."""
         super().__init__(coordinator=coordinator)
-        self.type = {
-            "cover_blind": "Vertical",
-            "cover_awning": "Horizontal",
-            "cover_tilt": "Tilt",
-        }
         self.coordinator = coordinator
         self.data = self.coordinator.data
         self._sensor_name = "Next State Change"
@@ -299,7 +248,7 @@ class AdaptiveCoverNextChangeSensorEntity(
         self.hass = hass
         self.config_entry = config_entry
         self._name = name
-        self._device_name = self.type[config_entry.data[CONF_SENSOR_TYPE]]
+        self._attr_device_info = adaptive_cover_device_info(config_entry)
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -310,7 +259,7 @@ class AdaptiveCoverNextChangeSensorEntity(
     @property
     def name(self):
         """Name of the entity."""
-        return f"{self._sensor_name} {self._name}"
+        return self._sensor_name
 
     @property
     def native_value(self) -> str | None:
@@ -336,15 +285,6 @@ class AdaptiveCoverNextChangeSensorEntity(
             "current_reason": self.data.states.get("state_reason"),
         }
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device info."""
-        return DeviceInfo(
-            entry_type=DeviceEntryType.SERVICE,
-            identifiers={(DOMAIN, self._device_id)},
-            name=self._device_name,
-        )
-
 
 class AdaptiveCoverLastChangeSensorEntity(
     CoordinatorEntity[AdaptiveDataUpdateCoordinator], SensorEntity
@@ -365,11 +305,6 @@ class AdaptiveCoverLastChangeSensorEntity(
     ) -> None:
         """Initialize adaptive_cover Last Change Sensor."""
         super().__init__(coordinator=coordinator)
-        self.type = {
-            "cover_blind": "Vertical",
-            "cover_awning": "Horizontal",
-            "cover_tilt": "Tilt",
-        }
         self.coordinator = coordinator
         self.data = self.coordinator.data
         self._sensor_name = "Last State Change"
@@ -378,7 +313,7 @@ class AdaptiveCoverLastChangeSensorEntity(
         self.hass = hass
         self.config_entry = config_entry
         self._name = name
-        self._device_name = self.type[config_entry.data[CONF_SENSOR_TYPE]]
+        self._attr_device_info = adaptive_cover_device_info(config_entry)
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -389,7 +324,7 @@ class AdaptiveCoverLastChangeSensorEntity(
     @property
     def name(self):
         """Name of the entity."""
-        return f"{self._sensor_name} {self._name}"
+        return self._sensor_name
 
     @property
     def native_value(self) -> str | None:
@@ -412,12 +347,3 @@ class AdaptiveCoverLastChangeSensorEntity(
             "changed_at": local_time.isoformat() if local_time else None,
             "reason": self.data.states.get("last_change_reason"),
         }
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device info."""
-        return DeviceInfo(
-            entry_type=DeviceEntryType.SERVICE,
-            identifiers={(DOMAIN, self._device_id)},
-            name=self._device_name,
-        )

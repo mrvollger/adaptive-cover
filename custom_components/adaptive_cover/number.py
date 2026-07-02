@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo, EntityCategory
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -30,6 +30,7 @@ from .const import (
     SensorType,
 )
 from .coordinator import AdaptiveDataUpdateCoordinator
+from .entity_shared import adaptive_cover_device_info
 
 
 @dataclass(frozen=True)
@@ -122,11 +123,6 @@ class AdaptiveCoverNumber(
     ) -> None:
         """Initialize the tunable."""
         super().__init__(coordinator=coordinator)
-        self.type = {
-            "cover_blind": "Vertical",
-            "cover_awning": "Horizontal",
-            "cover_tilt": "Tilt",
-        }
         self._config_entry = config_entry
         self._spec = spec
         self._attr_native_min_value = spec.min_value
@@ -137,15 +133,12 @@ class AdaptiveCoverNumber(
         self._attr_unique_id = f"{config_entry.entry_id}_number_{spec.key}"
         self._device_id = config_entry.entry_id
         self._name = config_entry.data["name"]
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._device_id)},
-            name=self.type[config_entry.data[CONF_SENSOR_TYPE]],
-        )
+        self._attr_device_info = adaptive_cover_device_info(config_entry)
 
     @property
     def name(self):
         """Name of the entity."""
-        return f"{self._spec.name} {self._name}"
+        return self._spec.name
 
     @property
     def native_value(self) -> float | None:

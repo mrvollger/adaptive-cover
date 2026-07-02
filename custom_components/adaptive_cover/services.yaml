@@ -12,3 +12,43 @@ get_forecast:
       example: "SE south shades"
       selector:
         text:
+
+change_settings:
+  name: Change settings
+  description: >-
+    Change any tunable option of an Adaptive Cover entry. Changes persist
+    (they are written to the config entry) and take effect within seconds
+    via an automatic reload. Ideal for rolling one window's tuned settings
+    out to others via a script.
+  fields:
+    config_entry:
+      name: Config entry
+      description: Entry ID, title, or internal name of the instance.
+      required: true
+      example: "SE south shades"
+      selector:
+        text:
+    overhang_depth:
+      name: Overhang depth (m)
+      selector: { number: { min: 0, max: 5, step: 0.01, mode: box } }
+    overhang_height:
+      name: Overhang height above sill (m)
+      selector: { number: { min: 0, max: 10, step: 0.01, mode: box } }
+    eye_height:
+      name: Eye height (m)
+      selector: { number: { min: 0, max: 3, step: 0.01, mode: box } }
+    occupied_distance:
+      name: Seat distance from window (m)
+      selector: { number: { min: 0, max: 10, step: 0.1, mode: box } }
+    privacy_mode:
+      name: Close after dusk for privacy
+      selector: { boolean: }
+    privacy_offset:
+      name: Privacy delay after sunset (min)
+      selector: { number: { min: 0, max: 180, step: 5, mode: box } }
+    temp_low:
+      name: Heating threshold (°C)
+      selector: { number: { min: 5, max: 30, step: 0.5, mode: box } }
+    temp_high:
+      name: Cooling threshold (°C)
+      selector: { number: { min: 10, max: 40, step: 0.5, mode: box } }
