@@ -245,13 +245,23 @@
   "options": {
     "step": {
       "init": {
-        "menu_options": {
-          "automation": "Timing, quiet hours & manual override",
-          "blind": "Window & overhang geometry",
-          "climate": "Climate & comfort sensors",
-          "weather": "Weather conditions",
-          "blind_spot": "Blind spot (obstruction)",
-          "interp": "Position interpolation"
+        "sections": {
+          "covers_geometry": {
+            "name": "Covers & window geometry",
+            "description": "Which covers to drive and the physical measurements of the window (and overhang, if any)."
+          },
+          "sun_behavior": {
+            "name": "Sun tracking & positions",
+            "description": "Azimuth, field of view, default/sunset positions, limits, blind spot, interpolation."
+          },
+          "automation_timing": {
+            "name": "Timing, quiet hours & manual override",
+            "description": "When automation runs, movement smoothing, privacy after dusk, manual override handling."
+          },
+          "climate": {
+            "name": "Climate & weather",
+            "description": "Temperature thresholds, presence, lux/irradiance, and weather conditions."
+          }
         }
       },
       "automation": {
