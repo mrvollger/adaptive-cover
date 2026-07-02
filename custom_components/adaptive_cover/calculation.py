@@ -83,6 +83,48 @@ def _get_climate_reason(cover, climate_data):
     return get_state_reason(cover)
 
 
+def build_day_forecast(cover, climate_data=None) -> list[dict]:
+    """Run the engine over today's 5-minute solar table.
+
+    Returns change-points only: [{time, position, intent}, ...]. Climate
+    readings are a snapshot of right now - the forecast assumes current
+    temperature/presence/weather persist. Blocking (pandas/astral); call
+    from an executor.
+    """
+    config = cover.engine_config()
+    sun_data = cover.sun_data
+    times = sun_data.times
+    azimuths = sun_data.solar_azimuth
+    elevations = sun_data.solar_elevation
+    sunrise = sun_data.sunrise().replace(tzinfo=None)
+    sunset = sun_data.sunset().replace(tzinfo=None)
+    inputs = climate_data.to_inputs() if climate_data is not None else None
+
+    entries: list[dict] = []
+    last_key = None
+    for i, ts in enumerate(times):
+        now_utc = ts.tz_convert("UTC").tz_localize(None).to_pydatetime()
+        ctx = TimeContext(now_utc=now_utc, sunrise_utc=sunrise, sunset_utc=sunset)
+        decision = engine_evaluate(
+            config,
+            SunSnapshot(azimuth=azimuths[i], elevation=elevations[i]),
+            ctx,
+            inputs,
+        )
+        position = round(float(decision.position))
+        key = (position, str(decision.intent))
+        if key != last_key:
+            entries.append(
+                {
+                    "time": ts.isoformat(),
+                    "position": position,
+                    "intent": str(decision.intent),
+                }
+            )
+            last_key = key
+    return entries
+
+
 @dataclass
 class AdaptiveGeneralCover(ABC):
     """Adapter between HA context and the pure engine (common data)."""
@@ -322,8 +364,8 @@ class NormalCoverState:
 
     cover: AdaptiveGeneralCover
 
-    def get_state(self) -> int:
-        """Return state."""
+    def get_decision(self):
+        """Return the full engine Decision (position, intent, trace)."""
         decision = engine_evaluate(
             self.cover.engine_config(),
             self.cover.sun_snapshot(),
@@ -335,7 +377,11 @@ class NormalCoverState:
             decision.intent,
             "; ".join(decision.trace),
         )
-        return decision.position
+        return decision
+
+    def get_state(self) -> int:
+        """Return state."""
+        return self.get_decision().position
 
 
 @dataclass
@@ -512,8 +558,8 @@ class ClimateCoverState(NormalCoverState):
 
     climate_data: ClimateCoverData
 
-    def get_state(self) -> int:
-        """Return state."""
+    def get_decision(self):
+        """Return the full engine Decision (position, intent, trace)."""
         decision = engine_evaluate(
             self.cover.engine_config(),
             self.cover.sun_snapshot(),
@@ -526,7 +572,11 @@ class ClimateCoverState(NormalCoverState):
             decision.intent,
             "; ".join(decision.trace),
         )
-        return decision.position
+        return decision
+
+    def get_state(self) -> int:
+        """Return state."""
+        return self.get_decision().position
 
 
 @dataclass

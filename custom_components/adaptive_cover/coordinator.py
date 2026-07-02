@@ -34,6 +34,7 @@ from .calculation import (
     ClimateCoverData,
     ClimateCoverState,
     NormalCoverState,
+    build_day_forecast,
     get_state_reason,
 )
 from .engine.models import GlareModel, Overhang, PrivacyConfig
@@ -186,6 +187,10 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self._cached_options = None
         self._previous_state = None
         self._move_history: dict[str, list[dt.datetime]] = {}
+        self._basic_decision = None
+        self._climate_decision = None
+        self.forecast: list[dict] | None = None
+        self._forecast_key = "___unset___"
         self._last_change_data = {
             "old_position": None,
             "new_position": None,
@@ -424,7 +429,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             "Determined normal cover state to be %s", self.normal_cover_state
         )
 
-        self.default_state = round(self.normal_cover_state.get_state())
+        self._basic_decision = self.normal_cover_state.get_decision()
+        self.default_state = round(self._basic_decision.position)
         self.logger.debug("Determined default state to be %s", self.default_state)
         state = self.state
 
@@ -451,21 +457,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             await self.async_handle_timed_refresh(options)
 
         normal_cover = self.normal_cover_state.cover
-        # Run the solar_times method in a separate thread
-        if (
-            self.first_refresh
-            or self._sun_start_time is None
-            or dt.datetime.now(pytz.UTC).date() != self._sun_start_time.date()
-        ):
-            self.logger.debug("Calculating solar times")
-            loop = asyncio.get_event_loop()
-            start, end = await loop.run_in_executor(None, normal_cover.solar_times)
-            self._sun_start_time = start
-            self._sun_end_time = end
-            self.logger.debug("Sun start time: %s, Sun end time: %s", start, end)
-        else:
-            start, end = self._sun_start_time, self._sun_end_time
-        # Compute state reason
+        # Climate snapshot used for reasons, forecasting, and trace
         climate_data_for_reason = None
         if self._climate_mode and self._switch_mode:
             try:
@@ -474,9 +466,55 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 )
             except Exception:  # noqa: BLE001
                 climate_data_for_reason = None
+
+        # Run the solar_times method in a separate thread
+        solar_day_stale = (
+            self.first_refresh
+            or self._sun_start_time is None
+            or dt.datetime.now(pytz.UTC).date() != self._sun_start_time.date()
+        )
+        if solar_day_stale:
+            self.logger.debug("Calculating solar times")
+            loop = asyncio.get_event_loop()
+            start, end = await loop.run_in_executor(None, normal_cover.solar_times)
+            self._sun_start_time = start
+            self._sun_end_time = end
+            self.logger.debug("Sun start time: %s, Sun end time: %s", start, end)
+        else:
+            start, end = self._sun_start_time, self._sun_end_time
+
+        # Rebuild the day forecast when the solar day rolls over or the
+        # climate snapshot changes (it is baked into the schedule).
+        forecast_key = None
+        if climate_data_for_reason is not None:
+            try:
+                forecast_key = repr(climate_data_for_reason.to_inputs())
+            except Exception:  # noqa: BLE001
+                forecast_key = None
+        if solar_day_stale or forecast_key != self._forecast_key:
+            loop = asyncio.get_event_loop()
+            try:
+                raw_forecast = await loop.run_in_executor(
+                    None, build_day_forecast, cover_data, climate_data_for_reason
+                )
+                self.forecast = [
+                    {**entry, "position": int(self._transform_state(entry["position"]))}
+                    for entry in raw_forecast
+                ]
+            except Exception:  # noqa: BLE001
+                self.logger.debug("Forecast build failed", exc_info=True)
+                self.forecast = None
+            self._forecast_key = forecast_key
+
+        # Compute state reason
         reason = get_state_reason(cover_data, climate_data_for_reason)
         if self.manager.binary_cover_manual:
             reason = "Manual override"
+
+        # Active decision (intent + trace) for explanations
+        active_decision = (
+            self._climate_decision if self._switch_mode else self._basic_decision
+        )
 
         # Compute next event
         next_event = self._compute_next_event(cover_data, start, end)
@@ -554,6 +592,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     options.get(CONF_FOV_RIGHT),
                 ],
                 "blind_spot": options.get(CONF_BLIND_SPOT_ELEVATION),
+                "intent": str(active_decision.intent) if active_decision else None,
+                "decision_trace": list(active_decision.trace)
+                if active_decision
+                else None,
+                "forecast_today": self.forecast,
             },
         )
 
@@ -980,7 +1023,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     def climate_mode_data(self, options, cover_data):
         """Update climate mode data and control method."""
         climate = ClimateCoverData(*self.get_climate_data(options))
-        self.climate_state = round(ClimateCoverState(cover_data, climate).get_state())
+        self._climate_decision = ClimateCoverState(cover_data, climate).get_decision()
+        self.climate_state = round(self._climate_decision.position)
         climate_data = ClimateCoverState(cover_data, climate).climate_data
         if climate_data.is_summer and self.switch_mode:
             self.control_method = "summer"
@@ -1026,6 +1070,12 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         else:
             state = self.default_state
 
+        state = self._transform_state(state)
+        self.logger.debug("Final position to use: %s", state)
+        return state
+
+    def _transform_state(self, state):
+        """Apply interpolation / inversion output transforms."""
         if self._use_interpolation:
             self.logger.debug("Interpolating position: %s", state)
             state = self.interpolate_states(state)
@@ -1038,8 +1088,6 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         if self._inverse_state and not self._use_interpolation:
             state = inverse_state(state)
             self.logger.debug("Inversed position: %s", state)
-
-        self.logger.debug("Final position to use: %s", state)
         return state
 
     def interpolate_states(self, state):
