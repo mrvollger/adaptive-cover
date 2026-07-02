@@ -174,6 +174,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _async_register_services(hass)
     hass.async_create_task(_async_bootstrap_hub(hass))
 
+    if not hass.data.get(f"{DOMAIN}_card_registered"):
+        hass.data[f"{DOMAIN}_card_registered"] = True
+        from homeassistant.loader import async_get_integration
+
+        from .frontend import async_register_card
+
+        integration = await async_get_integration(hass, DOMAIN)
+        hass.async_create_task(
+            async_register_card(hass, str(integration.version))
+        )
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
