@@ -147,3 +147,33 @@ async def test_hub_unloads_cleanly(hass, mock_sun_entity):
         if is_hub_entry(entry)
     )
     assert await hass.config_entries.async_unload(hub.entry_id)
+
+
+async def test_aggregate_cover_polls_and_recovers_from_boot_race(
+    hass, mock_sun_entity
+):
+    """Regression: frozen 'unknown / 0 covers' state after hub loaded first.
+
+    The aggregate must poll so its state converges even when it rendered
+    before regular entries registered their coordinators.
+    """
+    from custom_components.adaptive_cover.hub import AllShadesCover
+
+    await _setup_two_entries(hass)
+    assert AllShadesCover(hass)._attr_should_poll is True
+
+    from homeassistant.setup import async_setup_component
+
+    await async_setup_component(hass, "homeassistant", {})
+    # Underlying covers move; a poll/update must reflect it
+    hass.states.async_set("cover.a", "open", {"current_position": 100})
+    hass.states.async_set("cover.b", "open", {"current_position": 100})
+    await hass.services.async_call(
+        "homeassistant",
+        "update_entity",
+        {"entity_id": "cover.adaptive_cover_all"},
+        blocking=True,
+    )
+    state = hass.states.get("cover.adaptive_cover_all")
+    assert state.attributes["current_position"] == 100
+    assert state.attributes["covers"] == 2

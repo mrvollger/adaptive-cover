@@ -67,10 +67,15 @@ def hub_device_info() -> DeviceInfo:
 
 
 class AllShadesCover(CoverEntity):
-    """Aggregate cover over every entry's covers."""
+    """Aggregate cover over every entry's covers.
+
+    Polls: it has no coordinator, the underlying covers move at any time,
+    and at boot the hub can load before the regular entries register -
+    without polling the state would freeze at 'unknown / 0 covers'.
+    """
 
     _attr_has_entity_name = True
-    _attr_should_poll = False
+    _attr_should_poll = True
     _attr_name = None  # main feature: takes the device name
     _attr_device_class = CoverDeviceClass.SHADE
     _attr_supported_features = (
@@ -150,6 +155,8 @@ class AllShadesCover(CoverEntity):
             )
             coordinator.manager.mark_manual_control(entity)
             coordinator.manager.manual_control_time[entity] = now
+        if self.entity_id:  # skip when not added to hass (bare instance)
+            self.async_write_ha_state()
 
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open all covers."""
