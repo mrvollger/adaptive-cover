@@ -145,7 +145,9 @@ class AllShadesCover(CoverEntity):
         position = round(kwargs["position"])
         now = dt.datetime.now(dt.UTC)
         for coordinator, entity in self._all_cover_entities():
-            await coordinator.async_set_manual_position(entity, position)
+            await coordinator.async_set_manual_position(
+                entity, position, source="all_covers", reason="whole-house gesture"
+            )
             coordinator.manager.mark_manual_control(entity)
             coordinator.manager.manual_control_time[entity] = now
 

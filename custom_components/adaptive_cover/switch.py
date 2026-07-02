@@ -156,7 +156,10 @@ class AdaptiveCoverSwitch(
                     and self.coordinator.check_adaptive_time
                 ):
                     await self.coordinator.async_set_position(
-                        entity, self.coordinator.state
+                        entity,
+                        self.coordinator.state,
+                        source="control_enabled",
+                        reason="adaptive control switched on",
                     )
         await self.coordinator.async_refresh()
         self.schedule_update_ha_state()
