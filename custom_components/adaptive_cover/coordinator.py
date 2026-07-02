@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
+from collections import deque
 from dataclasses import dataclass
 
 import numpy as np
@@ -16,6 +17,7 @@ from homeassistant.const import (
     SERVICE_SET_COVER_TILT_POSITION,
 )
 from homeassistant.core import (
+    Context,
     Event,
     EventStateChangedData,
     HomeAssistant,
@@ -185,6 +187,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.wait_for_target = {}
         self.target_call = {}
         self.target_call_time: dict[str, dt.datetime] = {}
+        self._our_context_ids: deque[str] = deque(maxlen=64)
+        self._sun_table = None
         self.ignore_intermediate_states = self.config_entry.options.get(
             CONF_MANUAL_IGNORE_INTERMEDIATE, False
         )
@@ -238,7 +242,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         """Fetch and process state change event."""
         self.logger.debug("Entity state change")
         self.state_change = True
-        await self.async_refresh()
+        await self.async_request_refresh()
 
     async def async_check_cover_state_change(
         self, event: Event[EventStateChangedData]
@@ -261,8 +265,22 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         if self.state_change_data.new_state.state in ("unknown", "unavailable"):
             self.logger.debug("New state is %s, not processing", self.state_change_data.new_state.state)
             return
-        self.cover_state_change = True
+        entity_id = data["entity_id"]
+        # Our own command echoing back (service context preserved):
+        # bookkeeping only - never manual, never a full refresh.
+        if (
+            event.context is not None
+            and event.context.id in self._our_context_ids
+        ):
+            self.process_entity_state_change()
+            return
+        # Foreign event. Update the travel latch first (tolerance/expiry);
+        # if the cover is still mid-travel this is a device position echo:
+        # skip the full refresh so bursts don't queue-storm the pipeline.
         self.process_entity_state_change()
+        if self.wait_for_target.get(entity_id):
+            return
+        self.cover_state_change = True
         await self.async_refresh()
 
     def process_entity_state_change(self):
@@ -340,7 +358,14 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
     def _predict_position_at_time(self, cover_data, target_time):
         """Predict cover position at a specific future time using sun data."""
-        times = cover_data.sun_data.times
+        if self._sun_table is not None:
+            times, azimuths, elevations = self._sun_table
+        else:
+            sun_data = cover_data.sun_data
+            times = sun_data.times
+            azimuths = sun_data.solar_azimuth
+            elevations = sun_data.solar_elevation
+        _ = times
         # Convert target_time to same timezone as sun data times for correct indexing
         target_tz = target_time
         if times.tz is not None and target_time.tzinfo is not None:
@@ -348,9 +373,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         idx = times.get_indexer([target_tz], method="nearest")[0]
         if idx < 0 or idx >= len(times):
             return int(cover_data.h_def)
-        azi = cover_data.sun_data.solar_azimuth[idx]
-        elev = cover_data.sun_data.solar_elevation[idx]
-        return cover_data.calculate_percentage_at(azi, elev)
+        return cover_data.calculate_percentage_at(azimuths[idx], elevations[idx])
 
     def _make_utc(self, time):
         """Ensure a datetime is UTC-aware."""
@@ -511,7 +534,19 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         if solar_day_stale:
             self.logger.debug("Calculating solar times")
             loop = asyncio.get_event_loop()
-            start, end = await loop.run_in_executor(None, normal_cover.solar_times)
+
+            def _load_solar_day(cover=normal_cover):
+                span = cover.solar_times()
+                sun_data = cover.sun_data
+                return span, (
+                    sun_data.times,
+                    sun_data.solar_azimuth,
+                    sun_data.solar_elevation,
+                )
+
+            (start, end), self._sun_table = await loop.run_in_executor(
+                None, _load_solar_day
+            )
             self._sun_start_time = start
             self._sun_end_time = end
             self.logger.debug("Sun start time: %s, Sun end time: %s", start, end)
@@ -900,7 +935,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self.logger.debug("Run %s with data %s", service, service_data)
             self._record_move(entity)
             self.record_move_provenance(entity, state, source, reason)
-            await self.hass.services.async_call(COVER_DOMAIN, service, service_data)
+            ctx = Context()
+            self._our_context_ids.append(ctx.id)
+            await self.hass.services.async_call(
+                COVER_DOMAIN, service, service_data, context=ctx
+            )
 
     def record_move_provenance(
         self, entity, position, source: str, reason: str | None = None

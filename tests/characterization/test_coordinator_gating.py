@@ -85,6 +85,10 @@ def make_coordinator(**overrides):
     coord.max_moves_hour = None
     coord._move_history = {}
     coord._gate_blocks = {}
+    coord._sun_table = None
+    from collections import deque
+
+    coord._our_context_ids = deque(maxlen=64)
     for key, value in overrides.items():
         setattr(coord, key, value)
     return coord
