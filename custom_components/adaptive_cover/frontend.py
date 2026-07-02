@@ -31,6 +31,9 @@ async def async_register_card(hass: HomeAssistant, version: str) -> None:
     if not path.is_file():
         _LOGGER.debug("Card bundle missing at %s; skipping registration", path)
         return
+    if getattr(hass, "http", None) is None:  # test harness without HTTP
+        _LOGGER.debug("HTTP component unavailable; skipping card registration")
+        return
 
     await hass.http.async_register_static_paths(
         [StaticPathConfig(CARD_URL, str(path), cache_headers=False)]

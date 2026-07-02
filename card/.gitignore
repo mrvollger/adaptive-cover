@@ -1,0 +1,26 @@
+# build artifacts
+node_modules/
+*.tsbuildinfo
+harness/dist/
+.timelapse-frames/
+
+# editor / OS
+.vscode/*
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/extensions.json
+.DS_Store
+
+# test output
+coverage/
+.vitest-cache/
+
+# local deploy config (credentials — never commit)
+.deploy
+.dirty-deploy
+
+# agent tooling
+.claude/*
+!.claude/skills/
+.worktrees/
+.superpowers/

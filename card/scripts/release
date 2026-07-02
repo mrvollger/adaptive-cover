@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+# Interactive release automation. Bumps package.json + src/const.ts, tags, pushes.
+# The publish-release.yml workflow picks up the tag and builds+publishes the asset.
+#
+# Usage:
+#   scripts/release patch        # 0.1.0 -> 0.1.1
+#   scripts/release minor        # 0.1.0 -> 0.2.0
+#   scripts/release major        # 0.1.0 -> 1.0.0
+#   scripts/release beta         # 0.1.0 -> 0.1.1-beta.1 (or bump -beta.N)
+#   scripts/release 0.2.0        # explicit
+#   scripts/release --dry-run beta
+#   scripts/release beta --dry-run
+#
+# Requires `release_notes/vX.Y.Z.md` to exist for the target version — matches
+# the publish-release.yml workflow's body_path expectation. Author notes first.
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+DRY_RUN=0
+positional=()
+for arg in "$@"; do
+  if [[ "$arg" == "--dry-run" ]]; then
+    DRY_RUN=1
+  else
+    positional+=("$arg")
+  fi
+done
+set -- "${positional[@]:+${positional[@]}}"
+
+BUMP="${1:-}"
+if [[ -z "$BUMP" ]]; then
+  echo "Usage: scripts/release [--dry-run] <patch|minor|major|beta|X.Y.Z[-beta.N]>"
+  exit 1
+fi
+
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "✖ Working tree not clean. Commit or stash first."
+  exit 1
+fi
+
+# Branch policy (soft warnings — never block):
+#   stable bumps (patch/minor/major) expect main; beta expects develop.
+# Cutting off-policy is allowed for hotfix work or shipping a beta off a
+# feature branch for a tester — confirm interactively.
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+confirm_off_policy() {
+  local expected="$1"
+  local kind="$2"
+  echo "⚠️  $kind releases normally run from '$expected' (currently on '$current_branch')."
+  read -rp "Continue anyway? [y/N] " ans
+  [[ "$ans" == "y" || "$ans" == "Y" ]] || { echo "Aborted."; exit 1; }
+}
+case "$BUMP" in
+  patch|minor|major)
+    [[ "$current_branch" == "main" ]] || confirm_off_policy "main" "Stable"
+    ;;
+  beta)
+    [[ "$current_branch" == "develop" ]] || confirm_off_policy "develop" "Beta"
+    ;;
+esac
+
+current=$(node -p "require('./package.json').version")
+echo "→ Current version: $current"
+
+case "$BUMP" in
+  patch|minor|major)
+    new_version=$(npm version --no-git-tag-version "$BUMP" | tr -d 'v')
+    ;;
+  beta)
+    # naive: append -beta.N (increment if already beta)
+    if [[ "$current" == *-beta.* ]]; then
+      base=${current%-beta.*}
+      n=${current##*-beta.}
+      new_version="${base}-beta.$((n+1))"
+    else
+      new_version="${current}-beta.1"
+    fi
+    npm version --no-git-tag-version "$new_version" >/dev/null
+    ;;
+  [0-9]*.*)
+    new_version="$BUMP"
+    npm version --no-git-tag-version "$new_version" >/dev/null
+    ;;
+  *)
+    echo "✖ Unknown bump type: $BUMP"
+    exit 1
+    ;;
+esac
+
+echo "→ New version: $new_version"
+
+# Pre-flight: release notes file must exist. publish-release.yml reads this
+# verbatim as the GitHub Release body via body_path, so a missing file would
+# fail the workflow after tag-push — catch it locally instead.
+notes_file="release_notes/v${new_version}.md"
+if [[ ! -f "$notes_file" ]]; then
+  echo "✖ Missing $notes_file — author release notes first."
+  echo "  Reverting package.json / package-lock.json."
+  git checkout -- package.json package-lock.json
+  exit 1
+fi
+
+# Keep CARD_VERSION in src/const.ts in sync
+sed -i.bak "s/^export const CARD_VERSION = '.*';$/export const CARD_VERSION = '$new_version';/" src/const.ts
+rm -f src/const.ts.bak
+
+npm run build
+
+if [[ $DRY_RUN -eq 1 ]]; then
+  echo "→ Would commit + tag v$new_version and push"
+  echo "  Undo with:  git checkout -- package.json src/const.ts dist/ && git clean -fd dist/"
+  exit 0
+fi
+
+git add package.json package-lock.json src/const.ts dist/
+git commit -m "chore: release v$new_version"
+git tag "v$new_version"
+git push origin HEAD --tags
+
+echo "✓ Tagged v$new_version. publish-release.yml will build and publish the asset."

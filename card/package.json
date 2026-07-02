@@ -1,0 +1,65 @@
+{
+  "name": "adaptive-cover-card",
+  "version": "1.0.0",
+  "description": "Custom Lovelace card bundle for the Adaptive Cover Home Assistant integration (fork of basbruss/adaptive-cover). Visualizes sun/window geometry, the engine decision trace, and live cover positions with inline controls.",
+  "keywords": [
+    "home-assistant",
+    "lovelace",
+    "custom-card",
+    "hacs",
+    "adaptive-cover"
+  ],
+  "author": "Mitchell R. Vollger",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrvollger/adaptive-cover-card.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mrvollger/adaptive-cover-card/issues"
+  },
+  "homepage": "https://github.com/mrvollger/adaptive-cover-card",
+  "type": "module",
+  "main": "dist/adaptive-cover-card.js",
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "harness": "rollup -c harness/rollup.config.mjs -w",
+    "build:harness": "rollup -c harness/rollup.config.mjs",
+    "lint": "eslint src tests harness && prettier --check \"src/**/*.ts\" \"tests/**/*.ts\" \"harness/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\" \"harness/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\" \"harness/**/*.ts\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "capture:timelapse": "node scripts/capture-timelapse.mjs",
+    "capture:screenshots": "node scripts/capture-screenshots.mjs",
+    "capture:readme-wiki": "node scripts/capture-readme-wiki.mjs"
+  },
+  "dependencies": {
+    "custom-card-helpers": "^2.0.0",
+    "lit": "^3.1.4",
+    "suncalc": "^1.9.0"
+  },
+  "devDependencies": {
+    "@mdi/js": "^7.4.47",
+    "@rollup/plugin-commonjs": "^29.0.2",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-terser": "^1.0.0",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "@types/node": "^25.6.0",
+    "@types/suncalc": "^1.9.2",
+    "@typescript-eslint/eslint-plugin": "^8.59.0",
+    "@typescript-eslint/parser": "^8.59.0",
+    "eslint": "^10.2.1",
+    "happy-dom": "^20.9.0",
+    "playwright": "^1.49.0",
+    "prettier": "^3.3.2",
+    "rollup": "^4.18.0",
+    "rollup-plugin-livereload": "^2.0.5",
+    "rollup-plugin-serve": "^3.0.0",
+    "tslib": "^2.6.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
+  }
+}

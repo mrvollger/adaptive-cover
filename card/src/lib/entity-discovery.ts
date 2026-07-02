@@ -1,0 +1,269 @@
+import type { HomeAssistant } from 'custom-card-helpers';
+import { INTEGRATION_DOMAIN, UNIQUE_ID_ROLES } from '../const';
+import type { EntityRegistryEntry } from './entity-registry';
+import type { DiscoveredEntities, AdaptiveCoverCardConfig } from '../types';
+
+/**
+ * Memoized discovery for the root card, which re-runs on every HA state tick (HA
+ * hands over a fresh `hass` object each time). Keying on `hass` identity would miss
+ * every tick; instead this tracks the *real* inputs:
+ *
+ * - the **registry-derived base** (entities map + device_id) — memoized on
+ *   `(registry, entryId)`, since the entity wiring only moves when the registry does;
+ * - the three `hass`-derived references the result depends on: `hass.devices` (title),
+ *   the target-position state (managed covers) and the control-status state (cover type).
+ *
+ * When all of those are reference-equal to the previous call it returns the **same**
+ * `DiscoveredEntities` object — so `_discovered` (and the child props derived from it)
+ * stay stable across unrelated ticks instead of churning a new object every time.
+ */
+export function createDiscoveryMemo(): (
+  hass: HomeAssistant,
+  config: AdaptiveCoverCardConfig,
+  registry: EntityRegistryEntry[],
+) => DiscoveredEntities | null {
+  let last: {
+    registry: EntityRegistryEntry[];
+    entryId: string;
+    base: DiscoverBase | null;
+    devices: unknown;
+    posState: unknown;
+    ctrlState: unknown;
+    result: DiscoveredEntities | null;
+  } | null = null;
+
+  return (hass, config, registry) => {
+    const entryId = config.entry_id ?? '';
+    if (!entryId) {
+      last = null;
+      return null;
+    }
+
+    const baseSame = last !== null && last.registry === registry && last.entryId === entryId;
+    const base = baseSame ? last!.base : discoverBase(entryId, registry);
+    if (!base) {
+      last = {
+        registry,
+        entryId,
+        base: null,
+        devices: null,
+        posState: null,
+        ctrlState: null,
+        result: null,
+      };
+      return null;
+    }
+
+    const devices = (hass as HassWithDevices).devices;
+    const posId = base.entities.target_position_sensor;
+    const ctrlId = base.entities.control_status_sensor;
+    const posState = posId ? hass.states[posId] : undefined;
+    const ctrlState = ctrlId ? hass.states[ctrlId] : undefined;
+
+    if (
+      baseSame &&
+      last !== null &&
+      last.result !== null &&
+      last.devices === devices &&
+      last.posState === posState &&
+      last.ctrlState === ctrlState
+    ) {
+      return last.result;
+    }
+
+    const result = assembleDiscovered(hass, entryId, base);
+    last = { registry, entryId, base, devices, posState, ctrlState, result };
+    return result;
+  };
+}
+
+/** Result of multi-entry discovery: the entries that resolved, plus the ids that didn't. */
+export interface DiscoveryListResult {
+  list: DiscoveredEntities[];
+  missing: string[];
+}
+
+/**
+ * Memoized discovery for the multi-entry cards (sky-compass card, …) which accept a
+ * list of `entry_ids`. Each id runs through its own {@link createDiscoveryMemo}, so a
+ * per-entry result is reference-stable across ticks. This wrapper additionally returns
+ * the **same `{ list, missing }` object** (and therefore the same `list` array) when the
+ * id list and every per-entry result are unchanged — so the array handed to the child
+ * compass/chart stays reference-stable and does not defeat their own `shouldUpdate`.
+ */
+export function createDiscoveryListMemo(): (
+  hass: HomeAssistant,
+  entryIds: string[],
+  registry: EntityRegistryEntry[],
+  type: string,
+) => DiscoveryListResult {
+  const memos = new Map<string, ReturnType<typeof createDiscoveryMemo>>();
+  let lastEntryIds: string[] = [];
+  let lastResults: (DiscoveredEntities | null)[] = [];
+  let cached: DiscoveryListResult = { list: [], missing: [] };
+
+  return (hass, entryIds, registry, type) => {
+    const results = entryIds.map((id) => {
+      let memo = memos.get(id);
+      if (!memo) {
+        memo = createDiscoveryMemo();
+        memos.set(id, memo);
+      }
+      return memo(hass, { type, entry_id: id }, registry);
+    });
+    // Drop per-entry memos for ids no longer configured.
+    if (memos.size > entryIds.length) {
+      for (const id of memos.keys()) if (!entryIds.includes(id)) memos.delete(id);
+    }
+
+    const unchanged =
+      lastEntryIds.length === entryIds.length &&
+      lastEntryIds.every((id, i) => id === entryIds[i]) &&
+      lastResults.length === results.length &&
+      lastResults.every((r, i) => r === results[i]);
+    if (unchanged) return cached;
+
+    lastEntryIds = entryIds.slice();
+    lastResults = results;
+    const list: DiscoveredEntities[] = [];
+    const missing: string[] = [];
+    entryIds.forEach((id, i) => {
+      const d = results[i];
+      if (d) list.push(d);
+      else missing.push(id);
+    });
+    cached = { list, missing };
+    return cached;
+  };
+}
+
+interface DeviceDisplay {
+  id: string;
+  name?: string;
+  name_by_user?: string;
+  config_entries?: string[];
+}
+
+type HassWithDevices = HomeAssistant & {
+  devices?: Record<string, DeviceDisplay>;
+};
+
+/**
+ * Identity is derived from `(platform, unique_id_suffix)`. The unique_id of
+ * every ACP entity is `{entry_id}_{suffix}`; stripping the entry_id prefix
+ * gives a stable, user-unrenameable identifier that the integration controls.
+ *
+ * The full entity registry is an async websocket fetch (`hass.entities` is a
+ * display-only subset that omits `unique_id`/`config_entry_id`). The caller
+ * passes in the pre-fetched registry so discovery stays pure and sync.
+ *
+ * `hass.devices` is used only for the *display title* and the list of managed
+ * cover entity_ids (from the target-position sensor's `actual_positions`
+ * attribute). It is not used for identity.
+ */
+
+/** Registry-derived identity for an entry — the part that only moves when the entity
+ *  registry does. Returned by {@link discoverBase} and reused across `hass` ticks. */
+interface DiscoverBase {
+  entities: DiscoveredEntities['entities'];
+  deviceId: string | undefined;
+}
+
+/** Walk the registry and resolve an entry's entities + device id. Pure in
+ *  `(entryId, registry)`. Returns null when the entry has no matching entities. */
+function discoverBase(entryId: string, registry: EntityRegistryEntry[]): DiscoverBase | null {
+  const entities: DiscoveredEntities['entities'] = {};
+  const prefix = `${entryId}_`;
+  let anyEntryMatched = false;
+  let deviceId: string | undefined;
+
+  for (const entry of registry) {
+    if (entry.config_entry_id !== entryId) continue;
+    if (entry.platform !== INTEGRATION_DOMAIN) continue;
+    anyEntryMatched = true;
+    if (!deviceId && entry.device_id) deviceId = entry.device_id;
+
+    if (!entry.unique_id.startsWith(prefix)) continue;
+    const suffix = entry.unique_id.slice(prefix.length);
+    const platform = entry.entity_id.split('.')[0];
+    const role = UNIQUE_ID_ROLES[`${platform}:${suffix}`];
+    if (!role) continue;
+    entities[role] = entry.entity_id;
+  }
+
+  if (!anyEntryMatched || Object.keys(entities).length === 0) return null;
+  return { entities, deviceId };
+}
+
+/** Combine the registry-derived base with the `hass`-derived fields (title, managed
+ *  covers, cover type) into a full {@link DiscoveredEntities}. */
+function assembleDiscovered(
+  hass: HomeAssistant,
+  entryId: string,
+  base: DiscoverBase,
+): DiscoveredEntities {
+  const { entities, deviceId } = base;
+
+  const h = hass as HassWithDevices;
+  let entryTitle = entryId;
+  if (h.devices) {
+    for (const device of Object.values(h.devices)) {
+      if (!device.config_entries?.includes(entryId)) continue;
+      entryTitle = device.name_by_user ?? device.name ?? entryId;
+      break;
+    }
+  }
+
+  // Managed covers are discovered from the Cover Position sensor's
+  // `last_moves` / `move_blocked_by` attribute keys — the integration does not
+  // expose its configured cover list directly. Until it has recorded at least
+  // one move or blocked gate the list is empty and the card renders the
+  // entry-level position only.
+  const managedCovers: string[] = [];
+  const positionSensorId = entities.target_position_sensor;
+  if (positionSensorId) {
+    const attrs = hass.states[positionSensorId]?.attributes as
+      | { last_moves?: Record<string, string>; move_blocked_by?: Record<string, string> }
+      | undefined;
+    const ids = new Set<string>([
+      ...Object.keys(attrs?.last_moves ?? {}),
+      ...Object.keys(attrs?.move_blocked_by ?? {}),
+    ]);
+    managedCovers.push(...[...ids].sort());
+  }
+
+  // The integration does not expose its blind type (vertical/awning/tilt) on
+  // any entity attribute; default to the vertical-blind visuals. A managed
+  // cover that only reports `current_tilt_position` marks the entry as tilt.
+  let coverType: DiscoveredEntities['cover_type'] = 'cover_blind';
+  if (managedCovers.length > 0) {
+    const isTilt = managedCovers.every((id) => {
+      const a = hass.states[id]?.attributes as
+        | { current_position?: number; current_tilt_position?: number }
+        | undefined;
+      return a?.current_tilt_position !== undefined && a?.current_position === undefined;
+    });
+    if (isTilt) coverType = 'cover_tilt';
+  }
+
+  return {
+    entry_id: entryId,
+    entry_title: entryTitle,
+    cover_type: coverType,
+    entities,
+    managed_covers: managedCovers,
+    device_id: deviceId,
+  };
+}
+
+export function discoverEntities(
+  hass: HomeAssistant,
+  config: AdaptiveCoverCardConfig,
+  registry: EntityRegistryEntry[],
+): DiscoveredEntities | null {
+  const entryId = config.entry_id;
+  if (!entryId) return null;
+  const base = discoverBase(entryId, registry);
+  if (!base) return null;
+  return assembleDiscovered(hass, entryId, base);
+}

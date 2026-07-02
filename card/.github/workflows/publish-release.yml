@@ -1,0 +1,42 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+      - "v*.*.*-beta.*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: Verify release notes file exists
+        run: |
+          file="release_notes/${GITHUB_REF_NAME}.md"
+          if [[ ! -f "$file" ]]; then
+            echo "::error::$file is missing — author it before tagging."
+            exit 1
+          fi
+
+      - name: Build
+        run: npm run build
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v3
+        with:
+          body_path: release_notes/${{ github.ref_name }}.md
+          files: dist/adaptive-cover-card.js
+          prerelease: ${{ contains(github.ref, '-beta.') }}
