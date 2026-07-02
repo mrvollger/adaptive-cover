@@ -235,19 +235,19 @@
         "sections": {
           "covers_geometry": {
             "name": "Covers & window geometry",
-            "description": "Which covers to drive and the physical measurements of the window (and overhang, if any)."
+            "description": "Cover entities, window height, shaded depth, overhang depth/height, eye height, seat distance."
           },
           "sun_behavior": {
             "name": "Sun tracking & positions",
-            "description": "Azimuth, field of view, default/sunset positions, limits, blind spot, interpolation."
+            "description": "Azimuth, field of view, default/sunset positions, min/max limits, elevation range, blind spot, interpolation."
           },
           "automation_timing": {
-            "name": "Timing, quiet hours & manual override",
-            "description": "When automation runs, movement smoothing, privacy after dusk, manual override handling."
+            "name": "Automation, privacy & quiet hours",
+            "description": "Position/time deltas, start/end times, manual override handling, privacy after dusk, quiet hours, move cap."
           },
           "climate": {
             "name": "Climate & weather",
-            "description": "Temperature thresholds, presence, lux/irradiance, and weather conditions."
+            "description": "Enable climate mode here; temperature thresholds, presence, lux/irradiance, weather conditions appear once enabled."
           }
         }
       },

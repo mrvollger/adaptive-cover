@@ -15,6 +15,7 @@ from homeassistant.data_entry_flow import FlowResult, section
 from homeassistant.helpers import selector
 
 from .const import (
+    _LOGGER,
     CONF_AWNING_ANGLE,
     CONF_AZIMUTH,
     CONF_BLIND_SPOT_ELEVATION,
@@ -791,11 +792,17 @@ class OptionsFlowHandler(OptionsFlow):
                 _fields_of(AUTOMATION_CONFIG), self.options
             ),
         }
+        # Climate section is always visible so the feature is discoverable;
+        # with climate mode off it holds only the enable toggle.
+        climate_toggle = _with_suggestions(_fields_of(CLIMATE_MODE), self.options)
         if self.options.get(CONF_CLIMATE_MODE):
             sections["climate"] = {
+                **climate_toggle,
                 **_with_suggestions(_fields_of(CLIMATE_OPTIONS), self.options),
                 **_with_suggestions(_fields_of(WEATHER_OPTIONS), self.options),
             }
+        else:
+            sections["climate"] = climate_toggle
         return sections
 
     async def async_step_init(
@@ -829,6 +836,23 @@ class OptionsFlowHandler(OptionsFlow):
                     errors={
                         "base": "Maximal elevation must be greater than minimal elevation"
                     },
+                )
+            changed = {
+                key: value
+                for key, value in flat.items()
+                if self.options.get(key) != value and value is not None
+            }
+            cleared = sorted(
+                key
+                for key, value in flat.items()
+                if value is None and self.options.get(key) is not None
+            )
+            if changed or cleared:
+                _LOGGER.info(
+                    "Options updated for '%s': changed=%s cleared=%s",
+                    self.current_config.get("name"),
+                    sorted(changed),
+                    cleared,
                 )
             self.options.update(flat)
             return await self._update_options()

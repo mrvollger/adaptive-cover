@@ -64,12 +64,12 @@ async def test_hub_auto_bootstrapped_once(hass, mock_sun_entity):
         if is_hub_entry(entry)
     ]
     assert len(hubs) == 1
-    assert hubs[0].title == "All Shades"
+    assert hubs[0].title == "Adaptive Cover All"
 
 
 async def test_aggregate_cover_average_position(hass, mock_sun_entity):
     await _setup_two_entries(hass)
-    state = hass.states.get("cover.all_shades")
+    state = hass.states.get("cover.adaptive_cover_all")
     assert state is not None
     assert state.attributes["current_position"] == 50  # avg(80, 20)
 

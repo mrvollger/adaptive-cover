@@ -39,7 +39,7 @@ async def test_sections_for_basic_vertical(
 ):
     result = await _open_options(hass, vertical_config_entry)
     names = _section_names(result)
-    assert names == ["covers_geometry", "sun_behavior", "automation_timing"]
+    assert names == ["covers_geometry", "sun_behavior", "automation_timing", "climate"]
 
 
 async def test_climate_section_present_when_enabled(
@@ -74,6 +74,7 @@ async def test_submit_flattens_sections_and_preserves_rest(
             },
             "sun_behavior": {},
             "automation_timing": {CONF_PRIVACY_MODE: True},
+            "climate": {},
         },
     )
     await hass.async_block_till_done()
@@ -105,6 +106,7 @@ async def test_absent_nullable_field_clears_setting(
             "covers_geometry": {CONF_HEIGHT_WIN: 2.1, CONF_DISTANCE: 0.5},
             "sun_behavior": {},  # max_elevation omitted -> cleared
             "automation_timing": {},
+            "climate": {},
         },
     )
     await hass.async_block_till_done()
@@ -121,6 +123,7 @@ async def test_elevation_validation_error(
             "covers_geometry": {},
             "sun_behavior": {"min_elevation": 40, "max_elevation": 20},
             "automation_timing": {},
+            "climate": {},
         },
     )
     assert result["type"] == data_entry_flow.FlowResultType.FORM
