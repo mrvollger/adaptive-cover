@@ -219,6 +219,7 @@ class TestGateVisibility:
     ):
         entry = _entry(hass)
         await _setup(hass, entry)
+        cover_calls_stub = async_mock_service(hass, "cover", "set_cover_position")
 
         hass.states.async_set(
             "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}

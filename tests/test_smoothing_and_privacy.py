@@ -127,6 +127,7 @@ async def test_privacy_closes_after_dusk(hass, mock_sun_data, mock_sun_entity):
 
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
+    calls = async_mock_service(hass, "cover", "set_cover_position")
 
     hass.states.async_set(
         "sun.sun", "below_horizon", {"azimuth": 300.0, "elevation": -8.0}

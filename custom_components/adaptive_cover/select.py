@@ -34,7 +34,12 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the mode select for one config entry."""
+    """Set up the mode select for one config entry (or the hub's)."""
+    from .hub import HouseModeSelect, is_hub_entry
+
+    if is_hub_entry(config_entry):
+        async_add_entities([HouseModeSelect(hass)])
+        return
     coordinator: AdaptiveDataUpdateCoordinator = hass.data[DOMAIN][
         config_entry.entry_id
     ]

@@ -11,10 +11,11 @@ from homeassistant.config_entries import (
     OptionsFlow,
 )
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import FlowResult
+from homeassistant.data_entry_flow import FlowResult, section
 from homeassistant.helpers import selector
 
 from .const import (
+    _LOGGER,
     CONF_AWNING_ANGLE,
     CONF_AZIMUTH,
     CONF_BLIND_SPOT_ELEVATION,
@@ -430,6 +431,18 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         """Get the options flow for this handler."""
         return OptionsFlowHandler(config_entry)
 
+    async def async_step_import(self, import_data: dict[str, Any] | None = None):
+        """Create the singleton All Shades hub entry (auto-bootstrapped)."""
+        from .hub import CONF_IS_HUB, HUB_ENTRY_NAME, HUB_UNIQUE_ID
+
+        await self.async_set_unique_id(HUB_UNIQUE_ID)
+        self._abort_if_unique_id_configured()
+        return self.async_create_entry(
+            title=HUB_ENTRY_NAME,
+            data={"name": HUB_ENTRY_NAME, CONF_IS_HUB: True},
+            options={},
+        )
+
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         """Handle the initial step."""
         # errors = {}
@@ -672,8 +685,79 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         )
 
 
+# Blind-spot detail fields (were previously an extra wizard step)
+BLIND_SPOT_FIELDS = {
+    vol.Optional(CONF_BLIND_SPOT_LEFT): selector.NumberSelector(
+        selector.NumberSelectorConfig(min=0, max=90, mode="box")
+    ),
+    vol.Optional(CONF_BLIND_SPOT_RIGHT): selector.NumberSelector(
+        selector.NumberSelectorConfig(min=1, max=90, mode="box")
+    ),
+    vol.Optional(CONF_BLIND_SPOT_ELEVATION): vol.All(
+        vol.Coerce(int), vol.Range(min=0, max=90)
+    ),
+}
+
+# Keys where "absent from the submitted form" means "clear the setting"
+# (mirrors the old wizard's optional_entities behavior).
+_NULLABLE_KEYS = {
+    CONF_MIN_ELEVATION,
+    CONF_MAX_ELEVATION,
+    CONF_OVERHANG_DEPTH,
+    CONF_OVERHANG_HEIGHT,
+    CONF_EYE_HEIGHT,
+    CONF_OCCUPIED_DISTANCE,
+    CONF_START_ENTITY,
+    CONF_END_ENTITY,
+    CONF_MANUAL_THRESHOLD,
+    CONF_QUIET_START,
+    CONF_QUIET_END,
+    CONF_MAX_MOVES_HOUR,
+    CONF_BLIND_SPOT_LEFT,
+    CONF_BLIND_SPOT_RIGHT,
+    CONF_BLIND_SPOT_ELEVATION,
+    CONF_OUTSIDETEMP_ENTITY,
+    CONF_WEATHER_ENTITY,
+    CONF_PRESENCE_ENTITY,
+    CONF_LUX_ENTITY,
+    CONF_IRRADIANCE_ENTITY,
+    CONF_INTERP_START,
+    CONF_INTERP_END,
+}
+
+
+def _fields_of(schema: vol.Schema) -> dict:
+    """Marker -> validator mapping of a voluptuous schema."""
+    return dict(schema.schema)
+
+
+def _own_fields(schema: vol.Schema, base: vol.Schema) -> dict:
+    """Fields of `schema` that are not part of `base` (undo .extend)."""
+    base_keys = {marker.schema for marker in base.schema}
+    return {
+        marker: validator
+        for marker, validator in schema.schema.items()
+        if marker.schema not in base_keys
+    }
+
+
+def _with_suggestions(fields: dict, options: dict) -> dict:
+    """Rebuild fields as Optional with the current value suggested."""
+    rebuilt = {}
+    for marker, validator in fields.items():
+        key = marker.schema
+        rebuilt[
+            vol.Optional(key, description={"suggested_value": options.get(key)})
+        ] = validator
+    return rebuilt
+
+
 class OptionsFlowHandler(OptionsFlow):
-    """Options to adjust parameters."""
+    """Single-page options flow.
+
+    Every applicable setting on one form, grouped into collapsible
+    sections, with current values pre-filled.
+    """
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         """Initialize options flow."""
@@ -683,21 +767,111 @@ class OptionsFlowHandler(OptionsFlow):
         self.sensor_type: SensorType = (
             self.current_config.get(CONF_SENSOR_TYPE) or SensorType.BLIND
         )
+        self._shown_keys: set[str] = set()
+
+    def _section_fields(self) -> dict[str, dict]:
+        """Build {section_name: fields} for this entry's type and features."""
+        type_schema = {
+            SensorType.BLIND: VERTICAL_OPTIONS,
+            SensorType.AWNING: HORIZONTAL_OPTIONS,
+            SensorType.TILT: TILT_OPTIONS,
+        }[self.sensor_type]
+
+        sections: dict[str, dict] = {
+            "covers_geometry": _with_suggestions(
+                _own_fields(type_schema, OPTIONS), self.options
+            ),
+            "sun_behavior": {
+                **_with_suggestions(_fields_of(OPTIONS), self.options),
+                **_with_suggestions(BLIND_SPOT_FIELDS, self.options),
+                **_with_suggestions(
+                    _fields_of(INTERPOLATION_OPTIONS), self.options
+                ),
+            },
+            "automation_timing": _with_suggestions(
+                _fields_of(AUTOMATION_CONFIG), self.options
+            ),
+        }
+        # Climate section is always visible so the feature is discoverable;
+        # with climate mode off it holds only the enable toggle.
+        climate_toggle = _with_suggestions(_fields_of(CLIMATE_MODE), self.options)
+        if self.options.get(CONF_CLIMATE_MODE):
+            sections["climate"] = {
+                **climate_toggle,
+                **_with_suggestions(_fields_of(CLIMATE_OPTIONS), self.options),
+                **_with_suggestions(_fields_of(WEATHER_OPTIONS), self.options),
+            }
+        else:
+            sections["climate"] = climate_toggle
+        return sections
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Manage the options."""
-        options = ["automation", "blind"]
-        if self.options[CONF_CLIMATE_MODE]:
-            options.append("climate")
-        if self.options.get(CONF_WEATHER_ENTITY):
-            options.append("weather")
-        if self.options.get(CONF_ENABLE_BLIND_SPOT):
-            options.append("blind_spot")
-        if self.options.get(CONF_INTERP):
-            options.append("interp")
-        return self.async_show_menu(step_id="init", menu_options=options)
+        """Show and process the single options page."""
+        section_fields = self._section_fields()
+        self._shown_keys = {
+            marker.schema
+            for fields in section_fields.values()
+            for marker in fields
+        }
+
+        if user_input is not None:
+            flat: dict = {}
+            for section_data in user_input.values():
+                if isinstance(section_data, dict):
+                    flat.update(section_data)
+            # Absent nullable fields were cleared by the user
+            for key in _NULLABLE_KEYS & self._shown_keys:
+                if key not in flat:
+                    flat[key] = None
+            if (
+                flat.get(CONF_MAX_ELEVATION) is not None
+                and flat.get(CONF_MIN_ELEVATION) is not None
+                and flat[CONF_MAX_ELEVATION] <= flat[CONF_MIN_ELEVATION]
+            ):
+                return self.async_show_form(
+                    step_id="init",
+                    data_schema=self._build_schema(section_fields),
+                    errors={
+                        "base": "Maximal elevation must be greater than minimal elevation"
+                    },
+                )
+            changed = {
+                key: value
+                for key, value in flat.items()
+                if self.options.get(key) != value and value is not None
+            }
+            cleared = sorted(
+                key
+                for key, value in flat.items()
+                if value is None and self.options.get(key) is not None
+            )
+            if changed or cleared:
+                _LOGGER.info(
+                    "Options updated for '%s': changed=%s cleared=%s",
+                    self.current_config.get("name"),
+                    sorted(changed),
+                    cleared,
+                )
+            self.options.update(flat)
+            return await self._update_options()
+
+        return self.async_show_form(
+            step_id="init", data_schema=self._build_schema(section_fields)
+        )
+
+    def _build_schema(self, section_fields: dict[str, dict]) -> vol.Schema:
+        """Assemble the sectioned one-page schema."""
+        return vol.Schema(
+            {
+                vol.Required(name): section(
+                    vol.Schema(fields),
+                    {"collapsed": name != "covers_geometry"},
+                )
+                for name, fields in section_fields.items()
+            }
+        )
 
     async def async_step_automation(self, user_input: dict[str, Any] | None = None):
         """Manage automation options."""
