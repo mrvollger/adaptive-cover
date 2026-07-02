@@ -1,0 +1,1298 @@
+{
+ "presence=away|temp=cold|weather=cloudy|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=away|temp=cold|weather=cloudy|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=away|temp=cold|weather=cloudy|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 100
+ },
+ "presence=away|temp=cold|weather=cloudy|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 100
+ },
+ "presence=away|temp=cold|weather=cloudy|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=away|temp=cold|weather=cloudy|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 89
+ },
+ "presence=away|temp=cold|weather=cloudy|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=away|temp=cold|weather=cloudy|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 75
+ },
+ "presence=away|temp=cold|weather=none|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=away|temp=cold|weather=none|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=away|temp=cold|weather=none|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 100
+ },
+ "presence=away|temp=cold|weather=none|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 100
+ },
+ "presence=away|temp=cold|weather=none|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=away|temp=cold|weather=none|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 89
+ },
+ "presence=away|temp=cold|weather=none|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=away|temp=cold|weather=none|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 75
+ },
+ "presence=away|temp=cold|weather=sunny|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=away|temp=cold|weather=sunny|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=away|temp=cold|weather=sunny|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 100
+ },
+ "presence=away|temp=cold|weather=sunny|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 100
+ },
+ "presence=away|temp=cold|weather=sunny|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=away|temp=cold|weather=sunny|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 89
+ },
+ "presence=away|temp=cold|weather=sunny|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=away|temp=cold|weather=sunny|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 75
+ },
+ "presence=away|temp=hot|weather=cloudy|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=hot|weather=cloudy|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=hot|weather=cloudy|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=away|temp=hot|weather=cloudy|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=away|temp=hot|weather=cloudy|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=hot|weather=cloudy|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=away|temp=hot|weather=cloudy|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=hot|weather=cloudy|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=away|temp=hot|weather=none|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=hot|weather=none|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=hot|weather=none|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=away|temp=hot|weather=none|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=away|temp=hot|weather=none|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=hot|weather=none|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=away|temp=hot|weather=none|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=hot|weather=none|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=away|temp=hot|weather=sunny|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=hot|weather=sunny|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=hot|weather=sunny|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=away|temp=hot|weather=sunny|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=away|temp=hot|weather=sunny|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=hot|weather=sunny|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=away|temp=hot|weather=sunny|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=hot|weather=sunny|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=away|temp=mid|weather=cloudy|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=cloudy|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=cloudy|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=cloudy|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=cloudy|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=cloudy|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=away|temp=mid|weather=cloudy|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=cloudy|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=away|temp=mid|weather=none|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=none|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=none|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=none|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=none|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=none|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=away|temp=mid|weather=none|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=none|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=away|temp=mid|weather=sunny|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=sunny|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=sunny|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=sunny|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=sunny|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=sunny|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=away|temp=mid|weather=sunny|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=away|temp=mid|weather=sunny|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": false,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=home|temp=cold|weather=cloudy|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=home|temp=cold|weather=cloudy|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=home|temp=cold|weather=cloudy|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 100
+ },
+ "presence=home|temp=cold|weather=cloudy|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 100
+ },
+ "presence=home|temp=cold|weather=cloudy|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 89
+ },
+ "presence=home|temp=cold|weather=cloudy|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 100
+ },
+ "presence=home|temp=cold|weather=cloudy|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 44
+ },
+ "presence=home|temp=cold|weather=cloudy|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 59
+ },
+ "presence=home|temp=cold|weather=none|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=home|temp=cold|weather=none|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=home|temp=cold|weather=none|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 24
+ },
+ "presence=home|temp=cold|weather=none|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 24
+ },
+ "presence=home|temp=cold|weather=none|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 89
+ },
+ "presence=home|temp=cold|weather=none|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 89
+ },
+ "presence=home|temp=cold|weather=none|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 44
+ },
+ "presence=home|temp=cold|weather=none|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 44
+ },
+ "presence=home|temp=cold|weather=sunny|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=home|temp=cold|weather=sunny|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=home|temp=cold|weather=sunny|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 24
+ },
+ "presence=home|temp=cold|weather=sunny|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 24
+ },
+ "presence=home|temp=cold|weather=sunny|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 89
+ },
+ "presence=home|temp=cold|weather=sunny|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 89
+ },
+ "presence=home|temp=cold|weather=sunny|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 44
+ },
+ "presence=home|temp=cold|weather=sunny|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 44
+ },
+ "presence=home|temp=hot|weather=cloudy|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=home|temp=hot|weather=cloudy|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=home|temp=hot|weather=cloudy|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 24
+ },
+ "presence=home|temp=hot|weather=cloudy|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=home|temp=hot|weather=cloudy|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=home|temp=hot|weather=cloudy|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 50
+ },
+ "presence=home|temp=hot|weather=cloudy|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=home|temp=hot|weather=cloudy|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 25
+ },
+ "presence=home|temp=hot|weather=none|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=home|temp=hot|weather=none|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=home|temp=hot|weather=none|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 24
+ },
+ "presence=home|temp=hot|weather=none|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=home|temp=hot|weather=none|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=home|temp=hot|weather=none|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=home|temp=hot|weather=none|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=home|temp=hot|weather=none|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=home|temp=hot|weather=sunny|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=home|temp=hot|weather=sunny|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=home|temp=hot|weather=sunny|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 24
+ },
+ "presence=home|temp=hot|weather=sunny|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=home|temp=hot|weather=sunny|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=home|temp=hot|weather=sunny|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=home|temp=hot|weather=sunny|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=home|temp=hot|weather=sunny|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=home|temp=mid|weather=cloudy|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=home|temp=mid|weather=cloudy|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=home|temp=mid|weather=cloudy|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=home|temp=mid|weather=cloudy|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=home|temp=mid|weather=cloudy|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=home|temp=mid|weather=cloudy|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 100
+ },
+ "presence=home|temp=mid|weather=cloudy|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=home|temp=mid|weather=cloudy|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 59
+ },
+ "presence=home|temp=mid|weather=none|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=home|temp=mid|weather=none|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=home|temp=mid|weather=none|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 24
+ },
+ "presence=home|temp=mid|weather=none|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 24
+ },
+ "presence=home|temp=mid|weather=none|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=home|temp=mid|weather=none|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=home|temp=mid|weather=none|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=home|temp=mid|weather=none|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=home|temp=mid|weather=sunny|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=home|temp=mid|weather=sunny|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=home|temp=mid|weather=sunny|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 24
+ },
+ "presence=home|temp=mid|weather=sunny|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 24
+ },
+ "presence=home|temp=mid|weather=sunny|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=home|temp=mid|weather=sunny|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=home|temp=mid|weather=sunny|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=home|temp=mid|weather=sunny|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=none|temp=cold|weather=cloudy|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=none|temp=cold|weather=cloudy|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=none|temp=cold|weather=cloudy|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 100
+ },
+ "presence=none|temp=cold|weather=cloudy|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 100
+ },
+ "presence=none|temp=cold|weather=cloudy|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 89
+ },
+ "presence=none|temp=cold|weather=cloudy|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 100
+ },
+ "presence=none|temp=cold|weather=cloudy|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 44
+ },
+ "presence=none|temp=cold|weather=cloudy|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 59
+ },
+ "presence=none|temp=cold|weather=none|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=none|temp=cold|weather=none|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=none|temp=cold|weather=none|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 24
+ },
+ "presence=none|temp=cold|weather=none|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 24
+ },
+ "presence=none|temp=cold|weather=none|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 89
+ },
+ "presence=none|temp=cold|weather=none|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 89
+ },
+ "presence=none|temp=cold|weather=none|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 44
+ },
+ "presence=none|temp=cold|weather=none|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 44
+ },
+ "presence=none|temp=cold|weather=sunny|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=none|temp=cold|weather=sunny|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 60
+ },
+ "presence=none|temp=cold|weather=sunny|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 24
+ },
+ "presence=none|temp=cold|weather=sunny|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 24
+ },
+ "presence=none|temp=cold|weather=sunny|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 89
+ },
+ "presence=none|temp=cold|weather=sunny|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 89
+ },
+ "presence=none|temp=cold|weather=sunny|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 44
+ },
+ "presence=none|temp=cold|weather=sunny|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": true,
+  "state": 44
+ },
+ "presence=none|temp=hot|weather=cloudy|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=none|temp=hot|weather=cloudy|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=none|temp=hot|weather=cloudy|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 24
+ },
+ "presence=none|temp=hot|weather=cloudy|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=none|temp=hot|weather=cloudy|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=none|temp=hot|weather=cloudy|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 50
+ },
+ "presence=none|temp=hot|weather=cloudy|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=none|temp=hot|weather=cloudy|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 25
+ },
+ "presence=none|temp=hot|weather=none|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=none|temp=hot|weather=none|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=none|temp=hot|weather=none|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 24
+ },
+ "presence=none|temp=hot|weather=none|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=none|temp=hot|weather=none|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=none|temp=hot|weather=none|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=none|temp=hot|weather=none|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=none|temp=hot|weather=none|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=none|temp=hot|weather=sunny|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=none|temp=hot|weather=sunny|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=none|temp=hot|weather=sunny|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 24
+ },
+ "presence=none|temp=hot|weather=sunny|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 0
+ },
+ "presence=none|temp=hot|weather=sunny|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=none|temp=hot|weather=sunny|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=none|temp=hot|weather=sunny|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=none|temp=hot|weather=sunny|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": true,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=none|temp=mid|weather=cloudy|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=none|temp=mid|weather=cloudy|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=none|temp=mid|weather=cloudy|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=none|temp=mid|weather=cloudy|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=none|temp=mid|weather=cloudy|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=none|temp=mid|weather=cloudy|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 100
+ },
+ "presence=none|temp=mid|weather=cloudy|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=none|temp=mid|weather=cloudy|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 59
+ },
+ "presence=none|temp=mid|weather=none|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=none|temp=mid|weather=none|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=none|temp=mid|weather=none|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 24
+ },
+ "presence=none|temp=mid|weather=none|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 24
+ },
+ "presence=none|temp=mid|weather=none|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=none|temp=mid|weather=none|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=none|temp=mid|weather=none|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=none|temp=mid|weather=none|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=none|temp=mid|weather=sunny|blind=cover_blind|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=none|temp=mid|weather=sunny|blind=cover_blind|valid=False|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 60
+ },
+ "presence=none|temp=mid|weather=sunny|blind=cover_blind|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 24
+ },
+ "presence=none|temp=mid|weather=sunny|blind=cover_blind|valid=True|transparent=True": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 24
+ },
+ "presence=none|temp=mid|weather=sunny|blind=tilt_mode1|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=none|temp=mid|weather=sunny|blind=tilt_mode1|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 89
+ },
+ "presence=none|temp=mid|weather=sunny|blind=tilt_mode2|valid=False|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 44
+ },
+ "presence=none|temp=mid|weather=sunny|blind=tilt_mode2|valid=True|transparent=False": {
+  "is_presence": true,
+  "is_summer": false,
+  "is_winter": false,
+  "state": 44
+ }
+}

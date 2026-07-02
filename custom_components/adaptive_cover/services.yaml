@@ -1,0 +1,14 @@
+get_forecast:
+  name: Get today's position forecast
+  description: >-
+    Returns the planned cover schedule for today as change-points
+    (time, position, intent), computed from solar geometry and the
+    current climate snapshot.
+  fields:
+    config_entry:
+      name: Config entry
+      description: Config entry ID or title of the Adaptive Cover instance.
+      required: true
+      example: "SE south shades"
+      selector:
+        text:

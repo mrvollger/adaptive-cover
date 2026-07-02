@@ -35,6 +35,38 @@ This integration builds upon the template sensor from this forum post [Automatic
     - [Simulation](#simulation)
     - [Blueprint (deprecated since v1.0.0)](#blueprint-deprecated-since-v100)
 
+## New in v1.1.0 (this fork)
+
+**Physical model of your window, not just the sun:**
+
+- **Overhang modeling** — configure the depth and height of a balcony/eave above the window (vertical covers). The integration computes the shadow line via the solar profile angle: when architecture already shades the glass, the shade stays open instead of pointlessly tracking. Replaces per-entry `max_elevation` hacks.
+- **Glare-band mode** — configure eye height and the distance to the nearest seat. On cold sunny days the shade opens exactly as far as eye comfort allows: warmth on the floor, no beam in your eyes (instead of the old all-or-nothing winter behavior).
+- **Privacy after dusk** — close automatically N minutes after sunset until sunrise, overriding all solar/climate logic. No more DIY automations fighting the manual-override detector.
+- **Movement smoothing** — quiet hours (no tracking moves at night) and a max-moves-per-hour budget stop the "3% at a time" motor noise; transitions to fully open/closed/default always pass.
+
+**Explainability:**
+
+- The Cover Position sensor now exposes `intent` (what the integration is trying to do), `decision_trace` (every rule it evaluated), and `forecast_today` (the planned schedule as change-points).
+- `adaptive_cover.get_forecast` service returns today's schedule for any config entry.
+
+Plot the plan with [ApexCharts card](https://github.com/RomRider/apexcharts-card):
+
+```yaml
+type: custom:apexcharts-card
+header: { show: true, title: Shade plan today }
+graph_span: 24h
+span: { start: day }
+series:
+  - entity: sensor.vertical_cover_position_your_name
+    data_generator: |
+      return entity.attributes.forecast_today.map(e =>
+        [new Date(e.time).getTime(), e.position]);
+    curve: stepline
+```
+
+**Engineering:** all math/strategy logic now lives in a pure engine (`custom_components/adaptive_cover/engine/`) with no HA imports or clock reads, validated by a 216-row climate truth table, 11 committed golden-day schedules, ~1,500 tests, and regression tests for every historical bug fix.
+
+
 ## Features
 
 - Individual service devices for `vertical`, `horizontal` and `tilted` covers

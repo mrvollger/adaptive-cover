@@ -34,8 +34,10 @@ from .calculation import (
     ClimateCoverData,
     ClimateCoverState,
     NormalCoverState,
+    build_day_forecast,
     get_state_reason,
 )
+from .engine.models import GlareModel, Overhang, PrivacyConfig
 from .const import (
     _LOGGER,
     ATTR_POSITION,
@@ -75,9 +77,19 @@ from .const import (
     CONF_MANUAL_OVERRIDE_RESET,
     CONF_MANUAL_THRESHOLD,
     CONF_MAX_ELEVATION,
+    CONF_MAX_MOVES_HOUR,
     CONF_MAX_POSITION,
     CONF_MIN_ELEVATION,
     CONF_MIN_POSITION,
+    CONF_OCCUPIED_DISTANCE,
+    CONF_OVERHANG_DEPTH,
+    CONF_OVERHANG_HEIGHT,
+    CONF_EYE_HEIGHT,
+    CONF_PRIVACY_MODE,
+    CONF_PRIVACY_OFFSET,
+    CONF_PRIVACY_POSITION,
+    CONF_QUIET_END,
+    CONF_QUIET_START,
     CONF_OUTSIDE_THRESHOLD,
     CONF_OUTSIDETEMP_ENTITY,
     CONF_PRESENCE_ENTITY,
@@ -174,6 +186,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
         self._cached_options = None
         self._previous_state = None
+        self._move_history: dict[str, list[dt.datetime]] = {}
+        self._basic_decision = None
+        self._climate_decision = None
+        self.forecast: list[dict] | None = None
+        self._forecast_key = "___unset___"
         self._last_change_data = {
             "old_position": None,
             "new_position": None,
@@ -371,7 +388,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
         # Manual override expires
         if self.manager.binary_cover_manual:
-            for entity_id, override_time in self.manager.manual_control_time.items():
+            for override_time in self.manager.manual_control_time.values():
                 expire_time = override_time + self.manager.reset_duration
                 if expire_time > now:
                     events.append((
@@ -412,7 +429,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             "Determined normal cover state to be %s", self.normal_cover_state
         )
 
-        self.default_state = round(self.normal_cover_state.get_state())
+        self._basic_decision = self.normal_cover_state.get_decision()
+        self.default_state = round(self._basic_decision.position)
         self.logger.debug("Determined default state to be %s", self.default_state)
         state = self.state
 
@@ -439,21 +457,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             await self.async_handle_timed_refresh(options)
 
         normal_cover = self.normal_cover_state.cover
-        # Run the solar_times method in a separate thread
-        if (
-            self.first_refresh
-            or self._sun_start_time is None
-            or dt.datetime.now(pytz.UTC).date() != self._sun_start_time.date()
-        ):
-            self.logger.debug("Calculating solar times")
-            loop = asyncio.get_event_loop()
-            start, end = await loop.run_in_executor(None, normal_cover.solar_times)
-            self._sun_start_time = start
-            self._sun_end_time = end
-            self.logger.debug("Sun start time: %s, Sun end time: %s", start, end)
-        else:
-            start, end = self._sun_start_time, self._sun_end_time
-        # Compute state reason
+        # Climate snapshot used for reasons, forecasting, and trace
         climate_data_for_reason = None
         if self._climate_mode and self._switch_mode:
             try:
@@ -462,9 +466,55 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 )
             except Exception:  # noqa: BLE001
                 climate_data_for_reason = None
+
+        # Run the solar_times method in a separate thread
+        solar_day_stale = (
+            self.first_refresh
+            or self._sun_start_time is None
+            or dt.datetime.now(pytz.UTC).date() != self._sun_start_time.date()
+        )
+        if solar_day_stale:
+            self.logger.debug("Calculating solar times")
+            loop = asyncio.get_event_loop()
+            start, end = await loop.run_in_executor(None, normal_cover.solar_times)
+            self._sun_start_time = start
+            self._sun_end_time = end
+            self.logger.debug("Sun start time: %s, Sun end time: %s", start, end)
+        else:
+            start, end = self._sun_start_time, self._sun_end_time
+
+        # Rebuild the day forecast when the solar day rolls over or the
+        # climate snapshot changes (it is baked into the schedule).
+        forecast_key = None
+        if climate_data_for_reason is not None:
+            try:
+                forecast_key = repr(climate_data_for_reason.to_inputs())
+            except Exception:  # noqa: BLE001
+                forecast_key = None
+        if solar_day_stale or forecast_key != self._forecast_key:
+            loop = asyncio.get_event_loop()
+            try:
+                raw_forecast = await loop.run_in_executor(
+                    None, build_day_forecast, cover_data, climate_data_for_reason
+                )
+                self.forecast = [
+                    {**entry, "position": int(self._transform_state(entry["position"]))}
+                    for entry in raw_forecast
+                ]
+            except Exception:  # noqa: BLE001
+                self.logger.debug("Forecast build failed", exc_info=True)
+                self.forecast = None
+            self._forecast_key = forecast_key
+
+        # Compute state reason
         reason = get_state_reason(cover_data, climate_data_for_reason)
         if self.manager.binary_cover_manual:
             reason = "Manual override"
+
+        # Active decision (intent + trace) for explanations
+        active_decision = (
+            self._climate_decision if self._switch_mode else self._basic_decision
+        )
 
         # Compute next event
         next_event = self._compute_next_event(cover_data, start, end)
@@ -542,6 +592,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     options.get(CONF_FOV_RIGHT),
                 ],
                 "blind_spot": options.get(CONF_BLIND_SPOT_ELEVATION),
+                "intent": str(active_decision.intent) if active_decision else None,
+                "decision_trace": list(active_decision.trace)
+                if active_decision
+                else None,
+                "forecast_today": self.forecast,
             },
         )
 
@@ -612,8 +667,76 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             and self.check_position_delta(entity, state, options)
             and self.check_time_delta(entity)
             and not self.manager.is_cover_manual(entity)
+            and self.check_quiet_hours(state, options)
+            and self.check_move_budget(entity, state, options)
         ):
             await self.async_set_position(entity, state)
+
+    def _is_snap_position(self, state: int, options) -> bool:
+        """Positions that always deserve a move (endpoints, rest positions)."""
+        return state in [
+            options.get(CONF_SUNSET_POS),
+            options.get(CONF_DEFAULT_HEIGHT),
+            options.get(CONF_PRIVACY_POSITION),
+            0,
+            100,
+        ]
+
+    def check_quiet_hours(self, state: int, options) -> bool:
+        """Block tracking moves during the configured quiet window.
+
+        Snap positions (fully open/closed, default, sunset, privacy) are
+        allowed through: arriving at a rest position is the one move worth
+        making at night.
+        """
+        if not self.quiet_start or not self.quiet_end:
+            return True
+        if self._is_snap_position(state, options):
+            return True
+        now = dt.datetime.now().time()
+        start = get_datetime_from_str(self.quiet_start).time()
+        end = get_datetime_from_str(self.quiet_end).time()
+        if start <= end:
+            quiet = start <= now < end
+        else:  # window crosses midnight
+            quiet = now >= start or now < end
+        if quiet:
+            self.logger.debug(
+                "Quiet hours (%s-%s): skipping tracking move", start, end
+            )
+        return not quiet
+
+    def check_move_budget(self, entity, state: int, options) -> bool:
+        """Cap tracking moves per entity per hour (motor noise / wear).
+
+        Snap positions bypass the budget so day-phase transitions always
+        happen; only incremental tracking moves are rationed.
+        """
+        if not self.max_moves_hour:
+            return True
+        if self._is_snap_position(state, options):
+            return True
+        now = dt.datetime.now(dt.UTC)
+        history = [
+            t
+            for t in self._move_history.get(entity, [])
+            if now - t < dt.timedelta(hours=1)
+        ]
+        self._move_history[entity] = history
+        if len(history) >= self.max_moves_hour:
+            self.logger.debug(
+                "Move budget (%s/h) exhausted for %s: skipping tracking move",
+                self.max_moves_hour,
+                entity,
+            )
+            return False
+        return True
+
+    def _record_move(self, entity) -> None:
+        if self.max_moves_hour:
+            self._move_history.setdefault(entity, []).append(
+                dt.datetime.now(dt.UTC)
+            )
 
     async def async_set_position(self, entity, state: int):
         """Call service to set cover position."""
@@ -640,6 +763,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 self.target_call,
             )
             self.logger.debug("Run %s with data %s", service, service_data)
+            self._record_move(entity)
             await self.hass.services.async_call(COVER_DOMAIN, service, service_data)
 
     def _update_options(self, options):
@@ -660,6 +784,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.end_value = options.get(CONF_INTERP_END)
         self.normal_list = options.get(CONF_INTERP_LIST)
         self.new_list = options.get(CONF_INTERP_LIST_NEW)
+        self.quiet_start = options.get(CONF_QUIET_START)
+        self.quiet_end = options.get(CONF_QUIET_END)
+        self.max_moves_hour = options.get(CONF_MAX_MOVES_HOUR)
 
     def _update_manager_and_covers(self):
         self.manager.reset_duration = dt.timedelta(**self.manual_duration)
@@ -704,7 +831,27 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 *self.common_data(options),
                 *self.tilt_data(options),
             )
+        self._apply_extended_config(cover_data, options)
         return cover_data
+
+    def _apply_extended_config(self, cover_data, options) -> None:
+        """Attach overhang / glare / privacy config to the cover adapter."""
+        depth = options.get(CONF_OVERHANG_DEPTH)
+        height = options.get(CONF_OVERHANG_HEIGHT)
+        if depth and height and self._cover_type == "cover_blind":
+            cover_data.overhang = Overhang(depth=depth, height_above_sill=height)
+        eye_height = options.get(CONF_EYE_HEIGHT)
+        occupied = options.get(CONF_OCCUPIED_DISTANCE)
+        if eye_height and occupied and self._cover_type == "cover_blind":
+            cover_data.glare = GlareModel(
+                eye_height=eye_height, occupied_distance=occupied
+            )
+        if options.get(CONF_PRIVACY_MODE):
+            cover_data.privacy = PrivacyConfig(
+                enabled=True,
+                offset_min=options.get(CONF_PRIVACY_OFFSET, 30) or 30,
+                position=options.get(CONF_PRIVACY_POSITION, 0) or 0,
+            )
 
     @property
     def check_adaptive_time(self):
@@ -876,7 +1023,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     def climate_mode_data(self, options, cover_data):
         """Update climate mode data and control method."""
         climate = ClimateCoverData(*self.get_climate_data(options))
-        self.climate_state = round(ClimateCoverState(cover_data, climate).get_state())
+        self._climate_decision = ClimateCoverState(cover_data, climate).get_decision()
+        self.climate_state = round(self._climate_decision.position)
         climate_data = ClimateCoverState(cover_data, climate).climate_data
         if climate_data.is_summer and self.switch_mode:
             self.control_method = "summer"
@@ -922,6 +1070,12 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         else:
             state = self.default_state
 
+        state = self._transform_state(state)
+        self.logger.debug("Final position to use: %s", state)
+        return state
+
+    def _transform_state(self, state):
+        """Apply interpolation / inversion output transforms."""
         if self._use_interpolation:
             self.logger.debug("Interpolating position: %s", state)
             state = self.interpolate_states(state)
@@ -934,8 +1088,6 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         if self._inverse_state and not self._use_interpolation:
             state = inverse_state(state)
             self.logger.debug("Inversed position: %s", state)
-
-        self.logger.debug("Final position to use: %s", state)
         return state
 
     def interpolate_states(self, state):

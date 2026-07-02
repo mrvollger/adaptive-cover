@@ -1,0 +1,100 @@
+# scenario=house_summer_overhang date=2026-06-21 lat=40.76 lon=-111.89 tz=America/Denver
+# cover=vertical win_azi=180 fov=90/90 elev_range=None..None climate=on
+# solar_times start=2026-06-21 09:45:00-06:00 end=2026-06-21 17:15:00-06:00
+00:00 pos=  0 azi= 337.8 elev=-22.5 reason=Sunset position
+00:15 pos=  0 azi= 341.4 elev=-23.5 reason=Sunset position
+00:30 pos=  0 azi= 345.1 elev=-24.3 reason=Sunset position
+00:45 pos=  0 azi= 348.8 elev=-25.0 reason=Sunset position
+01:00 pos=  0 azi= 352.5 elev=-25.4 reason=Sunset position
+01:15 pos=  0 azi= 356.3 elev=-25.7 reason=Sunset position
+01:30 pos=  0 azi=   0.2 elev=-25.8 reason=Sunset position
+01:45 pos=  0 azi=   4.0 elev=-25.7 reason=Sunset position
+02:00 pos=  0 azi=   7.8 elev=-25.4 reason=Sunset position
+02:15 pos=  0 azi=  11.5 elev=-24.9 reason=Sunset position
+02:30 pos=  0 azi=  15.3 elev=-24.3 reason=Sunset position
+02:45 pos=  0 azi=  18.9 elev=-23.4 reason=Sunset position
+03:00 pos=  0 azi=  22.5 elev=-22.4 reason=Sunset position
+03:15 pos=  0 azi=  26.0 elev=-21.3 reason=Sunset position
+03:30 pos=  0 azi=  29.4 elev=-19.9 reason=Sunset position
+03:45 pos=  0 azi=  32.7 elev=-18.5 reason=Sunset position
+04:00 pos=  0 azi=  35.9 elev=-16.9 reason=Sunset position
+04:15 pos=  0 azi=  39.0 elev=-15.1 reason=Sunset position
+04:30 pos=  0 azi=  42.0 elev=-13.3 reason=Sunset position
+04:45 pos=  0 azi=  44.9 elev=-11.3 reason=Sunset position
+05:00 pos=  0 azi=  47.7 elev= -9.3 reason=Sunset position
+05:15 pos=  0 azi=  50.4 elev= -7.1 reason=Sunset position
+05:30 pos=  0 azi=  53.0 elev= -4.9 reason=Sunset position
+05:45 pos=  0 azi=  55.6 elev= -2.5 reason=Sunset position
+06:00 pos= 60 azi=  58.1 elev=  0.3 reason=Sun outside field of view (gamma 122°)
+06:15 pos= 60 azi=  60.5 elev=  2.5 reason=Sun outside field of view (gamma 120°)
+06:30 pos= 60 azi=  62.9 elev=  4.8 reason=Sun outside field of view (gamma 117°)
+06:45 pos= 60 azi=  65.2 elev=  7.4 reason=Sun outside field of view (gamma 115°)
+07:00 pos= 60 azi=  67.4 elev=  9.9 reason=Sun outside field of view (gamma 113°)
+07:15 pos= 60 azi=  69.7 elev= 12.5 reason=Sun outside field of view (gamma 110°)
+07:30 pos= 60 azi=  71.9 elev= 15.2 reason=Sun outside field of view (gamma 108°)
+07:45 pos= 60 azi=  74.1 elev= 17.9 reason=Sun outside field of view (gamma 106°)
+08:00 pos= 60 azi=  76.3 elev= 20.7 reason=Sun outside field of view (gamma 104°)
+08:15 pos= 60 azi=  78.5 elev= 23.4 reason=Sun outside field of view (gamma 101°)
+08:30 pos= 60 azi=  80.7 elev= 26.2 reason=Sun outside field of view (gamma 99°)
+08:45 pos= 60 azi=  83.0 elev= 29.0 reason=Sun outside field of view (gamma 97°)
+09:00 pos= 60 azi=  85.2 elev= 31.8 reason=Sun outside field of view (gamma 95°)
+09:15 pos= 60 azi=  87.6 elev= 34.7 reason=Sun outside field of view (gamma 92°)
+09:30 pos= 60 azi=  90.0 elev= 37.5 reason=Sun outside field of view (gamma 90°)
+09:45 pos= 60 azi=  92.5 elev= 40.4 reason=Default position
+10:00 pos= 60 azi=  95.1 elev= 43.2 reason=Default position
+10:15 pos= 60 azi=  97.8 elev= 46.0 reason=Default position
+10:30 pos= 60 azi= 100.8 elev= 48.8 reason=Default position
+10:45 pos= 60 azi= 104.0 elev= 51.6 reason=Default position
+11:00 pos= 60 azi= 107.4 elev= 54.3 reason=Default position
+11:15 pos= 60 azi= 111.3 elev= 57.0 reason=Default position
+11:30 pos= 60 azi= 115.5 elev= 59.6 reason=Default position
+11:45 pos= 60 azi= 120.4 elev= 62.1 reason=Default position
+12:00 pos= 60 azi= 125.9 elev= 64.5 reason=Default position
+12:15 pos= 60 azi= 132.3 elev= 66.7 reason=Default position
+12:30 pos= 60 azi= 139.7 elev= 68.7 reason=Default position
+12:45 pos= 60 azi= 148.3 elev= 70.3 reason=Default position
+13:00 pos= 60 azi= 158.1 elev= 71.6 reason=Default position
+13:15 pos= 60 azi= 169.0 elev= 72.4 reason=Default position
+13:30 pos= 60 azi= 180.4 elev= 72.7 reason=Default position
+13:45 pos= 60 azi= 191.9 elev= 72.4 reason=Default position
+14:00 pos= 60 azi= 202.6 elev= 71.5 reason=Default position
+14:15 pos= 60 azi= 212.3 elev= 70.2 reason=Default position
+14:30 pos= 60 azi= 220.9 elev= 68.5 reason=Default position
+14:45 pos= 60 azi= 228.2 elev= 66.5 reason=Default position
+15:00 pos= 60 azi= 234.5 elev= 64.3 reason=Default position
+15:15 pos= 60 azi= 240.0 elev= 61.9 reason=Default position
+15:30 pos= 60 azi= 244.8 elev= 59.4 reason=Default position
+15:45 pos= 60 azi= 249.0 elev= 56.8 reason=Default position
+16:00 pos= 60 azi= 252.8 elev= 54.1 reason=Default position
+16:15 pos= 60 azi= 256.3 elev= 51.4 reason=Default position
+16:30 pos= 60 azi= 259.4 elev= 48.6 reason=Default position
+16:45 pos= 60 azi= 262.4 elev= 45.8 reason=Default position
+17:00 pos= 60 azi= 265.1 elev= 43.0 reason=Default position
+17:15 pos= 60 azi= 267.7 elev= 40.1 reason=Default position
+17:30 pos= 60 azi= 270.2 elev= 37.3 reason=Sun outside field of view (gamma -90°)
+17:45 pos= 60 azi= 272.6 elev= 34.5 reason=Sun outside field of view (gamma -93°)
+18:00 pos= 60 azi= 275.0 elev= 31.6 reason=Sun outside field of view (gamma -95°)
+18:15 pos= 60 azi= 277.2 elev= 28.8 reason=Sun outside field of view (gamma -97°)
+18:30 pos= 60 azi= 279.5 elev= 26.0 reason=Sun outside field of view (gamma -99°)
+18:45 pos= 60 azi= 281.7 elev= 23.2 reason=Sun outside field of view (gamma -102°)
+19:00 pos= 60 azi= 283.9 elev= 20.4 reason=Sun outside field of view (gamma -104°)
+19:15 pos= 60 azi= 286.1 elev= 17.7 reason=Sun outside field of view (gamma -106°)
+19:30 pos= 60 azi= 288.3 elev= 15.0 reason=Sun outside field of view (gamma -108°)
+19:45 pos= 60 azi= 290.5 elev= 12.3 reason=Sun outside field of view (gamma -111°)
+20:00 pos= 60 azi= 292.8 elev=  9.7 reason=Sun outside field of view (gamma -113°)
+20:15 pos= 60 azi= 295.0 elev=  7.1 reason=Sun outside field of view (gamma -115°)
+20:30 pos= 60 azi= 297.4 elev=  4.6 reason=Sun outside field of view (gamma -117°)
+20:45 pos= 60 azi= 299.7 elev=  2.3 reason=Sun outside field of view (gamma -120°)
+21:00 pos= 60 azi= 302.2 elev=  0.1 reason=Sun outside field of view (gamma -122°)
+21:15 pos=  0 azi= 304.6 elev= -2.7 reason=Sunset position
+21:30 pos=  0 azi= 307.2 elev= -5.1 reason=Sunset position
+21:45 pos=  0 azi= 309.9 elev= -7.3 reason=Sunset position
+22:00 pos=  0 azi= 312.6 elev= -9.5 reason=Sunset position
+22:15 pos=  0 azi= 315.4 elev=-11.5 reason=Sunset position
+22:30 pos=  0 azi= 318.3 elev=-13.5 reason=Sunset position
+22:45 pos=  0 azi= 321.3 elev=-15.3 reason=Sunset position
+23:00 pos=  0 azi= 324.4 elev=-17.0 reason=Sunset position
+23:15 pos=  0 azi= 327.6 elev=-18.6 reason=Sunset position
+23:30 pos=  0 azi= 330.9 elev=-20.1 reason=Sunset position
+23:45 pos=  0 azi= 334.3 elev=-21.4 reason=Sunset position
+00:00 pos=  0 azi= 337.8 elev=-22.5 reason=Sunset position

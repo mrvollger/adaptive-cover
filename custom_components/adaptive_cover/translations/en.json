@@ -21,7 +21,13 @@
           "end_entity": "Entity indicating ending time",
           "manual_threshold": "Manual override threshold",
           "manual_ignore_intermediate": "Ignore intermediate positions during manual override (opening and closing)",
-          "return_sunset": "Always adjust position to sunset default at end time; Useful if end time is before actual sunset"
+          "return_sunset": "Always adjust position to sunset default at end time; Useful if end time is before actual sunset",
+          "privacy_mode": "Close after dusk for privacy",
+          "privacy_offset": "Privacy: minutes after sunset",
+          "privacy_position": "Privacy position",
+          "quiet_start": "Quiet hours start (no tracking moves)",
+          "quiet_end": "Quiet hours end",
+          "max_moves_hour": "Max tracking moves per hour"
         },
         "data_description": {
           "delta_position": "Minimum change in position required before adjusting the cover's position",
@@ -55,7 +61,11 @@
           "blind_spot": "Setup Blindspot",
           "min_elevation": "Minimum Elevation of the sun",
           "max_elevation": "Maximum Elevation of the sun",
-          "interp": "Set custom open/close positions for My Cover, if it doesn't fully operate at 0-100%"
+          "interp": "Set custom open/close positions for My Cover, if it doesn't fully operate at 0-100%",
+          "overhang_depth": "Overhang depth (balcony/eave above window)",
+          "overhang_height": "Overhang height above window sill",
+          "eye_height": "Eye height (glare protection)",
+          "occupied_distance": "Distance from window to nearest seat"
         },
         "data_description": {
           "set_azimuth": "Adjust Azimuth",
@@ -106,7 +116,9 @@
         "title": "Climate settings"
       },
       "weather": {
-        "data": { "weather_state": "Weather Conditions" },
+        "data": {
+          "weather_state": "Weather Conditions"
+        },
         "data_description": {
           "weather_state": "Choose weather conditions that indicate the possibility of direct sunlight."
         },
@@ -254,7 +266,13 @@
           "end_entity": "Entity indicating ending time",
           "manual_threshold": "Manual override threshold",
           "manual_ignore_intermediate": "Ignore intermediate positions during manual override (opening and closing)",
-          "return_sunset": "Always adjust position to sunset default at end time; Useful if end time is before actual sunset"
+          "return_sunset": "Always adjust position to sunset default at end time; Useful if end time is before actual sunset",
+          "privacy_mode": "Close after dusk for privacy",
+          "privacy_offset": "Privacy: minutes after sunset",
+          "privacy_position": "Privacy position",
+          "quiet_start": "Quiet hours start (no tracking moves)",
+          "quiet_end": "Quiet hours end",
+          "max_moves_hour": "Max tracking moves per hour"
         },
         "data_description": {
           "delta_position": "Minimum change in position required before adjusting the cover's position",
@@ -288,7 +306,11 @@
           "blind_spot": "Setup Blindspot",
           "min_elevation": "Minimum Elevation of the sun",
           "max_elevation": "Maximum Elevation of the sun",
-          "interp": "Set custom open/close positions for My Cover, if it doesn't fully operate at 0-100%"
+          "interp": "Set custom open/close positions for My Cover, if it doesn't fully operate at 0-100%",
+          "overhang_depth": "Overhang depth (balcony/eave above window)",
+          "overhang_height": "Overhang height above window sill",
+          "eye_height": "Eye height (glare protection)",
+          "occupied_distance": "Distance from window to nearest seat"
         },
         "data_description": {
           "set_azimuth": "Adjust Azimuth",
@@ -339,7 +361,9 @@
         "title": "Climate settings"
       },
       "weather": {
-        "data": { "weather_state": "Weather Conditions" },
+        "data": {
+          "weather_state": "Weather Conditions"
+        },
         "data_description": {
           "weather_state": "Choose weather conditions that indicate the possibility of direct sunlight."
         },

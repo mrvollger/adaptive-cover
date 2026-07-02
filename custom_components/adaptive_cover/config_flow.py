@@ -46,8 +46,18 @@ from .const import (
     CONF_MANUAL_IGNORE_INTERMEDIATE,
     CONF_MANUAL_OVERRIDE_DURATION,
     CONF_MANUAL_OVERRIDE_RESET,
+    CONF_EYE_HEIGHT,
     CONF_MANUAL_THRESHOLD,
     CONF_MAX_ELEVATION,
+    CONF_MAX_MOVES_HOUR,
+    CONF_OCCUPIED_DISTANCE,
+    CONF_OVERHANG_DEPTH,
+    CONF_OVERHANG_HEIGHT,
+    CONF_PRIVACY_MODE,
+    CONF_PRIVACY_OFFSET,
+    CONF_PRIVACY_POSITION,
+    CONF_QUIET_END,
+    CONF_QUIET_START,
     CONF_MAX_POSITION,
     CONF_MIN_ELEVATION,
     CONF_MODE,
@@ -171,6 +181,26 @@ VERTICAL_OPTIONS = vol.Schema(
         vol.Required(CONF_DISTANCE, default=0.5): selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=0.1, max=2, step=0.1, mode="slider", unit_of_measurement="m"
+            )
+        ),
+        vol.Optional(CONF_OVERHANG_DEPTH): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=0.1, max=5, step=0.01, mode="box", unit_of_measurement="m"
+            )
+        ),
+        vol.Optional(CONF_OVERHANG_HEIGHT): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=0.1, max=10, step=0.01, mode="box", unit_of_measurement="m"
+            )
+        ),
+        vol.Optional(CONF_EYE_HEIGHT): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=0.1, max=3, step=0.01, mode="box", unit_of_measurement="m"
+            )
+        ),
+        vol.Optional(CONF_OCCUPIED_DISTANCE): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=0.1, max=10, step=0.1, mode="box", unit_of_measurement="m"
             )
         ),
     }
@@ -339,6 +369,22 @@ AUTOMATION_CONFIG = vol.Schema(
             selector.EntitySelectorConfig(domain=["sensor", "input_datetime"])
         ),
         vol.Optional(CONF_RETURN_SUNSET, default=False): bool,
+        vol.Optional(CONF_PRIVACY_MODE, default=False): bool,
+        vol.Optional(CONF_PRIVACY_OFFSET, default=30): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=0, max=180, step=5, mode="box", unit_of_measurement="minutes"
+            )
+        ),
+        vol.Optional(CONF_PRIVACY_POSITION, default=0): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=0, max=100, step=1, mode="box", unit_of_measurement="%"
+            )
+        ),
+        vol.Optional(CONF_QUIET_START): selector.TimeSelector(),
+        vol.Optional(CONF_QUIET_END): selector.TimeSelector(),
+        vol.Optional(CONF_MAX_MOVES_HOUR): vol.All(
+            vol.Coerce(int), vol.Range(min=1, max=60)
+        ),
     }
 )
 
@@ -661,7 +707,14 @@ class OptionsFlowHandler(OptionsFlow):
     async def async_step_automation(self, user_input: dict[str, Any] | None = None):
         """Manage automation options."""
         if user_input is not None:
-            entities = [CONF_START_ENTITY, CONF_END_ENTITY, CONF_MANUAL_THRESHOLD]
+            entities = [
+                CONF_START_ENTITY,
+                CONF_END_ENTITY,
+                CONF_MANUAL_THRESHOLD,
+                CONF_QUIET_START,
+                CONF_QUIET_END,
+                CONF_MAX_MOVES_HOUR,
+            ]
             self.optional_entities(entities, user_input)
             self.options.update(user_input)
             return await self._update_options()
@@ -691,6 +744,10 @@ class OptionsFlowHandler(OptionsFlow):
             keys = [
                 CONF_MIN_ELEVATION,
                 CONF_MAX_ELEVATION,
+                CONF_OVERHANG_DEPTH,
+                CONF_OVERHANG_HEIGHT,
+                CONF_EYE_HEIGHT,
+                CONF_OCCUPIED_DISTANCE,
             ]
             self.optional_entities(keys, user_input)
             if (

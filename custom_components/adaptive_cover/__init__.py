@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import (
+    HomeAssistant,
+    ServiceCall,
+    ServiceResponse,
+    SupportsResponse,
+)
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.event import (
     async_track_state_change_event,
 )
@@ -22,6 +29,39 @@ from .coordinator import AdaptiveDataUpdateCoordinator
 
 PLATFORMS = [Platform.SENSOR, Platform.SWITCH, Platform.BINARY_SENSOR, Platform.BUTTON]
 CONF_SUN = ["sun.sun"]
+
+SERVICE_GET_FORECAST = "get_forecast"
+GET_FORECAST_SCHEMA = vol.Schema({vol.Required("config_entry"): str})
+
+
+def _async_register_services(hass: HomeAssistant) -> None:
+    """Register domain services once."""
+    if hass.services.has_service(DOMAIN, SERVICE_GET_FORECAST):
+        return
+
+    async def handle_get_forecast(call: ServiceCall) -> ServiceResponse:
+        entry_id = call.data["config_entry"]
+        coordinator = hass.data.get(DOMAIN, {}).get(entry_id)
+        if coordinator is None:
+            # Allow lookup by the config entry title as a convenience
+            for eid, coord in hass.data.get(DOMAIN, {}).items():
+                entry = hass.config_entries.async_get_entry(eid)
+                if entry and entry.title == entry_id:
+                    coordinator = coord
+                    break
+        if coordinator is None:
+            raise ServiceValidationError(
+                f"No Adaptive Cover config entry '{entry_id}'"
+            )
+        return {"forecast": coordinator.forecast or []}
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GET_FORECAST,
+        handle_get_forecast,
+        schema=GET_FORECAST_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
 
 
 async def async_initialize_integration(
@@ -69,6 +109,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await coordinator.async_config_entry_first_refresh()
     hass.data[DOMAIN][entry.entry_id] = coordinator
+    _async_register_services(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
