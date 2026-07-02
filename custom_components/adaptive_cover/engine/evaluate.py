@@ -72,8 +72,11 @@ def _evaluate_basic(
 
 
 def _admits_glare_position(config: CoverConfig) -> bool:
-    """Glare-limited admission applies only where eyes and beams meet:
-    vertical covers with a configured glare model."""
+    """Check whether glare-limited admission applies.
+
+    Only where eyes and beams meet: vertical covers with a configured
+    glare model.
+    """
     return config.glare is not None and config.cover_type == "vertical"
 
 

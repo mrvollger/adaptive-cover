@@ -202,7 +202,7 @@ class AdaptiveGeneralCover(ABC):
         )
 
     def sun_snapshot(self) -> SunSnapshot:
-        """Current solar position as an engine input."""
+        """Return the current solar position as an engine input."""
         return SunSnapshot(azimuth=self.sol_azi, elevation=self.sol_elev)
 
     def time_context(self) -> TimeContext:

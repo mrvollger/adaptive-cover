@@ -388,7 +388,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
         # Manual override expires
         if self.manager.binary_cover_manual:
-            for entity_id, override_time in self.manager.manual_control_time.items():
+            for override_time in self.manager.manual_control_time.values():
                 expire_time = override_time + self.manager.reset_duration
                 if expire_time > now:
                     events.append((

@@ -23,7 +23,7 @@ def gamma(window_azimuth: float, solar_azimuth: float) -> float:
 def valid_elevation(
     elevation: float, min_elevation: float | None, max_elevation: float | None
 ) -> bool:
-    """Is the sun's elevation within the configured band?"""
+    """Check whether the sun's elevation is within the configured band."""
     if min_elevation is None and max_elevation is None:
         return elevation >= 0
     if min_elevation is None:
@@ -46,7 +46,7 @@ def sun_in_fov(config: CoverConfig, sun: SunSnapshot) -> bool:
 
 
 def in_blind_spot(config: CoverConfig, sun: SunSnapshot) -> bool:
-    """Is the sun inside the configured blind-spot region?"""
+    """Check whether the sun is inside the configured blind-spot region."""
     spot: BlindSpot = config.blind_spot
     if spot.left is None or spot.right is None or not spot.enabled:
         return False
@@ -71,8 +71,11 @@ def sunset_valid(config: CoverConfig, ctx: TimeContext) -> bool:
 
 
 def direct_sun_valid(config: CoverConfig, sun: SunSnapshot, ctx: TimeContext) -> bool:
-    """Sun in front, not after sunset, not in the blind spot, glass not
-    already fully shaded by an overhang."""
+    """Check for actionable direct sun.
+
+    Sun in front, not after sunset, not in the blind spot, and the glass
+    not already fully shaded by an overhang.
+    """
     return (
         sun_in_fov(config, sun)
         & (not sunset_valid(config, ctx))
@@ -96,9 +99,12 @@ def privacy_active(config: CoverConfig, ctx: TimeContext) -> bool:
 
 
 def profile_angle(config: CoverConfig, sun: SunSnapshot) -> float:
-    """Profile angle (radians): solar elevation projected onto the plane
-    perpendicular to the window. Governs how deep sun reaches past
-    horizontal edges (overhangs) and how fast rays descend into the room."""
+    """Return the profile angle in radians.
+
+    Solar elevation projected onto the plane perpendicular to the window.
+    Governs how deep sun reaches past horizontal edges (overhangs) and how
+    fast rays descend into the room.
+    """
     g = gamma(config.window_azimuth, sun.azimuth)
     return np.arctan(tan(rad(sun.elevation)) / cos(rad(g)))
 
@@ -120,7 +126,7 @@ def sunlit_top(config: CoverConfig, sun: SunSnapshot) -> float:
 
 
 def window_fully_shaded(config: CoverConfig, sun: SunSnapshot) -> bool:
-    """Does the overhang shade the entire window at this sun position?"""
+    """Check whether the overhang shades the entire window right now."""
     if config.overhang is None or config.window_height is None:
         return False
     if sun.elevation <= 0:
@@ -129,8 +135,11 @@ def window_fully_shaded(config: CoverConfig, sun: SunSnapshot) -> bool:
 
 
 def glare_safe_height(config: CoverConfig, sun: SunSnapshot) -> float:
-    """Highest entry point (m above sill) whose rays stay below eye height
-    at the nearest occupied distance."""
+    """Return the highest glare-safe entry height (m above sill).
+
+    Rays entering at or below this height stay below eye level at the
+    nearest occupied distance.
+    """
     if config.glare is None:
         raise ValueError("glare_safe_height requires a GlareModel")
     return config.glare.eye_height + config.glare.occupied_distance * float(
@@ -186,7 +195,7 @@ def vertical_percentage(config: CoverConfig, sun: SunSnapshot) -> float:
 
 
 def awning_extension(config: CoverConfig, sun: SunSnapshot) -> float:
-    """Required awning extension length (m). NOTE: historically unclipped."""
+    """Return the required awning extension length (m); historically unclipped."""
     awn_angle = 90 - config.awning_angle
     a_angle = 90 - sun.elevation
     c_angle = 180 - awn_angle - a_angle

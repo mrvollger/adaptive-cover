@@ -229,3 +229,46 @@ rm -rf /tmp/adaptive-cover
 - HA config (integration settings) is stored in `.storage/core.config_entries`, not in the integration code — replacing the code preserves configuration
 - If the upstream repo was previously installed via HACS, remove it first before adding this fork
 - Delete any `adaptive_cover.bak` directories in `custom_components/` — HA will try to load them as integrations
+
+## Redesign Architecture (v1.1.0+)
+
+### Pure Engine (`custom_components/adaptive_cover/engine/`)
+
+All math and strategy logic lives in a pure package: no `homeassistant`
+imports, no wall-clock reads, no entity access (enforced by
+`tests/engine/test_purity.py`). `calculation.py` classes are thin HA
+adapters that build typed inputs and delegate.
+
+- `models.py` — `CoverConfig`, `SunSnapshot`, `TimeContext`, `ClimateInputs`,
+  `Overhang`, `GlareModel`, `PrivacyConfig`, `Decision(position, intent, trace)`
+- `geometry.py` — gamma/FOV/elevation checks, per-cover-type percentages,
+  profile angle, overhang shadow line (`sunlit_top`), glare-safe height
+- `evaluate.py` — `evaluate(config, sun, ctx, climate=None) -> Decision`;
+  privacy runs first, then climate/basic strategy branches
+
+Key domain rule (sunlit-band asymmetry): position = f(sunlit_band, intent).
+ADMIT_NO_GLARE cares about the band's top vs eye height; BLOCK cares whether
+the band is non-empty. Same sun, cold vs hot day, opposite positions.
+
+### New features & options
+
+- Overhang: `overhang_depth`, `overhang_height` (vertical covers)
+- Glare band: `eye_height`, `occupied_distance` (engages on sunny winter
+  days with presence; cloudy/away keep historical fully-open)
+- Privacy: `privacy_mode`, `privacy_offset`, `privacy_position`
+- Smoothing: `quiet_start`/`quiet_end`, `max_moves_hour` (snap positions
+  bypass both gates)
+- Position sensor attributes: `intent`, `decision_trace`, `forecast_today`
+- Service: `adaptive_cover.get_forecast` (entry id or title)
+
+### Testing harness
+
+- `tests/characterization/` pins behavior:
+  - `climate_truth_table.json` (216 combos) — regenerate deliberately with
+    `PYTHONPATH=. python tests/characterization/generate_truth_table.py`
+  - golden day schedules in `goldens/` — regenerate with
+    `UPDATE_GOLDENS=1 python -m pytest tests/characterization/test_golden_days.py`
+  - the JSON/golden diff is the review artifact for behavior changes
+- `tests/engine/` — pure engine tests incl. dense property sweeps
+- Regression policy: every bug fix gets a `test_regression_<slug>` naming
+  the commit. Time is always an input; never call `datetime.now()` in logic.
