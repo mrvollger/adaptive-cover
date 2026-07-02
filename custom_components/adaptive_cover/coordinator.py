@@ -142,6 +142,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
     config_entry: ConfigEntry
     MOVE_LOG_LIMIT = 10
+    # Wait-for-target: covers rarely land exactly on the commanded value
+    # (99 when told 100), and a latch that never clears swallows every
+    # subsequent HUMAN move - adaptive then reverts people within minutes.
+    TARGET_TOLERANCE = 3  # percent: close enough counts as arrived
+    TARGET_TIMEOUT = dt.timedelta(seconds=120)  # travel-time upper bound
 
     def __init__(self, hass: HomeAssistant) -> None:  # noqa: D107
         super().__init__(hass, LOGGER, name=DOMAIN)
@@ -179,6 +184,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.manager = AdaptiveCoverManager(self.manual_duration, self.logger)
         self.wait_for_target = {}
         self.target_call = {}
+        self.target_call_time: dict[str, dt.datetime] = {}
         self.ignore_intermediate_states = self.config_entry.options.get(
             CONF_MANUAL_IGNORE_INTERMEDIATE, False
         )
@@ -276,9 +282,35 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 if self._cover_type != "cover_tilt"
                 else "current_tilt_position"
             )
-            if position == self.target_call.get(entity_id):
+            target = self.target_call.get(entity_id)
+            arrived = (
+                position is not None
+                and target is not None
+                and abs(position - target) <= self.TARGET_TOLERANCE
+            )
+            sent_at = self.target_call_time.get(entity_id)
+            expired = (
+                sent_at is None
+                or dt.datetime.now(dt.UTC) - sent_at > self.TARGET_TIMEOUT
+            )
+            if arrived:
                 self.wait_for_target[entity_id] = False
-                self.logger.debug("Position %s reached for %s", position, entity_id)
+                self.logger.debug(
+                    "Position %s within tolerance of target %s for %s",
+                    position,
+                    target,
+                    entity_id,
+                )
+            elif expired:
+                # Motor had ample time; whatever moves now is a human.
+                self.wait_for_target[entity_id] = False
+                self.logger.debug(
+                    "Target wait expired for %s (at %s, wanted %s); "
+                    "treating changes as manual",
+                    entity_id,
+                    position,
+                    target,
+                )
             self.logger.debug("Wait for target: %s", self.wait_for_target)
         else:
             self.logger.debug("No wait for target call for %s", entity_id)
@@ -859,6 +891,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
             self.wait_for_target[entity] = True
             self.target_call[entity] = state
+            self.target_call_time[entity] = dt.datetime.now(dt.UTC)
             self.logger.debug(
                 "Set wait for target %s and target call %s",
                 self.wait_for_target,
