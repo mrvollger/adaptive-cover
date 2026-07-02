@@ -16,12 +16,13 @@ from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity import DeviceInfo, EntityCategory
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_CLIMATE_MODE, CONF_SENSOR_TYPE, DOMAIN
+from .const import CONF_CLIMATE_MODE, DOMAIN
 from .coordinator import AdaptiveDataUpdateCoordinator
+from .entity_shared import adaptive_cover_device_info
 
 MODE_MANUAL = "Manual"
 MODE_SUN = "Sun tracking"
@@ -57,11 +58,6 @@ class AdaptiveCoverModeSelect(
     ) -> None:
         """Initialize the mode select."""
         super().__init__(coordinator=coordinator)
-        self.type = {
-            "cover_blind": "Vertical",
-            "cover_awning": "Horizontal",
-            "cover_tilt": "Tilt",
-        }
         self._config_entry = config_entry
         self._has_climate = bool(config_entry.options.get(CONF_CLIMATE_MODE))
         self._attr_options = (
@@ -72,15 +68,12 @@ class AdaptiveCoverModeSelect(
         self._name = config_entry.data["name"]
         self._attr_unique_id = f"{config_entry.entry_id}_mode_select"
         self._device_id = config_entry.entry_id
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._device_id)},
-            name=self.type[config_entry.data[CONF_SENSOR_TYPE]],
-        )
+        self._attr_device_info = adaptive_cover_device_info(config_entry)
 
     @property
     def name(self):
         """Name of the entity."""
-        return f"Mode {self._name}"
+        return "Mode"
 
     @property
     def current_option(self) -> str:

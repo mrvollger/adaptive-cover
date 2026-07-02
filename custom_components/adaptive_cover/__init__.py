@@ -38,7 +38,23 @@ PLATFORMS = [
 CONF_SUN = ["sun.sun"]
 
 SERVICE_GET_FORECAST = "get_forecast"
+SERVICE_CHANGE_SETTINGS = "change_settings"
 GET_FORECAST_SCHEMA = vol.Schema({vol.Required("config_entry"): str})
+
+
+def _resolve_entry(hass: HomeAssistant, reference: str) -> ConfigEntry:
+    """Find a config entry by entry_id, title, or internal name."""
+    entry = hass.config_entries.async_get_entry(reference)
+    if entry and entry.domain == DOMAIN:
+        return entry
+    for entry_id in hass.data.get(DOMAIN, {}):
+        candidate = hass.config_entries.async_get_entry(entry_id)
+        if candidate and reference in (
+            candidate.title,
+            candidate.data.get("name"),
+        ):
+            return candidate
+    raise ServiceValidationError(f"No Adaptive Cover config entry '{reference}'")
 
 
 def _async_register_services(hass: HomeAssistant) -> None:
@@ -47,18 +63,11 @@ def _async_register_services(hass: HomeAssistant) -> None:
         return
 
     async def handle_get_forecast(call: ServiceCall) -> ServiceResponse:
-        entry_id = call.data["config_entry"]
-        coordinator = hass.data.get(DOMAIN, {}).get(entry_id)
-        if coordinator is None:
-            # Allow lookup by the config entry title as a convenience
-            for eid, coord in hass.data.get(DOMAIN, {}).items():
-                entry = hass.config_entries.async_get_entry(eid)
-                if entry and entry.title == entry_id:
-                    coordinator = coord
-                    break
+        entry = _resolve_entry(hass, call.data["config_entry"])
+        coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
         if coordinator is None:
             raise ServiceValidationError(
-                f"No Adaptive Cover config entry '{entry_id}'"
+                f"Entry '{entry.title}' is not loaded"
             )
         return {"forecast": coordinator.forecast or []}
 
@@ -68,6 +77,26 @@ def _async_register_services(hass: HomeAssistant) -> None:
         handle_get_forecast,
         schema=GET_FORECAST_SCHEMA,
         supports_response=SupportsResponse.ONLY,
+    )
+
+    from .options_spec import change_settings_schema
+
+    async def handle_change_settings(call: ServiceCall) -> ServiceResponse:
+        entry = _resolve_entry(hass, call.data["config_entry"])
+        changes = {k: v for k, v in call.data.items() if k != "config_entry"}
+        if not changes:
+            raise ServiceValidationError("No settings provided to change")
+        hass.config_entries.async_update_entry(
+            entry, options={**entry.options, **changes}
+        )
+        return {"entry": entry.title, "changed": sorted(changes)}
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_CHANGE_SETTINGS,
+        handle_change_settings,
+        schema=change_settings_schema(),
+        supports_response=SupportsResponse.OPTIONAL,
     )
 
 

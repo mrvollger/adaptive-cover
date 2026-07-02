@@ -128,7 +128,7 @@ async def test_full_vertical_flow(hass):
         AUTOMATION_STEP_INPUT,
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == "Vertical Living Room"
+    assert result["title"] == "Living Room"
     assert result["data"][CONF_SENSOR_TYPE] == SensorType.BLIND
     assert result["options"][CONF_AZIMUTH] == 180
 
@@ -157,7 +157,7 @@ async def test_full_horizontal_flow(hass):
         AUTOMATION_STEP_INPUT,
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == "Horizontal Terrace"
+    assert result["title"] == "Terrace"
     assert result["data"][CONF_SENSOR_TYPE] == SensorType.AWNING
 
 
@@ -185,7 +185,7 @@ async def test_full_tilt_flow(hass):
         AUTOMATION_STEP_INPUT,
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == "Tilt Bedroom"
+    assert result["title"] == "Bedroom"
     assert result["data"][CONF_SENSOR_TYPE] == SensorType.TILT
 
 
