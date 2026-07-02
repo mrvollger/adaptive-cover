@@ -351,3 +351,86 @@ async def test_no_recommand_while_awaiting_target(
         coordinator.data.attributes["move_blocked_by"].get(COVER)
         == "awaiting_target"
     )
+
+
+async def test_poll_forced_when_landing_report_missing(
+    hass, mock_sun_data, mock_sun_entity
+):
+    """Zigbee dropped the landing report: we force a device poll after
+    the travel timeout instead of staying stale forever."""
+    from pytest_homeassistant_custom_component.common import (
+        async_fire_time_changed,
+    )
+    from homeassistant.util import dt as dt_util
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={"name": "PollTest", CONF_SENSOR_TYPE: SensorType.BLIND},
+        options={
+            **COMMON_OPTIONS,
+            CONF_HEIGHT_WIN: 2.1,
+            CONF_DISTANCE: 0.5,
+            CONF_ENTITIES: [COVER],
+            CONF_DELTA_TIME: 0,
+        },
+    )
+    entry.add_to_hass(hass)
+    async_mock_service(hass, "cover", "set_cover_position")
+    update_calls = async_mock_service(hass, "homeassistant", "update_entity")
+    hass.states.async_set(COVER, "open", {"current_position": 60})
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+
+    hass.states.async_set(
+        "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
+    )
+    await hass.async_block_till_done()
+    assert coordinator.wait_for_target[COVER] is True
+
+    # No landing report ever arrives; jump past TARGET_TIMEOUT + margin
+    async_fire_time_changed(hass, dt_util.utcnow() + dt.timedelta(seconds=130))
+    await hass.async_block_till_done()
+
+    assert any(c.data["entity_id"] == COVER for c in update_calls)
+
+
+async def test_no_poll_when_cover_arrived(hass, mock_sun_data, mock_sun_entity):
+    """Landing report arrived: no needless device poll."""
+    from pytest_homeassistant_custom_component.common import (
+        async_fire_time_changed,
+    )
+    from homeassistant.util import dt as dt_util
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={"name": "PollTest2", CONF_SENSOR_TYPE: SensorType.BLIND},
+        options={
+            **COMMON_OPTIONS,
+            CONF_HEIGHT_WIN: 2.1,
+            CONF_DISTANCE: 0.5,
+            CONF_ENTITIES: [COVER],
+            CONF_DELTA_TIME: 0,
+        },
+    )
+    entry.add_to_hass(hass)
+    async_mock_service(hass, "cover", "set_cover_position")
+    update_calls = async_mock_service(hass, "homeassistant", "update_entity")
+    hass.states.async_set(COVER, "open", {"current_position": 60})
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+
+    hass.states.async_set(
+        "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
+    )
+    await hass.async_block_till_done()
+    target = coordinator.target_call[COVER]
+    hass.states.async_set(COVER, "open", {"current_position": target})
+    await hass.async_block_till_done()
+    assert coordinator.wait_for_target[COVER] is False
+
+    async_fire_time_changed(hass, dt_util.utcnow() + dt.timedelta(seconds=130))
+    await hass.async_block_till_done()
+
+    assert not any(c.data["entity_id"] == COVER for c in update_calls)
