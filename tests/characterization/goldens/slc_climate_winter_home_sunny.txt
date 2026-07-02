@@ -1,0 +1,100 @@
+# scenario=slc_climate_winter_home_sunny date=2026-12-21 lat=40.76 lon=-111.89 tz=America/Denver
+# cover=vertical win_azi=180 fov=90/90 elev_range=None..None climate=on
+# solar_times start=2026-12-21 08:00:00-07:00 end=2026-12-21 17:00:00-07:00
+00:00 pos=  0 azi= 340.9 elev=-71.9 reason=Sunset position
+00:15 pos=  0 azi= 351.9 elev=-72.5 reason=Sunset position
+00:30 pos=  0 azi=   3.4 elev=-72.6 reason=Sunset position
+00:45 pos=  0 azi=  14.7 elev=-72.2 reason=Sunset position
+01:00 pos=  0 azi=  25.3 elev=-71.2 reason=Sunset position
+01:15 pos=  0 azi=  34.7 elev=-69.8 reason=Sunset position
+01:30 pos=  0 azi=  42.9 elev=-68.0 reason=Sunset position
+01:45 pos=  0 azi=  49.9 elev=-66.0 reason=Sunset position
+02:00 pos=  0 azi=  56.0 elev=-63.7 reason=Sunset position
+02:15 pos=  0 azi=  61.3 elev=-61.3 reason=Sunset position
+02:30 pos=  0 azi=  65.9 elev=-58.7 reason=Sunset position
+02:45 pos=  0 azi=  70.1 elev=-56.1 reason=Sunset position
+03:00 pos=  0 azi=  73.7 elev=-53.4 reason=Sunset position
+03:15 pos=  0 azi=  77.1 elev=-50.6 reason=Sunset position
+03:30 pos=  0 azi=  80.2 elev=-47.9 reason=Sunset position
+03:45 pos=  0 azi=  83.1 elev=-45.1 reason=Sunset position
+04:00 pos=  0 azi=  85.8 elev=-42.2 reason=Sunset position
+04:15 pos=  0 azi=  88.4 elev=-39.4 reason=Sunset position
+04:30 pos=  0 azi=  90.8 elev=-36.5 reason=Sunset position
+04:45 pos=  0 azi=  93.2 elev=-33.7 reason=Sunset position
+05:00 pos=  0 azi=  95.5 elev=-30.9 reason=Sunset position
+05:15 pos=  0 azi=  97.8 elev=-28.1 reason=Sunset position
+05:30 pos=  0 azi= 100.0 elev=-25.3 reason=Sunset position
+05:45 pos=  0 azi= 102.2 elev=-22.5 reason=Sunset position
+06:00 pos=  0 azi= 104.4 elev=-19.7 reason=Sunset position
+06:15 pos=  0 azi= 106.6 elev=-17.0 reason=Sunset position
+06:30 pos=  0 azi= 108.8 elev=-14.3 reason=Sunset position
+06:45 pos=  0 azi= 111.0 elev=-11.6 reason=Sunset position
+07:00 pos=  0 azi= 113.3 elev= -8.9 reason=Sunset position
+07:15 pos=  0 azi= 115.6 elev= -6.3 reason=Sunset position
+07:30 pos=  0 azi= 117.9 elev= -3.8 reason=Sunset position
+07:45 pos=  0 azi= 120.3 elev= -1.1 reason=Sunset position
+08:00 pos=  1 azi= 122.7 elev=  1.4 reason=Climate mode: sun in window (azi 123°, elev 1°)
+08:15 pos=  3 azi= 125.3 elev=  3.6 reason=Climate mode: sun in window (azi 125°, elev 4°)
+08:30 pos=  4 azi= 127.8 elev=  5.8 reason=Climate mode: sun in window (azi 128°, elev 6°)
+08:45 pos=  5 azi= 130.5 elev=  8.0 reason=Climate mode: sun in window (azi 131°, elev 8°)
+09:00 pos=  6 azi= 133.2 elev= 10.1 reason=Climate mode: sun in window (azi 133°, elev 10°)
+09:15 pos=  7 azi= 136.1 elev= 12.1 reason=Climate mode: sun in window (azi 136°, elev 12°)
+09:30 pos=  8 azi= 139.0 elev= 14.0 reason=Climate mode: sun in window (azi 139°, elev 14°)
+09:45 pos=  9 azi= 142.0 elev= 15.8 reason=Climate mode: sun in window (azi 142°, elev 16°)
+10:00 pos=  9 azi= 145.2 elev= 17.5 reason=Climate mode: sun in window (azi 145°, elev 17°)
+10:15 pos= 10 azi= 148.4 elev= 19.0 reason=Climate mode: sun in window (azi 148°, elev 19°)
+10:30 pos= 10 azi= 151.7 elev= 20.4 reason=Climate mode: sun in window (azi 152°, elev 20°)
+10:45 pos= 10 azi= 155.2 elev= 21.7 reason=Climate mode: sun in window (azi 155°, elev 22°)
+11:00 pos= 11 azi= 158.7 elev= 22.8 reason=Climate mode: sun in window (azi 159°, elev 23°)
+11:15 pos= 11 azi= 162.3 elev= 23.8 reason=Climate mode: sun in window (azi 162°, elev 24°)
+11:30 pos= 11 azi= 165.9 elev= 24.5 reason=Climate mode: sun in window (azi 166°, elev 25°)
+11:45 pos= 11 azi= 169.7 elev= 25.1 reason=Climate mode: sun in window (azi 170°, elev 25°)
+12:00 pos= 11 azi= 173.4 elev= 25.6 reason=Climate mode: sun in window (azi 173°, elev 26°)
+12:15 pos= 12 azi= 177.3 elev= 25.8 reason=Climate mode: sun in window (azi 177°, elev 26°)
+12:30 pos= 12 azi= 181.1 elev= 25.8 reason=Climate mode: sun in window (azi 181°, elev 26°)
+12:45 pos= 11 azi= 184.9 elev= 25.7 reason=Climate mode: sun in window (azi 185°, elev 26°)
+13:00 pos= 11 azi= 188.7 elev= 25.3 reason=Climate mode: sun in window (azi 189°, elev 25°)
+13:15 pos= 11 azi= 192.4 elev= 24.8 reason=Climate mode: sun in window (azi 192°, elev 25°)
+13:30 pos= 11 azi= 196.1 elev= 24.1 reason=Climate mode: sun in window (azi 196°, elev 24°)
+13:45 pos= 11 azi= 199.8 elev= 23.3 reason=Climate mode: sun in window (azi 200°, elev 23°)
+14:00 pos= 11 azi= 203.3 elev= 22.2 reason=Climate mode: sun in window (azi 203°, elev 22°)
+14:15 pos= 10 azi= 206.8 elev= 21.0 reason=Climate mode: sun in window (azi 207°, elev 21°)
+14:30 pos= 10 azi= 210.2 elev= 19.7 reason=Climate mode: sun in window (azi 210°, elev 20°)
+14:45 pos=  9 azi= 213.4 elev= 18.2 reason=Climate mode: sun in window (azi 213°, elev 18°)
+15:00 pos=  9 azi= 216.6 elev= 16.5 reason=Climate mode: sun in window (azi 217°, elev 17°)
+15:15 pos=  8 azi= 219.7 elev= 14.8 reason=Climate mode: sun in window (azi 220°, elev 15°)
+15:30 pos=  7 azi= 222.6 elev= 12.9 reason=Climate mode: sun in window (azi 223°, elev 13°)
+15:45 pos=  7 azi= 225.5 elev= 11.0 reason=Climate mode: sun in window (azi 226°, elev 11°)
+16:00 pos=  6 azi= 228.3 elev=  8.9 reason=Climate mode: sun in window (azi 228°, elev 9°)
+16:15 pos=  5 azi= 231.0 elev=  6.8 reason=Climate mode: sun in window (azi 231°, elev 7°)
+16:30 pos=  3 azi= 233.6 elev=  4.6 reason=Climate mode: sun in window (azi 234°, elev 5°)
+16:45 pos=  2 azi= 236.2 elev=  2.4 reason=Climate mode: sun in window (azi 236°, elev 2°)
+17:00 pos=  0 azi= 238.7 elev=  0.2 reason=Climate mode: sun in window (azi 239°, elev 0°)
+17:15 pos=  0 azi= 241.1 elev= -2.7 reason=Sunset position
+17:30 pos=  0 azi= 243.5 elev= -5.3 reason=Sunset position
+17:45 pos=  0 azi= 245.8 elev= -7.9 reason=Sunset position
+18:00 pos=  0 azi= 248.0 elev=-10.5 reason=Sunset position
+18:15 pos=  0 azi= 250.3 elev=-13.2 reason=Sunset position
+18:30 pos=  0 azi= 252.5 elev=-15.9 reason=Sunset position
+18:45 pos=  0 azi= 254.7 elev=-18.6 reason=Sunset position
+19:00 pos=  0 azi= 256.9 elev=-21.3 reason=Sunset position
+19:15 pos=  0 azi= 259.1 elev=-24.1 reason=Sunset position
+19:30 pos=  0 azi= 261.3 elev=-26.9 reason=Sunset position
+19:45 pos=  0 azi= 263.6 elev=-29.7 reason=Sunset position
+20:00 pos=  0 azi= 265.8 elev=-32.6 reason=Sunset position
+20:15 pos=  0 azi= 268.2 elev=-35.4 reason=Sunset position
+20:30 pos=  0 azi= 270.6 elev=-38.2 reason=Sunset position
+20:45 pos=  0 azi= 273.1 elev=-41.1 reason=Sunset position
+21:00 pos=  0 azi= 275.8 elev=-43.9 reason=Sunset position
+21:15 pos=  0 azi= 278.6 elev=-46.7 reason=Sunset position
+21:30 pos=  0 azi= 281.6 elev=-49.5 reason=Sunset position
+21:45 pos=  0 azi= 284.9 elev=-52.3 reason=Sunset position
+22:00 pos=  0 azi= 288.4 elev=-55.0 reason=Sunset position
+22:15 pos=  0 azi= 292.3 elev=-57.7 reason=Sunset position
+22:30 pos=  0 azi= 296.7 elev=-60.3 reason=Sunset position
+22:45 pos=  0 azi= 301.7 elev=-62.7 reason=Sunset position
+23:00 pos=  0 azi= 307.5 elev=-65.1 reason=Sunset position
+23:15 pos=  0 azi= 314.1 elev=-67.2 reason=Sunset position
+23:30 pos=  0 azi= 321.9 elev=-69.1 reason=Sunset position
+23:45 pos=  0 azi= 330.8 elev=-70.7 reason=Sunset position
+00:00 pos=  0 azi= 340.5 elev=-71.8 reason=Sunset position
