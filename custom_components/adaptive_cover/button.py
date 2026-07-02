@@ -20,7 +20,12 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the button platform."""
+    """Set up the button platform (regular entry or hub)."""
+    from .hub import ResetAllOverridesButton, is_hub_entry
+
+    if is_hub_entry(config_entry):
+        async_add_entities([ResetAllOverridesButton(hass)])
+        return
     coordinator: AdaptiveDataUpdateCoordinator = hass.data[DOMAIN][
         config_entry.entry_id
     ]

@@ -35,7 +35,28 @@ PLATFORMS = [
     Platform.NUMBER,
     Platform.SELECT,
 ]
+HUB_PLATFORMS = [Platform.COVER, Platform.SELECT, Platform.BUTTON]
 CONF_SUN = ["sun.sun"]
+
+
+def _hub_entry_exists(hass: HomeAssistant) -> bool:
+    from .hub import is_hub_entry
+
+    return any(
+        is_hub_entry(entry)
+        for entry in hass.config_entries.async_entries(DOMAIN)
+    )
+
+
+async def _async_bootstrap_hub(hass: HomeAssistant) -> None:
+    """Create the singleton All Shades hub entry if it doesn't exist."""
+    from homeassistant.config_entries import SOURCE_IMPORT
+
+    if _hub_entry_exists(hass):
+        return
+    await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_IMPORT}, data={}
+    )
 
 SERVICE_GET_FORECAST = "get_forecast"
 SERVICE_CHANGE_SETTINGS = "change_settings"
@@ -111,8 +132,13 @@ async def async_initialize_integration(
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Adaptive Cover from a config entry."""
+    from .hub import is_hub_entry
 
     hass.data.setdefault(DOMAIN, {})
+
+    if is_hub_entry(entry):
+        await hass.config_entries.async_forward_entry_setups(entry, HUB_PLATFORMS)
+        return True
 
     coordinator = AdaptiveDataUpdateCoordinator(hass)
     _temp_entity = entry.options.get(CONF_TEMP_ENTITY)
@@ -146,6 +172,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await coordinator.async_config_entry_first_refresh()
     hass.data[DOMAIN][entry.entry_id] = coordinator
     _async_register_services(hass)
+    hass.async_create_task(_async_bootstrap_hub(hass))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -155,6 +182,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
+    from .hub import is_hub_entry
+
+    if is_hub_entry(entry):
+        return await hass.config_entries.async_unload_platforms(
+            entry, HUB_PLATFORMS
+        )
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hass.data[DOMAIN].pop(entry.entry_id)
 

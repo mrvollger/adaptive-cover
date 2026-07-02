@@ -430,6 +430,18 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         """Get the options flow for this handler."""
         return OptionsFlowHandler(config_entry)
 
+    async def async_step_import(self, import_data: dict[str, Any] | None = None):
+        """Create the singleton All Shades hub entry (auto-bootstrapped)."""
+        from .hub import CONF_IS_HUB, HUB_ENTRY_NAME, HUB_UNIQUE_ID
+
+        await self.async_set_unique_id(HUB_UNIQUE_ID)
+        self._abort_if_unique_id_configured()
+        return self.async_create_entry(
+            title=HUB_ENTRY_NAME,
+            data={"name": HUB_ENTRY_NAME, CONF_IS_HUB: True},
+            options={},
+        )
+
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         """Handle the initial step."""
         # errors = {}

@@ -98,6 +98,7 @@ async def test_sun_change_triggers_position_call(
 ):
     _set_cover(hass, 60)
     await _setup(hass, cover_entry)
+    cover_calls = async_mock_service(hass, "cover", "set_cover_position")
 
     _nudge_sun(hass)
     await hass.async_block_till_done()
@@ -132,6 +133,7 @@ async def test_regression_1b2b668_override_visible_same_cycle(
     """A manual move must latch override AND show in the same cycle's data."""
     _set_cover(hass, 60)
     await _setup(hass, cover_entry)
+    cover_calls = async_mock_service(hass, "cover", "set_cover_position")
     coordinator = hass.data[DOMAIN][cover_entry.entry_id]
 
     # Integration moves the cover; simulate it reaching its target so the
@@ -159,6 +161,7 @@ async def test_manual_change_ignored_while_waiting_for_target(
     other position change is swallowed and never marks manual override."""
     _set_cover(hass, 60)
     await _setup(hass, cover_entry)
+    cover_calls = async_mock_service(hass, "cover", "set_cover_position")
     coordinator = hass.data[DOMAIN][cover_entry.entry_id]
 
     _nudge_sun(hass)
