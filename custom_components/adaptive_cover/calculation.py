@@ -1,18 +1,32 @@
-"""Generate values for all types of covers."""
+"""Generate values for all types of covers.
 
-from abc import ABC, abstractmethod
+The classes here are thin adapters over the pure engine in ``engine/``:
+they hold Home Assistant context (hass, entity reads, wall clock) and
+delegate every calculation to engine functions. All math lives in
+``engine/geometry.py``; all strategy logic lives in ``engine/evaluate.py``.
+"""
+
+from abc import ABC
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
 from homeassistant.core import HomeAssistant
-from numpy import cos, sin, tan
-from numpy import radians as rad
 
+from .config_context_adapter import ConfigContextAdapter
+from .engine import evaluate as engine_evaluate
+from .engine import geometry as engine_geometry
+from .engine.models import (
+    BlindSpot,
+    ClimateInputs,
+    CoverConfig,
+    PositionLimits,
+    SunSnapshot,
+    TimeContext,
+)
 from .helpers import get_domain, get_safe_attr, get_safe_state
 from .sun import SunData
-from .config_context_adapter import ConfigContextAdapter
 
 
 def get_state_reason(cover, climate_data=None):
@@ -21,17 +35,17 @@ def get_state_reason(cover, climate_data=None):
         return _get_climate_reason(cover, climate_data)
 
     if cover.direct_sun_valid:
-        return f"Sun in window (azi {cover.sol_azi:.0f}\u00b0, elev {cover.sol_elev:.0f}\u00b0)"
+        return f"Sun in window (azi {cover.sol_azi:.0f}°, elev {cover.sol_elev:.0f}°)"
     if cover.sunset_valid:
         return "Sunset position"
     if cover.sol_elev < 0:
         return "Sun below horizon"
     if not cover.valid_elevation:
-        return f"Elevation {cover.sol_elev:.0f}\u00b0 outside configured range"
+        return f"Elevation {cover.sol_elev:.0f}° outside configured range"
     if cover.is_sun_in_blind_spot:
         return "Sun in blind spot"
     if not cover.valid:
-        return f"Sun outside field of view (gamma {cover.gamma:.0f}\u00b0)"
+        return f"Sun outside field of view (gamma {cover.gamma:.0f}°)"
     return "Default position"
 
 
@@ -61,14 +75,14 @@ def _get_climate_reason(cover, climate_data):
         return "Summer mode: blocking sun (transparent blind)"
 
     if cover.direct_sun_valid:
-        return f"Climate mode: sun in window (azi {cover.sol_azi:.0f}\u00b0, elev {cover.sol_elev:.0f}\u00b0)"
+        return f"Climate mode: sun in window (azi {cover.sol_azi:.0f}°, elev {cover.sol_elev:.0f}°)"
 
     return get_state_reason(cover)
 
 
 @dataclass
 class AdaptiveGeneralCover(ABC):
-    """Collect common data."""
+    """Adapter between HA context and the pure engine (common data)."""
 
     hass: HomeAssistant
     logger: ConfigContextAdapter
@@ -98,6 +112,56 @@ class AdaptiveGeneralCover(ABC):
         """Add solar data to dataset."""
         self.sun_data = SunData(self.timezone, self.hass)
 
+    # --- engine input builders ---
+
+    _COVER_TYPE = "vertical"
+
+    def _extra_config(self) -> dict:
+        """Cover-type-specific config fields."""
+        return {}
+
+    def engine_config(self) -> CoverConfig:
+        """Build the pure engine config from this adapter's fields."""
+        return CoverConfig(
+            cover_type=self._COVER_TYPE,
+            window_azimuth=self.win_azi,
+            fov_left=self.fov_left,
+            fov_right=self.fov_right,
+            default_position=self.h_def,
+            sunset_position=self.sunset_pos,
+            sunset_offset_min=self.sunset_off,
+            sunrise_offset_min=self.sunrise_off,
+            min_elevation=self.min_elevation,
+            max_elevation=self.max_elevation,
+            blind_spot=BlindSpot(
+                left=self.blind_spot_left,
+                right=self.blind_spot_right,
+                elevation=self.blind_spot_elevation,
+                enabled=bool(self.blind_spot_on),
+            ),
+            limits=PositionLimits(
+                min_position=self.min_pos,
+                max_position=self.max_pos,
+                min_only_when_sun=bool(self.min_pos_bool),
+                max_only_when_sun=bool(self.max_pos_bool),
+            ),
+            **self._extra_config(),
+        )
+
+    def sun_snapshot(self) -> SunSnapshot:
+        """Current solar position as an engine input."""
+        return SunSnapshot(azimuth=self.sol_azi, elevation=self.sol_elev)
+
+    def time_context(self) -> TimeContext:
+        """Time inputs (naive UTC, matching historical arithmetic)."""
+        return TimeContext(
+            now_utc=datetime.utcnow(),  # noqa: DTZ003
+            sunrise_utc=self.sun_data.sunrise().replace(tzinfo=None),
+            sunset_utc=self.sun_data.sunset().replace(tzinfo=None),
+        )
+
+    # --- solar day table ---
+
     def solar_times(self):
         """Determine start/end times."""
         df_today = pd.DataFrame(
@@ -122,6 +186,8 @@ class AdaptiveGeneralCover(ABC):
                 solpos[frame].index[-1].to_pydatetime(),
             )
 
+    # --- delegated geometry properties (public API preserved) ---
+
     @property
     def _get_azimuth_edges(self) -> tuple[int, int]:
         """Calculate azimuth edges."""
@@ -130,87 +196,57 @@ class AdaptiveGeneralCover(ABC):
     @property
     def is_sun_in_blind_spot(self) -> bool:
         """Check if sun is in blind spot."""
-        if (
-            self.blind_spot_left is not None
-            and self.blind_spot_right is not None
-            and self.blind_spot_on
-        ):
-            left_edge = self.fov_left - self.blind_spot_left
-            right_edge = self.fov_left - self.blind_spot_right
-            blindspot = (self.gamma <= left_edge) & (self.gamma >= right_edge)
-            if self.blind_spot_elevation is not None:
-                blindspot = blindspot & (self.sol_elev <= self.blind_spot_elevation)
-            self.logger.debug("Is sun in blind spot? %s", blindspot)
-            return blindspot
-        return False
+        result = engine_geometry.in_blind_spot(
+            self.engine_config(), self.sun_snapshot()
+        )
+        if self.blind_spot_on:
+            self.logger.debug("Is sun in blind spot? %s", result)
+        return result
 
     @property
     def azi_min_abs(self) -> int:
         """Calculate min azimuth."""
-        azi_min_abs = (self.win_azi - self.fov_left + 360) % 360
-        return azi_min_abs
+        return (self.win_azi - self.fov_left + 360) % 360
 
     @property
     def azi_max_abs(self) -> int:
         """Calculate max azimuth."""
-        azi_max_abs = (self.win_azi + self.fov_right + 360) % 360
-        return azi_max_abs
+        return (self.win_azi + self.fov_right + 360) % 360
 
     @property
     def gamma(self) -> float:
         """Calculate Gamma."""
-        # surface solar azimuth
-        gamma = (self.win_azi - self.sol_azi + 180) % 360 - 180
-        return gamma
+        return engine_geometry.gamma(self.win_azi, self.sol_azi)
 
     @property
     def valid_elevation(self) -> bool:
         """Check if elevation is within range."""
-        if self.min_elevation is None and self.max_elevation is None:
-            return self.sol_elev >= 0
-        if self.min_elevation is None:
-            return self.sol_elev <= self.max_elevation
-        if self.max_elevation is None:
-            return self.sol_elev >= self.min_elevation
-        within_range = self.min_elevation <= self.sol_elev <= self.max_elevation
-        self.logger.debug("elevation within range? %s", within_range)
-        return within_range
+        return engine_geometry.valid_elevation(
+            self.sol_elev, self.min_elevation, self.max_elevation
+        )
 
     @property
     def valid(self) -> bool:
         """Determine if sun is in front of window."""
-        # clip azi_min and azi_max to 90
-        azi_min = min(self.fov_left, 90)
-        azi_max = min(self.fov_right, 90)
-
-        # valid sun positions are those within the blind's azimuth range and above the horizon (FOV)
-        valid = (
-            (self.gamma < azi_min) & (self.gamma > -azi_max) & (self.valid_elevation)
-        )
+        valid = engine_geometry.sun_in_fov(self.engine_config(), self.sun_snapshot())
         self.logger.debug("Sun in front of window (ignoring blindspot)? %s", valid)
         return valid
 
     @property
     def sunset_valid(self) -> bool:
         """Determine if it is after sunset plus offset."""
-        sunset = self.sun_data.sunset().replace(tzinfo=None)
-        sunrise = self.sun_data.sunrise().replace(tzinfo=None)
-        after_sunset = datetime.utcnow() > (sunset + timedelta(minutes=self.sunset_off))
-        before_sunrise = datetime.utcnow() < (
-            sunrise + timedelta(minutes=self.sunrise_off)
+        result = engine_geometry.sunset_valid(
+            self.engine_config(), self.time_context()
         )
-        self.logger.debug(
-            "After sunset plus offset? %s", (after_sunset or before_sunrise)
-        )
-        return after_sunset or before_sunrise
+        self.logger.debug("After sunset plus offset? %s", result)
+        return result
 
     @property
     def default(self) -> float:
         """Change default position at sunset."""
-        default = self.h_def
-        if self.sunset_valid:
-            default = self.sunset_pos
-        return default
+        return engine_geometry.default_position(
+            self.engine_config(), self.time_context()
+        )
 
     def fov(self) -> list:
         """Return field of view."""
@@ -237,7 +273,9 @@ class AdaptiveGeneralCover(ABC):
     @property
     def direct_sun_valid(self) -> bool:
         """Check if sun is directly in front of window."""
-        return (self.valid) & (not self.sunset_valid) & (not self.is_sun_in_blind_spot)
+        return engine_geometry.direct_sun_valid(
+            self.engine_config(), self.sun_snapshot(), self.time_context()
+        )
 
     def calculate_percentage_at(self, azi, elev):
         """Calculate position at a future solar position using geometry only.
@@ -245,62 +283,53 @@ class AdaptiveGeneralCover(ABC):
         Bypasses sunset_valid/direct_sun_valid time-of-day checks since we're
         predicting for a future time, not the current wall-clock time.
         """
-        orig_azi, orig_elev = self.sol_azi, self.sol_elev
-        self.sol_azi, self.sol_elev = azi, elev
-        try:
-            if self.valid and elev > 0:
-                result = np.clip(self.calculate_percentage(), 0, 100)
-                if self.apply_max_position and result > self.max_pos:
-                    return self.max_pos
-                if self.apply_min_position and result < self.min_pos:
-                    return self.min_pos
-                return round(result)
-            return int(self.h_def)
-        finally:
-            self.sol_azi, self.sol_elev = orig_azi, orig_elev
+        config = self.engine_config()
+        sun = SunSnapshot(azimuth=azi, elevation=elev)
+        if engine_geometry.sun_in_fov(config, sun) and elev > 0:
+            result = np.clip(engine_geometry.calculated_percentage(config, sun), 0, 100)
+            if self.apply_max_position and result > self.max_pos:
+                return self.max_pos
+            if self.apply_min_position and result < self.min_pos:
+                return self.min_pos
+            return round(result)
+        return int(self.h_def)
 
-    @abstractmethod
     def calculate_position(self) -> float:
         """Calculate the position of the blind."""
+        raise NotImplementedError
 
-    @abstractmethod
     def calculate_percentage(self) -> int:
         """Calculate percentage from position."""
+        return engine_geometry.calculated_percentage(
+            self.engine_config(), self.sun_snapshot()
+        )
 
 
 @dataclass
 class NormalCoverState:
-    """Compute state for normal operation."""
+    """Compute state for normal operation (delegates to the engine)."""
 
     cover: AdaptiveGeneralCover
 
     def get_state(self) -> int:
         """Return state."""
-        self.cover.logger.debug("Determining normal position")
-        dsv = self.cover.direct_sun_valid
-        self.cover.logger.debug(
-            "Sun directly in front of window & before sunset + offset? %s", dsv
+        decision = engine_evaluate(
+            self.cover.engine_config(),
+            self.cover.sun_snapshot(),
+            self.cover.time_context(),
         )
-        if dsv:
-            state = self.cover.calculate_percentage()
-            self.cover.logger.debug(
-                "Yes sun in window: using calculated percentage (%s)", state
-            )
-        else:
-            state = self.cover.default
-            self.cover.logger.debug("No sun in window: using default value (%s)", state)
-
-        result = np.clip(state, 0, 100)
-        if self.cover.apply_max_position and result > self.cover.max_pos:
-            return self.cover.max_pos
-        if self.cover.apply_min_position and result < self.cover.min_pos:
-            return self.cover.min_pos
-        return result
+        self.cover.logger.debug(
+            "Normal state: %s (intent=%s, trace=%s)",
+            decision.position,
+            decision.intent,
+            "; ".join(decision.trace),
+        )
+        return decision.position
 
 
 @dataclass
 class ClimateCoverData:
-    """Fetch additional data."""
+    """Resolve climate entity readings from HA (adapter for ClimateInputs)."""
 
     hass: HomeAssistant
     logger: ConfigContextAdapter
@@ -453,118 +482,40 @@ class ClimateCoverData:
             return float(value) <= self.irradiance_threshold
         return False
 
+    def to_inputs(self) -> ClimateInputs:
+        """Resolve all entity readings into pure engine inputs."""
+        return ClimateInputs(
+            presence=bool(self.is_presence),
+            is_summer=bool(self.is_summer),
+            is_winter=bool(self.is_winter),
+            is_sunny=self.is_sunny,
+            lux_dim=bool(self.lux),
+            irradiance_dim=bool(self.irradiance),
+            transparent_blind=bool(self.transparent_blind),
+        )
+
 
 @dataclass
 class ClimateCoverState(NormalCoverState):
-    """Compute state for climate control operation."""
+    """Compute state for climate control operation (delegates to the engine)."""
 
     climate_data: ClimateCoverData
 
-    def normal_type_cover(self) -> int:
-        """Determine state for horizontal and vertical covers."""
-
-        self.cover.logger.debug("Is presence? %s", self.climate_data.is_presence)
-
-        if self.climate_data.is_presence:
-            return self.normal_with_presence()
-
-        return self.normal_without_presence()
-
-    def normal_with_presence(self) -> int:
-        """Determine state for horizontal and vertical covers with occupants."""
-
-        is_summer = self.climate_data.is_summer
-
-        # Check if it's not summer and either lux, irradiance or sunny weather is present
-        if not is_summer and (
-            self.climate_data.lux
-            or self.climate_data.irradiance
-            or not self.climate_data.is_sunny
-        ):
-            # If it's winter and the cover is valid, return 100
-            if self.climate_data.is_winter and self.cover.valid:
-                self.cover.logger.debug(
-                    "n_w_p(): Winter and sun is in front of window = use 100"
-                )
-                return 100
-            # Otherwise, return the default cover state
-            self.cover.logger.debug(
-                "n_w_p(): it's not summer and sunny weather is not present = use default"
-            )
-            return self.cover.default
-
-        # If it's summer and there's a transparent blind, return 0
-        if is_summer and self.climate_data.transparent_blind:
-            return 0
-
-        # If none of the above conditions are met, get the state from the parent class
-        self.cover.logger.debug("n_w_p(): None of the climate conditions are met")
-        return super().get_state()
-
-    def normal_without_presence(self) -> int:
-        """Determine state for horizontal and vertical covers without occupants."""
-        if self.cover.valid:
-            if self.climate_data.is_summer:
-                return 0
-            if self.climate_data.is_winter:
-                return 100
-        return self.cover.default
-
-    def tilt_with_presence(self, degrees: int) -> int:
-        """Determine state for tilted blinds with occupants."""
-        if self.cover.valid and (
-            self.climate_data.lux
-            or self.climate_data.irradiance
-            or not self.climate_data.is_sunny
-        ):
-            if self.climate_data.is_summer:
-                # If it's summer, return 45 degrees
-                return 45 / degrees * 100
-            return super().get_state()
-        return 80 / degrees * 100
-
-    def tilt_without_presence(self, degrees: int) -> int:
-        """Determine state for tilted blinds without occupants."""
-        beta = np.rad2deg(self.cover.beta)
-        if self.cover.valid:
-            if self.climate_data.is_summer:
-                # block out all light in summer
-                return 0
-            if self.climate_data.is_winter and self.cover.mode == "mode2":
-                # parallel to sun beams, not possible with single direction
-                return (beta + 90) / degrees * 100
-            return 80 / degrees * 100
-        return super().get_state()
-
-    def tilt_state(self):
-        """Add tilt specific controls."""
-        degrees = 90
-        if self.cover.mode == "mode2":
-            degrees = 180
-        if self.climate_data.is_presence:
-            return self.tilt_with_presence(degrees)
-        return self.tilt_without_presence(degrees)
-
     def get_state(self) -> int:
         """Return state."""
-        result = self.normal_type_cover()
-        if self.climate_data.blind_type == "cover_tilt":
-            result = self.tilt_state()
-        if self.cover.apply_max_position and result > self.cover.max_pos:
-            self.cover.logger.debug(
-                "Climate state: Max position applied (%s > %s)",
-                result,
-                self.cover.max_pos,
-            )
-            return self.cover.max_pos
-        if self.cover.apply_min_position and result < self.cover.min_pos:
-            self.cover.logger.debug(
-                "Climate state: Min position applied (%s < %s)",
-                result,
-                self.cover.min_pos,
-            )
-            return self.cover.min_pos
-        return result
+        decision = engine_evaluate(
+            self.cover.engine_config(),
+            self.cover.sun_snapshot(),
+            self.cover.time_context(),
+            self.climate_data.to_inputs(),
+        )
+        self.cover.logger.debug(
+            "Climate state: %s (intent=%s, trace=%s)",
+            decision.position,
+            decision.intent,
+            "; ".join(decision.trace),
+        )
+        return decision.position
 
 
 @dataclass
@@ -574,24 +525,19 @@ class AdaptiveVerticalCover(AdaptiveGeneralCover):
     distance: float
     h_win: float
 
+    _COVER_TYPE = "vertical"
+
+    def _extra_config(self) -> dict:
+        return {
+            "distance_shaded_area": self.distance,
+            "window_height": self.h_win,
+        }
+
     def calculate_position(self) -> float:
         """Calculate blind height."""
-        # calculate blind height
-        blind_height = np.clip(
-            (self.distance / cos(rad(self.gamma))) * tan(rad(self.sol_elev)),
-            0,
-            self.h_win,
+        return engine_geometry.vertical_blind_height(
+            self.engine_config(), self.sun_snapshot()
         )
-        return blind_height
-
-    def calculate_percentage(self) -> float:
-        """Convert blind height to percentage or default value."""
-        position = self.calculate_position()
-        self.logger.debug(
-            "Converting height to percentage: %s / %s * 100", position, self.h_win
-        )
-        result = position / self.h_win * 100
-        return round(result)
 
 
 @dataclass
@@ -601,23 +547,21 @@ class AdaptiveHorizontalCover(AdaptiveVerticalCover):
     awn_length: float
     awn_angle: float
 
+    _COVER_TYPE = "awning"
+
+    def _extra_config(self) -> dict:
+        return {
+            "distance_shaded_area": self.distance,
+            "window_height": self.h_win,
+            "awning_length": self.awn_length,
+            "awning_angle": self.awn_angle,
+        }
+
     def calculate_position(self) -> float:
         """Calculate awn length from blind height."""
-        awn_angle = 90 - self.awn_angle
-        a_angle = 90 - self.sol_elev
-        c_angle = 180 - awn_angle - a_angle
-
-        vertical_position = super().calculate_position()
-        length = ((self.h_win - vertical_position) * sin(rad(a_angle))) / sin(
-            rad(c_angle)
+        return engine_geometry.awning_extension(
+            self.engine_config(), self.sun_snapshot()
         )
-        # return np.clip(length, 0, self.awn_length)
-        return length
-
-    def calculate_percentage(self) -> float:
-        """Convert awn length to percentage or default value."""
-        result = self.calculate_position() / self.awn_length * 100
-        return round(result)
 
 
 @dataclass
@@ -628,41 +572,25 @@ class AdaptiveTiltCover(AdaptiveGeneralCover):
     depth: float
     mode: str
 
+    _COVER_TYPE = "tilt"
+
+    def _extra_config(self) -> dict:
+        return {
+            "slat_distance": self.slat_distance,
+            "slat_depth": self.depth,
+            "tilt_mode": self.mode,
+        }
+
     @property
     def beta(self):
         """Calculate beta."""
-        beta = np.arctan(tan(rad(self.sol_elev)) / cos(rad(self.gamma)))
-        return beta
+        return engine_geometry.tilt_beta(self.engine_config(), self.sun_snapshot())
 
     def calculate_position(self) -> float:
         """Calculate position of venetian blinds.
 
         https://www.mdpi.com/1996-1073/13/7/1731
         """
-        beta = self.beta
-
-        slat = 2 * np.arctan(
-            (
-                tan(beta)
-                + np.sqrt(
-                    (tan(beta) ** 2) - ((self.slat_distance / self.depth) ** 2) + 1
-                )
-            )
-            / (1 + self.slat_distance / self.depth)
+        return engine_geometry.tilt_slat_angle(
+            self.engine_config(), self.sun_snapshot()
         )
-        result = np.rad2deg(slat)
-
-        return result
-
-    def calculate_percentage(self):
-        """Convert tilt angle to percentages or default value."""
-        # 0 degrees is closed, 90 degrees is open, 180 degrees is closed
-        percentage_single = self.calculate_position() / 90 * 100  # single directional
-        percentage_bi = self.calculate_position() / 180 * 100  # bi-directional
-
-        if self.mode == "mode1":
-            percentage = percentage_single
-        else:
-            percentage = percentage_bi
-
-        return round(percentage)
