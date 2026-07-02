@@ -81,6 +81,17 @@ def direct_sun_valid(config: CoverConfig, sun: SunSnapshot, ctx: TimeContext) ->
     )
 
 
+def privacy_active(config: CoverConfig, ctx: TimeContext) -> bool:
+    """Dark outside: from sunset + privacy offset until sunrise."""
+    if config.privacy is None or not config.privacy.enabled:
+        return False
+    after_dusk = ctx.now_utc > (
+        ctx.sunset_utc + timedelta(minutes=config.privacy.offset_min)
+    )
+    before_dawn = ctx.now_utc < ctx.sunrise_utc
+    return after_dusk or before_dawn
+
+
 # --- overhang & glare band ---
 
 

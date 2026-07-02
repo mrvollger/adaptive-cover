@@ -58,12 +58,34 @@ def _evaluate_basic(
         if geometry.sunset_valid(config, ctx):
             intent = Intent.SUNSET
             trace.append(f"after sunset/before sunrise: sunset position {raw}")
+        elif geometry.window_fully_shaded(config, sun) and geometry.sun_in_fov(
+            config, sun
+        ):
+            intent = Intent.SHADED_BY_OVERHANG
+            trace.append(f"overhang shades whole window: default {raw}")
         else:
             intent = Intent.DEFAULT
             trace.append(f"sun not in window: default {raw}")
     result = np.clip(raw, 0, 100)
     result = _apply_limits(result, dsv, config, trace)
     return result, intent
+
+
+def _open_for_heat(
+    config: CoverConfig, sun: SunSnapshot, trace: list[str]
+) -> tuple[float, Intent]:
+    """Winter 'maximize gain' resolution.
+
+    Without a glare model this is the historical fully-open (100). With
+    one, open exactly as far as eye comfort allows - warmth on the floor,
+    no beam in the eyes.
+    """
+    if config.glare is not None and config.cover_type == "vertical":
+        raw = geometry.admit_no_glare_percentage(config, sun)
+        trace.append(f"open for heat, glare-limited: {raw}")
+        return raw, Intent.ADMIT_NO_GLARE
+    trace.append("open for heat: 100")
+    return 100, Intent.CLIMATE_OPEN_HEAT
 
 
 def _not_sunny(climate: ClimateInputs) -> bool:
@@ -87,16 +109,16 @@ def _evaluate_climate_normal(
                 trace.append("summer, away: close fully")
                 return 0, Intent.CLIMATE_BLOCK_HEAT
             if climate.is_winter:
-                trace.append("winter, away: open fully")
-                return 100, Intent.CLIMATE_OPEN_HEAT
+                trace.append("winter, away")
+                return _open_for_heat(config, sun, trace)
         raw = geometry.default_position(config, ctx)
         trace.append(f"away, sun not relevant: default {raw}")
         return raw, Intent.CLIMATE_DEFAULT
 
     if not climate.is_summer and _not_sunny(climate):
         if climate.is_winter and valid:
-            trace.append("winter, dim/cloudy, sun in window: open fully")
-            return 100, Intent.CLIMATE_OPEN_HEAT
+            trace.append("winter, dim/cloudy, sun in window")
+            return _open_for_heat(config, sun, trace)
         raw = geometry.default_position(config, ctx)
         trace.append(f"not summer, dim/cloudy: default {raw}")
         return raw, Intent.CLIMATE_DEFAULT
@@ -152,6 +174,18 @@ def evaluate(
 ) -> Decision:
     """Compute the target position for one instant."""
     trace: list[str] = []
+
+    # Privacy runs before everything: a lit room against a dark sky is
+    # visible from outside no matter what solar/climate logic says.
+    if geometry.privacy_active(config, ctx):
+        trace.append(
+            f"dark outside: privacy position {config.privacy.position}"
+        )
+        result = _apply_limits(
+            config.privacy.position, False, config, trace
+        )
+        return Decision(position=result, intent=Intent.PRIVACY, trace=tuple(trace))
+
     if climate is None:
         result, intent = _evaluate_basic(config, sun, ctx, trace)
         return Decision(position=result, intent=intent, trace=tuple(trace))

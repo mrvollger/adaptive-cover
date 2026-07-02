@@ -21,7 +21,10 @@ from .engine.models import (
     BlindSpot,
     ClimateInputs,
     CoverConfig,
+    GlareModel,
+    Overhang,
     PositionLimits,
+    PrivacyConfig,
     SunSnapshot,
     TimeContext,
 )
@@ -107,6 +110,11 @@ class AdaptiveGeneralCover(ABC):
     min_elevation: int
     max_elevation: int
     sun_data: SunData = field(init=False)
+    # Extended config, assigned by the coordinator after construction so
+    # historical positional construction and all subclasses stay intact.
+    overhang: "Overhang | None" = field(init=False, default=None)
+    glare: "GlareModel | None" = field(init=False, default=None)
+    privacy: "PrivacyConfig | None" = field(init=False, default=None)
 
     def __post_init__(self):
         """Add solar data to dataset."""
@@ -145,6 +153,9 @@ class AdaptiveGeneralCover(ABC):
                 min_only_when_sun=bool(self.min_pos_bool),
                 max_only_when_sun=bool(self.max_pos_bool),
             ),
+            overhang=self.overhang,
+            glare=self.glare,
+            privacy=self.privacy,
             **self._extra_config(),
         )
 

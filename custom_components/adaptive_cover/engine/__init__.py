@@ -17,6 +17,7 @@ from .models import (
     Intent,
     Overhang,
     PositionLimits,
+    PrivacyConfig,
     SunSnapshot,
     TimeContext,
 )
@@ -31,6 +32,7 @@ __all__ = [
     "Intent",
     "Overhang",
     "PositionLimits",
+    "PrivacyConfig",
     "SunSnapshot",
     "TimeContext",
     "evaluate",

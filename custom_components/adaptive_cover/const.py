@@ -62,6 +62,22 @@ CONF_IRRADIANCE_THRESHOLD = "irradiance_threshold"
 CONF_OUTSIDE_THRESHOLD = "outside_threshold"
 
 
+# Overhang / glare-band geometry (vertical covers)
+CONF_OVERHANG_DEPTH = "overhang_depth"
+CONF_OVERHANG_HEIGHT = "overhang_height"
+CONF_EYE_HEIGHT = "eye_height"
+CONF_OCCUPIED_DISTANCE = "occupied_distance"
+
+# Privacy after dusk
+CONF_PRIVACY_MODE = "privacy_mode"
+CONF_PRIVACY_OFFSET = "privacy_offset"
+CONF_PRIVACY_POSITION = "privacy_position"
+
+# Movement smoothing
+CONF_QUIET_START = "quiet_start"
+CONF_QUIET_END = "quiet_end"
+CONF_MAX_MOVES_HOUR = "max_moves_hour"
+
 CONF_DELTA_POSITION = "delta_position"
 CONF_DELTA_TIME = "delta_time"
 CONF_START_TIME = "start_time"

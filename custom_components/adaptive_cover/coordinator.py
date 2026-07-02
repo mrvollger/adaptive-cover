@@ -36,6 +36,7 @@ from .calculation import (
     NormalCoverState,
     get_state_reason,
 )
+from .engine.models import GlareModel, Overhang, PrivacyConfig
 from .const import (
     _LOGGER,
     ATTR_POSITION,
@@ -75,9 +76,19 @@ from .const import (
     CONF_MANUAL_OVERRIDE_RESET,
     CONF_MANUAL_THRESHOLD,
     CONF_MAX_ELEVATION,
+    CONF_MAX_MOVES_HOUR,
     CONF_MAX_POSITION,
     CONF_MIN_ELEVATION,
     CONF_MIN_POSITION,
+    CONF_OCCUPIED_DISTANCE,
+    CONF_OVERHANG_DEPTH,
+    CONF_OVERHANG_HEIGHT,
+    CONF_EYE_HEIGHT,
+    CONF_PRIVACY_MODE,
+    CONF_PRIVACY_OFFSET,
+    CONF_PRIVACY_POSITION,
+    CONF_QUIET_END,
+    CONF_QUIET_START,
     CONF_OUTSIDE_THRESHOLD,
     CONF_OUTSIDETEMP_ENTITY,
     CONF_PRESENCE_ENTITY,
@@ -174,6 +185,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
         self._cached_options = None
         self._previous_state = None
+        self._move_history: dict[str, list[dt.datetime]] = {}
         self._last_change_data = {
             "old_position": None,
             "new_position": None,
@@ -612,8 +624,76 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             and self.check_position_delta(entity, state, options)
             and self.check_time_delta(entity)
             and not self.manager.is_cover_manual(entity)
+            and self.check_quiet_hours(state, options)
+            and self.check_move_budget(entity, state, options)
         ):
             await self.async_set_position(entity, state)
+
+    def _is_snap_position(self, state: int, options) -> bool:
+        """Positions that always deserve a move (endpoints, rest positions)."""
+        return state in [
+            options.get(CONF_SUNSET_POS),
+            options.get(CONF_DEFAULT_HEIGHT),
+            options.get(CONF_PRIVACY_POSITION),
+            0,
+            100,
+        ]
+
+    def check_quiet_hours(self, state: int, options) -> bool:
+        """Block tracking moves during the configured quiet window.
+
+        Snap positions (fully open/closed, default, sunset, privacy) are
+        allowed through: arriving at a rest position is the one move worth
+        making at night.
+        """
+        if not self.quiet_start or not self.quiet_end:
+            return True
+        if self._is_snap_position(state, options):
+            return True
+        now = dt.datetime.now().time()
+        start = get_datetime_from_str(self.quiet_start).time()
+        end = get_datetime_from_str(self.quiet_end).time()
+        if start <= end:
+            quiet = start <= now < end
+        else:  # window crosses midnight
+            quiet = now >= start or now < end
+        if quiet:
+            self.logger.debug(
+                "Quiet hours (%s-%s): skipping tracking move", start, end
+            )
+        return not quiet
+
+    def check_move_budget(self, entity, state: int, options) -> bool:
+        """Cap tracking moves per entity per hour (motor noise / wear).
+
+        Snap positions bypass the budget so day-phase transitions always
+        happen; only incremental tracking moves are rationed.
+        """
+        if not self.max_moves_hour:
+            return True
+        if self._is_snap_position(state, options):
+            return True
+        now = dt.datetime.now(dt.UTC)
+        history = [
+            t
+            for t in self._move_history.get(entity, [])
+            if now - t < dt.timedelta(hours=1)
+        ]
+        self._move_history[entity] = history
+        if len(history) >= self.max_moves_hour:
+            self.logger.debug(
+                "Move budget (%s/h) exhausted for %s: skipping tracking move",
+                self.max_moves_hour,
+                entity,
+            )
+            return False
+        return True
+
+    def _record_move(self, entity) -> None:
+        if self.max_moves_hour:
+            self._move_history.setdefault(entity, []).append(
+                dt.datetime.now(dt.UTC)
+            )
 
     async def async_set_position(self, entity, state: int):
         """Call service to set cover position."""
@@ -640,6 +720,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 self.target_call,
             )
             self.logger.debug("Run %s with data %s", service, service_data)
+            self._record_move(entity)
             await self.hass.services.async_call(COVER_DOMAIN, service, service_data)
 
     def _update_options(self, options):
@@ -660,6 +741,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.end_value = options.get(CONF_INTERP_END)
         self.normal_list = options.get(CONF_INTERP_LIST)
         self.new_list = options.get(CONF_INTERP_LIST_NEW)
+        self.quiet_start = options.get(CONF_QUIET_START)
+        self.quiet_end = options.get(CONF_QUIET_END)
+        self.max_moves_hour = options.get(CONF_MAX_MOVES_HOUR)
 
     def _update_manager_and_covers(self):
         self.manager.reset_duration = dt.timedelta(**self.manual_duration)
@@ -704,7 +788,27 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 *self.common_data(options),
                 *self.tilt_data(options),
             )
+        self._apply_extended_config(cover_data, options)
         return cover_data
+
+    def _apply_extended_config(self, cover_data, options) -> None:
+        """Attach overhang / glare / privacy config to the cover adapter."""
+        depth = options.get(CONF_OVERHANG_DEPTH)
+        height = options.get(CONF_OVERHANG_HEIGHT)
+        if depth and height and self._cover_type == "cover_blind":
+            cover_data.overhang = Overhang(depth=depth, height_above_sill=height)
+        eye_height = options.get(CONF_EYE_HEIGHT)
+        occupied = options.get(CONF_OCCUPIED_DISTANCE)
+        if eye_height and occupied and self._cover_type == "cover_blind":
+            cover_data.glare = GlareModel(
+                eye_height=eye_height, occupied_distance=occupied
+            )
+        if options.get(CONF_PRIVACY_MODE):
+            cover_data.privacy = PrivacyConfig(
+                enabled=True,
+                offset_min=options.get(CONF_PRIVACY_OFFSET, 30) or 30,
+                position=options.get(CONF_PRIVACY_POSITION, 0) or 0,
+            )
 
     @property
     def check_adaptive_time(self):

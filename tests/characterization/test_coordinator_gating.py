@@ -81,6 +81,10 @@ def make_coordinator(**overrides):
     coord._track_end_time = False
     coord.manager = AdaptiveCoverManager({"minutes": 15}, coord.logger)
     coord.config_entry = SimpleNamespace(options={})
+    coord.quiet_start = None
+    coord.quiet_end = None
+    coord.max_moves_hour = None
+    coord._move_history = {}
     for key, value in overrides.items():
         setattr(coord, key, value)
     return coord

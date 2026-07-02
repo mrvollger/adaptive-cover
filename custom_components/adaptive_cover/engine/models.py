@@ -15,6 +15,7 @@ class Intent(StrEnum):
     SUNSET = "sunset"  # after sunset / before sunrise position
     ADMIT_NO_GLARE = "admit_no_glare"  # let warmth in, keep sun out of eyes
     SHADED_BY_OVERHANG = "shaded_by_overhang"  # architecture already shades
+    PRIVACY = "privacy"  # dark outside, lit inside: close
     CLIMATE_OPEN_HEAT = "climate_open_heat"  # winter: maximize gain
     CLIMATE_BLOCK_HEAT = "climate_block_heat"  # summer: minimize gain
     CLIMATE_DEFAULT = "climate_default"  # climate says nothing special
@@ -80,6 +81,20 @@ class GlareModel:
 
 
 @dataclass(frozen=True)
+class PrivacyConfig:
+    """Close after dusk regardless of solar/climate logic.
+
+    Active from ``sunset + offset_min`` until sunrise. Runs before every
+    other rule: a lit room with a dark sky is visible from outside no
+    matter what the thermometer says.
+    """
+
+    enabled: bool = False
+    offset_min: float = 30
+    position: float = 0
+
+
+@dataclass(frozen=True)
 class PositionLimits:
     """Clamps applied after the raw position is computed."""
 
@@ -107,6 +122,7 @@ class CoverConfig:
     limits: PositionLimits = field(default_factory=PositionLimits)
     overhang: Overhang | None = None  # vertical covers only
     glare: GlareModel | None = None  # vertical covers only
+    privacy: PrivacyConfig | None = None
     # vertical + awning
     distance_shaded_area: float | None = None
     window_height: float | None = None
