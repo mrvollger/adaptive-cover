@@ -46,3 +46,7 @@ keep-runtime-typing = true
 
 [lint.mccabe]
 max-complexity = 25
+
+# Tests: docstring rules are not enforced (test names are the documentation).
+[lint.per-file-ignores]
+"tests/**" = ["D", "C408", "UP038", "T201"]

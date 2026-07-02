@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -23,15 +23,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 def _mock_sun_data():
     """Match tests/conftest.py mock_sun_data: sunset far ahead, sunrise far behind."""
-    now_utc = datetime.now(timezone.utc)
+    now_utc = datetime.now(UTC)
     tomorrow = now_utc + timedelta(days=1)
     yesterday = now_utc - timedelta(days=1)
     mock_instance = MagicMock()
     mock_instance.sunset.return_value = datetime(
-        tomorrow.year, tomorrow.month, tomorrow.day, 23, 59, 59, tzinfo=timezone.utc
+        tomorrow.year, tomorrow.month, tomorrow.day, 23, 59, 59, tzinfo=UTC
     )
     mock_instance.sunrise.return_value = datetime(
-        yesterday.year, yesterday.month, yesterday.day, 0, 0, 1, tzinfo=timezone.utc
+        yesterday.year, yesterday.month, yesterday.day, 0, 0, 1, tzinfo=UTC
     )
     times = pd.date_range(start=now_utc.date(), periods=289, freq="5min", tz="UTC")
     mock_instance.times = times

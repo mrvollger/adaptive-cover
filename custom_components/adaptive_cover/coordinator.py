@@ -191,6 +191,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self._climate_decision = None
         self.forecast: list[dict] | None = None
         self._forecast_key = "___unset___"
+        self._gate_blocks: dict[str, str | None] = {}
         self._last_change_data = {
             "old_position": None,
             "new_position": None,
@@ -597,6 +598,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 if active_decision
                 else None,
                 "forecast_today": self.forecast,
+                "move_blocked_by": {
+                    entity: gate
+                    for entity, gate in self._gate_blocks.items()
+                    if gate
+                },
             },
         )
 
@@ -662,15 +668,36 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
     async def async_handle_call_service(self, entity, state: int, options):
         """Handle call service."""
-        if (
-            self.check_adaptive_time
-            and self.check_position_delta(entity, state, options)
-            and self.check_time_delta(entity)
-            and not self.manager.is_cover_manual(entity)
-            and self.check_quiet_hours(state, options)
-            and self.check_move_budget(entity, state, options)
-        ):
+        gate = self._first_blocking_gate(entity, state, options)
+        self._gate_blocks[entity] = gate
+        if gate is None:
             await self.async_set_position(entity, state)
+        else:
+            self.logger.debug(
+                "Move of %s to %s blocked by gate: %s", entity, state, gate
+            )
+
+    def _first_blocking_gate(self, entity, state: int, options) -> str | None:
+        """Return the first gate that blocks this move, or None if allowed.
+
+        Precedence (also the documented order): manual override > time
+        window > position delta > time throttle > quiet hours > move budget.
+        Exposed per cover in the 'move_blocked_by' attribute so 'why didn't
+        it move?' is answerable from the UI.
+        """
+        if self.manager.is_cover_manual(entity):
+            return "manual_override"
+        if not self.check_adaptive_time:
+            return "outside_time_window"
+        if not self.check_position_delta(entity, state, options):
+            return "position_delta"
+        if not self.check_time_delta(entity):
+            return "time_throttle"
+        if not self.check_quiet_hours(state, options):
+            return "quiet_hours"
+        if not self.check_move_budget(entity, state, options):
+            return "move_budget"
+        return None
 
     def _is_snap_position(self, state: int, options) -> bool:
         """Positions that always deserve a move (endpoints, rest positions)."""

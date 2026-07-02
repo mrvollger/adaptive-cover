@@ -16,7 +16,6 @@ import datetime as dt
 import difflib
 import logging
 import os
-from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -85,6 +84,7 @@ def make_coordinator(**overrides):
     coord.quiet_end = None
     coord.max_moves_hour = None
     coord._move_history = {}
+    coord._gate_blocks = {}
     for key, value in overrides.items():
         setattr(coord, key, value)
     return coord
