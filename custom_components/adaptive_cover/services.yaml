@@ -52,3 +52,28 @@ change_settings:
     temp_high:
       name: Cooling threshold (°C)
       selector: { number: { min: 10, max: 40, step: 0.5, mode: box } }
+
+add_entry:
+  name: Add a window
+  description: >-
+    Create a new Adaptive Cover entry without the wizard. Start from a
+    template entry (copy_from) and override what differs, or from defaults.
+  fields:
+    name:
+      name: Name
+      required: true
+      example: "Den south"
+      selector: { text: }
+    covers:
+      name: Cover entities
+      required: true
+      example: "[cover.den_south_shades]"
+      selector: { entity: { multiple: true, domain: cover } }
+    copy_from:
+      name: Copy settings from
+      description: Entry ID, title, or name of an existing entry to use as template.
+      example: "SW south shade"
+      selector: { text: }
+    set_azimuth:
+      name: Window azimuth (°)
+      selector: { number: { min: 0, max: 359, mode: box } }

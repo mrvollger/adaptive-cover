@@ -100,7 +100,11 @@ def _async_register_services(hass: HomeAssistant) -> None:
         supports_response=SupportsResponse.ONLY,
     )
 
-    from .options_spec import change_settings_schema
+    from .options_spec import (
+        DEFAULT_OPTIONS,
+        add_entry_schema,
+        change_settings_schema,
+    )
 
     async def handle_change_settings(call: ServiceCall) -> ServiceResponse:
         entry = _resolve_entry(hass, call.data["config_entry"])
@@ -117,6 +121,49 @@ def _async_register_services(hass: HomeAssistant) -> None:
         SERVICE_CHANGE_SETTINGS,
         handle_change_settings,
         schema=change_settings_schema(),
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    async def handle_add_entry(call: ServiceCall) -> ServiceResponse:
+        """Create a new entry without the wizard, optionally from a template."""
+        from homeassistant.config_entries import SOURCE_IMPORT
+
+        name = call.data["name"]
+        covers = call.data["covers"]
+        overrides = {
+            key: value
+            for key, value in call.data.items()
+            if key not in ("name", "covers", "copy_from", "sensor_type")
+        }
+        if copy_from := call.data.get("copy_from"):
+            source = _resolve_entry(hass, copy_from)
+            options = dict(source.options)
+            sensor_type = call.data.get(
+                "sensor_type", source.data.get("sensor_type", "cover_blind")
+            )
+        else:
+            options = dict(DEFAULT_OPTIONS)
+            sensor_type = call.data.get("sensor_type", "cover_blind")
+        options.update(overrides)
+        options[CONF_ENTITIES] = covers
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_IMPORT},
+            data={"name": name, "sensor_type": sensor_type, "options": options},
+        )
+        entry = result.get("result")
+        if entry is None:
+            raise ServiceValidationError(
+                f"Entry creation failed: {result.get('reason', 'unknown')}"
+            )
+        return {"entry_id": entry.entry_id, "title": entry.title}
+
+    hass.services.async_register(
+        DOMAIN,
+        "add_entry",
+        handle_add_entry,
+        schema=add_entry_schema(),
         supports_response=SupportsResponse.OPTIONAL,
     )
 
