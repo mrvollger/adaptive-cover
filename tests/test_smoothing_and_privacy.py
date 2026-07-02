@@ -178,3 +178,83 @@ async def test_privacy_beats_winter_open(hass, mock_sun_data, mock_sun_entity):
 
     coordinator = hass.data[DOMAIN][entry.entry_id]
     assert coordinator.data.states["state"] == 0  # privacy, not winter-100
+
+
+async def test_regression_target_latch_tolerance(
+    hass, mock_sun_data, mock_sun_entity
+):
+    """Cover lands NEAR the target (99 vs 100): latch must clear so the
+    next human move is detected as manual. Production bug 2026-07-02."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={"name": "Latch Test", CONF_SENSOR_TYPE: SensorType.BLIND},
+        options={
+            **COMMON_OPTIONS,
+            CONF_HEIGHT_WIN: 2.1,
+            CONF_DISTANCE: 0.5,
+            CONF_ENTITIES: [COVER],
+            CONF_DELTA_TIME: 0,
+        },
+    )
+    entry.add_to_hass(hass)
+    async_mock_service(hass, "cover", "set_cover_position")
+    hass.states.async_set(COVER, "open", {"current_position": 60})
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+
+    hass.states.async_set(
+        "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
+    )
+    await hass.async_block_till_done()
+    target = coordinator.target_call[COVER]
+
+    # Motor lands 2 off the target: within tolerance -> latch clears
+    hass.states.async_set(COVER, "open", {"current_position": target - 2})
+    await hass.async_block_till_done()
+    assert coordinator.wait_for_target[COVER] is False
+
+    # Now a human move MUST latch the override
+    hass.states.async_set(COVER, "open", {"current_position": 5})
+    await hass.async_block_till_done()
+    assert coordinator.manager.is_cover_manual(COVER) is True
+
+
+async def test_regression_target_latch_expiry(
+    hass, mock_sun_data, mock_sun_entity
+):
+    """Cover never approaches the target: after TARGET_TIMEOUT the latch
+    expires and human moves are manual again (not swallowed forever)."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={"name": "Latch Expiry", CONF_SENSOR_TYPE: SensorType.BLIND},
+        options={
+            **COMMON_OPTIONS,
+            CONF_HEIGHT_WIN: 2.1,
+            CONF_DISTANCE: 0.5,
+            CONF_ENTITIES: [COVER],
+            CONF_DELTA_TIME: 0,
+        },
+    )
+    entry.add_to_hass(hass)
+    async_mock_service(hass, "cover", "set_cover_position")
+    hass.states.async_set(COVER, "open", {"current_position": 60})
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+
+    hass.states.async_set(
+        "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
+    )
+    await hass.async_block_till_done()
+    assert coordinator.wait_for_target[COVER] is True
+
+    # Simulate the command having been sent long ago
+    coordinator.target_call_time[COVER] = dt.datetime.now(dt.UTC) - dt.timedelta(
+        minutes=10
+    )
+    # Human parks it far from target: expiry clears latch, move is manual
+    hass.states.async_set(COVER, "open", {"current_position": 5})
+    await hass.async_block_till_done()
+    assert coordinator.wait_for_target[COVER] is False
+    assert coordinator.manager.is_cover_manual(COVER) is True
