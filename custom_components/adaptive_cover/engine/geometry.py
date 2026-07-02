@@ -71,12 +71,74 @@ def sunset_valid(config: CoverConfig, ctx: TimeContext) -> bool:
 
 
 def direct_sun_valid(config: CoverConfig, sun: SunSnapshot, ctx: TimeContext) -> bool:
-    """Sun in front, not after sunset, not in the blind spot."""
+    """Sun in front, not after sunset, not in the blind spot, glass not
+    already fully shaded by an overhang."""
     return (
         sun_in_fov(config, sun)
         & (not sunset_valid(config, ctx))
         & (not in_blind_spot(config, sun))
+        & (not window_fully_shaded(config, sun))
     )
+
+
+# --- overhang & glare band ---
+
+
+def profile_angle(config: CoverConfig, sun: SunSnapshot) -> float:
+    """Profile angle (radians): solar elevation projected onto the plane
+    perpendicular to the window. Governs how deep sun reaches past
+    horizontal edges (overhangs) and how fast rays descend into the room."""
+    g = gamma(config.window_azimuth, sun.azimuth)
+    return np.arctan(tan(rad(sun.elevation)) / cos(rad(g)))
+
+
+def sunlit_top(config: CoverConfig, sun: SunSnapshot) -> float:
+    """Height (m above sill) of the top of the sunlit band on the glass.
+
+    Without an overhang the whole window can be sunlit. With one, glass
+    above the shadow line never sees direct sun.
+    """
+    if config.window_height is None:
+        raise ValueError("sunlit_top requires window_height")
+    if config.overhang is None:
+        return config.window_height
+    shadow_line = config.overhang.height_above_sill - config.overhang.depth * tan(
+        profile_angle(config, sun)
+    )
+    return float(np.clip(shadow_line, 0, config.window_height))
+
+
+def window_fully_shaded(config: CoverConfig, sun: SunSnapshot) -> bool:
+    """Does the overhang shade the entire window at this sun position?"""
+    if config.overhang is None or config.window_height is None:
+        return False
+    if sun.elevation <= 0:
+        return False
+    return sunlit_top(config, sun) <= 0
+
+
+def glare_safe_height(config: CoverConfig, sun: SunSnapshot) -> float:
+    """Highest entry point (m above sill) whose rays stay below eye height
+    at the nearest occupied distance."""
+    if config.glare is None:
+        raise ValueError("glare_safe_height requires a GlareModel")
+    return config.glare.eye_height + config.glare.occupied_distance * float(
+        tan(profile_angle(config, sun))
+    )
+
+
+def admit_no_glare_percentage(config: CoverConfig, sun: SunSnapshot) -> float:
+    """Position (% open) that admits maximum sun without eye-level glare.
+
+    The cover edge may sit at the glare-safe height; if the overhang's
+    shadow line is already at or below it, no coverage is needed at all.
+    """
+    top = sunlit_top(config, sun)
+    safe = glare_safe_height(config, sun)
+    if top <= safe:
+        return 100
+    return round(float(np.clip(safe, 0, config.window_height))
+                 / config.window_height * 100)
 
 
 def default_position(config: CoverConfig, ctx: TimeContext) -> float:
@@ -100,8 +162,15 @@ def vertical_blind_height(config: CoverConfig, sun: SunSnapshot) -> float:
 
 
 def vertical_percentage(config: CoverConfig, sun: SunSnapshot) -> float:
-    """Vertical blind position as % of window height."""
+    """Vertical blind position as % of window height.
+
+    With an overhang: if the shadow line is at or below the edge height the
+    penetration model requires, the blind can open fully - glass above the
+    shadow line admits no direct sun anyway.
+    """
     position = vertical_blind_height(config, sun)
+    if config.overhang is not None and sunlit_top(config, sun) <= position:
+        return 100
     return round(position / config.window_height * 100)
 
 
@@ -122,9 +191,8 @@ def awning_percentage(config: CoverConfig, sun: SunSnapshot) -> float:
 
 
 def tilt_beta(config: CoverConfig, sun: SunSnapshot) -> float:
-    """Profile angle beta (radians): elevation projected onto window normal."""
-    g = gamma(config.window_azimuth, sun.azimuth)
-    return np.arctan(tan(rad(sun.elevation)) / cos(rad(g)))
+    """Historical alias: the tilt formula's beta IS the profile angle."""
+    return profile_angle(config, sun)
 
 
 def tilt_slat_angle(config: CoverConfig, sun: SunSnapshot) -> float:

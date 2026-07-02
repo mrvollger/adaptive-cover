@@ -13,6 +13,8 @@ class Intent(StrEnum):
     CALCULATED = "calculated"  # track the sun geometrically
     DEFAULT = "default"  # sun not relevant: rest position
     SUNSET = "sunset"  # after sunset / before sunrise position
+    ADMIT_NO_GLARE = "admit_no_glare"  # let warmth in, keep sun out of eyes
+    SHADED_BY_OVERHANG = "shaded_by_overhang"  # architecture already shades
     CLIMATE_OPEN_HEAT = "climate_open_heat"  # winter: maximize gain
     CLIMATE_BLOCK_HEAT = "climate_block_heat"  # summer: minimize gain
     CLIMATE_DEFAULT = "climate_default"  # climate says nothing special
@@ -51,6 +53,33 @@ class BlindSpot:
 
 
 @dataclass(frozen=True)
+class Overhang:
+    """Fixed horizontal shade (balcony, eave) above the window.
+
+    Casts a shadow line onto the glass at
+    ``height_above_sill - depth * tan(profile_angle)``; glass above that
+    line never sees direct sun, so the cover need not protect it.
+    """
+
+    depth: float  # m, horizontal projection out from the facade
+    height_above_sill: float  # m, underside height above the window sill
+
+
+@dataclass(frozen=True)
+class GlareModel:
+    """Where eyes are, for the admit-warmth-but-no-glare objective.
+
+    A ray entering the glass at height h descends at the profile angle and
+    reaches ``eye_height`` at horizontal distance
+    ``(h - eye_height) / tan(profile)``. The cover only needs to block
+    entry above ``eye_height + occupied_distance * tan(profile)``.
+    """
+
+    eye_height: float  # m above the sill (seated eyes ~1.2 m)
+    occupied_distance: float  # m from window to nearest occupied spot
+
+
+@dataclass(frozen=True)
 class PositionLimits:
     """Clamps applied after the raw position is computed."""
 
@@ -76,6 +105,8 @@ class CoverConfig:
     max_elevation: float | None = None
     blind_spot: BlindSpot = field(default_factory=BlindSpot)
     limits: PositionLimits = field(default_factory=PositionLimits)
+    overhang: Overhang | None = None  # vertical covers only
+    glare: GlareModel | None = None  # vertical covers only
     # vertical + awning
     distance_shaded_area: float | None = None
     window_height: float | None = None
