@@ -141,6 +141,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     """Adaptive cover data update coordinator."""
 
     config_entry: ConfigEntry
+    MOVE_LOG_LIMIT = 10
 
     def __init__(self, hass: HomeAssistant) -> None:  # noqa: D107
         super().__init__(hass, LOGGER, name=DOMAIN)
@@ -192,6 +193,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.forecast: list[dict] | None = None
         self._forecast_key = "___unset___"
         self._gate_blocks: dict[str, str | None] = {}
+        self.move_log: dict[str, list[dict]] = {}
         self._last_change_data = {
             "old_position": None,
             "new_position": None,
@@ -603,6 +605,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     for entity, gate in self._gate_blocks.items()
                     if gate
                 },
+                "last_moves": {
+                    entity: line
+                    for entity in self.entities
+                    if (line := self._format_last_move(entity)) is not None
+                },
             },
         )
 
@@ -618,6 +625,10 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
     async def async_handle_cover_state_change(self, state: int):
         """Handle state change from assigned covers."""
+        event = self.state_change_data
+        was_manual = (
+            self.manager.is_cover_manual(event.entity_id) if event else False
+        )
         if self.manual_toggle and self.control_toggle:
             self.manager.handle_state_change(
                 self.state_change_data,
@@ -626,6 +637,28 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 self.manual_reset,
                 self.wait_for_target,
                 self.manual_threshold,
+            )
+        # A human just took over: record it with provenance
+        if (
+            event
+            and not was_manual
+            and self.manager.is_cover_manual(event.entity_id)
+        ):
+            pos_attr = (
+                "current_tilt_position"
+                if self._cover_type == "cover_tilt"
+                else "current_position"
+            )
+            new_position = (
+                event.new_state.attributes.get(pos_attr)
+                if event.new_state
+                else None
+            )
+            self.record_move_provenance(
+                event.entity_id,
+                new_position,
+                "manual",
+                "manual change detected",
             )
         self.cover_state_change = False
         self.logger.debug("Cover state change handled")
@@ -639,7 +672,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     and not self.manager.is_cover_manual(cover)
                     and self.check_position_delta(cover, state, options)
                 ):
-                    await self.async_set_position(cover, state)
+                    await self.async_set_position(
+                        cover, state, source="startup", reason=self._active_intent()
+                    )
         else:
             self.logger.debug("First refresh but control toggle is off")
         self.first_refresh = False
@@ -660,6 +695,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                         if self._inverse_state
                         else options.get(CONF_SUNSET_POS)
                     ),
+                    source="end_time",
+                    reason="configured end time reached",
                 )
         else:
             self.logger.debug("Timed refresh but control toggle is off")
@@ -671,7 +708,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         gate = self._first_blocking_gate(entity, state, options)
         self._gate_blocks[entity] = gate
         if gate is None:
-            await self.async_set_position(entity, state)
+            await self.async_set_position(
+                entity, state, source="adaptive", reason=self._active_intent()
+            )
         else:
             self.logger.debug(
                 "Move of %s to %s blocked by gate: %s", entity, state, gate
@@ -765,11 +804,15 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 dt.datetime.now(dt.UTC)
             )
 
-    async def async_set_position(self, entity, state: int):
+    async def async_set_position(
+        self, entity, state: int, source: str = "adaptive", reason: str | None = None
+    ):
         """Call service to set cover position."""
-        await self.async_set_manual_position(entity, state)
+        await self.async_set_manual_position(entity, state, source, reason)
 
-    async def async_set_manual_position(self, entity, state):
+    async def async_set_manual_position(
+        self, entity, state, source: str = "integration", reason: str | None = None
+    ):
         """Call service to set cover position."""
         if self.check_position(entity, state):
             service = SERVICE_SET_COVER_POSITION
@@ -791,7 +834,49 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             )
             self.logger.debug("Run %s with data %s", service, service_data)
             self._record_move(entity)
+            self.record_move_provenance(entity, state, source, reason)
             await self.hass.services.async_call(COVER_DOMAIN, service, service_data)
+
+    def record_move_provenance(
+        self, entity, position, source: str, reason: str | None = None
+    ) -> None:
+        """Append to the per-cover move log and fire a logbook event.
+
+        Answers "what moved this cover and why": source is adaptive /
+        startup / end_time / control_enabled / all_covers / manual, with
+        the driving intent as reason where known.
+        """
+        entry = {
+            "time": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
+            "position": position,
+            "source": source,
+            "reason": reason,
+        }
+        log = self.move_log.setdefault(entity, [])
+        log.append(entry)
+        del log[: -self.MOVE_LOG_LIMIT]
+        bus = getattr(self.hass, "bus", None)
+        if bus is not None:  # bare test harnesses have no event bus
+            bus.async_fire("adaptive_cover_moved", {"entity_id": entity, **entry})
+
+    def _active_intent(self) -> str | None:
+        """Intent of the currently-active decision, for provenance."""
+        decision = (
+            self._climate_decision if self._switch_mode else self._basic_decision
+        )
+        return str(decision.intent) if decision else None
+
+    def _format_last_move(self, entity) -> str | None:
+        """Compact 'HH:MM -> 37% (source: reason)' line for attributes."""
+        log = self.move_log.get(entity)
+        if not log:
+            return None
+        entry = log[-1]
+        when = dt.datetime.fromisoformat(entry["time"]).astimezone()
+        line = f"{when.strftime('%H:%M')} -> {entry['position']}% ({entry['source']}"
+        if entry.get("reason"):
+            line += f": {entry['reason']}"
+        return line + ")"
 
     def _update_options(self, options):
         """Update options."""
