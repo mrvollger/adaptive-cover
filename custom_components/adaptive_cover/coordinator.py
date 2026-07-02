@@ -804,6 +804,27 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 dt.datetime.now(dt.UTC)
             )
 
+    async def async_force_apply(
+        self, source: str = "user", reason: str | None = None
+    ) -> None:
+        """Apply calculated positions NOW, bypassing all rate gates.
+
+        Human-initiated actions (reset buttons, mode changes, control
+        toggles) are never throttled: deltas, time throttle, quiet hours,
+        and move budget do not apply. Manual overrides and the timing
+        window are still respected.
+        """
+        if not self.control_toggle:
+            return
+        for entity in self.entities:
+            if (
+                not self.manager.is_cover_manual(entity)
+                and self.check_adaptive_time
+            ):
+                await self.async_set_position(
+                    entity, self.state, source=source, reason=reason
+                )
+
     async def async_set_position(
         self, entity, state: int, source: str = "adaptive", reason: str | None = None
     ):

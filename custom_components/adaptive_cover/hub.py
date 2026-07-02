@@ -257,8 +257,15 @@ class ResetAllOverridesButton(ButtonEntity):
         return "Reset all manual overrides"
 
     async def async_press(self) -> None:
-        """Reset overrides everywhere and refresh."""
+        """Reset overrides everywhere and re-apply positions immediately.
+
+        A button press is a manual command: recovery must not dribble in
+        through the per-cover time throttle.
+        """
         for coordinator in iter_coordinators(self.hass):
             for entity in list(coordinator.manager.manual_controlled):
                 coordinator.manager.reset(entity)
             await coordinator.async_refresh()
+            await coordinator.async_force_apply(
+                source="reset_all", reason="manual overrides reset"
+            )
