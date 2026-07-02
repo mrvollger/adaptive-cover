@@ -258,3 +258,96 @@ async def test_regression_target_latch_expiry(
     await hass.async_block_till_done()
     assert coordinator.wait_for_target[COVER] is False
     assert coordinator.manager.is_cover_manual(COVER) is True
+
+
+async def test_user_context_move_latches_even_mid_window(
+    hass, mock_sun_data, mock_sun_entity
+):
+    """A change carrying a user_id is human: manual latches instantly,
+    even inside a fresh travel window. Production bug 2026-07-02 (2)."""
+    from homeassistant.core import Context
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={"name": "UserCtx", CONF_SENSOR_TYPE: SensorType.BLIND},
+        options={
+            **COMMON_OPTIONS,
+            CONF_HEIGHT_WIN: 2.1,
+            CONF_DISTANCE: 0.5,
+            CONF_ENTITIES: [COVER],
+            CONF_DELTA_TIME: 0,
+        },
+    )
+    entry.add_to_hass(hass)
+    async_mock_service(hass, "cover", "set_cover_position")
+    hass.states.async_set(COVER, "open", {"current_position": 60})
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+
+    hass.states.async_set(
+        "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
+    )
+    await hass.async_block_till_done()
+    assert coordinator.wait_for_target[COVER] is True  # window armed
+
+    hass.states.async_set(
+        COVER,
+        "open",
+        {"current_position": 5},
+        context=Context(user_id="0123456789abcdef0123456789abcdef"),
+    )
+    await hass.async_block_till_done()
+
+    assert coordinator.manager.is_cover_manual(COVER) is True
+    assert coordinator.wait_for_target[COVER] is False
+
+
+async def test_no_recommand_while_awaiting_target(
+    hass, mock_sun_data, mock_sun_entity
+):
+    """While a command is in flight, adaptive ticks must not re-send:
+    only the latest command matters, no stacking."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={"name": "NoStack", CONF_SENSOR_TYPE: SensorType.BLIND},
+        options={
+            **COMMON_OPTIONS,
+            CONF_HEIGHT_WIN: 2.1,
+            CONF_DISTANCE: 0.5,
+            CONF_ENTITIES: [COVER],
+            CONF_DELTA_TIME: 0,
+        },
+    )
+    entry.add_to_hass(hass)
+    async_mock_service(hass, "cover", "set_cover_position")
+    hass.states.async_set(COVER, "open", {"current_position": 60})
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    calls = async_mock_service(hass, "cover", "set_cover_position")
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+
+    hass.states.async_set(
+        "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
+    )
+    await hass.async_block_till_done()
+    assert len(calls) == 1  # first command in flight
+
+    hass.states.async_set(
+        "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 43.0}
+    )
+    await hass.async_block_till_done()
+    # flush the sensor-refresh debouncer so the gate actually evaluates
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import (
+        async_fire_time_changed,
+    )
+
+    async_fire_time_changed(hass, dt_util.utcnow() + dt.timedelta(seconds=15))
+    await hass.async_block_till_done()
+
+    assert len(calls) == 1  # no stacking
+    assert (
+        coordinator.data.attributes["move_blocked_by"].get(COVER)
+        == "awaiting_target"
+    )
