@@ -33,8 +33,11 @@ DUSK_35M = TimeContext(datetime(2026, 12, 22, 0, 38), SUNRISE, SUNSET)
 WINTER_SUN = SunSnapshot(azimuth=180.0, elevation=26.0)
 NIGHT_SUN = SunSnapshot(azimuth=300.0, elevation=-10.0)
 
-COLD_HOME_SUNNY = ClimateInputs(
+COLD_HOME_CLOUDY = ClimateInputs(
     presence=True, is_summer=False, is_winter=True, is_sunny=False
+)
+COLD_HOME_SUNNY = ClimateInputs(
+    presence=True, is_summer=False, is_winter=True, is_sunny=True
 )
 
 
@@ -106,28 +109,39 @@ class TestPrivacy:
 
 
 class TestGlareWiredWinter:
-    def test_winter_home_dim_without_glare_opens_fully(self):
-        """Historical behavior preserved when no glare model configured."""
+    """Glare-limited admission engages exactly where eyes meet beams:
+    someone home, direct winter sun, glare model configured."""
+
+    def test_winter_home_sunny_without_glare_blocks(self):
+        """Historical quirk preserved: sunny winter day = full blocking."""
         cfg = make_config()
         d = evaluate(cfg, WINTER_SUN, DAY, COLD_HOME_SUNNY)
-        assert d.position == 100
-        assert d.intent == Intent.CLIMATE_OPEN_HEAT
+        assert d.intent == Intent.CALCULATED
+        assert d.position < 30  # the 'cave in winter' behavior
 
-    def test_winter_home_dim_with_glare_opens_to_eye_band(self):
-        """With a glare model, 'maximize gain' stops at eye comfort."""
+    def test_winter_home_sunny_with_glare_admits_to_eye_band(self):
+        """The fix the redesign exists for: warmth in, beam out of eyes."""
         cfg = make_config(glare=GLARE, overhang=OVERHANG)
         d = evaluate(cfg, WINTER_SUN, DAY, COLD_HOME_SUNNY)
         assert d.intent == Intent.ADMIT_NO_GLARE
         assert 65 <= d.position <= 72  # ~68%: cover the top third
 
-    def test_winter_away_with_glare_also_limited(self):
+    def test_winter_home_cloudy_opens_fully_even_with_glare(self):
+        """No direct beam, no glare: every lumen matters on a snow day."""
+        cfg = make_config(glare=GLARE, overhang=OVERHANG)
+        d = evaluate(cfg, WINTER_SUN, DAY, COLD_HOME_CLOUDY)
+        assert d.intent == Intent.CLIMATE_OPEN_HEAT
+        assert d.position == 100
+
+    def test_winter_away_opens_fully_even_with_glare(self):
+        """Nobody home, nobody to glare: maximize gain."""
         away = ClimateInputs(
             presence=False, is_summer=False, is_winter=True, is_sunny=True
         )
         cfg = make_config(glare=GLARE)
         d = evaluate(cfg, WINTER_SUN, DAY, away)
-        assert d.intent == Intent.ADMIT_NO_GLARE
-        assert d.position < 100
+        assert d.intent == Intent.CLIMATE_OPEN_HEAT
+        assert d.position == 100
 
     def test_tilt_covers_unaffected_by_glare_model(self):
         cfg = make_config(
@@ -139,11 +153,8 @@ class TestGlareWiredWinter:
             window_height=None,
             distance_shaded_area=None,
         )
-        away = ClimateInputs(
-            presence=False, is_summer=False, is_winter=True, is_sunny=True
-        )
-        d = evaluate(cfg, WINTER_SUN, DAY, away)
-        assert d.intent == Intent.CLIMATE_OPEN_HEAT  # tilt keeps its formula
+        d = evaluate(cfg, WINTER_SUN, DAY, COLD_HOME_SUNNY)
+        assert d.intent != Intent.ADMIT_NO_GLARE  # tilt keeps its formulas
 
 
 class TestOverhangIntent:

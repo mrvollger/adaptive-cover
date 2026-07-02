@@ -111,6 +111,9 @@ class Scenario:
     slat_depth: float = 3
     climate: dict | None = None  # {temp, presence, weather}
     location: dict = field(default_factory=lambda: dict(SLC))
+    overhang: tuple[float, float] | None = None  # (depth, height_above_sill)
+    glare: tuple[float, float] | None = None  # (eye_height, occupied_distance)
+    privacy: tuple[float, float] | None = None  # (offset_min, position)
 
 
 SCENARIOS = [
@@ -142,6 +145,35 @@ SCENARIOS = [
         name="slc_climate_summer_away",
         date="2026-06-21",
         climate=dict(temp=26.0, presence="not_home", weather="sunny"),
+    ),
+    # --- redesign feature scenarios (user-house geometry, metric) ---
+    Scenario(
+        name="house_winter_glare_overhang",
+        date="2026-12-21",
+        h_win=2.44,
+        distance=0.5,
+        overhang=(1.22, 3.05),
+        glare=(1.22, 0.91),
+        privacy=(30, 0),
+        climate=dict(temp=18.0, presence="home", weather="sunny"),
+    ),
+    Scenario(
+        name="house_summer_overhang",
+        date="2026-06-21",
+        h_win=2.44,
+        distance=0.5,
+        overhang=(1.22, 3.05),
+        glare=(1.22, 0.91),
+        privacy=(30, 0),
+        climate=dict(temp=26.0, presence="home", weather="sunny"),
+    ),
+    Scenario(
+        name="house_equinox_privacy_basic",
+        date="2026-03-20",
+        h_win=2.44,
+        distance=0.5,
+        overhang=(1.22, 3.05),
+        privacy=(30, 0),
     ),
 ]
 
@@ -249,6 +281,26 @@ def render_scenario(scenario: Scenario) -> str:
         return_value=sun_data,
     ):
         cover = _make_cover(scenario, hass, 180.0, 0.0)
+        if scenario.overhang:
+            from custom_components.adaptive_cover.engine.models import Overhang
+
+            cover.overhang = Overhang(
+                depth=scenario.overhang[0], height_above_sill=scenario.overhang[1]
+            )
+        if scenario.glare:
+            from custom_components.adaptive_cover.engine.models import GlareModel
+
+            cover.glare = GlareModel(
+                eye_height=scenario.glare[0], occupied_distance=scenario.glare[1]
+            )
+        if scenario.privacy:
+            from custom_components.adaptive_cover.engine.models import PrivacyConfig
+
+            cover.privacy = PrivacyConfig(
+                enabled=True,
+                offset_min=scenario.privacy[0],
+                position=scenario.privacy[1],
+            )
         start, end = cover.solar_times()
         lines.append(f"# solar_times start={start} end={end}")
 

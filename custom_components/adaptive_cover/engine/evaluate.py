@@ -71,21 +71,10 @@ def _evaluate_basic(
     return result, intent
 
 
-def _open_for_heat(
-    config: CoverConfig, sun: SunSnapshot, trace: list[str]
-) -> tuple[float, Intent]:
-    """Winter 'maximize gain' resolution.
-
-    Without a glare model this is the historical fully-open (100). With
-    one, open exactly as far as eye comfort allows - warmth on the floor,
-    no beam in the eyes.
-    """
-    if config.glare is not None and config.cover_type == "vertical":
-        raw = geometry.admit_no_glare_percentage(config, sun)
-        trace.append(f"open for heat, glare-limited: {raw}")
-        return raw, Intent.ADMIT_NO_GLARE
-    trace.append("open for heat: 100")
-    return 100, Intent.CLIMATE_OPEN_HEAT
+def _admits_glare_position(config: CoverConfig) -> bool:
+    """Glare-limited admission applies only where eyes and beams meet:
+    vertical covers with a configured glare model."""
+    return config.glare is not None and config.cover_type == "vertical"
 
 
 def _not_sunny(climate: ClimateInputs) -> bool:
@@ -109,16 +98,16 @@ def _evaluate_climate_normal(
                 trace.append("summer, away: close fully")
                 return 0, Intent.CLIMATE_BLOCK_HEAT
             if climate.is_winter:
-                trace.append("winter, away")
-                return _open_for_heat(config, sun, trace)
+                trace.append("winter, away: open fully (nobody to glare)")
+                return 100, Intent.CLIMATE_OPEN_HEAT
         raw = geometry.default_position(config, ctx)
         trace.append(f"away, sun not relevant: default {raw}")
         return raw, Intent.CLIMATE_DEFAULT
 
     if not climate.is_summer and _not_sunny(climate):
         if climate.is_winter and valid:
-            trace.append("winter, dim/cloudy, sun in window")
-            return _open_for_heat(config, sun, trace)
+            trace.append("winter, dim/cloudy: open fully (no beam, no glare)")
+            return 100, Intent.CLIMATE_OPEN_HEAT
         raw = geometry.default_position(config, ctx)
         trace.append(f"not summer, dim/cloudy: default {raw}")
         return raw, Intent.CLIMATE_DEFAULT
@@ -126,6 +115,18 @@ def _evaluate_climate_normal(
     if climate.is_summer and climate.transparent_blind:
         trace.append("summer, transparent blind: close fully")
         return 0, Intent.CLIMATE_BLOCK_HEAT
+
+    # Presence + direct sun + heating wanted: the historical tree fell
+    # through to full glare-blocking here, giving 'sunny winter day = cave'.
+    # With a glare model, admit warmth up to the eye band instead.
+    if (
+        climate.is_winter
+        and _admits_glare_position(config)
+        and geometry.direct_sun_valid(config, sun, ctx)
+    ):
+        raw = geometry.admit_no_glare_percentage(config, sun)
+        trace.append(f"winter, sunny, someone home: admit warmth to eye band ({raw})")
+        return raw, Intent.ADMIT_NO_GLARE
 
     trace.append("climate neutral: basic strategy")
     return _evaluate_basic(config, sun, ctx, trace)
