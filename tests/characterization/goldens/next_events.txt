@@ -1,0 +1,4 @@
+# _compute_next_event characterization: 2026-03-20, SLC south window
+now=2026-03-20 04:00:00 -> name='Sunrise + offset' time=2026-03-20T13:30:51.773694+00:00 pos=60
+now=2026-03-20 15:00:00 -> name='Sun leaves window' time=2026-03-20T19:30:00-06:00 pos=60
+now=2026-03-20 22:00:00 -> name='Sunrise + offset' time=2026-03-22T13:27:32.756234+00:00 pos=60

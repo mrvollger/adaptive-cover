@@ -18,6 +18,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 from astral import LocationInfo
 from astral import sun as astral_sun
+from astral.location import Location
 from freezegun import freeze_time
 
 from custom_components.adaptive_cover.calculation import (
@@ -45,7 +46,7 @@ class FakeSunData:
     def __init__(self, lat, lon, tz, date):
         info = LocationInfo(name="test", region="test", timezone=tz,
                             latitude=lat, longitude=lon)
-        self.location = info
+        self.location = Location(info)
         self.observer = info.observer
         self.elevation = 0
         self.timezone = tz
