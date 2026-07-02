@@ -432,8 +432,27 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         return OptionsFlowHandler(config_entry)
 
     async def async_step_import(self, import_data: dict[str, Any] | None = None):
-        """Create the singleton All Shades hub entry (auto-bootstrapped)."""
+        """Programmatic entry creation.
+
+        Two shapes: {} bootstraps the singleton hub; {name, sensor_type,
+        options} creates a regular entry (used by the add_entry service so
+        new windows never require the wizard).
+        """
         from .hub import CONF_IS_HUB, HUB_ENTRY_NAME, HUB_UNIQUE_ID
+
+        if import_data and import_data.get("name") and not import_data.get(
+            CONF_IS_HUB
+        ):
+            return self.async_create_entry(
+                title=import_data["name"],
+                data={
+                    "name": import_data["name"],
+                    CONF_SENSOR_TYPE: import_data.get(
+                        CONF_SENSOR_TYPE, SensorType.BLIND
+                    ),
+                },
+                options=dict(import_data.get("options", {})),
+            )
 
         await self.async_set_unique_id(HUB_UNIQUE_ID)
         self._abort_if_unique_id_configured()

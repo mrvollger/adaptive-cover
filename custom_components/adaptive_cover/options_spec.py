@@ -113,6 +113,51 @@ CHANGEABLE_OPTIONS: dict[str, object] = {
 }
 
 
+# Baseline for entries created via the add_entry service without a
+# copy_from template. Mirrors the wizard's defaults.
+DEFAULT_OPTIONS: dict = {
+    "mode": "basic",
+    CONF_AZIMUTH: 180,
+    CONF_HEIGHT_WIN: 2.1,
+    CONF_DISTANCE: 0.5,
+    CONF_DEFAULT_HEIGHT: 100,
+    CONF_FOV_LEFT: 90,
+    CONF_FOV_RIGHT: 90,
+    CONF_SUNSET_POS: 0,
+    CONF_SUNSET_OFFSET: 0,
+    CONF_SUNRISE_OFFSET: 0,
+    CONF_DELTA_POSITION: 1,
+    CONF_DELTA_TIME: 2,
+    CONF_START_TIME: "00:00:00",
+    CONF_END_TIME: "00:00:00",
+    CONF_MANUAL_OVERRIDE_DURATION: {"minutes": 15},
+    CONF_MANUAL_OVERRIDE_RESET: False,
+    "climate_mode": False,
+    "inverse_state": False,
+    "blind_spot": False,
+    "interp": False,
+    "enable_max_position": False,
+    "enable_min_position": False,
+    "interp_list": [],
+    "interp_list_new": [],
+}
+
+
+def add_entry_schema() -> vol.Schema:
+    """Schema for the add_entry service: identity + any changeable option."""
+    schema: dict = {
+        vol.Required("name"): str,
+        vol.Required("covers"): [str],
+        vol.Optional("copy_from"): str,
+        vol.Optional("sensor_type"): vol.In(
+            ["cover_blind", "cover_awning", "cover_tilt"]
+        ),
+    }
+    for key, validator in CHANGEABLE_OPTIONS.items():
+        schema[vol.Optional(key)] = validator
+    return vol.Schema(schema)
+
+
 def change_settings_schema() -> vol.Schema:
     """Build the service schema: config_entry + any changeable option."""
     schema: dict = {vol.Required("config_entry"): str}
