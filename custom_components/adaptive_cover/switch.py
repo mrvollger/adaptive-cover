@@ -150,17 +150,9 @@ class AdaptiveCoverSwitch(
         self._attr_is_on = True
         setattr(self.coordinator, self._key, True)
         if self._key == "control_toggle" and kwargs.get("added") is not True:
-            for entity in self.coordinator.entities:
-                if (
-                    not self.coordinator.manager.is_cover_manual(entity)
-                    and self.coordinator.check_adaptive_time
-                ):
-                    await self.coordinator.async_set_position(
-                        entity,
-                        self.coordinator.state,
-                        source="control_enabled",
-                        reason="adaptive control switched on",
-                    )
+            await self.coordinator.async_force_apply(
+                source="control_enabled", reason="adaptive control switched on"
+            )
         await self.coordinator.async_refresh()
         self.schedule_update_ha_state()
 

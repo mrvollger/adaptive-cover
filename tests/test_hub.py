@@ -177,3 +177,32 @@ async def test_aggregate_cover_polls_and_recovers_from_boot_race(
     state = hass.states.get("cover.adaptive_cover_all")
     assert state.attributes["current_position"] == 100
     assert state.attributes["covers"] == 2
+
+
+async def test_reset_all_bypasses_time_throttle(hass, mock_sun_entity):
+    """A human reset is a manual command: recovery is never throttled."""
+    e1, _ = await _setup_two_entries(hass)
+    coordinator = hass.data[DOMAIN][e1.entry_id]
+
+    # Make any ordinary adaptive move impossible for the next hour
+    coordinator.time_threshold = 60
+    # Cover was just manually moved (throttle window hot, override latched)
+    coordinator.manager.mark_manual_control("cover.a")
+    coordinator.manager.manual_control_time["cover.a"] = dt.datetime.now(dt.UTC)
+    hass.states.async_set("cover.a", "open", {"current_position": 40})
+    await hass.async_block_till_done()
+
+    calls = async_mock_service(hass, "cover", "set_cover_position")
+    registry = er.async_get(hass)
+    button_id = registry.async_get_entity_id(
+        "button", DOMAIN, f"{HUB_UNIQUE_ID}_reset_all"
+    )
+    await hass.services.async_call(
+        "button", "press", {"entity_id": button_id}, blocking=True
+    )
+    await hass.async_block_till_done()
+
+    assert coordinator.manager.is_cover_manual("cover.a") is False
+    moved = [c for c in calls if c.data["entity_id"] == "cover.a"]
+    assert moved, "reset-all must re-apply immediately despite the throttle"
+    assert moved[-1].data["position"] == coordinator.state
