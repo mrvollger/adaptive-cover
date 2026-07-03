@@ -14,6 +14,7 @@ import type { AdaptiveCoverTileCardConfig, DiscoveredEntities } from '../types';
 import { readCoverAttrs, readForecast, readIntent, readTraceAttrs } from '../lib/trace-adapter';
 import { formatPercent } from '../lib/formatters';
 import { t } from '../lib/i18n';
+import { confirmResume } from '../lib/confirm';
 import { tooltip } from '../lib/tooltip';
 
 import './tile-badge';
@@ -232,6 +233,7 @@ export class MoreInfoDialog extends LitElement {
   private _onResume = (): void => {
     const btn = this.discovered.entities.reset_override_button;
     if (!btn) return;
+    if (!confirmResume(this.hass, this._target())) return;
     this.hass.callService('button', 'press', { entity_id: btn });
   };
 

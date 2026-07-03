@@ -397,7 +397,8 @@ describe('adaptive-cover-tile-card service calls', () => {
     expect((el.shadowRoot!.querySelector('button.down') as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('badge acp-resume event calls button.press on the reset override button', async () => {
+  it('badge acp-resume event calls button.press after the user confirms', async () => {
+    window.confirm = vi.fn(() => true);
     const callService = vi.fn();
     const el = await mount(
       { type: TYPE, entry_id: ENTRY },
@@ -406,9 +407,26 @@ describe('adaptive-cover-tile-card service calls', () => {
     el.shadowRoot!.querySelector('acp-tile-badge')!.dispatchEvent(
       new CustomEvent('acp-resume', { bubbles: true, composed: true }),
     );
+    expect(window.confirm).toHaveBeenCalled();
     expect(callService).toHaveBeenCalledWith('button', 'press', {
       entity_id: 'button.reset_manual_override',
     });
+  });
+
+  // Regression 2026-07-03: resuming moves the cover back to the adaptive
+  // position; an accidental badge tap right after a manual close silently
+  // reverted the user's move. The tap must be confirm-gated.
+  it('badge acp-resume event does nothing when the user declines the confirm', async () => {
+    window.confirm = vi.fn(() => false);
+    const callService = vi.fn();
+    const el = await mount(
+      { type: TYPE, entry_id: ENTRY },
+      makeHass({ manualOverrideOn: true, callService }),
+    );
+    el.shadowRoot!.querySelector('acp-tile-badge')!.dispatchEvent(
+      new CustomEvent('acp-resume', { bubbles: true, composed: true }),
+    );
+    expect(callService).not.toHaveBeenCalled();
   });
 });
 

@@ -268,10 +268,11 @@ describe('acp-overrides-panel', () => {
     expect(callService).not.toHaveBeenCalled();
   });
 
-  it('calls hass.callService when resetEnabled=true and tile is clicked', async () => {
+  it('calls hass.callService when resetEnabled=true, tile is clicked and confirmed', async () => {
     interface OverridesLike extends LitLike {
       resetEnabled?: boolean;
     }
+    window.confirm = vi.fn(() => true);
     const callService = vi.fn();
     const el = await mount<OverridesLike>('acp-overrides-panel');
     el.hass = { states: {}, callService } as unknown as HomeAssistant;
@@ -280,6 +281,21 @@ describe('acp-overrides-panel', () => {
     await flush(el);
     (el.shadowRoot!.querySelector('.tile.action') as HTMLElement).click();
     expect(callService).toHaveBeenCalledWith('button', 'press', { entity_id: 'button.reset' });
+  });
+
+  it('does not call hass.callService when the resume confirm is declined', async () => {
+    interface OverridesLike extends LitLike {
+      resetEnabled?: boolean;
+    }
+    window.confirm = vi.fn(() => false);
+    const callService = vi.fn();
+    const el = await mount<OverridesLike>('acp-overrides-panel');
+    el.hass = { states: {}, callService } as unknown as HomeAssistant;
+    el.discovered = { ...baseDiscovered, entities: { reset_override_button: 'button.reset' } };
+    el.resetEnabled = true;
+    await flush(el);
+    (el.shadowRoot!.querySelector('.tile.action') as HTMLElement).click();
+    expect(callService).not.toHaveBeenCalled();
   });
 });
 

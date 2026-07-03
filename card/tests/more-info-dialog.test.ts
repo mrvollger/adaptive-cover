@@ -477,7 +477,8 @@ describe('acp-more-info-dialog: Resume Auto', () => {
   const manualDiscovered = (): DiscoveredEntities =>
     discovered({ manual_override_binary: 'binary_sensor.manual_override' });
 
-  it('Resume button calls button.press on reset_override_button', async () => {
+  it('Resume button calls button.press after the user confirms', async () => {
+    window.confirm = vi.fn(() => true);
     const callService = vi.fn();
     const el = await mount({
       hass: manualOnHass(callService),
@@ -486,6 +487,18 @@ describe('acp-more-info-dialog: Resume Auto', () => {
     });
     (el.shadowRoot!.querySelector('button.resume') as HTMLElement).click();
     expect(callService).toHaveBeenCalledWith('button', 'press', { entity_id: 'button.reset' });
+  });
+
+  it('Resume button does nothing when the user declines the confirm', async () => {
+    window.confirm = vi.fn(() => false);
+    const callService = vi.fn();
+    const el = await mount({
+      hass: manualOnHass(callService),
+      discovered: manualDiscovered(),
+      open: true,
+    });
+    (el.shadowRoot!.querySelector('button.resume') as HTMLElement).click();
+    expect(callService).not.toHaveBeenCalled();
   });
 
   it('Resume button is hidden when no reset_override_button discovered', async () => {

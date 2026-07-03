@@ -63,7 +63,10 @@ export const en = {
     ends_in: 'ends in {time}',
     active_count: '{count} active',
     timeout: 'expires in {time}',
-    reset_manual: 'Reset Manual',
+    reset_manual: 'Return to Auto',
+    resume_confirm:
+      'Resume automatic control? This shade will move back to its automatic position.',
+    resume_confirm_pos: 'Resume automatic control? This shade will move to {position}% now.',
   },
   climate: {
     title: 'Climate',

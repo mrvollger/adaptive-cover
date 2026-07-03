@@ -71,7 +71,10 @@ export const fr: EnDict = {
     ends_in: 'se termine dans {time}',
     active_count: '{count} dérogation(s) active(s)',
     timeout: 'expire dans {time}',
-    reset_manual: 'Réinitialiser le mode manuel',
+    reset_manual: 'Retour en auto',
+    resume_confirm:
+      'Reprendre le contrôle automatique ? Le store reviendra à sa position automatique.',
+    resume_confirm_pos: 'Reprendre le contrôle automatique ? Le store se placera à {position} % maintenant.',
   },
   climate: {
     title: 'Climatique',

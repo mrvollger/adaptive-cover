@@ -434,3 +434,117 @@ async def test_no_poll_when_cover_arrived(hass, mock_sun_data, mock_sun_entity):
     await hass.async_block_till_done()
 
     assert not any(c.data["entity_id"] == COVER for c in update_calls)
+
+
+async def test_regression_manual_latch_on_movement_start(
+    hass, mock_sun_data, mock_sun_entity
+):
+    """Foreign opening/closing latches manual the moment travel starts.
+
+    Regression 2026-07-03: these shades report position only at journey
+    end, so latching on the landing report left a 1-3 minute window where
+    a person's move read as auto-controlled mid-travel.
+    """
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={"name": "StartLatch", CONF_SENSOR_TYPE: SensorType.BLIND},
+        options={
+            **COMMON_OPTIONS,
+            CONF_HEIGHT_WIN: 2.1,
+            CONF_DISTANCE: 0.5,
+            CONF_ENTITIES: [COVER],
+            CONF_DELTA_TIME: 0,
+        },
+    )
+    entry.add_to_hass(hass)
+    async_mock_service(hass, "cover", "set_cover_position")
+    hass.states.async_set(COVER, "open", {"current_position": 60})
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+
+    hass.states.async_set(
+        "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
+    )
+    await hass.async_block_till_done()
+    assert coordinator.wait_for_target[COVER] is True
+    target = coordinator.target_call[COVER]
+
+    # Cover lands on our target: window clears, cover is auto-controlled.
+    hass.states.async_set(COVER, "open", {"current_position": target})
+    await hass.async_block_till_done()
+    assert coordinator.wait_for_target[COVER] is False
+    assert coordinator.manager.is_cover_manual(COVER) is False
+
+    # Human starts moving it: state flips to "closing" but position still
+    # reads the old value (no landing report yet, no user context - e.g. a
+    # paired remote). Manual must latch NOW, not minutes later.
+    hass.states.async_set(COVER, "closing", {"current_position": target})
+    await hass.async_block_till_done()
+    assert coordinator.manager.is_cover_manual(COVER) is True
+
+
+async def test_regression_no_latch_when_movement_is_ours(
+    hass, mock_sun_data, mock_sun_entity
+):
+    """Movement while our own command is in flight must NOT latch manual."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={"name": "OwnMove", CONF_SENSOR_TYPE: SensorType.BLIND},
+        options={
+            **COMMON_OPTIONS,
+            CONF_HEIGHT_WIN: 2.1,
+            CONF_DISTANCE: 0.5,
+            CONF_ENTITIES: [COVER],
+            CONF_DELTA_TIME: 0,
+        },
+    )
+    entry.add_to_hass(hass)
+    async_mock_service(hass, "cover", "set_cover_position")
+    hass.states.async_set(COVER, "open", {"current_position": 60})
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+
+    hass.states.async_set(
+        "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
+    )
+    await hass.async_block_till_done()
+    assert coordinator.wait_for_target[COVER] is True  # our command in flight
+
+    # Device reports travel toward OUR target: not a human act.
+    hass.states.async_set(COVER, "closing", {"current_position": 60})
+    await hass.async_block_till_done()
+    assert coordinator.manager.is_cover_manual(COVER) is False
+
+
+async def test_regression_resume_button_rename_keeps_unique_id(
+    hass, mock_sun_data, mock_sun_entity
+):
+    """The reset button reads "Return to Auto" but its unique_id keeps
+    the historical "Reset Manual Override" slug (renaming the unique_id
+    would orphan every existing registry entry). Regression 2026-07-03."""
+    from homeassistant.helpers import entity_registry as er
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={"name": "Rename", CONF_SENSOR_TYPE: SensorType.BLIND},
+        options={
+            **COMMON_OPTIONS,
+            CONF_HEIGHT_WIN: 2.1,
+            CONF_DISTANCE: 0.5,
+            CONF_ENTITIES: [COVER],
+        },
+    )
+    entry.add_to_hass(hass)
+    hass.states.async_set(COVER, "open", {"current_position": 60})
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    registry = er.async_get(hass)
+    button_entity = registry.async_get_entity_id(
+        "button", DOMAIN, f"{entry.entry_id}_Reset Manual Override"
+    )
+    assert button_entity is not None
+    state = hass.states.get(button_entity)
+    assert "Return to Auto" in state.attributes["friendly_name"]
