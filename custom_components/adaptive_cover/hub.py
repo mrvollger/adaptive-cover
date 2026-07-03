@@ -8,7 +8,7 @@ setup. Its entities fan out over all loaded coordinators:
   ticks do not walk the command back)
 - select "Cover control mode": Manual / Adaptive / Mixed(display-only);
   Adaptive respects existing manual overrides
-- button "Reset all manual overrides"
+- button "Return all shades to auto" (unique_id keeps the reset_all slug)
 
 Clean re-implementation of the upstream "All Blinds" concept (no dead
 pipeline, no hardcoded language, typed access to coordinators).
@@ -254,7 +254,9 @@ class ResetAllOverridesButton(ButtonEntity):
     @property
     def name(self):
         """Name of the entity."""
-        return "Reset all manual overrides"
+        # Pressing this moves covers back to their adaptive positions, so
+        # the label says "resume", not "reset" (unique_id keeps the old slug).
+        return "Return all shades to auto"
 
     async def async_press(self) -> None:
         """Reset overrides everywhere and re-apply positions immediately.

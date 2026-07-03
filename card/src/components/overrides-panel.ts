@@ -5,6 +5,7 @@ import type { HomeAssistant } from 'custom-card-helpers';
 import { entityStateChanged } from '../lib/hass-change';
 import type { DiscoveredEntities } from '../types';
 import { t } from '../lib/i18n';
+import { confirmResume, resumeTarget } from '../lib/confirm';
 
 @customElement('acp-overrides-panel')
 export class OverridesPanel extends LitElement {
@@ -42,6 +43,8 @@ export class OverridesPanel extends LitElement {
   private _resetManual(): void {
     const id = this.discovered.entities.reset_override_button;
     if (!id) return;
+    if (!confirmResume(this.hass, resumeTarget(this.hass, this.discovered.entities.target_position_sensor)))
+      return;
     this.hass.callService('button', 'press', { entity_id: id });
   }
 

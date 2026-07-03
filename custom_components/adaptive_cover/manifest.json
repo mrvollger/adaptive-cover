@@ -1,7 +1,9 @@
 {
   "domain": "adaptive_cover",
   "name": "Adaptive Cover",
-  "codeowners": ["@mrvollger"],
+  "codeowners": [
+    "@mrvollger"
+  ],
   "config_flow": true,
   "dependencies": [
     "sun",
@@ -14,6 +16,9 @@
   "documentation": "https://github.com/mrvollger/adaptive-cover",
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/mrvollger/adaptive-cover/issues",
-  "requirements": ["astral", "pandas"],
-  "version": "1.10.2"
+  "requirements": [
+    "astral",
+    "pandas"
+  ],
+  "version": "1.11.0"
 }

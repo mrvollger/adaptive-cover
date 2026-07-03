@@ -280,6 +280,38 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # window so it can never be swallowed as a motor echo.
         if event.context is not None and event.context.user_id is not None:
             self.wait_for_target[entity_id] = False
+        # Foreign movement STARTING (opening/closing we didn't command) is a
+        # human act the moment the motor spins. These shades report position
+        # only at journey end, so waiting for the landing report leaves a
+        # 1-3 minute window where the cover reads as auto-controlled while a
+        # person is actively moving it.
+        new_state = self.state_change_data.new_state
+        if (
+            new_state.state in ("opening", "closing")
+            and not self.ignore_intermediate_states
+            and not self.wait_for_target.get(entity_id)
+            and self.manual_toggle
+            and self.control_toggle
+            and entity_id in self.manager.covers
+            and not self.manager.is_cover_manual(entity_id)
+        ):
+            self.logger.debug(
+                "Foreign %s movement started for %s: latching manual immediately",
+                new_state.state,
+                entity_id,
+            )
+            self.manager.mark_manual_control(entity_id)
+            self.manager.set_last_updated(entity_id, new_state, self.manual_reset)
+            self.record_move_provenance(
+                entity_id,
+                new_state.attributes.get(
+                    "current_tilt_position"
+                    if self._cover_type == "cover_tilt"
+                    else "current_position"
+                ),
+                "manual",
+                "manual movement started",
+            )
         # Foreign event. Update the travel latch (tolerance/expiry); if the
         # cover is still mid-travel this is a device position echo: skip
         # the full refresh so bursts don't queue-storm the pipeline.
