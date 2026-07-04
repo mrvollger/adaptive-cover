@@ -26,6 +26,15 @@ change_settings:
       description: Entry ID, title, or internal name of the instance.
       required: true
       example: "SE south shades"
+    name:
+      name: Rename entry
+      description: >-
+        New name for the entry. Updates the title, device name, and log
+        prefix; entity unique IDs are unchanged.
+      required: false
+      example: "Family south"
+      selector:
+        text:
       selector:
         text:
     overhang_depth:

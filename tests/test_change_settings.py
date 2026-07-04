@@ -133,3 +133,51 @@ async def test_no_changes_raises(hass, entry, mock_sun_entity):
             {"config_entry": entry.entry_id},
             blocking=True,
         )
+
+
+async def test_regression_rename_updates_title_and_device_name(
+    hass, entry, mock_sun_entity
+):
+    """change_settings with name renames the entry without breaking entities.
+
+    User request 2026-07-04: room-based names ("Office north") replacing the
+    compass wizard names ("NE north shade") - without recreating entries.
+    """
+    from homeassistant.helpers import entity_registry as er
+
+    await _setup(hass, entry)
+    registry = er.async_get(hass)
+    before = {
+        e.unique_id
+        for e in er.async_entries_for_config_entry(registry, entry.entry_id)
+    }
+    assert before
+
+    await hass.services.async_call(
+        DOMAIN,
+        "change_settings",
+        {"config_entry": entry.entry_id, "name": "Office north"},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    assert entry.title == "Office north"
+    assert entry.data["name"] == "Office north"
+    after = {
+        e.unique_id
+        for e in er.async_entries_for_config_entry(registry, entry.entry_id)
+    }
+    assert after == before  # rename must never orphan entities
+
+
+async def test_rename_combines_with_option_changes(hass, entry, mock_sun_entity):
+    await _setup(hass, entry)
+    await hass.services.async_call(
+        DOMAIN,
+        "change_settings",
+        {"config_entry": entry.entry_id, "name": "Renamed", CONF_EYE_HEIGHT: 1.4},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+    assert entry.title == "Renamed"
+    assert entry.options[CONF_EYE_HEIGHT] == 1.4

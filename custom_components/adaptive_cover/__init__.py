@@ -111,10 +111,23 @@ def _async_register_services(hass: HomeAssistant) -> None:
         changes = {k: v for k, v in call.data.items() if k != "config_entry"}
         if not changes:
             raise ServiceValidationError("No settings provided to change")
-        hass.config_entries.async_update_entry(
-            entry, options={**entry.options, **changes}
-        )
-        return {"entry": entry.title, "changed": sorted(changes)}
+        # "name" lives in entry data (drives title, device name, and log
+        # prefix), not options - handle it separately so entries can be
+        # renamed without recreating them.
+        new_name = changes.pop("name", None)
+        update_kwargs: dict = {}
+        if new_name:
+            update_kwargs["data"] = {**entry.data, "name": new_name}
+            update_kwargs["title"] = new_name
+        if changes:
+            update_kwargs["options"] = {**entry.options, **changes}
+        hass.config_entries.async_update_entry(entry, **update_kwargs)
+        if new_name and not changes:
+            # Options updates reload via the update listener; a pure rename
+            # must reload explicitly so entities and device pick up the name.
+            await hass.config_entries.async_reload(entry.entry_id)
+        changed = sorted([*changes, *(["name"] if new_name else [])])
+        return {"entry": entry.title, "changed": changed}
 
     hass.services.async_register(
         DOMAIN,
