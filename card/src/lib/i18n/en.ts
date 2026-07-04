@@ -193,6 +193,7 @@ export const en = {
     automatic_control: 'Automatic Control',
   },
   tile: {
+    battery: 'Shade battery',
     motion_pending: 'Motion timeout pending',
     motion_detected: 'Motion detected',
     open: 'Open',

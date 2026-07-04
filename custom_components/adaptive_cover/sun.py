@@ -1,6 +1,7 @@
 """Fetch sun data."""
 
 from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 from homeassistant.core import HomeAssistant
@@ -17,10 +18,20 @@ class SunData:
         self.elevation = elevation
         self.timezone = timezone
 
+    def _today_local(self) -> date:
+        """Today in the HA-configured timezone.
+
+        date.today() reads the PROCESS timezone, which on HA OS is UTC:
+        late in the evening it already reports tomorrow, so sunset()
+        silently returns tomorrow's sunset and the engine's night branch
+        never engages (regression 2026-07-03).
+        """
+        return datetime.now(ZoneInfo(str(self.timezone))).date()
+
     @property
     def times(self) -> pd.DatetimeIndex:
         """Define time interval."""
-        start_date = date.today()
+        start_date = self._today_local()
         end_date = start_date + timedelta(days=1)
 
         times = pd.date_range(
@@ -53,12 +64,12 @@ class SunData:
         return ele_list
 
     def sunset(self) -> datetime:
-        """Fetch sunset time."""
-        return self.location.sunset(date.today(), local=False)
+        """Fetch today's (local date) sunset time."""
+        return self.location.sunset(self._today_local(), local=False)
 
     def sunrise(self) -> datetime:
-        """Fetch sunrise time."""
-        return self.location.sunrise(date.today(), local=False)
+        """Fetch today's (local date) sunrise time."""
+        return self.location.sunrise(self._today_local(), local=False)
 
     # def df_today(self)-> pd.DataFrame:
     #     """Create dataframe with azimuth and elevation data"""

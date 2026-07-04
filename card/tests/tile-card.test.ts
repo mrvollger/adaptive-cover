@@ -60,6 +60,20 @@ const REGISTRY: EntityRegistryEntry[] = [
     device_id: null,
   },
   {
+    entity_id: 'cover.left',
+    unique_id: 'zha-left',
+    config_entry_id: 'zha-entry',
+    platform: 'zha',
+    device_id: 'zha-dev-left',
+  },
+  {
+    entity_id: 'sensor.left_battery',
+    unique_id: 'zha-left-batt',
+    config_entry_id: 'zha-entry',
+    platform: 'zha',
+    device_id: 'zha-dev-left',
+  },
+  {
     entity_id: 'button.reset_manual_override',
     unique_id: `${ENTRY}_Reset Manual Override`,
     config_entry_id: ENTRY,
@@ -81,6 +95,7 @@ function makeHass(
     automaticControl: boolean;
     callService: (...args: unknown[]) => unknown;
     coverLeftCurrentPosition: number | undefined;
+    batteryState: string;
   }> = {},
 ): HomeAssistant {
   return {
@@ -118,6 +133,10 @@ function makeHass(
         },
       },
       'cover.right': { state: 'open', attributes: { friendly_name: 'Right blind' } },
+      'sensor.left_battery': {
+        state: overrides.batteryState ?? '80',
+        attributes: {},
+      },
     },
     callService: overrides.callService ?? vi.fn(),
     // Resolve to the same fixture the tests inject directly, so the async
@@ -166,7 +185,7 @@ describe('adaptive-cover-tile-card render', () => {
     // cover.left has no current_position → the label falls back to the Cover
     // Position sensor state (42). formatCoverState capitalizes the raw state.
     const el = await mount({ type: TYPE, entry_id: ENTRY }, makeHass());
-    expect(el.shadowRoot!.querySelector('.position')?.textContent?.trim()).toBe('Open · 42%');
+    expect(el.shadowRoot!.querySelector('.pos-text')?.textContent?.trim()).toBe('Open · 42%');
   });
 
   it('displays the live cover current_position, not the calculated sensor value', async () => {
@@ -175,25 +194,26 @@ describe('adaptive-cover-tile-card render', () => {
       { type: TYPE, entry_id: ENTRY },
       makeHass({ sensorState: '100', coverLeftCurrentPosition: 16 }),
     );
-    expect(el.shadowRoot!.querySelector('.position')?.textContent?.trim()).toBe('Open · 16%');
+    expect(el.shadowRoot!.querySelector('.pos-text')?.textContent?.trim()).toBe('Open · 16%');
   });
 
   it('renders only the percentage when show_state is false', async () => {
     const el = await mount({ type: TYPE, entry_id: ENTRY, show_state: false }, makeHass());
-    expect(el.shadowRoot!.querySelector('.position')?.textContent?.trim()).toBe('42%');
+    expect(el.shadowRoot!.querySelector('.pos-text')?.textContent?.trim()).toBe('42%');
   });
 
   it('renders only the state when show_position is false', async () => {
     const el = await mount({ type: TYPE, entry_id: ENTRY, show_position: false }, makeHass());
-    expect(el.shadowRoot!.querySelector('.position')?.textContent?.trim()).toBe('Open');
+    expect(el.shadowRoot!.querySelector('.pos-text')?.textContent?.trim()).toBe('Open');
   });
 
-  it('hides the position cell entirely when both toggles are off', async () => {
+  it('hides the position text when both toggles are off (battery may remain)', async () => {
     const el = await mount(
       { type: TYPE, entry_id: ENTRY, show_position: false, show_state: false },
       makeHass(),
     );
-    expect(el.shadowRoot!.querySelector('.position')).toBeFalsy();
+    expect(el.shadowRoot!.querySelector('.pos-text')).toBeFalsy();
+    expect(el.shadowRoot!.querySelector('.battery')).toBeTruthy();
   });
 
   it('shows the entry-not-found message when the registry has no entities for the entry', async () => {
@@ -910,5 +930,73 @@ describe('AdaptiveCoverTileCard.getGridOptions', () => {
     const card = makeCard() as GridTileLike;
     card.setConfig({ type: TYPE, entry_id: ENTRY, layout: 'one-line' });
     expect(card.getGridOptions().rows).toBe('auto');
+  });
+});
+
+
+describe('adaptive-cover-tile-card battery indicator', () => {
+  it('healthy battery (>40%) is icon-only, no number, no tint', async () => {
+    const el = await mount({ type: TYPE, entry_id: ENTRY, cover: 'cover.left' }, makeHass());
+    const batt = el.shadowRoot!.querySelector('.battery');
+    expect(batt).toBeTruthy();
+    expect(batt!.textContent!.trim()).toBe('');
+    expect(batt!.classList.contains('warn')).toBe(false);
+    expect(batt!.classList.contains('low')).toBe(false);
+  });
+
+  it('shows the number once attention-worthy (<=40%)', async () => {
+    const el = await mount(
+      { type: TYPE, entry_id: ENTRY, cover: 'cover.left' },
+      makeHass({ batteryState: '36.0' }),
+    );
+    const batt = el.shadowRoot!.querySelector('.battery');
+    expect(batt!.textContent).toContain('36%');
+    expect(batt!.classList.contains('warn')).toBe(false);
+  });
+
+  it('turns amber at the household alert threshold (<=25%)', async () => {
+    const el = await mount(
+      { type: TYPE, entry_id: ENTRY, cover: 'cover.left' },
+      makeHass({ batteryState: '24.0' }),
+    );
+    const batt = el.shadowRoot!.querySelector('.battery');
+    expect(batt!.textContent).toContain('24%');
+    expect(batt!.classList.contains('warn')).toBe(true);
+    expect(batt!.classList.contains('low')).toBe(false);
+  });
+
+  it('turns red when death is imminent (<=12%)', async () => {
+    const el = await mount(
+      { type: TYPE, entry_id: ENTRY, cover: 'cover.left' },
+      makeHass({ batteryState: '10.0' }),
+    );
+    const batt = el.shadowRoot!.querySelector('.battery');
+    expect(batt!.textContent).toContain('10%');
+    expect(batt!.classList.contains('low')).toBe(true);
+  });
+
+  // Regression: the 5% shade died OFFLINE - unavailable must render a loud
+  // stale marker, never disappear like "no battery sensor".
+  it('unavailable battery sensor renders a red "?" marker', async () => {
+    const el = await mount(
+      { type: TYPE, entry_id: ENTRY, cover: 'cover.left' },
+      makeHass({ batteryState: 'unavailable' }),
+    );
+    const batt = el.shadowRoot!.querySelector('.battery');
+    expect(batt!.textContent).toContain('?');
+    expect(batt!.classList.contains('low')).toBe(true);
+  });
+
+  it('renders nothing when the cover has no battery sensor', async () => {
+    const el = await mount({ type: TYPE, entry_id: ENTRY, cover: 'cover.right' }, makeHass());
+    expect(el.shadowRoot!.querySelector('.battery')).toBeNull();
+  });
+
+  it('honors show_battery: false', async () => {
+    const el = await mount(
+      { type: TYPE, entry_id: ENTRY, cover: 'cover.left', show_battery: false },
+      makeHass(),
+    );
+    expect(el.shadowRoot!.querySelector('.battery')).toBeNull();
   });
 });

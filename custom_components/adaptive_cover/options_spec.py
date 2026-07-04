@@ -159,8 +159,12 @@ def add_entry_schema() -> vol.Schema:
 
 
 def change_settings_schema() -> vol.Schema:
-    """Build the service schema: config_entry + any changeable option."""
-    schema: dict = {vol.Required("config_entry"): str}
+    """Build the service schema: config_entry + rename + any changeable option."""
+    schema: dict = {
+        vol.Required("config_entry"): str,
+        # entry-data rename (title + device name + log prefix)
+        vol.Optional("name"): vol.All(str, vol.Length(min=1)),
+    }
     for key, validator in CHANGEABLE_OPTIONS.items():
         schema[vol.Optional(key)] = validator
     return vol.Schema(schema)

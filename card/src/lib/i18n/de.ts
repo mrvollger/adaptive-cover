@@ -202,6 +202,7 @@ export const de: EnDict = {
     automatic_control: 'Automatische Steuerung',
   },
   tile: {
+    battery: 'Batterie des Behangs',
     motion_pending: 'Bewegungs-Timeout läuft',
     motion_detected: 'Bewegung erkannt',
     open: 'Öffnen',

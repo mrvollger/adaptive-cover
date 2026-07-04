@@ -74,6 +74,9 @@ export interface AdaptiveCoverTileCardConfig extends LovelaceCardConfig {
   show_decision_summary?: boolean;
   /** Render the ↑■▼ controls row (default true). */
   show_controls?: boolean;
+  /** Render the cover device's battery % next to the position (default
+   *  true; auto-hidden when the cover has no battery sensor). */
+  show_battery?: boolean;
   /** Render the contextual badge (default true). Master switch for the tile
    *  badge — `badges` filters within it. */
   show_badge?: boolean;

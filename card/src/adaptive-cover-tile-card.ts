@@ -28,6 +28,13 @@ import {
 import { formatCoverState, formatPercent } from './lib/formatters';
 import { t } from './lib/i18n';
 import { confirmResume, resumeTarget } from './lib/confirm';
+import {
+  BATTERY_LOW_PCT,
+  BATTERY_SHOW_NUMBER_PCT,
+  BATTERY_WARN_PCT,
+  batteryReading,
+  findBatterySensor,
+} from './lib/battery';
 import { setTooltipDefaults, tooltip } from './lib/tooltip';
 
 import './components/tile-badge';
@@ -320,8 +327,41 @@ export class AdaptiveCoverTileCard extends LitElement {
     // becomes tappable to resume automatic control.
     const resumable = manualActive && !!discovered.entities.reset_override_button;
 
+    const batterySensor =
+      cfg.show_battery === false ? null : findBatterySensor(this._registry, primaryCover);
+    const battery = batteryReading(this.hass, batterySensor);
+    let batteryTpl: TemplateResult | typeof nothing = nothing;
+    if (battery !== null) {
+      // Offline sensor = possibly dead battery: loud stale marker, never hidden.
+      const cls = !battery.available
+        ? ' low'
+        : battery.level! <= BATTERY_LOW_PCT
+          ? ' low'
+          : battery.level! <= BATTERY_WARN_PCT
+            ? ' warn'
+            : '';
+      const icon = !battery.available
+        ? 'mdi:battery-unknown'
+        : battery.level! <= BATTERY_WARN_PCT
+          ? 'mdi:battery-alert'
+          : 'mdi:battery-outline';
+      const text = !battery.available
+        ? '?'
+        : battery.level! <= BATTERY_SHOW_NUMBER_PCT
+          ? `${Math.round(battery.level!)}%`
+          : '';
+      batteryTpl = html`<span class=${`battery${cls}`} title=${t('tile.battery', this.hass)}
+        ><ha-icon icon=${icon}></ha-icon>${text}</span
+      >`;
+    }
     const positionTpl =
-      labelParts.length > 0 ? html`<div class="position">${labelParts.join(' · ')}</div>` : nothing;
+      labelParts.length > 0 || battery !== null
+        ? html`<div class="position">
+            ${labelParts.length > 0
+              ? html`<span class="pos-text">${labelParts.join(' · ')}</span>`
+              : nothing}${batteryTpl}
+          </div>`
+        : nothing;
     const badgeTpl = renderBadge
       ? html`<acp-tile-badge
           .hass=${this.hass}
@@ -656,6 +696,24 @@ export class AdaptiveCoverTileCard extends LitElement {
       align-items: center;
       gap: 6px;
       min-width: 0;
+    }
+    .battery {
+      margin-left: 6px;
+      font-size: 0.72rem;
+      color: var(--secondary-text-color);
+      white-space: nowrap;
+    }
+    .battery ha-icon {
+      --mdc-icon-size: 13px;
+      vertical-align: -2px;
+    }
+    .battery.warn {
+      color: var(--warning-color, #e6a02e);
+      font-weight: 600;
+    }
+    .battery.low {
+      color: var(--error-color, #db4437);
+      font-weight: 600;
     }
     .detail-line .position {
       padding: 0;

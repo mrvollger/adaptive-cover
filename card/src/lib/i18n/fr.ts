@@ -202,6 +202,7 @@ export const fr: EnDict = {
     automatic_control: 'Contrôle automatique',
   },
   tile: {
+    battery: 'Batterie du store',
     motion_pending: 'Délai de mouvement en cours',
     motion_detected: 'Mouvement détecté',
     open: 'Ouvrir',
