@@ -85,13 +85,18 @@ def direct_sun_valid(config: CoverConfig, sun: SunSnapshot, ctx: TimeContext) ->
 
 
 def privacy_active(config: CoverConfig, ctx: TimeContext) -> bool:
-    """Dark outside: from sunset + privacy offset until sunrise."""
+    """Dark outside: from sunset + privacy offset until sunrise + sunrise offset."""
     if config.privacy is None or not config.privacy.enabled:
         return False
     after_dusk = ctx.now_utc > (
         ctx.sunset_utc + timedelta(minutes=config.privacy.offset_min)
     )
-    before_dawn = ctx.now_utc < ctx.sunrise_utc
+    # Dawn release honors the same sunrise offset as sunset_valid; a bare
+    # ctx.sunrise_utc held privacy covers closed 20 min past their
+    # siblings' morning open (regression 2026-07-02..09).
+    before_dawn = ctx.now_utc < (
+        ctx.sunrise_utc + timedelta(minutes=config.sunrise_offset_min)
+    )
     return after_dusk or before_dawn
 
 

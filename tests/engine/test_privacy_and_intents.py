@@ -106,6 +106,31 @@ class TestPrivacy:
         d = evaluate(cfg, NIGHT_SUN, before_dawn)
         assert d.intent == Intent.PRIVACY
 
+    def test_regression_privacy_dawn_honors_sunrise_offset(self):
+        """Privacy must release at sunrise + sunrise_offset_min, not bare sunrise.
+
+        2026-07-02..09: south shades (privacy on, sunrise_offset -20) stayed
+        pinned at privacy position until exact sunrise, opening 20 min after
+        their east/door siblings whose night hold released at sunrise - 20.
+        """
+        cfg = make_config(
+            privacy=PrivacyConfig(enabled=True), sunrise_offset_min=-20
+        )
+        # sunrise - 15: past the offset dawn, both night holds must be off.
+        released = TimeContext(datetime(2026, 12, 21, 14, 35), SUNRISE, SUNSET)
+        d = evaluate(cfg, NIGHT_SUN, released)
+        assert d.intent not in (Intent.PRIVACY, Intent.SUNSET)
+        assert d.position == 60  # default_position
+
+    def test_regression_privacy_dawn_still_held_before_offset(self):
+        """Before sunrise + (negative) offset the cover stays on night hold."""
+        cfg = make_config(
+            privacy=PrivacyConfig(enabled=True), sunrise_offset_min=-20
+        )
+        held = TimeContext(datetime(2026, 12, 21, 14, 25), SUNRISE, SUNSET)
+        d = evaluate(cfg, NIGHT_SUN, held)
+        assert d.position == 0
+
 
 class TestGlareWiredWinter:
     """Glare-limited admission engages exactly where eyes meet beams:
