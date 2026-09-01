@@ -118,12 +118,28 @@ async def test_house_mode_flips_all_entries(hass, mock_sun_entity):
     assert hass.states.get(select_id).state == "Manual"
 
 
+def _manual_binary(hass, entry):
+    """State of an entry's Manual Override binary sensor (entity surface)."""
+    eid = er.async_get(hass).async_get_entity_id(
+        "binary_sensor", DOMAIN, f"{entry.entry_id}_Manual Override"
+    )
+    assert eid is not None
+    return hass.states.get(eid)
+
+
 async def test_reset_all_button_clears_overrides(hass, mock_sun_entity):
+    """Reset-all clears overrides latched by REAL remote moves.
+
+    Overrides are latched through foreign cover state changes and observed
+    through the Manual Override binary sensors — no manager seeding/reads.
+    """
     e1, e2 = await _setup_two_entries(hass)
-    for entry, cover in ((e1, "cover.a"), (e2, "cover.b")):
-        coordinator = hass.data[DOMAIN][entry.entry_id]
-        coordinator.manager.mark_manual_control(cover)
-        coordinator.manager.manual_control_time[cover] = dt.datetime.now(dt.UTC)
+
+    for cover, position in (("cover.a", 55), ("cover.b", 70)):
+        hass.states.async_set(cover, "open", {"current_position": position})
+        await hass.async_block_till_done()
+    for entry in (e1, e2):
+        assert _manual_binary(hass, entry).state == "on"
 
     registry = er.async_get(hass)
     button_id = registry.async_get_entity_id(
@@ -134,9 +150,8 @@ async def test_reset_all_button_clears_overrides(hass, mock_sun_entity):
     )
     await hass.async_block_till_done()
 
-    for entry, cover in ((e1, "cover.a"), (e2, "cover.b")):
-        coordinator = hass.data[DOMAIN][entry.entry_id]
-        assert coordinator.manager.is_cover_manual(cover) is False
+    for entry in (e1, e2):
+        assert _manual_binary(hass, entry).state == "off"
 
 
 async def test_hub_unloads_cleanly(hass, mock_sun_entity):

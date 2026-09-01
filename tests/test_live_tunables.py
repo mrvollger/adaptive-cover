@@ -166,9 +166,19 @@ class TestModeSelect:
         )
         await hass.async_block_till_done()
 
-        coordinator = hass.data[DOMAIN][entry.entry_id]
-        assert coordinator.control_toggle is False
+        control_eid = _entity_id(
+            hass, "switch", f"{entry.entry_id}_Toggle Control"
+        )
+        assert hass.states.get(control_eid).state == "off"
         assert hass.states.get(eid).state == "Manual"
+
+        # Control off: a sun change commands nothing.
+        calls = async_mock_service(hass, "cover", "set_cover_position")
+        hass.states.async_set(
+            "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
+        )
+        await hass.async_block_till_done()
+        assert calls == []
 
     async def test_sun_tracking_mode_disables_climate(
         self, hass, cover_calls_stub, mock_sun_entity
@@ -185,9 +195,14 @@ class TestModeSelect:
         )
         await hass.async_block_till_done()
 
-        coordinator = hass.data[DOMAIN][entry.entry_id]
-        assert coordinator.control_toggle is True
-        assert coordinator.switch_mode is False
+        control_eid = _entity_id(
+            hass, "switch", f"{entry.entry_id}_Toggle Control"
+        )
+        climate_eid = _entity_id(
+            hass, "switch", f"{entry.entry_id}_Climate Mode"
+        )
+        assert hass.states.get(control_eid).state == "on"
+        assert hass.states.get(climate_eid).state == "off"
         assert hass.states.get(eid).state == "Sun tracking"
 
 

@@ -1,27 +1,23 @@
 """Shared machinery for the climate-mode truth table.
 
-Enumerates a cross-product of climate inputs and evaluates the CURRENT
-``ClimateCoverState`` implementation for each combination. The recorded
-outputs (``climate_truth_table.json``) are the spec that the intent-rule
-refactor must reproduce.
+Enumerates a cross-product of climate inputs and evaluates the engine seam
+``engine.evaluate(CoverConfig, SunSnapshot, TimeContext, ClimateInputs)``
+for each combination. The recorded outputs (``climate_truth_table.json``)
+are the spec that any refactor of the climate logic must reproduce.
 """
 
 from __future__ import annotations
 
 import json
-import logging
+from datetime import datetime
 from pathlib import Path
-from types import SimpleNamespace
-from unittest.mock import MagicMock
 
-from custom_components.adaptive_cover.calculation import (
-    AdaptiveTiltCover,
-    AdaptiveVerticalCover,
-    ClimateCoverData,
-    ClimateCoverState,
-)
-from custom_components.adaptive_cover.config_context_adapter import (
-    ConfigContextAdapter,
+from custom_components.adaptive_cover.engine import evaluate as engine_evaluate
+from custom_components.adaptive_cover.engine.models import (
+    ClimateInputs,
+    CoverConfig,
+    SunSnapshot,
+    TimeContext,
 )
 
 TRUTH_TABLE_PATH = Path(__file__).parent / "climate_truth_table.json"
@@ -48,79 +44,42 @@ WEATHER_CASES = {
 }
 BLIND_CASES = ["cover_blind", "tilt_mode1", "tilt_mode2"]
 
-
-class _FakeStates:
-    """Minimal stand-in for hass.states supporting get()."""
-
-    def __init__(self):
-        self._states = {}
-
-    def set(self, entity_id, state, attributes=None):
-        self._states[entity_id] = SimpleNamespace(
-            state=state, attributes=attributes or {}
-        )
-
-    def get(self, entity_id):
-        return self._states.get(entity_id)
+# Mid-day between sunrise and sunset: sunset_valid is False, matching the
+# historical mocked SunData (sunset far ahead, sunrise far behind).
+_CTX = TimeContext(
+    now_utc=datetime(2026, 6, 21, 12, 0, 0),
+    sunrise_utc=datetime(2026, 6, 21, 0, 0, 1),
+    sunset_utc=datetime(2026, 6, 21, 23, 59, 59),
+)
 
 
-def _make_logger():
-    logger = ConfigContextAdapter(logging.getLogger("truth_table"))
-    logger.set_config_name("TruthTable")
-    return logger
-
-
-def _make_hass(temp, presence_entity, presence_state, weather_entity, weather_state):
-    hass = MagicMock()
-    states = _FakeStates()
-    states.set("sensor.indoor_temp", str(temp))
-    if presence_entity:
-        states.set(presence_entity, presence_state)
-    if weather_entity:
-        states.set(weather_entity, weather_state)
-    hass.states = states
-    return hass
-
-
-def _cover_kwargs(sol_azi, sol_elev):
-    return dict(
-        logger=_make_logger(),
-        sol_azi=sol_azi,
-        sol_elev=sol_elev,
-        sunset_pos=0,
-        sunset_off=0,
-        sunrise_off=0,
-        timezone="UTC",
+def _make_config(blind_case: str) -> CoverConfig:
+    """Engine config for one blind case (mirrors the historical fixtures)."""
+    common = dict(
+        window_azimuth=180,
         fov_left=90,
         fov_right=90,
-        win_azi=180,
-        h_def=60,
-        max_pos=None,
-        min_pos=None,
-        max_pos_bool=False,
-        min_pos_bool=False,
-        blind_spot_left=None,
-        blind_spot_right=None,
-        blind_spot_elevation=None,
-        blind_spot_on=False,
+        default_position=60,
+        sunset_position=0,
+        sunset_offset_min=0,
+        sunrise_offset_min=0,
         min_elevation=None,
         max_elevation=None,
     )
-
-
-def _make_cover(hass, blind_case, sun):
-    sol_azi, sol_elev = sun
     if blind_case == "cover_blind":
-        return AdaptiveVerticalCover(
-            hass=hass, **_cover_kwargs(sol_azi, sol_elev), distance=0.5, h_win=2.1
+        return CoverConfig(
+            cover_type="vertical",
+            distance_shaded_area=0.5,
+            window_height=2.1,
+            **common,
         )
     mode = "mode1" if blind_case == "tilt_mode1" else "mode2"
-    return AdaptiveTiltCover(
-        hass=hass,
-        **_cover_kwargs(sol_azi, sol_elev),
+    return CoverConfig(
+        cover_type="tilt",
         slat_distance=2,
-        depth=3,
-        mode=mode,
+        slat_depth=3,
+        tilt_mode=mode,
+        **common,
     )
 
 
@@ -146,44 +105,47 @@ def iter_combos():
                             yield presence, temp, weather, blind, valid, transparent
 
 
-def evaluate_combo(presence, temp, weather, blind, valid, transparent):
-    """Run the current climate implementation for one combination."""
-    presence_entity, presence_state = PRESENCE_CASES[presence]
+def _resolve_inputs(presence, temp, weather, transparent):
+    """Resolve one combo's readings the way the adapter would.
+
+    presence: no entity -> present; device_tracker -> state == "home".
+    season: inside temp vs thresholds (no outside entity -> outside_high
+    permissive). weather: no entity -> sunny; entity -> condition-list match.
+    """
+    _, presence_state = PRESENCE_CASES[presence]
     weather_entity, weather_state = WEATHER_CASES[weather]
     temp_value = TEMP_CASES[temp]
-    hass = _make_hass(
-        temp_value, presence_entity, presence_state, weather_entity, weather_state
+    if weather_entity is None:
+        is_sunny = True
+    else:
+        is_sunny = weather_state in WEATHER_CONDITIONS
+    return ClimateInputs(
+        presence=presence_state is None or presence_state == "home",
+        is_summer=temp_value > TEMP_HIGH,
+        is_winter=temp_value < TEMP_LOW,
+        is_sunny=is_sunny,
+        lux_dim=False,
+        irradiance_dim=False,
+        transparent_blind=bool(transparent),
     )
-    sun = SUN_VALID if valid else SUN_INVALID
-    cover = _make_cover(hass, blind, sun)
-    blind_type = "cover_tilt" if blind.startswith("tilt") else blind
-    climate = ClimateCoverData(
-        hass=hass,
-        logger=_make_logger(),
-        temp_entity="sensor.indoor_temp",
-        temp_low=TEMP_LOW,
-        temp_high=TEMP_HIGH,
-        presence_entity=presence_entity,
-        weather_entity=weather_entity,
-        weather_condition=WEATHER_CONDITIONS if weather_entity else None,
-        outside_entity=None,
-        temp_switch=False,
-        blind_type=blind_type,
-        transparent_blind=transparent,
-        lux_entity=None,
-        irradiance_entity=None,
-        lux_threshold=None,
-        irradiance_threshold=None,
-        temp_summer_outside=0,
-        _use_lux=False,
-        _use_irradiance=False,
+
+
+def evaluate_combo(presence, temp, weather, blind, valid, transparent):
+    """Run the engine for one combination."""
+    config = _make_config(blind)
+    sol_azi, sol_elev = SUN_VALID if valid else SUN_INVALID
+    inputs = _resolve_inputs(presence, temp, weather, transparent)
+    decision = engine_evaluate(
+        config,
+        SunSnapshot(azimuth=sol_azi, elevation=sol_elev),
+        _CTX,
+        inputs,
     )
-    state = ClimateCoverState(cover, climate)
     return {
-        "state": round(float(state.get_state())),
-        "is_summer": bool(climate.is_summer),
-        "is_winter": bool(climate.is_winter),
-        "is_presence": bool(climate.is_presence),
+        "state": round(float(decision.position)),
+        "is_summer": inputs.is_summer,
+        "is_winter": inputs.is_winter,
+        "is_presence": inputs.presence,
     }
 
 

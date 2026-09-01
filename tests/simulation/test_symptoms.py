@@ -7,8 +7,6 @@
 These run the REAL integration against the simulated house (see harness.py).
 """
 
-import pytest
-
 from custom_components.adaptive_cover.const import (
     CONF_END_TIME,
     CONF_MANUAL_OVERRIDE_DURATION,
@@ -193,37 +191,8 @@ async def test_end_time_close_fires_despite_manual_override(hass, freezer):
     await house.teardown()
 
 
-async def test_end_time_close_retries_after_unavailable(hass, freezer):
-    """A shade unavailable at the end time must still close once it returns.
-
-    End time 18:00 is well before sunset, so during the outage the shade
-    still sits at its daytime position — after 18:00 the adaptive path is
-    outside the time window, and ONLY the pending-close retry can close it.
-    """
-    house = await make_house(
-        hass,
-        freezer,
-        options={
-            CONF_END_TIME: "18:00:00",
-            CONF_RETURN_SUNSET: True,
-            CONF_SUNSET_POS: 0,
-        },
-    )
-    await house.advance_to("17:50")
-    shade = house.shades[SHADE]
-    assert house.position(SHADE) not in (0,), "shade should be tracking now"
-    # Device drops off the network across the end time; the close's
-    # service call raises (the harness models HA's unavailable behavior).
-    hass.states.async_set(SHADE, "unavailable", {})
-    await house.advance_to("18:30")
-    assert house.position(SHADE) != 0, "close cannot have been delivered"
-    # Device comes back at its old (daytime) position.
-    house._write_shade_state(shade, "open", __import__(
-        "homeassistant.core", fromlist=["Context"]
-    ).Context(), actor="device")
-    await house.advance_to("19:15")
-    assert house.position(SHADE) == 0, (
-        "shade never closed after returning from unavailable; timeline: "
-        f"{[e for e in house.timeline if e.time.hour >= 17]}"
-    )
-    await house.teardown()
+# The former test_end_time_close_retries_after_unavailable was vacuous: the
+# fake cover service never raised for unavailable shades, so the pending-snap
+# retry path it claimed to pin was never exercised. Its real replacement is
+# tests/simulation/test_device_failures.py::test_pending_end_snap_real_retry,
+# which makes the service call genuinely raise (kills mutation M16).

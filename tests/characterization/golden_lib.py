@@ -1,43 +1,45 @@
-"""Golden-day harness: run the CURRENT cover pipeline over a real solar day.
+"""Golden-day harness: run the engine over a real solar day.
 
 Each scenario fixes location, date, and cover config, then steps through the
-day at 15-minute intervals computing the position and reason the current
-implementation produces. The rendered schedule is committed under
-``goldens/`` and doubles as the acceptance spec for the engine refactor:
-the new engine must reproduce these schedules bit-for-bit.
+day at 15-minute intervals computing the position and reason via the pure
+engine seam ``engine.evaluate(config, sun, ctx, climate)``. The rendered
+schedule is committed under ``goldens/`` and doubles as the acceptance spec
+for refactors: a new implementation must reproduce these schedules
+bit-for-bit.
 """
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pandas as pd
 from astral import LocationInfo
 from astral import sun as astral_sun
 from astral.location import Location
-from freezegun import freeze_time
 
-from custom_components.adaptive_cover.calculation import (
-    AdaptiveHorizontalCover,
-    AdaptiveTiltCover,
-    AdaptiveVerticalCover,
-    ClimateCoverData,
-    ClimateCoverState,
-    NormalCoverState,
-    get_state_reason,
-)
-from custom_components.adaptive_cover.config_context_adapter import (
-    ConfigContextAdapter,
+from custom_components.adaptive_cover.engine import evaluate as engine_evaluate
+from custom_components.adaptive_cover.engine import geometry as engine_geometry
+from custom_components.adaptive_cover.engine.models import (
+    ClimateInputs,
+    CoverConfig,
+    GlareModel,
+    Overhang,
+    PositionLimits,
+    PrivacyConfig,
+    SunSnapshot,
+    TimeContext,
 )
 
 GOLDENS_DIR = Path(__file__).parent / "goldens"
 
 SLC = dict(lat=40.76, lon=-111.89, tz="America/Denver")
 STEP_MINUTES = 15
+
+TEMP_LOW = 21.0
+TEMP_HIGH = 23.0
+WEATHER_CONDITIONS = ("sunny", "partlycloudy", "clear")
 
 
 def patch_sun_data(sun_data):
@@ -93,21 +95,6 @@ class FakeSunData:
 
     def sunrise(self):
         return astral_sun.sunrise(self.observer, self.date)
-
-
-class FakeStates:
-    """Minimal hass.states stand-in."""
-
-    def __init__(self):
-        self._states = {}
-
-    def set(self, entity_id, state, attributes=None):
-        self._states[entity_id] = SimpleNamespace(
-            state=state, attributes=attributes or {}
-        )
-
-    def get(self, entity_id):
-        return self._states.get(entity_id)
 
 
 @dataclass
@@ -204,94 +191,181 @@ SCENARIOS = [
 ]
 
 
-def _make_logger():
-    logger = ConfigContextAdapter(logging.getLogger("golden"))
-    logger.set_config_name("Golden")
-    return logger
-
-
-def _make_cover(scenario, hass, sol_azi, sol_elev):
+def _engine_config(scenario: Scenario) -> CoverConfig:
+    """Build the pure engine config for one scenario."""
     common = dict(
-        hass=hass,
-        logger=_make_logger(),
-        sol_azi=sol_azi,
-        sol_elev=sol_elev,
-        sunset_pos=scenario.sunset_pos,
-        sunset_off=scenario.sunset_off,
-        sunrise_off=scenario.sunrise_off,
-        timezone=scenario.location["tz"],
+        window_azimuth=scenario.win_azi,
         fov_left=scenario.fov_left,
         fov_right=scenario.fov_right,
-        win_azi=scenario.win_azi,
-        h_def=scenario.h_def,
-        max_pos=scenario.max_pos,
-        min_pos=scenario.min_pos,
-        max_pos_bool=False,
-        min_pos_bool=False,
-        blind_spot_left=None,
-        blind_spot_right=None,
-        blind_spot_elevation=None,
-        blind_spot_on=False,
+        default_position=scenario.h_def,
+        sunset_position=scenario.sunset_pos,
+        sunset_offset_min=scenario.sunset_off,
+        sunrise_offset_min=scenario.sunrise_off,
         min_elevation=scenario.min_elevation,
         max_elevation=scenario.max_elevation,
+        limits=PositionLimits(
+            min_position=scenario.min_pos,
+            max_position=scenario.max_pos,
+            min_only_when_sun=False,
+            max_only_when_sun=False,
+        ),
+        overhang=(
+            Overhang(
+                depth=scenario.overhang[0],
+                height_above_sill=scenario.overhang[1],
+            )
+            if scenario.overhang
+            else None
+        ),
+        glare=(
+            GlareModel(
+                eye_height=scenario.glare[0],
+                occupied_distance=scenario.glare[1],
+            )
+            if scenario.glare
+            else None
+        ),
+        privacy=(
+            PrivacyConfig(
+                enabled=True,
+                offset_min=scenario.privacy[0],
+                position=scenario.privacy[1],
+            )
+            if scenario.privacy
+            else None
+        ),
     )
     if scenario.cover_type == "vertical":
-        return AdaptiveVerticalCover(
-            **common, distance=scenario.distance, h_win=scenario.h_win
+        return CoverConfig(
+            cover_type="vertical",
+            distance_shaded_area=scenario.distance,
+            window_height=scenario.h_win,
+            **common,
         )
     if scenario.cover_type == "awning":
-        return AdaptiveHorizontalCover(
+        return CoverConfig(
+            cover_type="awning",
+            distance_shaded_area=scenario.distance,
+            window_height=scenario.h_win,
+            awning_length=scenario.awn_length,
+            awning_angle=scenario.awn_angle,
             **common,
-            distance=scenario.distance,
-            h_win=scenario.h_win,
-            awn_length=scenario.awn_length,
-            awn_angle=scenario.awn_angle,
         )
-    return AdaptiveTiltCover(
-        **common,
+    return CoverConfig(
+        cover_type="tilt",
         slat_distance=scenario.slat_distance,
-        depth=scenario.slat_depth,
-        mode=scenario.tilt_mode,
+        slat_depth=scenario.slat_depth,
+        tilt_mode=scenario.tilt_mode,
+        **common,
     )
 
 
-def _make_climate(scenario, hass):
+def _climate_inputs(scenario: Scenario) -> ClimateInputs:
+    """Resolve the scenario's climate dict the way the adapter would."""
     cfg = scenario.climate
-    states = hass.states
-    states.set("sensor.indoor_temp", str(cfg["temp"]))
-    states.set("device_tracker.person", cfg["presence"])
-    states.set("weather.home", cfg["weather"])
-    return ClimateCoverData(
-        hass=hass,
-        logger=_make_logger(),
-        temp_entity="sensor.indoor_temp",
-        temp_low=21.0,
-        temp_high=23.0,
-        presence_entity="device_tracker.person",
-        weather_entity="weather.home",
-        weather_condition=["sunny", "partlycloudy", "clear"],
-        outside_entity=None,
-        temp_switch=False,
-        blind_type="cover_tilt" if scenario.cover_type == "tilt" else "cover_blind",
+    temp = float(cfg["temp"])
+    return ClimateInputs(
+        presence=cfg["presence"] == "home",
+        is_summer=temp > TEMP_HIGH,
+        is_winter=temp < TEMP_LOW,
+        is_sunny=cfg["weather"] in WEATHER_CONDITIONS,
+        lux_dim=False,
+        irradiance_dim=False,
         transparent_blind=False,
-        lux_entity=None,
-        irradiance_entity=None,
-        lux_threshold=None,
-        irradiance_threshold=None,
-        temp_summer_outside=0,
-        _use_lux=False,
-        _use_irradiance=False,
     )
+
+
+def _solar_times(scenario: Scenario, sun_data: FakeSunData):
+    """Start/end sun times over the day table (mirrors the adapter's rule)."""
+    solpos = pd.DataFrame(
+        {
+            "azimuth": sun_data.solar_azimuth,
+            "elevation": sun_data.solar_elevation,
+        }
+    ).set_index(sun_data.times)
+    azi_min_abs = (scenario.win_azi - scenario.fov_left + 360) % 360
+    azi_max_abs = (scenario.win_azi + scenario.fov_right + 360) % 360
+    alpha = solpos["azimuth"]
+    elevation_ok = solpos["elevation"].map(
+        lambda elev: engine_geometry.valid_elevation(
+            elev, scenario.min_elevation, scenario.max_elevation
+        )
+    )
+    frame = (
+        (alpha - azi_min_abs) % 360 <= (azi_max_abs - azi_min_abs) % 360
+    ) & elevation_ok
+    if solpos[frame].empty:
+        return None, None
+    return (
+        solpos[frame].index[0].to_pydatetime(),
+        solpos[frame].index[-1].to_pydatetime(),
+    )
+
+
+def _basic_reason(
+    config: CoverConfig, sun: SunSnapshot, ctx: TimeContext
+) -> str:
+    """Human-readable reason, byte-identical to get_state_reason()."""
+    if engine_geometry.direct_sun_valid(config, sun, ctx):
+        return f"Sun in window (azi {sun.azimuth:.0f}°, elev {sun.elevation:.0f}°)"
+    if engine_geometry.sunset_valid(config, ctx):
+        return "Sunset position"
+    if sun.elevation < 0:
+        return "Sun below horizon"
+    if not engine_geometry.valid_elevation(
+        sun.elevation, config.min_elevation, config.max_elevation
+    ):
+        return f"Elevation {sun.elevation:.0f}° outside configured range"
+    if engine_geometry.in_blind_spot(config, sun):
+        return "Sun in blind spot"
+    if not engine_geometry.sun_in_fov(config, sun):
+        g = engine_geometry.gamma(config.window_azimuth, sun.azimuth)
+        return f"Sun outside field of view (gamma {g:.0f}°)"
+    return "Default position"
+
+
+def _climate_reason(
+    config: CoverConfig,
+    sun: SunSnapshot,
+    ctx: TimeContext,
+    inputs: ClimateInputs,
+) -> str:
+    """Climate-mode reason, byte-identical to _get_climate_reason()."""
+    if not inputs.presence:
+        if engine_geometry.sun_in_fov(config, sun):
+            if inputs.is_summer:
+                return "No presence, summer: blocking sun"
+            if inputs.is_winter:
+                return "No presence, winter: maximizing sun"
+        return "No presence: default position"
+
+    not_sunny = inputs.lux_dim or inputs.irradiance_dim or not inputs.is_sunny
+
+    if not inputs.is_summer and not_sunny:
+        if inputs.is_winter and engine_geometry.sun_in_fov(config, sun):
+            return "Winter mode: maximizing sun"
+        return "Not sunny weather: using default"
+
+    if inputs.is_summer and inputs.transparent_blind:
+        return "Summer mode: blocking sun (transparent blind)"
+
+    if engine_geometry.direct_sun_valid(config, sun, ctx):
+        return (
+            f"Climate mode: sun in window "
+            f"(azi {sun.azimuth:.0f}°, elev {sun.elevation:.0f}°)"
+        )
+
+    return _basic_reason(config, sun, ctx)
 
 
 def render_scenario(scenario: Scenario) -> str:
-    """Run one scenario through the current pipeline; return the schedule text."""
+    """Run one scenario through engine.evaluate(); return the schedule text."""
     loc = scenario.location
     date = pd.Timestamp(scenario.date)
     sun_data = FakeSunData(loc["lat"], loc["lon"], loc["tz"], date)
 
-    hass = MagicMock()
-    hass.states = FakeStates()
+    config = _engine_config(scenario)
+    inputs = _climate_inputs(scenario) if scenario.climate else None
 
     lines = [
         f"# scenario={scenario.name} date={scenario.date} "
@@ -302,48 +376,33 @@ def render_scenario(scenario: Scenario) -> str:
         f"climate={'on' if scenario.climate else 'off'}",
     ]
 
-    with patch_sun_data(sun_data):
-        cover = _make_cover(scenario, hass, 180.0, 0.0)
-        if scenario.overhang:
-            from custom_components.adaptive_cover.engine.models import Overhang
+    start, end = _solar_times(scenario, sun_data)
+    lines.append(f"# solar_times start={start} end={end}")
 
-            cover.overhang = Overhang(
-                depth=scenario.overhang[0], height_above_sill=scenario.overhang[1]
-            )
-        if scenario.glare:
-            from custom_components.adaptive_cover.engine.models import GlareModel
+    sunrise_utc = sun_data.sunrise().replace(tzinfo=None)
+    sunset_utc = sun_data.sunset().replace(tzinfo=None)
 
-            cover.glare = GlareModel(
-                eye_height=scenario.glare[0], occupied_distance=scenario.glare[1]
-            )
-        if scenario.privacy:
-            from custom_components.adaptive_cover.engine.models import PrivacyConfig
-
-            cover.privacy = PrivacyConfig(
-                enabled=True,
-                offset_min=scenario.privacy[0],
-                position=scenario.privacy[1],
-            )
-        start, end = cover.solar_times()
-        lines.append(f"# solar_times start={start} end={end}")
-
-        for i, ts in enumerate(sun_data.times):
-            cover.sol_azi = sun_data.solar_azimuth[i]
-            cover.sol_elev = sun_data.solar_elevation[i]
-            with freeze_time(ts.to_pydatetime()):
-                if scenario.climate:
-                    climate = _make_climate(scenario, hass)
-                    state = ClimateCoverState(cover, climate)
-                    pos = round(float(state.get_state()))
-                    reason = get_state_reason(cover, climate)
-                else:
-                    pos = round(float(NormalCoverState(cover).get_state()))
-                    reason = get_state_reason(cover)
-            lines.append(
-                f"{ts.strftime('%H:%M')} pos={pos:>3} "
-                f"azi={cover.sol_azi:6.1f} elev={cover.sol_elev:5.1f} "
-                f"reason={reason}"
-            )
+    for i, ts in enumerate(sun_data.times):
+        sun = SunSnapshot(
+            azimuth=sun_data.solar_azimuth[i],
+            elevation=sun_data.solar_elevation[i],
+        )
+        ctx = TimeContext(
+            now_utc=ts.tz_convert("UTC").tz_localize(None).to_pydatetime(),
+            sunrise_utc=sunrise_utc,
+            sunset_utc=sunset_utc,
+        )
+        decision = engine_evaluate(config, sun, ctx, inputs)
+        pos = round(float(decision.position))
+        if scenario.climate:
+            reason = _climate_reason(config, sun, ctx, inputs)
+        else:
+            reason = _basic_reason(config, sun, ctx)
+        lines.append(
+            f"{ts.strftime('%H:%M')} pos={pos:>3} "
+            f"azi={sun.azimuth:6.1f} elev={sun.elevation:5.1f} "
+            f"reason={reason}"
+        )
     return "\n".join(lines) + "\n"
 
 
