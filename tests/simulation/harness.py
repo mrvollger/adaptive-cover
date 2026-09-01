@@ -293,6 +293,13 @@ class SimHouse:
             entity_id = call.data["entity_id"]
             target = int(call.data.get("position", call.data.get("tilt_position")))
             shade = self.shades[entity_id]
+            current = self.hass.states.get(entity_id)
+            if current is not None and current.state == "unavailable":
+                # Real HA raises when an entity service targets an
+                # unavailable entity; the integration must handle it.
+                from homeassistant.exceptions import HomeAssistantError
+
+                raise HomeAssistantError(f"Entity {entity_id} is unavailable")
             actor = self._actor_for(call.context)
             self.timeline.append(
                 TimelineEvent(

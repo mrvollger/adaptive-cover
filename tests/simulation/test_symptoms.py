@@ -194,28 +194,36 @@ async def test_end_time_close_fires_despite_manual_override(hass, freezer):
 
 
 async def test_end_time_close_retries_after_unavailable(hass, freezer):
-    """A shade unavailable at the end time must still close once it returns."""
+    """A shade unavailable at the end time must still close once it returns.
+
+    End time 18:00 is well before sunset, so during the outage the shade
+    still sits at its daytime position — after 18:00 the adaptive path is
+    outside the time window, and ONLY the pending-close retry can close it.
+    """
     house = await make_house(
         hass,
         freezer,
         options={
-            CONF_END_TIME: "20:00:00",
+            CONF_END_TIME: "18:00:00",
             CONF_RETURN_SUNSET: True,
             CONF_SUNSET_POS: 0,
         },
     )
-    await house.advance_to("19:50")
+    await house.advance_to("17:50")
     shade = house.shades[SHADE]
-    # Device drops off the network across the end time.
+    assert house.position(SHADE) not in (0,), "shade should be tracking now"
+    # Device drops off the network across the end time; the close's
+    # service call raises (the harness models HA's unavailable behavior).
     hass.states.async_set(SHADE, "unavailable", {})
-    await house.advance_to("20:30")
-    # Device comes back at its old position.
+    await house.advance_to("18:30")
+    assert house.position(SHADE) != 0, "close cannot have been delivered"
+    # Device comes back at its old (daytime) position.
     house._write_shade_state(shade, "open", __import__(
         "homeassistant.core", fromlist=["Context"]
     ).Context(), actor="device")
-    await house.advance_to("21:30")
+    await house.advance_to("19:15")
     assert house.position(SHADE) == 0, (
         "shade never closed after returning from unavailable; timeline: "
-        f"{[e for e in house.timeline if e.time.hour >= 19]}"
+        f"{[e for e in house.timeline if e.time.hour >= 17]}"
     )
     await house.teardown()

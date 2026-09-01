@@ -1171,6 +1171,12 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         already in position), False when delivery failed — e.g. the device
         is unavailable — so one-shot moves (end-of-day close) can retry.
         """
+        entity_state = get_safe_state(self.hass, entity)
+        if entity_state in ("unavailable", "unknown"):
+            self.logger.warning(
+                "Cannot command %s to %s: entity is %s", entity, state, entity_state
+            )
+            return False
         if self.check_position(entity, state):
             service = SERVICE_SET_COVER_POSITION
             service_data = {}
@@ -1194,8 +1200,10 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             ctx = Context()
             self._our_context_ids.append(ctx.id)
             try:
+                # blocking=True so a failing device raises HERE, not in a
+                # fire-and-forget background task we can never observe.
                 await self.hass.services.async_call(
-                    COVER_DOMAIN, service, service_data, context=ctx
+                    COVER_DOMAIN, service, service_data, context=ctx, blocking=True
                 )
             except Exception:  # noqa: BLE001 - a dead device must not kill the loop
                 self.logger.warning(
