@@ -35,8 +35,6 @@ change_settings:
       example: "Family south"
       selector:
         text:
-      selector:
-        text:
     overhang_depth:
       name: Overhang depth (m)
       selector: { number: { min: 0, max: 5, step: 0.01, mode: box } }

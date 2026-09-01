@@ -164,10 +164,33 @@ Season is determined by comparing current temperature against configurable low/h
 ## Manual Override Detection
 
 1. Cover state change event fires
-2. Coordinator compares cover's actual position to last calculated position
-3. If difference exceeds `CONF_DELTA_POSITION` threshold → mark as manually overridden
-4. Override persists for `CONF_MANUAL_OVERRIDE_DURATION` minutes (or until reset button)
-5. `CONF_MANUAL_OVERRIDE_RESET` controls whether auto-control resumes after duration
+2. A human move is detected by any of: foreign `opening`/`closing` when no
+   command is in flight (motion-start latch); motion AGAINST our in-flight
+   command's direction; a definitive landing inside the travel window that
+   differs from OUR commanded target; or a landing that differs from the
+   computed state when idle. Landings matching our own commanded target
+   (±`TARGET_TOLERANCE`) are never manual, even if the computed state
+   drifted during travel.
+3. Every override expires after `CONF_MANUAL_OVERRIDE_DURATION` and
+   auto-control resumes (user intent: a manual move wins for ~the
+   configured window, e.g. 1.5-2 h). `CONF_MANUAL_OVERRIDE_RESET` only
+   controls whether LATER manual moves restart that clock (True) or the
+   clock runs from the first manual move (False). Day rollover
+   (local-date) clears any leftover override as a safety net.
+4. Override state lives in `hass.data[f"{DOMAIN}_manual_state"]` and
+   survives options reloads; only an EXPLICIT manual-toggle off clears it.
+5. The scheduled end-of-day close bypasses manual overrides when it fires
+   on time; a catch-up close (armed late after restart/reload) respects
+   them. Undeliverable end-of-day closes (cover unavailable) retry when the
+   cover returns.
+
+## Simulation harness (`tests/simulation/`)
+
+Full-day replay of the REAL integration against fake shades, a real astral
+sun, and a stepped frozen clock — house behavior is reproducible in pytest
+without touching the house. See `tests/simulation/README.md`. New
+coordinator-level bugs get a scenario there (symptom pin) in addition to
+unit regressions.
 
 ## Dependencies
 

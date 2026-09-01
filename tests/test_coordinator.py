@@ -433,12 +433,12 @@ class TestUpdateManagerAndCovers:
 
         assert coord.manager.is_cover_manual("cover.a") is False
 
-    def test_manual_toggle_none_clears_override(self):
-        """When manual_toggle=None (init state), overrides should be cleared.
+    def test_regression_manual_toggle_none_preserves_override(self):
+        """manual_toggle=None (startup/reload, switches not restored yet)
+        must NOT clear overrides — only an explicit off does.
 
-        This is the race condition: _manual_toggle starts as None, and
-        `not None` is True, so all overrides get reset on every update
-        cycle until the switch entity sets it to True.
+        Treating the init-state None as off wiped every override on entry
+        reload (any options edit) before the switch entity restored.
         """
         coord = _make_mock_coordinator(manual_toggle=None)
         coord.manager.mark_manual_control("cover.a")
@@ -446,7 +446,16 @@ class TestUpdateManagerAndCovers:
 
         coord._update_manager_and_covers()
 
-        # With the current code: not None → True → overrides cleared
+        assert coord.manager.is_cover_manual("cover.a") is True
+
+    def test_manual_toggle_explicit_off_clears_override(self):
+        """An explicit off still clears all overrides."""
+        coord = _make_mock_coordinator(manual_toggle=False)
+        coord.manager.mark_manual_control("cover.a")
+        coord.manager.manual_control_time["cover.a"] = dt.datetime.now(dt.UTC)
+
+        coord._update_manager_and_covers()
+
         assert coord.manager.is_cover_manual("cover.a") is False
 
     def test_duration_propagated_to_manager(self):

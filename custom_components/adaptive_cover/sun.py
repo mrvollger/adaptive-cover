@@ -4,8 +4,26 @@ from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pandas as pd
+from astral import LocationInfo
+from astral.location import Location
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.sun import get_astral_location
+
+
+def _astral_location(hass: HomeAssistant) -> tuple[Location, float]:
+    """Build an astral Location from the HA core configuration.
+
+    Replaces the deprecated ``homeassistant.helpers.sun.get_astral_location``
+    (which logged a deprecation warning on every call) with the same
+    construction that helper performed internally.
+    """
+    info = LocationInfo(
+        "",
+        "",
+        str(hass.config.time_zone),
+        hass.config.latitude,
+        hass.config.longitude,
+    )
+    return Location(info), hass.config.elevation
 
 
 class SunData:
@@ -13,10 +31,16 @@ class SunData:
 
     def __init__(self, timezone, hass: HomeAssistant) -> None:  # noqa: D107
         self.hass = hass
-        location, elevation = get_astral_location(self.hass)
+        location, elevation = _astral_location(hass)
         self.location = location  # astral.location.Location
         self.elevation = elevation
         self.timezone = timezone
+        # Per-local-date snapshot cache: times + azimuth/elevation computed
+        # together so they can never pair data from different days.
+        self._snapshot_date: date | None = None
+        self._times: pd.DatetimeIndex | None = None
+        self._solar_azimuth: list | None = None
+        self._solar_elevation: list | None = None
 
     def _today_local(self) -> date:
         """Today in the HA-configured timezone.
@@ -28,40 +52,49 @@ class SunData:
         """
         return datetime.now(ZoneInfo(str(self.timezone))).date()
 
+    def _snapshot(self) -> tuple[pd.DatetimeIndex, list, list]:
+        """Return (times, azimuth, elevation) computed from one date read.
+
+        Historically each property regenerated the times index on access,
+        so around midnight (or a DST shift) the azimuth/elevation lists
+        could be paired with a different day's index. Compute everything
+        once per local date and serve it from the same snapshot.
+        """
+        today = self._today_local()
+        if self._snapshot_date != today:
+            start_date = today
+            end_date = start_date + timedelta(days=1)
+            times = pd.date_range(
+                start=start_date,
+                end=end_date,
+                freq="5min",
+                tz=self.timezone,
+                name="time",
+            )
+            self._times = times
+            self._solar_azimuth = [
+                self.location.solar_azimuth(ts, self.elevation) for ts in times
+            ]
+            self._solar_elevation = [
+                self.location.solar_elevation(ts, self.elevation) for ts in times
+            ]
+            self._snapshot_date = today
+        return self._times, self._solar_azimuth, self._solar_elevation
+
     @property
     def times(self) -> pd.DatetimeIndex:
         """Define time interval."""
-        start_date = self._today_local()
-        end_date = start_date + timedelta(days=1)
-
-        times = pd.date_range(
-            start=start_date, end=end_date, freq="5min", tz=self.timezone, name="time"
-        )
-        return times
+        return self._snapshot()[0]
 
     @property
     def solar_azimuth(self) -> list:
         """Create list with solar azimuth data per 5 minutes."""
-        index = 0
-        azi_list = []
-        for _i in self.times:
-            azi_list.append(
-                self.location.solar_azimuth(self.times[index], self.elevation)
-            )
-            index += 1
-        return azi_list
+        return self._snapshot()[1]
 
     @property
     def solar_elevation(self) -> list:
         """Create list with solar elevation data per 5 minutes."""
-        index = 0
-        ele_list = []
-        for _i in self.times:
-            ele_list.append(
-                self.location.solar_elevation(self.times[index], self.elevation)
-            )
-            index += 1
-        return ele_list
+        return self._snapshot()[2]
 
     def sunset(self) -> datetime:
         """Fetch today's (local date) sunset time."""
@@ -70,9 +103,3 @@ class SunData:
     def sunrise(self) -> datetime:
         """Fetch today's (local date) sunrise time."""
         return self.location.sunrise(self._today_local(), local=False)
-
-    # def df_today(self)-> pd.DataFrame:
-    #     """Create dataframe with azimuth and elevation data"""
-    #     df_today = pd.DataFrame({"azimuth":self.solar_azimuth, "elevation":self.solar_elevation})
-    #     df_today = df_today.set_index(self.times)
-    #     return df_today

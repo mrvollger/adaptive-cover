@@ -226,10 +226,18 @@ class AdaptiveGeneralCover(ABC):
         solpos = df_today.set_index(self.sun_data.times)
 
         alpha = solpos["azimuth"]
+        # Use the same elevation predicate the engine enforces (min/max
+        # elevation band) so the start/end sun-time sensors agree with
+        # when control actually engages.
+        elevation_ok = solpos["elevation"].map(
+            lambda elev: engine_geometry.valid_elevation(
+                elev, self.min_elevation, self.max_elevation
+            )
+        )
         frame = (
             (alpha - self.azi_min_abs) % 360
             <= (self.azi_max_abs - self.azi_min_abs) % 360
-        ) & (solpos["elevation"] > 0)
+        ) & elevation_ok
 
         if solpos[frame].empty:
             return None, None
@@ -408,6 +416,21 @@ class ClimateCoverData:
     _use_lux: bool
     _use_irradiance: bool
 
+    @staticmethod
+    def _as_float(value):
+        """Coerce an entity reading to float; None for missing/non-numeric.
+
+        Unavailable sensors surface as None (get_safe_state) and flaky ones
+        as non-numeric strings; float() on either raised and killed every
+        coordinator update.
+        """
+        if value is None:
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
     @property
     def outside_temperature(self):
         """Get outside temperature."""
@@ -440,10 +463,10 @@ class ClimateCoverData:
     def get_current_temperature(self) -> float:
         """Get temperature."""
         if self.temp_switch:
-            if self.outside_temperature:
-                return float(self.outside_temperature)
-        if self.inside_temperature:
-            return float(self.inside_temperature)
+            outside = self._as_float(self.outside_temperature)
+            if outside is not None:
+                return outside
+        return self._as_float(self.inside_temperature)
 
     @property
     def is_presence(self):
@@ -481,11 +504,9 @@ class ClimateCoverData:
     @property
     def outside_high(self) -> bool:
         """Check if outdoor temperature is above threshold."""
-        if (
-            self.temp_summer_outside is not None
-            and self.outside_temperature is not None
-        ):
-            return float(self.outside_temperature) > self.temp_summer_outside
+        outside = self._as_float(self.outside_temperature)
+        if self.temp_summer_outside is not None and outside is not None:
+            return outside > self.temp_summer_outside
         return True
 
     @property
@@ -525,8 +546,10 @@ class ClimateCoverData:
         if not self._use_lux:
             return False
         if self.lux_entity is not None and self.lux_threshold is not None:
-            value = get_safe_state(self.hass, self.lux_entity)
-            return float(value) <= self.lux_threshold
+            value = self._as_float(get_safe_state(self.hass, self.lux_entity))
+            if value is None:
+                return False
+            return value <= self.lux_threshold
         return False
 
     @property
@@ -535,8 +558,12 @@ class ClimateCoverData:
         if not self._use_irradiance:
             return False
         if self.irradiance_entity is not None and self.irradiance_threshold is not None:
-            value = get_safe_state(self.hass, self.irradiance_entity)
-            return float(value) <= self.irradiance_threshold
+            value = self._as_float(
+                get_safe_state(self.hass, self.irradiance_entity)
+            )
+            if value is None:
+                return False
+            return value <= self.irradiance_threshold
         return False
 
     def to_inputs(self) -> ClimateInputs:

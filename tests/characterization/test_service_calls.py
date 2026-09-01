@@ -154,11 +154,15 @@ async def test_regression_1b2b668_override_visible_same_cycle(
     assert coordinator.data.states["last_change_new"] == 90
 
 
-async def test_manual_change_ignored_while_waiting_for_target(
+async def test_regression_foreign_landing_during_wait_latches_manual(
     hass, cover_entry, mock_sun_entity, cover_calls
 ):
-    """QUIRK: while the integration waits for its own move to finish, any
-    other position change is swallowed and never marks manual override."""
+    """A definitive landing far from OUR target during the travel window is
+    a human move: it must clear the wait and latch a manual override.
+
+    (Previously this was swallowed as a motor echo and the next sun tick
+    reverted the human's position — the reported override-loss symptom.)
+    """
     _set_cover(hass, 60)
     await _setup(hass, cover_entry)
     cover_calls = async_mock_service(hass, "cover", "set_cover_position")
@@ -168,12 +172,12 @@ async def test_manual_change_ignored_while_waiting_for_target(
     await hass.async_block_till_done()
     assert len(cover_calls) == 1
 
-    # Cover "moves" to a position that is neither old nor the target.
+    # Cover reports a position that is neither old nor the target.
     _set_cover(hass, 90)
     await hass.async_block_till_done()
 
-    assert coordinator.manager.is_cover_manual(COVER) is False
-    assert coordinator.wait_for_target[COVER] is True
+    assert coordinator.manager.is_cover_manual(COVER) is True
+    assert coordinator.wait_for_target[COVER] is False
 
 
 def test_regression_bbca2e9_predict_position_timezone():

@@ -36,9 +36,19 @@ def get_timedelta_str(string: str):
         return pd.to_timedelta(string)
 
 
-def get_datetime_from_str(string: str):
-    """Convert datetime string to datetime."""
+def get_datetime_from_str(string: str, default_date: dt.date | None = None):
+    """Convert datetime string to datetime.
+
+    A bare time string gets its date from default_date when given.
+    Without it, dateutil falls back to the PROCESS-local today, which is
+    wrong whenever the process timezone differs from HA's configured one
+    (e.g. docker containers running UTC) — callers that care about "today"
+    must pass the HA-local date explicitly.
+    """
     if string is not None:
+        if default_date is not None:
+            default = dt.datetime.combine(default_date, dt.time())
+            return parser.parse(string, ignoretz=True, default=default)
         return parser.parse(string, ignoretz=True)
 
 

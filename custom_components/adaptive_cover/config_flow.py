@@ -416,6 +416,32 @@ def _get_azimuth_edges(data) -> tuple[int, int]:
     return data[CONF_FOV_LEFT] + data[CONF_FOV_RIGHT]
 
 
+def _wizard_option_keys() -> set[str]:
+    """Every options key any wizard step can collect, derived from the schemas.
+
+    The initial-setup wizard used to persist a hand-maintained whitelist of
+    keys, silently dropping anything added later (end_time, return_sunset,
+    privacy_*, quiet_*, overhang_*, ...).  Deriving the key set from the
+    step schemas keeps entry creation in lockstep with the forms, matching
+    the options flow which already preserves everything.
+    """
+    keys: set[str] = set()
+    for schema in (
+        CLIMATE_MODE,
+        VERTICAL_OPTIONS,
+        HORIZONTAL_OPTIONS,
+        TILT_OPTIONS,
+        AUTOMATION_CONFIG,
+        CLIMATE_OPTIONS,
+        WEATHER_OPTIONS,
+        INTERPOLATION_OPTIONS,
+    ):
+        keys |= {marker.schema for marker in schema.schema}
+    # The blind-spot step builds its schema inline; list its keys explicitly.
+    keys |= {CONF_BLIND_SPOT_LEFT, CONF_BLIND_SPOT_RIGHT, CONF_BLIND_SPOT_ELEVATION}
+    return keys
+
+
 class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     """Handle ConfigFlow."""
 
@@ -634,73 +660,27 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(step_id="weather", data_schema=WEATHER_OPTIONS)
 
     async def async_step_update(self, user_input: dict[str, Any] | None = None):
-        """Create entry."""
+        """Create entry, persisting every option the wizard collected."""
+        options = {key: self.config.get(key) for key in _wizard_option_keys()}
+        # CONF_MODE in self.config holds the sensor type picked on the first
+        # page; in options it is the control mode ("basic").
+        options[CONF_MODE] = self.mode
+        # Defaults for keys whose collecting step may not have run.
+        options[CONF_MANUAL_OVERRIDE_DURATION] = self.config.get(
+            CONF_MANUAL_OVERRIDE_DURATION, {"minutes": 15}
+        )
+        options[CONF_TRANSPARENT_BLIND] = self.config.get(
+            CONF_TRANSPARENT_BLIND, False
+        )
+        options[CONF_INTERP_LIST] = self.config.get(CONF_INTERP_LIST, [])
+        options[CONF_INTERP_LIST_NEW] = self.config.get(CONF_INTERP_LIST_NEW, [])
         return self.async_create_entry(
             title=self.config["name"],
             data={
                 "name": self.config["name"],
                 CONF_SENSOR_TYPE: self.type_blind,
             },
-            options={
-                CONF_MODE: self.mode,
-                CONF_AZIMUTH: self.config.get(CONF_AZIMUTH),
-                CONF_HEIGHT_WIN: self.config.get(CONF_HEIGHT_WIN),
-                CONF_DISTANCE: self.config.get(CONF_DISTANCE),
-                CONF_DEFAULT_HEIGHT: self.config.get(CONF_DEFAULT_HEIGHT),
-                CONF_MAX_POSITION: self.config.get(CONF_MAX_POSITION),
-                CONF_MIN_POSITION: self.config.get(CONF_MIN_POSITION),
-                CONF_FOV_LEFT: self.config.get(CONF_FOV_LEFT),
-                CONF_FOV_RIGHT: self.config.get(CONF_FOV_RIGHT),
-                CONF_ENTITIES: self.config.get(CONF_ENTITIES),
-                CONF_INVERSE_STATE: self.config.get(CONF_INVERSE_STATE),
-                CONF_SUNSET_POS: self.config.get(CONF_SUNSET_POS),
-                CONF_SUNSET_OFFSET: self.config.get(CONF_SUNSET_OFFSET),
-                CONF_SUNRISE_OFFSET: self.config.get(CONF_SUNRISE_OFFSET),
-                CONF_LENGTH_AWNING: self.config.get(CONF_LENGTH_AWNING),
-                CONF_AWNING_ANGLE: self.config.get(CONF_AWNING_ANGLE),
-                CONF_TILT_DISTANCE: self.config.get(CONF_TILT_DISTANCE),
-                CONF_TILT_DEPTH: self.config.get(CONF_TILT_DEPTH),
-                CONF_TILT_MODE: self.config.get(CONF_TILT_MODE),
-                CONF_TEMP_ENTITY: self.config.get(CONF_TEMP_ENTITY),
-                CONF_PRESENCE_ENTITY: self.config.get(CONF_PRESENCE_ENTITY),
-                CONF_WEATHER_ENTITY: self.config.get(CONF_WEATHER_ENTITY),
-                CONF_TEMP_LOW: self.config.get(CONF_TEMP_LOW),
-                CONF_TEMP_HIGH: self.config.get(CONF_TEMP_HIGH),
-                CONF_OUTSIDETEMP_ENTITY: self.config.get(CONF_OUTSIDETEMP_ENTITY),
-                CONF_CLIMATE_MODE: self.config.get(CONF_CLIMATE_MODE),
-                CONF_WEATHER_STATE: self.config.get(CONF_WEATHER_STATE),
-                CONF_DELTA_POSITION: self.config.get(CONF_DELTA_POSITION),
-                CONF_DELTA_TIME: self.config.get(CONF_DELTA_TIME),
-                CONF_START_TIME: self.config.get(CONF_START_TIME),
-                CONF_START_ENTITY: self.config.get(CONF_START_ENTITY),
-                CONF_MANUAL_OVERRIDE_DURATION: self.config.get(
-                    CONF_MANUAL_OVERRIDE_DURATION, {"minutes": 15}
-                ),
-                CONF_MANUAL_OVERRIDE_RESET: self.config.get(CONF_MANUAL_OVERRIDE_RESET),
-                CONF_MANUAL_THRESHOLD: self.config.get(CONF_MANUAL_THRESHOLD),
-                CONF_MANUAL_IGNORE_INTERMEDIATE: self.config.get(
-                    CONF_MANUAL_IGNORE_INTERMEDIATE
-                ),
-                CONF_BLIND_SPOT_RIGHT: self.config.get(CONF_BLIND_SPOT_RIGHT, None),
-                CONF_BLIND_SPOT_LEFT: self.config.get(CONF_BLIND_SPOT_LEFT, None),
-                CONF_BLIND_SPOT_ELEVATION: self.config.get(
-                    CONF_BLIND_SPOT_ELEVATION, None
-                ),
-                CONF_ENABLE_BLIND_SPOT: self.config.get(CONF_ENABLE_BLIND_SPOT),
-                CONF_MIN_ELEVATION: self.config.get(CONF_MIN_ELEVATION, None),
-                CONF_MAX_ELEVATION: self.config.get(CONF_MAX_ELEVATION, None),
-                CONF_TRANSPARENT_BLIND: self.config.get(CONF_TRANSPARENT_BLIND, False),
-                CONF_INTERP: self.config.get(CONF_INTERP),
-                CONF_INTERP_START: self.config.get(CONF_INTERP_START, None),
-                CONF_INTERP_END: self.config.get(CONF_INTERP_END, None),
-                CONF_INTERP_LIST: self.config.get(CONF_INTERP_LIST, []),
-                CONF_INTERP_LIST_NEW: self.config.get(CONF_INTERP_LIST_NEW, []),
-                CONF_LUX_ENTITY: self.config.get(CONF_LUX_ENTITY),
-                CONF_LUX_THRESHOLD: self.config.get(CONF_LUX_THRESHOLD),
-                CONF_IRRADIANCE_ENTITY: self.config.get(CONF_IRRADIANCE_ENTITY),
-                CONF_IRRADIANCE_THRESHOLD: self.config.get(CONF_IRRADIANCE_THRESHOLD),
-                CONF_OUTSIDE_THRESHOLD: self.config.get(CONF_OUTSIDE_THRESHOLD),
-            },
+            options=options,
         )
 
 

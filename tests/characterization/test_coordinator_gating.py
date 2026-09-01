@@ -86,6 +86,10 @@ def make_coordinator(**overrides):
     coord._move_history = {}
     coord._gate_blocks = {}
     coord._sun_table = None
+    coord.target_call_time = {}
+    coord._scheduled_time = None
+    coord._end_time_is_catchup = False
+    coord._pending_end_snap = {}
     from collections import deque
 
     coord._our_context_ids = deque(maxlen=64)
@@ -139,29 +143,40 @@ class TestCheckPositionDelta:
 
 
 class TestCheckTimeDelta:
-    """Pin check_time_delta throttling."""
+    """Pin check_time_delta throttling.
 
-    def test_recent_update_blocks(self):
+    Throttles against OUR last command time (target_call_time), never the
+    entity's last_updated — device chatter (link quality, forced polls)
+    must not starve moves (regression: time-throttle starvation).
+    """
+
+    def test_recent_command_blocks(self):
         coord = make_coordinator()
-        coord.hass.states.set(
-            "cover.a",
-            "open",
-            last_updated=dt.datetime.now(dt.UTC) - dt.timedelta(minutes=1),
+        coord.target_call_time["cover.a"] = dt.datetime.now(dt.UTC) - dt.timedelta(
+            minutes=1
         )
         assert coord.check_time_delta("cover.a") is False
 
-    def test_stale_update_allows(self):
+    def test_stale_command_allows(self):
+        coord = make_coordinator()
+        coord.target_call_time["cover.a"] = dt.datetime.now(dt.UTC) - dt.timedelta(
+            minutes=3
+        )
+        assert coord.check_time_delta("cover.a") is True
+
+    def test_never_commanded_allows(self):
+        coord = make_coordinator()
+        assert coord.check_time_delta("cover.missing") is True
+
+    def test_regression_entity_chatter_does_not_throttle(self):
+        """Attribute chatter bumping last_updated must not block moves."""
         coord = make_coordinator()
         coord.hass.states.set(
             "cover.a",
             "open",
-            last_updated=dt.datetime.now(dt.UTC) - dt.timedelta(minutes=3),
+            last_updated=dt.datetime.now(dt.UTC) - dt.timedelta(seconds=10),
         )
         assert coord.check_time_delta("cover.a") is True
-
-    def test_missing_entity_allows(self):
-        coord = make_coordinator()
-        assert coord.check_time_delta("cover.missing") is True
 
 
 class TestCheckPosition:
@@ -177,35 +192,41 @@ class TestCheckPosition:
         coord.hass.states.set("cover.a", "open", attributes={"current_position": 50})
         assert coord.check_position("cover.a", 50) is False
 
-    def test_unknown_position_false(self):
-        """QUIRK: unknown current position means NO service call is made."""
+    def test_unknown_position_commands_anyway(self):
+        """Unknown position -> send the command (regression: a device that
+        napped at the end time silently missed its one-shot close)."""
         coord = make_coordinator()
-        assert coord.check_position("cover.missing", 50) is False
+        assert coord.check_position("cover.missing", 50) is True
 
 
 class TestTimingWindow:
-    """Pin the start/end timing window incl. the 00:00 end-time rule."""
+    """Pin the start/end timing window incl. the 00:00 end-time rule.
 
-    @freeze_time("2026-03-20 10:00:00")
+    Times are frozen with an explicit -06:00 offset: the window math runs
+    in HA's CONFIGURED timezone (America/Denver here), independent of the
+    process timezone (regression: docker-UTC shifted every window).
+    """
+
+    @freeze_time("2026-03-20 10:00:00-06:00")
     def test_midnight_end_time_means_tomorrow(self):
         coord = make_coordinator(end_time="00:00:00")
         assert coord._end_time == dt.datetime(2026, 3, 21, 0, 0)
         assert coord.before_end_time is True
 
-    @freeze_time("2026-03-20 10:00:00")
+    @freeze_time("2026-03-20 10:00:00-06:00")
     def test_explicit_end_time_same_day(self):
         coord = make_coordinator(end_time="09:00:00")
         assert coord._end_time == dt.datetime(2026, 3, 20, 9, 0)
         assert coord.before_end_time is False
 
-    @freeze_time("2026-03-20 10:00:00")
-    def test_after_start_time_uses_naive_local(self):
+    @freeze_time("2026-03-20 10:00:00-06:00")
+    def test_after_start_time_uses_configured_local(self):
         coord = make_coordinator(start_time="09:30:00")
         assert coord.after_start_time is True
         coord2 = make_coordinator(start_time="10:30:00")
         assert coord2.after_start_time is False
 
-    @freeze_time("2026-03-20 10:00:00")
+    @freeze_time("2026-03-20 10:00:00-06:00")
     def test_start_time_entity_wins_over_start_time(self):
         coord = make_coordinator(
             start_time="06:00:00", start_time_entity="input_datetime.start"
@@ -213,12 +234,20 @@ class TestTimingWindow:
         coord.hass.states.set("input_datetime.start", "11:00:00")
         assert coord.after_start_time is False
 
-    @freeze_time("2026-03-20 10:00:00")
+    @freeze_time("2026-03-20 10:00:00-06:00")
     def test_check_adaptive_time_combines_gates(self):
         coord = make_coordinator(start_time="07:30:00", end_time="00:00:00")
         assert coord.check_adaptive_time is True
         late = make_coordinator(start_time="07:30:00", end_time="09:00:00")
         assert late.check_adaptive_time is False
+
+    @freeze_time("2026-03-20 20:00:00")  # 20:00 UTC = 14:00 in Denver
+    def test_regression_process_tz_independent_window(self):
+        """A UTC process clock must not shift the configured-local window."""
+        coord = make_coordinator(end_time="15:00:00")
+        # 14:00 Denver wall time is before the 15:00 end time, even though
+        # the process (UTC) clock already reads 20:00.
+        assert coord.before_end_time is True
 
 
 def _render_next_events():

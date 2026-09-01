@@ -23,14 +23,19 @@ def gamma(window_azimuth: float, solar_azimuth: float) -> float:
 def valid_elevation(
     elevation: float, min_elevation: float | None, max_elevation: float | None
 ) -> bool:
-    """Check whether the sun's elevation is within the configured band."""
-    if min_elevation is None and max_elevation is None:
-        return elevation >= 0
-    if min_elevation is None:
-        return elevation <= max_elevation
-    if max_elevation is None:
-        return elevation >= min_elevation
-    return min_elevation <= elevation <= max_elevation
+    """Check whether the sun's elevation is within the configured band.
+
+    The horizon floor is unconditional: with no min_elevation configured the
+    sun must still be above 0 deg. (Historically a max-only band dropped the
+    floor entirely, so "sun in FOV" stayed true all night and winter climate
+    branches held covers open in the dark.)
+    """
+    floor = 0 if min_elevation is None else min_elevation
+    if elevation < floor:
+        return False
+    if max_elevation is not None and elevation > max_elevation:
+        return False
+    return True
 
 
 def sun_in_fov(config: CoverConfig, sun: SunSnapshot) -> bool:
@@ -200,18 +205,26 @@ def vertical_percentage(config: CoverConfig, sun: SunSnapshot) -> float:
 
 
 def awning_extension(config: CoverConfig, sun: SunSnapshot) -> float:
-    """Return the required awning extension length (m); historically unclipped."""
+    """Return the required awning extension length (m), clipped to the awning."""
     awn_angle = 90 - config.awning_angle
     a_angle = 90 - sun.elevation
     c_angle = 180 - awn_angle - a_angle
     vertical_position = vertical_blind_height(config, sun)
-    return ((config.window_height - vertical_position) * sin(rad(a_angle))) / sin(
-        rad(c_angle)
-    )
+    denominator = sin(rad(c_angle))
+    # Degenerate geometry (awning_angle + elevation ~ 0, e.g. flat awning at
+    # sunrise) makes the sine-rule denominator 0: division yields inf and
+    # round(inf) raised OverflowError in the update loop. Full extension is
+    # the physical answer: rays are parallel to the awning plane.
+    if abs(denominator) < 1e-9:
+        return float(config.awning_length)
+    extension = (
+        (config.window_height - vertical_position) * sin(rad(a_angle))
+    ) / denominator
+    return float(np.clip(extension, 0, config.awning_length))
 
 
 def awning_percentage(config: CoverConfig, sun: SunSnapshot) -> float:
-    """Awning position as % of awning length (may exceed 0-100 pre-clip)."""
+    """Awning position as % of awning length (0-100 after extension clip)."""
     return round(awning_extension(config, sun) / config.awning_length * 100)
 
 
@@ -224,9 +237,11 @@ def tilt_slat_angle(config: CoverConfig, sun: SunSnapshot) -> float:
     """Venetian slat angle (degrees), per MDPI 1996-1073/13/7/1731."""
     beta = tilt_beta(config, sun)
     ratio = config.slat_distance / config.slat_depth
-    slat = 2 * np.arctan(
-        (tan(beta) + np.sqrt((tan(beta) ** 2) - (ratio**2) + 1)) / (1 + ratio)
-    )
+    # With slat_distance > slat_depth (the UI allows it) the discriminant
+    # can go negative at low profile angles; sqrt would produce NaN and
+    # round(NaN) kills the update loop. Clamp to 0: max-blocking angle.
+    discriminant = np.clip((tan(beta) ** 2) - (ratio**2) + 1, 0, None)
+    slat = 2 * np.arctan((tan(beta) + np.sqrt(discriminant)) / (1 + ratio))
     return np.rad2deg(slat)
 
 

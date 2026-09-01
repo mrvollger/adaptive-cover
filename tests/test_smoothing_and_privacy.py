@@ -35,19 +35,19 @@ class TestQuietHours:
             quiet_start="22:00:00", quiet_end="07:00:00", max_moves_hour=None, **kw
         )
 
-    @freeze_time("2026-03-20 23:00:00")
+    @freeze_time("2026-03-20 23:00:00-06:00")
     def test_tracking_move_blocked_inside_window(self):
         assert self._coord().check_quiet_hours(42, OPTIONS) is False
 
-    @freeze_time("2026-03-20 06:30:00")
+    @freeze_time("2026-03-20 06:30:00-06:00")
     def test_window_crossing_midnight_still_quiet(self):
         assert self._coord().check_quiet_hours(42, OPTIONS) is False
 
-    @freeze_time("2026-03-20 12:00:00")
+    @freeze_time("2026-03-20 12:00:00-06:00")
     def test_tracking_move_allowed_outside_window(self):
         assert self._coord().check_quiet_hours(42, OPTIONS) is True
 
-    @freeze_time("2026-03-20 23:00:00")
+    @freeze_time("2026-03-20 23:00:00-06:00")
     def test_snap_positions_pass_through(self):
         coord = self._coord()
         assert coord.check_quiet_hours(0, OPTIONS) is True
