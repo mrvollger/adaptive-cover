@@ -1,0 +1,379 @@
+{
+ "date": "2026-09-01",
+ "total": 43,
+ "survivors": [],
+ "sim_kills": 32,
+ "matrix": [
+  {
+   "id": "M01",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M02",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M03",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M04",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation",
+    "characterization",
+    "entity"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M05",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M06",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M07",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M08",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation",
+    "characterization",
+    "entity"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M09",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation",
+    "characterization",
+    "entity"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M10",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation",
+    "entity"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M11",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M12",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M13",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M14",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M15",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M16",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M17",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M18",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M19",
+   "caught": true,
+   "caught_by_tiers": [
+    "characterization",
+    "engine"
+   ],
+   "sim_caught": false
+  },
+  {
+   "id": "M20",
+   "caught": true,
+   "caught_by_tiers": [
+    "characterization",
+    "engine"
+   ],
+   "sim_caught": false
+  },
+  {
+   "id": "M21",
+   "caught": true,
+   "caught_by_tiers": [
+    "characterization",
+    "engine"
+   ],
+   "sim_caught": false
+  },
+  {
+   "id": "M22",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation",
+    "characterization",
+    "engine"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M23",
+   "caught": true,
+   "caught_by_tiers": [
+    "engine",
+    "entity"
+   ],
+   "sim_caught": false
+  },
+  {
+   "id": "M24",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation",
+    "characterization",
+    "engine"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M25",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation",
+    "characterization",
+    "engine",
+    "entity"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M26",
+   "caught": true,
+   "caught_by_tiers": [
+    "characterization",
+    "engine"
+   ],
+   "sim_caught": false
+  },
+  {
+   "id": "M27",
+   "caught": true,
+   "caught_by_tiers": [
+    "entity"
+   ],
+   "sim_caught": false
+  },
+  {
+   "id": "M28",
+   "caught": true,
+   "caught_by_tiers": [
+    "entity"
+   ],
+   "sim_caught": false
+  },
+  {
+   "id": "M29",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation",
+    "characterization",
+    "engine"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M30",
+   "caught": true,
+   "caught_by_tiers": [
+    "engine",
+    "entity"
+   ],
+   "sim_caught": false
+  },
+  {
+   "id": "M31",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation",
+    "engine"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M32",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation",
+    "characterization",
+    "engine"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M33",
+   "caught": true,
+   "caught_by_tiers": [
+    "engine"
+   ],
+   "sim_caught": false
+  },
+  {
+   "id": "M34",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M35",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation",
+    "entity"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M36",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M37",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M38",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M39",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M40",
+   "caught": true,
+   "caught_by_tiers": [
+    "entity"
+   ],
+   "sim_caught": false
+  },
+  {
+   "id": "M41",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation",
+    "entity"
+   ],
+   "sim_caught": true
+  },
+  {
+   "id": "M42",
+   "caught": true,
+   "caught_by_tiers": [
+    "entity"
+   ],
+   "sim_caught": false
+  },
+  {
+   "id": "M43",
+   "caught": true,
+   "caught_by_tiers": [
+    "simulation"
+   ],
+   "sim_caught": true
+  }
+ ]
+}

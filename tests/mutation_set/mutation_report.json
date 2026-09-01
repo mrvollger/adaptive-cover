@@ -1,0 +1,35 @@
+{
+ "generated": "2026-09-01T18:34:25+00:00",
+ "tiers": [
+  "engine"
+ ],
+ "aborted": false,
+ "results": {
+  "M33": {
+   "id": "M33",
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "admit_no_glare_percentage",
+   "description": "ADMIT_NO_GLARE compares band non-empty instead of band-top vs eye height",
+   "patch": "M33_glare_band_nonempty_check.patch",
+   "deviation": "roadmap filed this under engine/evaluate.py; the comparison actually lives in geometry.admit_no_glare_percentage.",
+   "tiers": {
+    "engine": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 4.9,
+     "tail": "FAILED tests/engine/test_overhang_glare.py::TestAdmitNoGlareBandTopComparison::test_partial_band_below_safe_height_fully_open[42]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1253 passed in 3.81s"
+    }
+   },
+   "caught_by": [
+    "engine"
+   ],
+   "missed_by": []
+  }
+ },
+ "summary": {
+  "run": 1,
+  "killed": 1,
+  "survivors": []
+ }
+}

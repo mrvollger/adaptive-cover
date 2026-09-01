@@ -218,3 +218,113 @@ class TestProperties:
         cfg = make_config()
         beta = geometry.profile_angle(cfg, south_sun(elev))
         assert np.rad2deg(beta) == pytest.approx(elev, abs=1e-9)
+
+
+class TestAdmitNoGlareBandTopComparison:
+    """Kill mutation M33: 'top <= safe' must not degrade to 'top <= 0'.
+
+    ADMIT_NO_GLARE compares the sunlit band's TOP against the glare-safe
+    height, not whether the band is non-empty. The mutant survives every
+    case where either top > safe (same branch both ways) or the fallback
+    round(clip(safe)/h*100) also lands on 100 because safe >= window
+    height. The discriminating region is 0 < top <= safe AND safe <
+    window_height: for the reference house that is profile angles between
+    ~40.7 deg (top drops to safe) and ~53.3 deg (safe reaches the window
+    top). Every case here is hand-computed.
+    """
+
+    def make(self):
+        return make_config(overhang=OVERHANG, glare=GLARE, distance=0.5)
+
+    @pytest.mark.parametrize("elev", [42, 45, 47, 51])
+    def test_partial_band_below_safe_height_fully_open(self, elev):
+        """Band still sunlit (top > 0) but its top is at/below the safe
+        height -> fully open. The mutant ('top <= 0') instead returns
+        round(safe/h*100) which is 84/87/90/96 here — never 100."""
+        cfg = self.make()
+        top = geometry.sunlit_top(cfg, south_sun(elev))
+        safe = geometry.glare_safe_height(cfg, south_sun(elev))
+        # preconditions that make this the discriminating region
+        assert 0 < top <= safe
+        assert safe < H_WIN
+        assert geometry.admit_no_glare_percentage(cfg, south_sun(elev)) == 100
+
+    def test_elevation_47_exact_values(self):
+        """elev 47: top = 3.05-1.22*tan(47) = 1.742 m,
+        safe = 1.22+0.91*tan(47) = 2.196 m. top <= safe -> 100.
+        Mutant: top > 0 -> round(2.196/2.44*100) = 90."""
+        cfg = self.make()
+        assert geometry.sunlit_top(cfg, south_sun(47)) == pytest.approx(
+            3.05 - 1.22 * math.tan(math.radians(47)), abs=1e-6
+        )
+        assert geometry.glare_safe_height(cfg, south_sun(47)) == pytest.approx(
+            1.22 + 0.91 * math.tan(math.radians(47)), abs=1e-6
+        )
+        assert geometry.admit_no_glare_percentage(cfg, south_sun(47)) == 100
+
+    def test_band_top_above_safe_height_covers_to_safe(self):
+        """Just below the engagement angle (37 deg): top = 2.131 m rises
+        above safe = 1.906 m, so coverage to the safe height is required.
+        Both original and mutant take this branch — pinned so the pair of
+        tests brackets the comparison from both sides."""
+        cfg = self.make()
+        top = geometry.sunlit_top(cfg, south_sun(37))
+        safe = geometry.glare_safe_height(cfg, south_sun(37))
+        assert top > safe
+        expected = round(safe / H_WIN * 100)
+        assert geometry.admit_no_glare_percentage(cfg, south_sun(37)) == expected
+        assert expected == 78
+
+    def test_evaluate_winter_sunny_admits_fully_open(self):
+        """Through evaluate(): sunny winter day, someone home, overhang
+        shades the glass down to 1.74 m while eyes are safe up to 2.20 m
+        -> ADMIT_NO_GLARE at 100. The mutant would report 90."""
+        from datetime import datetime
+
+        from custom_components.adaptive_cover.engine import (
+            ClimateInputs,
+            Intent,
+            TimeContext,
+            evaluate,
+        )
+
+        cfg = self.make()
+        ctx = TimeContext(
+            now_utc=datetime(2026, 1, 15, 20, 0),
+            sunrise_utc=datetime(2026, 1, 15, 15, 0),
+            sunset_utc=datetime(2026, 1, 16, 1, 0),
+        )
+        climate = ClimateInputs(
+            presence=True, is_summer=False, is_winter=True, is_sunny=True
+        )
+        decision = evaluate(cfg, south_sun(47), ctx, climate)
+        assert decision.intent == Intent.ADMIT_NO_GLARE
+        assert decision.position == 100
+
+    def test_evaluate_same_sun_summer_blocks(self):
+        """Asymmetry through evaluate(): the same 47-deg sun on a hot day
+        falls through to the penetration model (edge 0.5*tan(47) = 0.54 m
+        -> 22%), not the glare band."""
+        from datetime import datetime
+
+        from custom_components.adaptive_cover.engine import (
+            ClimateInputs,
+            Intent,
+            TimeContext,
+            evaluate,
+        )
+
+        cfg = self.make()
+        ctx = TimeContext(
+            now_utc=datetime(2026, 1, 15, 20, 0),
+            sunrise_utc=datetime(2026, 1, 15, 15, 0),
+            sunset_utc=datetime(2026, 1, 16, 1, 0),
+        )
+        climate = ClimateInputs(
+            presence=True, is_summer=True, is_winter=False, is_sunny=True
+        )
+        decision = evaluate(cfg, south_sun(47), ctx, climate)
+        assert decision.intent == Intent.CALCULATED
+        assert decision.position == round(
+            0.5 * math.tan(math.radians(47)) / H_WIN * 100
+        )
