@@ -6,6 +6,7 @@ import asyncio
 import datetime as dt
 from collections import deque
 from dataclasses import dataclass
+from functools import lru_cache
 
 import numpy as np
 import pytz
@@ -115,10 +116,20 @@ from .const import (
 )
 from .helpers import (
     get_datetime_from_str,
-    get_last_updated,
     get_safe_attr,
     get_safe_state,
 )
+
+
+@lru_cache(maxsize=8)
+def cached_timezone(name: str):
+    """Return the pytz timezone by name, cached.
+
+    pytz reads a zoneinfo file on first construction — blocking I/O that
+    must not run in the event loop. async_setup_entry primes this cache
+    from an executor; every later call is a dict lookup.
+    """
+    return pytz.timezone(name)
 
 
 @dataclass
@@ -594,7 +605,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         if self._end_time is not None and self._track_end_time:
             end_t = self._end_time
             if end_t.tzinfo is None:
-                local_tz = pytz.timezone(self.hass.config.time_zone)
+                local_tz = cached_timezone(self.hass.config.time_zone)
                 end_t = local_tz.localize(end_t)
             if end_t > now:
                 events.append((
@@ -605,7 +616,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
         # Manual override expires
         if self.manager.binary_cover_manual:
-            for entity_id, override_time in self.manager.manual_control_time.items():
+            for override_time in self.manager.manual_control_time.values():
                 expire_time = override_time + self.manager.reset_duration
                 if expire_time > now:
                     events.append((
@@ -885,7 +896,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.logger.debug("State change handled")
 
     def _is_own_landing(self, event) -> bool:
-        """Is this state change the cover arriving at OUR last command?
+        """Return True when this state change is the cover arriving at OUR command.
 
         The computed state can drift a few percent while the shade travels
         (sun keeps moving); comparing the landing against the recomputed
@@ -1373,7 +1384,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         common deployments (docker defaults to UTC) and silently shifts
         every start/end/quiet window by the offset.
         """
-        tz = pytz.timezone(self.hass.config.time_zone)
+        tz = cached_timezone(self.hass.config.time_zone)
         return dt.datetime.now(tz).replace(tzinfo=None)
 
     @property
@@ -1486,7 +1497,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         return True
 
     def check_time_delta(self, entity):
-        """Throttle: has enough time passed since OUR last command?
+        """Throttle: allow only when enough time passed since OUR last command.
 
         Throttling on the entity's last_updated starved covers whose
         devices chatter (link-quality updates, forced polls bump
