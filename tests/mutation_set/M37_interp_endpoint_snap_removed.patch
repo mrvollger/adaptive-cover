@@ -1,0 +1,14 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -1662,10 +1662,6 @@
+             new_range = list(map(int, self.new_list))
+         if new_range:
+             state = np.interp(state, normal_range, new_range)
+-            if state == new_range[0]:
+-                state = 0
+-            if state == new_range[-1]:
+-                state = 100
+         return state
+ 
+     @property

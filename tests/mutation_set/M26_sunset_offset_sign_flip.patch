@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_components/adaptive_cover/engine/geometry.py
+--- a/custom_components/adaptive_cover/engine/geometry.py
++++ b/custom_components/adaptive_cover/engine/geometry.py
+@@ -67,7 +67,7 @@
+ def sunset_valid(config: CoverConfig, ctx: TimeContext) -> bool:
+     """After sunset+offset or before sunrise+offset (naive-UTC arithmetic)."""
+     after_sunset = ctx.now_utc > (
+-        ctx.sunset_utc + timedelta(minutes=config.sunset_offset_min)
++        ctx.sunset_utc - timedelta(minutes=config.sunset_offset_min)
+     )
+     before_sunrise = ctx.now_utc < (
+         ctx.sunrise_utc + timedelta(minutes=config.sunrise_offset_min)

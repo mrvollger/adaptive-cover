@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_components/adaptive_cover/engine/geometry.py
+--- a/custom_components/adaptive_cover/engine/geometry.py
++++ b/custom_components/adaptive_cover/engine/geometry.py
+@@ -185,7 +185,7 @@
+     """Height (m) below the blind edge that direct sun may reach."""
+     g = gamma(config.window_azimuth, sun.azimuth)
+     return np.clip(
+-        (config.distance_shaded_area / cos(rad(g))) * tan(rad(sun.elevation)),
++        (config.distance_shaded_area * cos(rad(g))) * tan(rad(sun.elevation)),
+         0,
+         config.window_height,
+     )

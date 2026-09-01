@@ -1,0 +1,13 @@
+diff --git a/custom_components/adaptive_cover/sensor.py b/custom_components/adaptive_cover/sensor.py
+--- a/custom_components/adaptive_cover/sensor.py
++++ b/custom_components/adaptive_cover/sensor.py
+@@ -218,7 +218,8 @@
+     @property
+     def native_value(self) -> str | None:
+         """Handle when entity is added."""
+-        return self.data.states["control"]
++        value = self.data.states["control"]
++        return {"winter": "summer", "summer": "winter"}.get(value, value)
+ 
+ 
+ class AdaptiveCoverNextChangeSensorEntity(

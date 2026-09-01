@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -1787,7 +1787,7 @@
+                 entity_id,
+             )
+             return
+-        if new_position != our_state:
++        if new_position == our_state:
+             if (
+                 manual_threshold is not None
+                 and abs(our_state - new_position) < manual_threshold

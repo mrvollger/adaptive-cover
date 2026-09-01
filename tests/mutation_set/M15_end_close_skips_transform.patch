@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -993,7 +993,7 @@
+             # Same transform pipeline as every other move (interpolation +
+             # inversion) — a raw sunset position is out of calibration for
+             # interpolated covers and then primes false manual detection.
+-            target = int(self._transform_state(options.get(CONF_SUNSET_POS)))
++            target = int(options.get(CONF_SUNSET_POS))
+             for cover in self.entities:
+                 if self._end_time_is_catchup and self.manager.is_cover_manual(
+                     cover

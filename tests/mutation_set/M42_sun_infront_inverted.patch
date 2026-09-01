@@ -1,0 +1,15 @@
+diff --git a/custom_components/adaptive_cover/binary_sensor.py b/custom_components/adaptive_cover/binary_sensor.py
+--- a/custom_components/adaptive_cover/binary_sensor.py
++++ b/custom_components/adaptive_cover/binary_sensor.py
+@@ -88,7 +88,10 @@
+     @property
+     def is_on(self) -> bool:
+         """Return true if the binary sensor is on."""
+-        return self.coordinator.data.states[self._key]
++        value = self.coordinator.data.states[self._key]
++        if self._key == "sun_motion":
++            return not value
++        return value
+ 
+     @property
+     def extra_state_attributes(self) -> Mapping[str, Any] | None:  # noqa: D102

@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -1524,7 +1524,7 @@
+                 condition,
+             )
+             return condition
+-        return True
++        return False
+ 
+     @property
+     def pos_sun(self):

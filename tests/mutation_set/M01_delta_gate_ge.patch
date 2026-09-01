@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -1484,7 +1484,7 @@
+         """Check cover positions to reduce calls."""
+         position = self._get_current_position(entity)
+         if position is not None:
+-            condition = abs(position - state) >= self.min_change
++            condition = abs(position - state) > self.min_change
+             self.logger.debug(
+                 "Entity: %s,  position: %s, state: %s, delta position: %s, min_change: %s, condition: %s",
+                 entity,

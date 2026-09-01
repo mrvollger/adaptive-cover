@@ -1,0 +1,14 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -255,6 +255,10 @@
+         exception: the end time was moved LATER after arming — re-arm.
+         """
+         current_end = self._end_time
++        if self._scheduled_time is not None and self._now_local() > (
++            self._scheduled_time + dt.timedelta(seconds=1)
++        ):
++            return
+         self.logger.debug(
+             "Timed refresh fired. Configured end: %s, armed for: %s",
+             current_end,

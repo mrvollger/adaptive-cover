@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -1539,7 +1539,7 @@
+         return [
+             options.get(CONF_SUNSET_POS),
+             options.get(CONF_SUNSET_OFFSET),
+-            options.get(CONF_SUNRISE_OFFSET, options.get(CONF_SUNSET_OFFSET)),
++            options.get(CONF_SUNRISE_OFFSET, 0),
+             self.hass.config.time_zone,
+             options.get(CONF_FOV_LEFT),
+             options.get(CONF_FOV_RIGHT),

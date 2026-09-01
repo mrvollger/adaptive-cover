@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -514,7 +514,7 @@
+         still runs (as a catch-up, which respects manual overrides).
+         """
+         self._async_cancel_update_listener()
+-        self._end_time_is_catchup = self._end_time <= self._now_local()
++        self._end_time_is_catchup = self._end_time > self._now_local()
+         self.logger.debug(
+             "Scheduling end time update at %s (was %s, catchup=%s)",
+             self._end_time,

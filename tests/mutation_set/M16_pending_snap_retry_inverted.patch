@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -305,7 +305,7 @@
+             # Device just came back: deliver any end-of-day close that
+             # could not be sent while it was away.
+             pending = self._pending_end_snap.pop(data["entity_id"], None)
+-            if pending is not None and self.control_toggle:
++            if pending is not None and not self.control_toggle:
+                 self.logger.debug(
+                     "Retrying missed end-of-day close for %s", data["entity_id"]
+                 )

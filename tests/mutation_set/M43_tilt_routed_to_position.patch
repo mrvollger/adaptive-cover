@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -1183,7 +1183,7 @@
+             service_data[ATTR_ENTITY_ID] = entity
+ 
+             if self._cover_type == "cover_tilt":
+-                service = SERVICE_SET_COVER_TILT_POSITION
++                service = SERVICE_SET_COVER_POSITION
+                 service_data[ATTR_TILT_POSITION] = state
+             else:
+                 service_data[ATTR_POSITION] = state

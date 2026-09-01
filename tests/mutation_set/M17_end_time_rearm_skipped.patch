@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -667,7 +667,7 @@
+         if (
+             self._end_time
+             and self._track_end_time
+-            and self._end_time != self._scheduled_time
++            and self._scheduled_time is None
+         ):
+             # != (not >) so moving the end time EARLIER re-arms too; and a
+             # first refresh after the end time arms a past point, which

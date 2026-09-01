@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -1120,7 +1120,7 @@
+             if now - t < dt.timedelta(hours=1)
+         ]
+         self._move_history[entity] = history
+-        if len(history) >= self.max_moves_hour:
++        if len(history) > self.max_moves_hour:
+             self.logger.debug(
+                 "Move budget (%s/h) exhausted for %s: skipping tracking move",
+                 self.max_moves_hour,

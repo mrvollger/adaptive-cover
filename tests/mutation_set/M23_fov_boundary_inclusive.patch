@@ -1,0 +1,14 @@
+diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_components/adaptive_cover/engine/geometry.py
+--- a/custom_components/adaptive_cover/engine/geometry.py
++++ b/custom_components/adaptive_cover/engine/geometry.py
+@@ -44,8 +44,8 @@
+     azi_min = min(config.fov_left, 90)
+     azi_max = min(config.fov_right, 90)
+     return bool(
+-        (g < azi_min)
+-        & (g > -azi_max)
++        (g <= azi_min)
++        & (g >= -azi_max)
+         & valid_elevation(sun.elevation, config.min_elevation, config.max_elevation)
+     )
+ 

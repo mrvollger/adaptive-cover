@@ -1,7 +1,7 @@
 """Shared fixtures for adaptive_cover tests."""
 
 from datetime import datetime, timedelta, UTC
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
@@ -70,6 +70,11 @@ def auto_enable_custom_integrations(enable_custom_integrations):
 @pytest.fixture(autouse=True)
 def mock_sun_data():
     """Mock SunData to avoid needing real astral location config."""
+    # The SunData import path is centralized in golden_lib.patch_sun_data
+    # (the single sanctioned test-side seam); import lazily so conftest
+    # collection stays light.
+    from tests.characterization.golden_lib import patch_sun_data
+
     # Use UTC-based dates to avoid local/UTC date mismatch with datetime.utcnow()
     now_utc = datetime.now(UTC)
     tomorrow = now_utc + timedelta(days=1)
@@ -88,10 +93,7 @@ def mock_sun_data():
     mock_instance.solar_azimuth = [180.0] * len(times)
     mock_instance.solar_elevation = [45.0] * len(times)
 
-    with patch(
-        "custom_components.adaptive_cover.calculation.SunData",
-        return_value=mock_instance,
-    ):
+    with patch_sun_data(mock_instance):
         yield mock_instance
 
 

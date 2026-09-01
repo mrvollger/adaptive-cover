@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -353,7 +353,7 @@
+                 else "current_position"
+             )
+             if target is not None and old_pos is not None and target != old_pos:
+-                expected = "opening" if target > old_pos else "closing"
++                expected = "closing" if target > old_pos else "opening"
+                 if new_state.state != expected:
+                     self.logger.debug(
+                         "%s is %s but our command was %s: human takeover "

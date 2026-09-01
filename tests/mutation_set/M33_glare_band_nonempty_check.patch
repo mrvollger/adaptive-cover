@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_components/adaptive_cover/engine/geometry.py
+--- a/custom_components/adaptive_cover/engine/geometry.py
++++ b/custom_components/adaptive_cover/engine/geometry.py
+@@ -165,7 +165,7 @@
+     """
+     top = sunlit_top(config, sun)
+     safe = glare_safe_height(config, sun)
+-    if top <= safe:
++    if top <= 0:
+         return 100
+     return round(float(np.clip(safe, 0, config.window_height))
+                  / config.window_height * 100)

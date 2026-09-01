@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/engine/evaluate.py b/custom_components/adaptive_cover/engine/evaluate.py
+--- a/custom_components/adaptive_cover/engine/evaluate.py
++++ b/custom_components/adaptive_cover/engine/evaluate.py
+@@ -32,7 +32,7 @@
+     apply_max = limits.max_position is not None and limits.max_position != 100
+     if apply_max and limits.max_only_when_sun:
+         apply_max = dsv
+-    if apply_max and result > limits.max_position:
++    if apply_max and result < limits.max_position:
+         trace.append(f"max limit {limits.max_position} applied (was {result})")
+         return limits.max_position
+ 

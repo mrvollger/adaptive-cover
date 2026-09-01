@@ -1,7 +1,5 @@
 """Simulation regressions for coordinator fixes (2026-09 bug hunt)."""
 
-from custom_components.adaptive_cover.const import DOMAIN
-
 from .harness import SimHouse
 
 A = "cover.left"
@@ -58,11 +56,9 @@ async def test_regression_overrides_survive_entry_reload(hass, freezer):
     await house.user_moves("cover.shade", 100, via="remote")
     assert house.coordinator.manager.is_cover_manual("cover.shade")
 
-    await hass.config_entries.async_reload(house.entry.entry_id)
-    await hass.async_block_till_done()
-    house.coordinator = hass.data[DOMAIN][house.entry.entry_id]
-    # the hub re-registers real cover services on reload; win them back
-    house._register_services()
+    # The user opens the options dialog and saves it unchanged: the entry
+    # reloads and the coordinator is rebuilt.
+    await house.set_options()
 
     assert house.coordinator.manager.is_cover_manual("cover.shade"), (
         "entry reload wiped the manual override"

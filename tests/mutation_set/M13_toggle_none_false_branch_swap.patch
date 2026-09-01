@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -1325,7 +1325,7 @@
+         # Only an EXPLICIT off clears overrides. During startup/reload the
+         # toggle is still None (switches restore after the first refresh),
+         # and treating that as off wiped overrides on every options edit.
+-        if self._manual_toggle is False:
++        if self._manual_toggle is None:
+             self.logger.debug(
+                 "Manual toggle is off, clearing all manual overrides"
+             )

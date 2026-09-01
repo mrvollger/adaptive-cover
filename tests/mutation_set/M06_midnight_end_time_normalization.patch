@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -1440,8 +1440,6 @@
+             )
+         elif self.end_time is not None:
+             time = get_datetime_from_str(self.end_time, default_date=today)
+-            if time.time() == dt.time(0, 0):
+-                time = time + dt.timedelta(days=1)
+         return time
+ 
+     @property

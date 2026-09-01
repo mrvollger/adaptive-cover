@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/engine/evaluate.py b/custom_components/adaptive_cover/engine/evaluate.py
+--- a/custom_components/adaptive_cover/engine/evaluate.py
++++ b/custom_components/adaptive_cover/engine/evaluate.py
+@@ -181,7 +181,7 @@
+ 
+     # Privacy runs before everything: a lit room against a dark sky is
+     # visible from outside no matter what solar/climate logic says.
+-    if geometry.privacy_active(config, ctx):
++    if climate is None and geometry.privacy_active(config, ctx):
+         trace.append(
+             f"dark outside: privacy position {config.privacy.position}"
+         )

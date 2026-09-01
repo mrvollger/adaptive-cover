@@ -1,0 +1,17 @@
+diff --git a/custom_components/adaptive_cover/engine/evaluate.py b/custom_components/adaptive_cover/engine/evaluate.py
+--- a/custom_components/adaptive_cover/engine/evaluate.py
++++ b/custom_components/adaptive_cover/engine/evaluate.py
+@@ -150,11 +150,11 @@
+         if valid and _not_sunny(climate):
+             if climate.is_summer:
+                 trace.append("tilt, summer, dim: 45 deg preset")
+-                return 45 / degrees * 100, Intent.CLIMATE_TILT_PRESET
++                return 80 / degrees * 100, Intent.CLIMATE_TILT_PRESET
+             trace.append("tilt, dim: basic strategy")
+             return _evaluate_basic(config, sun, ctx, trace)
+         trace.append("tilt, presence: 80 deg preset")
+-        return 80 / degrees * 100, Intent.CLIMATE_TILT_PRESET
++        return 45 / degrees * 100, Intent.CLIMATE_TILT_PRESET
+ 
+     beta = np.rad2deg(geometry.tilt_beta(config, sun))
+     if valid:

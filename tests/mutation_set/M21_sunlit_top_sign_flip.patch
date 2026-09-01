@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_components/adaptive_cover/engine/geometry.py
+--- a/custom_components/adaptive_cover/engine/geometry.py
++++ b/custom_components/adaptive_cover/engine/geometry.py
+@@ -129,7 +129,7 @@
+         raise ValueError("sunlit_top requires window_height")
+     if config.overhang is None:
+         return config.window_height
+-    shadow_line = config.overhang.height_above_sill - config.overhang.depth * tan(
++    shadow_line = config.overhang.height_above_sill + config.overhang.depth * tan(
+         profile_angle(config, sun)
+     )
+     return float(np.clip(shadow_line, 0, config.window_height))

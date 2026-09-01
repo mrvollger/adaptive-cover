@@ -1,0 +1,14 @@
+diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_components/adaptive_cover/engine/geometry.py
+--- a/custom_components/adaptive_cover/engine/geometry.py
++++ b/custom_components/adaptive_cover/engine/geometry.py
+@@ -249,8 +249,8 @@
+     """Tilt position as % (mode1: 0-90 deg range; mode2: 0-180 deg)."""
+     angle = tilt_slat_angle(config, sun)
+     if config.tilt_mode == "mode1":
+-        return round(angle / 90 * 100)
+-    return round(angle / 180 * 100)
++        return round(angle / 180 * 100)
++    return round(angle / 90 * 100)
+ 
+ 
+ def calculated_percentage(config: CoverConfig, sun: SunSnapshot) -> float:

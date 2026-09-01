@@ -40,6 +40,32 @@ SLC = dict(lat=40.76, lon=-111.89, tz="America/Denver")
 STEP_MINUTES = 15
 
 
+def patch_sun_data(sun_data):
+    """THE single test-side place that knows SunData's import path.
+
+    Every test-side replacement of the production sun provider goes through
+    this helper (harness, root conftest, golden renderer, truth-table
+    generator), so a refactor that moves SunData breaks ONE line, not five.
+    The real production seam (a ``sun_data_factory`` hook in calculation.py)
+    is the refactor's own first commit and swaps only this helper's body.
+    """
+    return patch(
+        "custom_components.adaptive_cover.calculation.SunData",
+        return_value=sun_data,
+    )
+
+
+def is_integration_context(coordinator, ctx) -> bool:
+    """THE single test-side place that knows how our own commands are marked.
+
+    Integration-issued service calls are tracked via the coordinator's
+    private ``_our_context_ids`` deque — a known, sanctioned coupling until
+    the refactor's first commit lands a public
+    ``coordinator.is_own_context(ctx)`` and swaps only this helper's body.
+    """
+    return ctx is not None and ctx.id in coordinator._our_context_ids
+
+
 class FakeSunData:
     """Deterministic SunData replacement for a fixed date and location."""
 
@@ -276,10 +302,7 @@ def render_scenario(scenario: Scenario) -> str:
         f"climate={'on' if scenario.climate else 'off'}",
     ]
 
-    with patch(
-        "custom_components.adaptive_cover.calculation.SunData",
-        return_value=sun_data,
-    ):
+    with patch_sun_data(sun_data):
         cover = _make_cover(scenario, hass, 180.0, 0.0)
         if scenario.overhang:
             from custom_components.adaptive_cover.engine.models import Overhang

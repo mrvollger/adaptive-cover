@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/engine/evaluate.py b/custom_components/adaptive_cover/engine/evaluate.py
+--- a/custom_components/adaptive_cover/engine/evaluate.py
++++ b/custom_components/adaptive_cover/engine/evaluate.py
+@@ -99,7 +99,7 @@
+         if valid:
+             if climate.is_summer:
+                 trace.append("summer, away: close fully")
+-                return 0, Intent.CLIMATE_BLOCK_HEAT
++                return 100, Intent.CLIMATE_BLOCK_HEAT
+             if climate.is_winter:
+                 trace.append("winter, away: open fully (nobody to glare)")
+                 return 100, Intent.CLIMATE_OPEN_HEAT

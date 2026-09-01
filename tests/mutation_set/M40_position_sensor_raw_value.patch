@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/sensor.py b/custom_components/adaptive_cover/sensor.py
+--- a/custom_components/adaptive_cover/sensor.py
++++ b/custom_components/adaptive_cover/sensor.py
+@@ -114,7 +114,7 @@
+     @property
+     def native_value(self) -> str | None:
+         """Handle when entity is added."""
+-        return self.data.states["state"]
++        return self.coordinator.default_state
+ 
+     @property
+     def extra_state_attributes(self) -> Mapping[str, Any] | None:  # noqa: D102

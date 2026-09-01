@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_components/adaptive_cover/engine/geometry.py
+--- a/custom_components/adaptive_cover/engine/geometry.py
++++ b/custom_components/adaptive_cover/engine/geometry.py
+@@ -17,7 +17,7 @@
+ 
+ def gamma(window_azimuth: float, solar_azimuth: float) -> float:
+     """Relative angle between window normal and sun (surface solar azimuth)."""
+-    return (window_azimuth - solar_azimuth + 180) % 360 - 180
++    return (solar_azimuth - window_azimuth + 180) % 360 - 180
+ 
+ 
+ def valid_elevation(

@@ -1,0 +1,309 @@
+[
+ {
+  "id": "M01",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "check_position_delta",
+  "description": ">= min_change -> > (move exactly at threshold now blocked)",
+  "patch": "M01_delta_gate_ge.patch"
+ },
+ {
+  "id": "M02",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "check_quiet_hours",
+  "description": "remove the snap-position early return (evening close swallowed in quiet window)",
+  "patch": "M02_quiet_hours_snap_bypass.patch"
+ },
+ {
+  "id": "M03",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "check_move_budget",
+  "description": ">= max_moves_hour -> > (one extra move per rolling hour)",
+  "patch": "M03_move_budget_ge.patch"
+ },
+ {
+  "id": "M04",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "check_time_delta",
+  "description": "no-previous-command branch return True -> return False",
+  "patch": "M04_time_delta_default_false.patch"
+ },
+ {
+  "id": "M05",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "after_start_time",
+  "description": "static CONF_START_TIME wins over the start-time entity (precedence swap)",
+  "patch": "M05_start_time_precedence_swap.patch"
+ },
+ {
+  "id": "M06",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "_end_time",
+  "description": "drop the 00:00-means-next-midnight normalization",
+  "patch": "M06_midnight_end_time_normalization.patch"
+ },
+ {
+  "id": "M07",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "_first_blocking_gate",
+  "description": "evaluate position-delta before the manual-override check (move_blocked_by names the wrong gate)",
+  "patch": "M07_gate_order_delta_before_manual.patch"
+ },
+ {
+  "id": "M08",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "AdaptiveCoverManager.handle_state_change",
+  "description": "new_position != our_state -> == (manual detection inverted)",
+  "patch": "M08_manual_detection_inverted.patch"
+ },
+ {
+  "id": "M09",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "_is_own_landing",
+  "description": "<= TARGET_TOLERANCE -> > (own landings latch as manual)",
+  "patch": "M09_own_landing_tolerance_flip.patch"
+ },
+ {
+  "id": "M10",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "async_check_cover_state_change",
+  "description": "expected opening/closing swapped in the travel-window direction check",
+  "patch": "M10_travel_direction_swap.patch"
+ },
+ {
+  "id": "M11",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "AdaptiveCoverManager.handle_state_change",
+  "description": "threshold check neutered: any nonzero diff latches",
+  "patch": "M11_manual_threshold_zero.patch"
+ },
+ {
+  "id": "M12",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "_update_manager_and_covers",
+  "description": "override duration unit blown up 60x (minutes behave like hours)",
+  "patch": "M12_override_duration_minutes_to_hours.patch"
+ },
+ {
+  "id": "M13",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "_update_manager_and_covers",
+  "description": "swap the None (restart: preserve) and False (toggle-off: clear) branches",
+  "patch": "M13_toggle_none_false_branch_swap.patch"
+ },
+ {
+  "id": "M14",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "async_timed_end_time",
+  "description": "catch-up flag inversion <= -> > (on-time closes skip overridden covers)",
+  "patch": "M14_catchup_flag_inverted.patch"
+ },
+ {
+  "id": "M15",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "async_handle_timed_refresh",
+  "description": "skip the sunset-position transform (raw value sent to interpolated/inverse covers)",
+  "patch": "M15_end_close_skips_transform.patch"
+ },
+ {
+  "id": "M16",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "async_check_cover_state_change",
+  "description": "pending-snap retry control_toggle condition inverted",
+  "patch": "M16_pending_snap_retry_inverted.patch"
+ },
+ {
+  "id": "M17",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "_async_update_data",
+  "description": "keep the stale timer: only arm once, never re-arm on an options change",
+  "patch": "M17_end_time_rearm_skipped.patch"
+ },
+ {
+  "id": "M18",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "async_timed_refresh",
+  "description": "late delivery becomes a no-op (the historical 1-second-equality bug)",
+  "patch": "M18_late_fire_noop.patch",
+  "deviation": "roadmap wrote the guard as 'if now < end_time: return'; the kill-relevant behavior (a LATE fire is dropped) needs the inverse comparison, implemented here against the armed time."
+ },
+ {
+  "id": "M19",
+  "file": "custom_components/adaptive_cover/engine/geometry.py",
+  "function": "gamma",
+  "description": "operand swap in the relative sun angle",
+  "patch": "M19_gamma_operand_swap.patch"
+ },
+ {
+  "id": "M20",
+  "file": "custom_components/adaptive_cover/engine/geometry.py",
+  "function": "valid_elevation",
+  "description": "drop the unconditional horizon floor",
+  "patch": "M20_horizon_floor_dropped.patch"
+ },
+ {
+  "id": "M21",
+  "file": "custom_components/adaptive_cover/engine/geometry.py",
+  "function": "sunlit_top",
+  "description": "overhang shadow-line sign flip",
+  "patch": "M21_sunlit_top_sign_flip.patch"
+ },
+ {
+  "id": "M22",
+  "file": "custom_components/adaptive_cover/engine/geometry.py",
+  "function": "tilt_percentage",
+  "description": "mode1/mode2 divisor swap",
+  "patch": "M22_tilt_mode_divisor_swap.patch"
+ },
+ {
+  "id": "M23",
+  "file": "custom_components/adaptive_cover/engine/geometry.py",
+  "function": "sun_in_fov",
+  "description": "FOV boundary < -> <= (and mirror on -fov_right)",
+  "patch": "M23_fov_boundary_inclusive.patch"
+ },
+ {
+  "id": "M24",
+  "file": "custom_components/adaptive_cover/engine/geometry.py",
+  "function": "vertical_blind_height",
+  "description": "distance / cos(gamma) -> distance * cos(gamma)",
+  "patch": "M24_vertical_cos_multiply.patch"
+ },
+ {
+  "id": "M25",
+  "file": "custom_components/adaptive_cover/engine/geometry.py",
+  "function": "valid_elevation",
+  "description": "min and max band comparisons swapped",
+  "patch": "M25_elevation_band_swapped.patch"
+ },
+ {
+  "id": "M26",
+  "file": "custom_components/adaptive_cover/engine/geometry.py",
+  "function": "sunset_valid",
+  "description": "sunset offset sign flip",
+  "patch": "M26_sunset_offset_sign_flip.patch"
+ },
+ {
+  "id": "M27",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "common_data",
+  "description": "sunrise-offset fallback falls back to 0 instead of sunset_offset",
+  "patch": "M27_sunrise_fallback_zero.patch",
+  "deviation": "roadmap filed this under engine/geometry.py; the fallback actually lives in coordinator.common_data."
+ },
+ {
+  "id": "M28",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "_apply_extended_config",
+  "description": "'offset or DEFAULT' coercion so privacy_offset=0 becomes 30",
+  "patch": "M28_privacy_offset_or_coercion.patch",
+  "deviation": "roadmap filed this under engine/geometry.py; the None-check actually lives in coordinator._apply_extended_config."
+ },
+ {
+  "id": "M29",
+  "file": "custom_components/adaptive_cover/engine/evaluate.py",
+  "function": "_evaluate_climate_normal",
+  "description": "away/summer branch return 0 -> return 100",
+  "patch": "M29_away_summer_opens.patch"
+ },
+ {
+  "id": "M30",
+  "file": "custom_components/adaptive_cover/engine/evaluate.py",
+  "function": "evaluate",
+  "description": "privacy-first ordering dropped for climate mode",
+  "patch": "M30_privacy_not_first_in_climate.patch"
+ },
+ {
+  "id": "M31",
+  "file": "custom_components/adaptive_cover/engine/evaluate.py",
+  "function": "_apply_limits",
+  "description": "max-clamp comparison flip",
+  "patch": "M31_max_clamp_flip.patch"
+ },
+ {
+  "id": "M32",
+  "file": "custom_components/adaptive_cover/engine/evaluate.py",
+  "function": "_evaluate_climate_tilt",
+  "description": "dim-summer 45 <-> presence 80 preset swap (trace strings untouched)",
+  "patch": "M32_tilt_preset_swap.patch"
+ },
+ {
+  "id": "M33",
+  "file": "custom_components/adaptive_cover/engine/geometry.py",
+  "function": "admit_no_glare_percentage",
+  "description": "ADMIT_NO_GLARE compares band non-empty instead of band-top vs eye height",
+  "patch": "M33_glare_band_nonempty_check.patch",
+  "deviation": "roadmap filed this under engine/evaluate.py; the comparison actually lives in geometry.admit_no_glare_percentage."
+ },
+ {
+  "id": "M34",
+  "file": "custom_components/adaptive_cover/calculation.py",
+  "function": "ClimateCoverData.is_summer",
+  "description": "summer test temp > temp_high -> temp > temp_low",
+  "patch": "M34_season_boundary_low.patch",
+  "deviation": "roadmap filed this under engine/evaluate.py; the season threshold comparison actually lives in calculation.ClimateCoverData."
+ },
+ {
+  "id": "M35",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "inverse_state",
+  "description": "100 - state -> state",
+  "patch": "M35_inverse_state_identity.patch"
+ },
+ {
+  "id": "M36",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "interpolate_states",
+  "description": "np.interp xp/fp argument swap",
+  "patch": "M36_interp_xp_fp_swap.patch"
+ },
+ {
+  "id": "M37",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "interpolate_states",
+  "description": "interpolation endpoint snap-to-0/100 removed",
+  "patch": "M37_interp_endpoint_snap_removed.patch"
+ },
+ {
+  "id": "M38",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "_transform_state",
+  "description": "inverse-skipped-when-interp rule inverted (apply both transforms)",
+  "patch": "M38_inverse_applied_with_interp.patch"
+ },
+ {
+  "id": "M39",
+  "file": "custom_components/adaptive_cover/__init__.py",
+  "function": "handle_change_settings",
+  "description": "options merge inverted: existing options win over the requested changes",
+  "patch": "M39_settings_merge_inverted.patch",
+  "deviation": "roadmap filed this under coordinator.py 'config merge'; no literal data/options merge exists there \u2014 the real options-over-changes merge lives in __init__.handle_change_settings."
+ },
+ {
+  "id": "M40",
+  "file": "custom_components/adaptive_cover/sensor.py",
+  "function": "AdaptiveCoverSensorEntity",
+  "description": "position sensor reports the raw pre-transform value",
+  "patch": "M40_position_sensor_raw_value.patch"
+ },
+ {
+  "id": "M41",
+  "file": "custom_components/adaptive_cover/sensor.py",
+  "function": "AdaptiveCoverControlSensorEntity",
+  "description": "winter/summer branch swap at the sensor surface",
+  "patch": "M41_control_method_swap.patch"
+ },
+ {
+  "id": "M42",
+  "file": "custom_components/adaptive_cover/binary_sensor.py",
+  "function": "AdaptiveCoverBinarySensor",
+  "description": "sun-in-front binary sensor inverted",
+  "patch": "M42_sun_infront_inverted.patch"
+ },
+ {
+  "id": "M43",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "async_set_manual_position",
+  "description": "tilt entries routed to set_cover_position instead of set_cover_tilt_position",
+  "patch": "M43_tilt_routed_to_position.patch"
+ }
+]

@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -1041,6 +1041,8 @@
+         Exposed per cover in the 'move_blocked_by' attribute so 'why didn't
+         it move?' is answerable from the UI.
+         """
++        if not self.check_position_delta(entity, state, options):
++            return "position_delta"
+         if self.manager.is_cover_manual(entity):
+             return "manual_override"
+         if self.wait_for_target.get(entity):

@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -1380,7 +1380,7 @@
+                 enabled=True,
+                 # explicit None check: an offset of 0 ("close right at
+                 # sunset") must not be coerced to the 30-minute default
+-                offset_min=30 if _privacy_offset is None else _privacy_offset,
++                offset_min=_privacy_offset or 30,
+                 position=options.get(CONF_PRIVACY_POSITION, 0) or 0,
+             )
+ 

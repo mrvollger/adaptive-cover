@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_components/adaptive_cover/engine/geometry.py
+--- a/custom_components/adaptive_cover/engine/geometry.py
++++ b/custom_components/adaptive_cover/engine/geometry.py
+@@ -30,7 +30,7 @@
+     floor entirely, so "sun in FOV" stayed true all night and winter climate
+     branches held covers open in the dark.)
+     """
+-    floor = 0 if min_elevation is None else min_elevation
++    floor = -90 if min_elevation is None else min_elevation
+     if elevation < floor:
+         return False
+     if max_elevation is not None and elevation > max_elevation:

@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -1088,8 +1088,6 @@
+         """
+         if not self.quiet_start or not self.quiet_end:
+             return True
+-        if self._is_snap_position(state, options):
+-            return True
+         now = self._now_local().time()
+         start = get_datetime_from_str(self.quiet_start).time()
+         end = get_datetime_from_str(self.quiet_end).time()

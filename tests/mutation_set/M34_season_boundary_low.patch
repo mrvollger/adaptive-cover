@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/calculation.py b/custom_components/adaptive_cover/calculation.py
+--- a/custom_components/adaptive_cover/calculation.py
++++ b/custom_components/adaptive_cover/calculation.py
+@@ -513,7 +513,7 @@
+     def is_summer(self) -> bool:
+         """Check if temperature is over threshold."""
+         if self.temp_high is not None and self.get_current_temperature is not None:
+-            is_it = self.get_current_temperature > self.temp_high and self.outside_high
++            is_it = self.get_current_temperature > self.temp_low and self.outside_high
+         else:
+             is_it = False
+ 

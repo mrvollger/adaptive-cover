@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -1790,7 +1790,7 @@
+         if new_position != our_state:
+             if (
+                 manual_threshold is not None
+-                and abs(our_state - new_position) < manual_threshold
++                and abs(our_state - new_position) < 0
+             ):
+                 self.logger.debug(
+                     "Position change is less than threshold %s for %s",
