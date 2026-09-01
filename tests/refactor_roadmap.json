@@ -1,0 +1,970 @@
+{
+ "harness_package": {
+  "apis": [
+   {
+    "name": "restart",
+    "signature": "async def restart(self, *, at: str | None = None, restore: bool = True, seed_states: dict[str, str] | None = None) -> None",
+    "semantics": "Tears the config entry down (unload), captures current states of the entry's restorable entities (switches, select), seeds mock_restore_cache with them (or seed_states overrides), re-runs async_setup on the same entry, and re-wins the fake cover services. Timeline is preserved so tests can assert 'no duplicate close after restart' / 'catch-up close fired on setup'. Shade states persist in hass.states across the restart, as in real HA. Also generalize/document create(start_at=...) for daytime starts (needed for first-refresh-positions).",
+    "implementation_notes": "Factor the tail of SimHouse.create() (setup + _register_services() re-win + coordinator re-fetch) into async _setup_entry(); restart() = optional advance_to(at) -> collect states via er.async_entries_for_config_entry -> async_unload -> mock_restore_cache -> await self._setup_entry(). Unblocks: catchup-close-after-restart, switch-restore, first-refresh-positions."
+   },
+   {
+    "name": "set_options",
+    "signature": "async def set_options(self, **option_changes) -> None",
+    "semantics": "Merges option_changes into entry.options via hass.config_entries.async_update_entry, waits for the entry reload to complete, re-registers the fake cover services (reload re-runs the hub bootstrap which steals them), and refreshes self.coordinator. Models 'user edits options in the UI at 14:00' as one call; replaces the private house._register_services() reach in test_regressions.py.",
+    "implementation_notes": "~10 lines reusing _setup_entry-style re-win; migrate the existing test_regressions.py caller inside this package (shared-file rule). Unblocks: end-time-rearm-on-change, reload variants of first-refresh/interpolation/inverse/midnight-end-time."
+   },
+   {
+    "name": "multi-day sun regeneration (SimSunData.regenerate_for)",
+    "signature": "class SimSunData(FakeSunData): def regenerate_for(self, date: pd.Timestamp) -> None  # no new public SimHouse API",
+    "semantics": "tick() detects a local-date change and calls sun_data.regenerate_for(new_date), recomputing times/solar_azimuth/solar_elevation/date IN PLACE (calculation.py holds a reference to the single patched instance) so day-two sunset()/sunrise(), solar-time sensors, and forecasts are correct. DST days need no extra API \u2014 pick a transition date (e.g. 2026-03-08 America/Denver) and advance_to across it.",
+    "implementation_notes": "Subclass in harness.py; leave golden_lib.FakeSunData untouched for characterization determinism. Fix while here: _local() uses pytz.localize on naive times \u2014 catch AmbiguousTimeError/NonExistentTimeError and take the fold, or transition-day tests crash at 02:30. Unblocks: day-rollover-clears-overrides (assertable via next-morning auto_moves), solar-day-table-regen."
+   },
+   {
+    "name": "shade_goes_unavailable / shade_returns",
+    "signature": "async def shade_goes_unavailable(self, entity_id: str) -> None; async def shade_returns(self, entity_id: str) -> None",
+    "semantics": "Write the 'unavailable' state / restore the real state with a device context; service calls to an unavailable shade keep raising as today. The hand-rolled version in test_regressions.py migrates onto this public API inside this package.",
+    "implementation_notes": "Part of the FakeShade fault API (audit E4)."
+   },
+   {
+    "name": "jam",
+    "signature": "def jam(self, entity_id: str) -> None",
+    "semantics": "Shade stops mid-travel at an interpolated intermediate position, never lands, no landing report ever; an arrival-poll (homeassistant.update_entity) reports the stuck position \u2014 distinguishing jam from drop_landing_report.",
+    "implementation_notes": "FakeShade gains jammed: bool; jam() computes the interpolated position from elapsed/travel_seconds; _land() skipped while jammed; handle_update_entity reports the stuck position."
+   },
+   {
+    "name": "drop_landing_report",
+    "signature": "def drop_landing_report(self, entity_id: str) -> None",
+    "semantics": "The next landing is silent: the shade DOES reach its target but the state report is swallowed; the true position surfaces only on the next poll. Exercises poll-on-silence / pending-snap retry paths.",
+    "implementation_notes": "FakeShade.drop_next_landing: bool; _land() updates position but skips _write_shade_state once."
+   },
+   {
+    "name": "strip_position_attr",
+    "signature": "def strip_position_attr(self, entity_id: str, on: bool = True) -> None",
+    "semantics": "While on, the shade's state writes omit current_position/current_tilt_position \u2014 models covers that report no position. Drives unknown-position-commands-anyway and no-position-no-latch.",
+    "implementation_notes": "FakeShade.report_position: bool = True honored by _write_shade_state."
+   },
+   {
+    "name": "fail_next_command",
+    "signature": "def fail_next_command(self, entity_id: str, exc: Exception | None = None) -> None",
+    "semantics": "The fake cover.set_cover_position handler raises once (default HomeAssistantError) for this shade, before recording any travel \u2014 proving the update loop survives, other covers still get commanded, and the failed cover is re-commanded later. This is what de-vacuates the pending-end-snap retry test.",
+    "implementation_notes": "FakeShade.fail_next: Exception | None consumed at the top of handle_set_position."
+   },
+   {
+    "name": "eid / entity / sensor_value / sensor_attr",
+    "signature": "def eid(self, domain: str, key: str) -> str; def entity(self, domain: str, key: str) -> State | None; def sensor_value(self, key: str = 'cover_position') -> str; def sensor_attr(self, key: str, attr: str)",
+    "semantics": "Resolve the entry's entities by unique-id suffix through the entity registry (never hard-coding sim_house_-slugged entity_ids) and read their states/attributes (e.g. cover_position state, move_blocked_by, intent, decision_trace) as one-liners.",
+    "implementation_notes": "Pure additions to SimHouse via er.async_entries_for_config_entry matched on unique-id suffix."
+   },
+   {
+    "name": "toggle / press / select_option",
+    "signature": "async def toggle(self, key: str, on: bool) -> None; async def press(self, key: str = 'reset_manual_override') -> None; async def select_option(self, key: str, option: str) -> None",
+    "semantics": "Flip the entry's switches / press its buttons / set its select through REAL HA service calls with a user Context \u2014 pinning switch/button/select semantics at the entity boundary instead of poking coordinator.control_toggle. Largest single unblock: 10 critical/high gaps (gate-precedence, control-toggle-off/on/clears, climate-mode-switch, manual-toggle-off, reset-button, aux toggles, position-sensor reads).",
+    "implementation_notes": "hass.services.async_call('switch', 'turn_on'/'turn_off', {'entity_id': self.eid('switch', key)}, blocking=True, context=Context(user_id=SIM_USER_ID))."
+   },
+   {
+    "name": "aux climate entities: set_lux / set_irradiance / set_outside_temp (+ create() extension)",
+    "signature": "create(climate={... lux=450, irradiance=300, outside_temp=28.0, lux_threshold=1000, irradiance_threshold=300, presence_domain='zone'|'binary_sensor'|'input_boolean'|'device_tracker'}); async def set_lux(self, value: float | str); async def set_irradiance(self, value: float | str); async def set_outside_temp(self, value: float | str)",
+    "semantics": "When the climate dict names them, the harness creates sensor.sim_lux / sensor.sim_irradiance / sensor.sim_outdoor_temp and wires CONF_LUX_ENTITY/CONF_IRRADIANCE_ENTITY/CONF_OUTSIDETEMP_ENTITY (+ thresholds) into the entry. Setters accept strings so 'unavailable'/garbage drive resilience scenarios. presence_domain parameterizes the presence entity's domain for the presence-entity-domains gap.",
+    "implementation_notes": "Mirror the existing TEMP/PRESENCE/WEATHER pattern in create() and the three existing setters; ~25 lines."
+   },
+   {
+    "name": "hold_timers / release_timers",
+    "signature": "def hold_timers(self) -> None; async def release_timers(self) -> None",
+    "semantics": "Between hold and release, tick() advances the freezer, sun state, and shade travel but does NOT fire time listeners \u2014 so a point-in-time listener (the end-time close) scheduled for 20:00 is delivered late, e.g. at 20:40, on release. Reproduces 'HA delivered the callback late' and, with set_options, 'end time moved after arming'.",
+    "implementation_notes": "self._timers_held flag checked in tick(); release_timers() = async_fire_time_changed(hass, self.now) + block_till_done; ~8 lines. Deliberately minimal \u2014 no per-listener targeting."
+   },
+   {
+    "name": "tilt fidelity (FakeShade.tilt + set_cover_tilt_position routing)",
+    "signature": "FakeShade gains tilt: int = 100; separate handle_set_tilt service handler; def position(self, entity_id, *, tilt: bool = False) -> int",
+    "semantics": "Split the currently-mirrored fields: set_cover_tilt_position moves the tilt field, set_cover_position moves position; _write_shade_state reports each attribute from its own field. A tilt house then proves commands go through set_cover_tilt_position and manual detection reads current_tilt_position. (Audit claim was slightly stale: current_tilt_position is already written but mirrors position.)",
+    "implementation_notes": "Register handle_set_tilt sharing the travel/timeline code with a field='tilt' parameter; ~20 lines."
+   },
+   {
+    "name": "golden_lib.patch_sun_data",
+    "signature": "def patch_sun_data(sun_data) -> unittest.mock._patch",
+    "semantics": "THE single test-side place that knows SunData's import path (patch('custom_components.adaptive_cover.calculation.SunData', return_value=sun_data)). All five call sites migrate onto it: harness._patch, root conftest.mock_sun_data, golden_lib, truth-table generator. A refactor then breaks one line, not five. The real production seam (a sun_data_factory hook) is the refactor's own first commit and swaps only this helper's body.",
+    "implementation_notes": "Shared-file work; lives in golden_lib.py; part of this sequential package."
+   },
+   {
+    "name": "golden_lib.is_integration_context",
+    "signature": "def is_integration_context(coordinator, ctx: Context) -> bool",
+    "semantics": "THE single test-side place that knows integration-issued commands are marked via coordinator._our_context_ids; harness._actor_for migrates onto it. The public coordinator.is_own_context(ctx) method is the refactor's own first commit and swaps only this helper's body.",
+    "implementation_notes": "Shared-file work; documented as a known coupling until the refactor lands the public seam."
+   },
+   {
+    "name": "mutation-set runner",
+    "signature": "tests/mutation_set/*.patch + tests/mutation_set/run_mutations.sh (apply -> pytest -> revert, per patch, per tier)",
+    "semantics": "The 43 mutations below committed as one-line patch files with a runner that reports the kill matrix (which tier killed which mutation), making the kill-rate a reproducible number, not an anecdote.",
+    "implementation_notes": "New files only, but landed in this package so every parallel package can verify its own kills in-flight."
+   },
+   {
+    "name": "harness smoke suite",
+    "signature": "tests/simulation/test_harness_extensions.py (this package's owned new test file, ~8 tests)",
+    "semantics": "One minimal scenario per extension proving the mechanism: tilt house lands a tilt command; day-two sunset differs from day-one; withheld timer fires on release; restart preserves timeline; set_options survives reload; jammed shade never lands; aux sensors wire into the entry; toggle() flips a real switch entity.",
+    "implementation_notes": "Also update tests/simulation/README.md documenting every new API. Files owned by this package: tests/simulation/harness.py, tests/simulation/conftest.py, tests/characterization/golden_lib.py (seam helpers only), tests/conftest.py (mock_sun_data migration), tests/simulation/test_regressions.py (migrate private-reach call sites), tests/simulation/README.md, tests/mutation_set/*, tests/simulation/test_harness_extensions.py."
+   }
+  ],
+  "dropped": [
+   "E7 production seams (public coordinator.is_own_context + SunData factory hook) \u2014 requires production changes, out of scope for the tests-only phase; replaced NOW by the two test-side helpers in golden_lib.py, and specified as the refactor's first commit.",
+   "E10 hub-inclusive sim mode (full re-plumbing so the hub's cover services win) \u2014 too costly (fake-services vs real cover-component registration race); all hub gaps incl. critical aggregate-set-marks-manual covered by the plain-HA hub package instead.",
+   "Hub passthrough delegation in the fake service handler (harness design \u00a79) \u2014 dropped along with E10: the plain-HA hub package covers aggregate-set-marks-manual and reset-all-button without the harness touching HA cover-entity internals.",
+   "E11 streamed-position shade variant (+ faked stop/open/close_cover) \u2014 no critical or high gap needs it; doubles the FakeShade travel model for hardware the project deliberately doesn't model. Revisit only with a real field bug as the fixture.",
+   "Per-listener timer targeting / sub-minute race control (15 s debouncer, TARGET_TIMEOUT edges) \u2014 sim time is tick-quantized by design; existing async_fire_time_changed unit tests retain this; hold/release whole-window suppression is enough.",
+   "Blueprint / diagnostics / translations harness support \u2014 no audited behavior gap; static assets.",
+   "Gap lovelace-card-registration (low) \u2014 heavy Lovelace-storage mocking for a registration side-effect with near-zero refactor risk."
+  ]
+ },
+ "test_packages": [
+  {
+   "id": "wp1-engine-geometry",
+   "test_file": "tests/engine/test_geometry_contracts.py",
+   "harness_deps": [],
+   "gap_ids": [
+    "gamma-fov-sun-in-front",
+    "vertical-blind-position",
+    "blind-spot-exclusion",
+    "min-max-elevation-band",
+    "sunset-sunrise-offsets",
+    "min-max-position-clamp",
+    "climate-tilt-presets",
+    "climate-transparent-blind",
+    "privacy-offset-zero-honored",
+    "climate-output-unclipped-quirk"
+   ],
+   "scenarios": [
+    {
+     "name": "test_gamma_fov_boundaries",
+     "outline": "evaluate()/geometry at azimuths putting gamma just inside/outside -fov_right and fov_left, the \u00b190 clip, elevation exactly 0 \u2014 the in-front predicate flips exactly at each boundary (kills gamma sign-flip at engine level)."
+    },
+    {
+     "name": "test_vertical_position_hand_computed",
+     "outline": "Plain vertical config (no overhang), several (elevation, gamma) pairs incl. clip-to-window-height \u2014 evaluate() position equals hand-computed (d/cos \u03b3)\u00b7tan e / h \u00b7 100, porting the exact numbers from tests/test_calculation.py."
+    },
+    {
+     "name": "test_blind_spot_default_position",
+     "outline": "CoverConfig with a blind-spot region; sun inside / outside / above its elevation cap \u2014 default position + correct intent inside, tracking outside."
+    },
+    {
+     "name": "test_elevation_band_min_only_and_full_band",
+     "outline": "min=15 alone, then min=15+max=45 \u2014 tracking only inside the band, default outside; complements the existing max-only regression."
+    },
+    {
+     "name": "test_sunset_sunrise_offsets_and_fallback",
+     "outline": "sunset_offset=+30/\u221230, sunrise_offset set and unset \u2014 sunset position engages exactly at sunset+offset, releases at sunrise+offset, sunrise falls back to sunset_offset when unset."
+    },
+    {
+     "name": "test_min_max_limits_sun_conditional",
+     "outline": "min/max limits with apply-only-while-sun-in-front flags, both sun states \u2014 clamped only when flag+state agree (kills the clamp-comparison flip)."
+    },
+    {
+     "name": "test_climate_tilt_presets",
+     "outline": "evaluate() for the 80 / 45 / closed / beta+90 tilt presets (home-dim-summer, away-summer, away-mode2-winter, \u2026) \u2014 exact preset values + intents, promoting truth-table rows to engine spec."
+    },
+    {
+     "name": "test_transparent_blind_summer_close",
+     "outline": "summer/home/sunny/transparent \u2014 position 0 with close intent."
+    },
+    {
+     "name": "test_privacy_offset_zero",
+     "outline": "privacy_offset_min=0 \u2014 privacy activates exactly at sunset, not sunset+default."
+    },
+    {
+     "name": "test_climate_output_unclipped",
+     "outline": "Limits pushing a climate preset outside 0\u2013100 \u2014 raw value preserved bit-for-bit (documented quirk)."
+    }
+   ],
+   "acceptance": [
+    "This file alone kills mutations M19\u2013M28, M31, M32; combined with existing tests/engine + goldens + truth table, all engine mutations M19\u2013M34 are killed.",
+    "All hand-computed values from tests/test_calculation.py that pin real math are ported here (prerequisite for that file's retirement); tests touch only engine.evaluate(), models.py dataclasses, and documented geometry functions.",
+    "No homeassistant imports and no harness dependency \u2014 package may start immediately, in parallel with the harness package."
+   ]
+  },
+  {
+   "id": "wp2-gates-windows-switches",
+   "test_file": "tests/simulation/test_gates_and_windows.py",
+   "harness_deps": [
+    "eid/entity/sensor_attr accessors",
+    "toggle/press/select_option"
+   ],
+   "gap_ids": [
+    "gate-precedence",
+    "position-delta-gate",
+    "start-end-time-window",
+    "time-delta-throttle",
+    "midnight-end-time",
+    "quiet-hours-gate",
+    "move-budget-gate",
+    "control-toggle-off",
+    "control-toggle-on-force-apply",
+    "control-toggle-off-clears-overrides",
+    "climate-mode-switch"
+   ],
+   "scenarios": [
+    {
+     "name": "test_delta_gate_blocks_drift_snap_passes",
+     "outline": "delta_position=20, 1-min ticks over slow solar drift \u2014 no commands until computed change \u226520 (\u2265, not >); evening sunset snap (0) still fires."
+    },
+    {
+     "name": "test_time_window_gates_tracking",
+     "outline": "start 10:00 / end 15:00 \u2014 zero tracking commands before 10:00 and after 15:00 while sun actionable; variant with a start-time entity proving entity precedence over the static option."
+    },
+    {
+     "name": "test_time_delta_throttle",
+     "outline": "delta_time=30min, 1-min ticks \u2014 consecutive tracking commands \u226530min apart; device landing reports in between don't restart the clock; sunset snap ignores the throttle."
+    },
+    {
+     "name": "test_midnight_end_time",
+     "outline": "end_time 00:00:00 \u2014 tracking continues through the evening, close fires at NEXT midnight, not day start."
+    },
+    {
+     "name": "test_quiet_hours_midnight_span_snap_bypass",
+     "outline": "Quiet window spanning midnight over sunset \u2014 tracking blocked in the window, sunset/privacy snap passes through."
+    },
+    {
+     "name": "test_move_budget",
+     "outline": "max_moves_hour=2, 1-min ticks \u2014 \u22642 tracking commands per rolling hour; evening snap exempt."
+    },
+    {
+     "name": "test_gate_precedence_order",
+     "outline": "Two simultaneously failing gates (manual override + quiet hours; awaiting-target + delta) \u2014 position sensor's move_blocked_by attribute names the earlier gate in documented order."
+    },
+    {
+     "name": "test_control_off_no_calls",
+     "outline": "Control switch entity off \u2014 no service call for sun changes, first refresh, or end-time close."
+    },
+    {
+     "name": "test_control_on_force_apply",
+     "outline": "Control off; advance so throttle/delta would block; switch on \u2014 immediate command to computed position for non-manual covers, none for the overridden one; time window still respected."
+    },
+    {
+     "name": "test_control_off_on_clears_overrides",
+     "outline": "Latch an override via remote move, toggle control off\u2192on \u2014 cover immediately re-commanded (toggle-off clears overrides)."
+    },
+    {
+     "name": "test_climate_switch_flips_live",
+     "outline": "Cold sunny day where basic vs climate disagree; toggle the climate-mode switch mid-day \u2014 next command flips tracking\u2194open-100 without a reload."
+    }
+   ],
+   "acceptance": [
+    "tests/simulation alone (this file) kills mutations M01\u2013M07 and corroborates M13's False branch \u2014 replacing the object.__new__ gating coverage a refactor will orphan.",
+    "All switch interactions go through real switch-entity service calls (harness toggle()); zero reads of coordinator.control_toggle, manager internals, or _-prefixed attributes.",
+    "All assertions are timeline events (moves/auto_moves), hass.states reads, or sensor attributes."
+   ]
+  },
+  {
+   "id": "wp3-climate-matrix",
+   "test_file": "tests/simulation/test_climate_scenarios.py",
+   "harness_deps": [
+    "eid/entity/sensor accessors",
+    "toggle/press/select_option",
+    "aux climate entities (set_lux/set_irradiance/set_outside_temp, presence_domain)"
+   ],
+   "gap_ids": [
+    "climate-away-summer-close",
+    "climate-away-default",
+    "climate-neutral-basic-fallthrough",
+    "season-from-thresholds",
+    "climate-sensor-resilience",
+    "presence-entity-domains",
+    "weather-condition-sunny",
+    "control-method-sensor",
+    "aux-toggle-switches",
+    "lux-threshold-dim",
+    "irradiance-threshold-dim",
+    "outside-temp-toggle"
+   ],
+   "scenarios": [
+    {
+     "name": "test_away_summer_closes",
+     "outline": "temp>temp_high, presence not_home, sunny \u2014 commanded to 0 while sun in FOV."
+    },
+    {
+     "name": "test_away_cloudy_default_then_sunset",
+     "outline": "not_home + cloudy \u2014 default position all day, sunset position after dark."
+    },
+    {
+     "name": "test_intermediate_temp_equals_basic",
+     "outline": "Intermediate temp, home, sunny \u2014 commanded positions identical to a basic-mode house run on the same day."
+    },
+    {
+     "name": "test_season_flips_across_thresholds",
+     "outline": "Drive set_temperature across temp_low/temp_high mid-day \u2014 strategy flips open\u2192track\u2192close; control-method sensor reads winter/intermediate/summer at each stage."
+    },
+    {
+     "name": "test_outside_temp_and_rule",
+     "outline": "Outside-temp entity variant of the season AND-condition across thresholds."
+    },
+    {
+     "name": "test_sensor_garbage_resilience",
+     "outline": "Write 'unavailable' and garbage strings to temp/weather/lux mid-day \u2014 coordinator keeps producing moves all day."
+    },
+    {
+     "name": "test_presence_domains",
+     "outline": "Parametrized: zone count 0/2, binary_sensor on/off, input_boolean, unavailable\u2192default-present \u2014 away/home branch asserted via commanded positions."
+    },
+    {
+     "name": "test_weather_tristate_defaults",
+     "outline": "No weather entity (always sunny) and entity with empty condition list \u2014 resulting branch asserted via positions."
+    },
+    {
+     "name": "test_lux_threshold_and_switch",
+     "outline": "Lux below threshold: winter branch flips fully-open when dim; toggling the Lux switch mid-day flips dim-open\u2194tracking."
+    },
+    {
+     "name": "test_irradiance_threshold_and_switch",
+     "outline": "Same shape via the irradiance entity + Irradiance switch."
+    },
+    {
+     "name": "test_outside_temp_toggle_and_fallback",
+     "outline": "Inside 18 (winter) / outside 30 (summer): Outside Temperature switch flips the season branch; outside sensor unavailable \u2192 falls back to inside."
+    }
+   ],
+   "acceptance": [
+    "Kills mutations M29 and M34 at simulation level and corroborates M32; asserts only via commanded positions on the timeline and entity states (control-method sensor).",
+    "The whole aux-sensor branch (lux/irradiance/outside-temp entities + their toggle switches) runs in sim with zero private-attribute reads.",
+    "Resilience scenario proves a full day of moves despite unavailable/garbage climate inputs (replacement for the direct-ClimateCoverData resilience tests slated for retirement)."
+   ]
+  },
+  {
+   "id": "wp4-endtime-restart-lifecycle",
+   "test_file": "tests/simulation/test_lifecycle.py",
+   "harness_deps": [
+    "set_options",
+    "restart + daytime start_at + restore seeding",
+    "hold_timers/release_timers"
+   ],
+   "gap_ids": [
+    "end-time-close-overrides-manual",
+    "late-fire-still-closes",
+    "end-time-rearm-on-change",
+    "catchup-close-after-restart",
+    "first-refresh-positions",
+    "switch-restore"
+   ],
+   "scenarios": [
+    {
+     "name": "test_close_beats_live_override",
+     "outline": "manual_override_duration 8h, remote move at 19:50, end 20:00 \u2014 close still fires at 20:00 (pins the LIVE-override case; the existing sim test's override is expired)."
+    },
+    {
+     "name": "test_late_fired_close_still_closes",
+     "outline": "Withhold the end-time timer via hold_timers, release 40min late \u2014 close runs on release."
+    },
+    {
+     "name": "test_end_time_rearm_earlier_and_later",
+     "outline": "set_options end 20:00\u219218:00 at 14:00 \u2192 close at 18:00; second run 18:00\u219221:00 \u2192 no 18:00 close, close at 21:00; moved-later + withheld variant asserts the close waits for the new time."
+    },
+    {
+     "name": "test_catchup_close_on_late_setup",
+     "outline": "House created start_at 21:00 with end 20:00 \u2014 immediate catch-up close on setup."
+    },
+    {
+     "name": "test_catchup_skips_overridden_cover",
+     "outline": "Same, one cover manually overridden pre-restart \u2014 catch-up (unlike on-time close) skips it. Behavior-level pin of the previously caught-by-nothing catch-up-flag mutation."
+    },
+    {
+     "name": "test_daytime_startup_positions",
+     "outline": "start_at 13:00, sun actionable \u2014 immediate command with provenance source=startup; reload-at-14:00 variant via set_options."
+    },
+    {
+     "name": "test_switch_restore",
+     "outline": "mock_restore_cache seeds off states for control/climate switches; restart() \u2014 each switch restores its prior state; no-prior-state variant asserts documented defaults; restart preserves latched overrides (None branch)."
+    }
+   ],
+   "acceptance": [
+    "tests/simulation alone (this file) kills mutations M14, M17, M18 and M39, and corroborates M13's None (restart-preserves) branch \u2014 including behavior-level reinforcement of previously caught-by-nothing end-time mutations.",
+    "Every options change goes through house.set_options() and every restart through house.restart(); no private _register_services or manager reaches.",
+    "Assertions are timeline-level (no duplicate close, catch-up close present/absent) and switch-entity states."
+   ]
+  },
+  {
+   "id": "wp5-transforms",
+   "test_file": "tests/simulation/test_transforms.py",
+   "harness_deps": [],
+   "gap_ids": [
+    "interpolation-mapping",
+    "inverse-state",
+    "min-max-position-clamp"
+   ],
+   "scenarios": [
+    {
+     "name": "test_interpolation_remaps_all_commands",
+     "outline": "interp 20\u201380 \u2014 every integration command lands in the remapped range; full-close becomes 20 INCLUDING the end-of-day sunset snap (pins transform-on-snap, previously caught by nothing)."
+    },
+    {
+     "name": "test_interpolation_list_endpoint_snap",
+     "outline": "Paired-list config \u2014 endpoint snap-to-0/100 rule holds on the timeline."
+    },
+    {
+     "name": "test_inverse_state_commands",
+     "outline": "inverse on \u2014 every commanded position == 100 \u2212 computed."
+    },
+    {
+     "name": "test_interp_wins_over_inverse",
+     "outline": "interp+inverse \u2014 inversion skipped, explanatory log line asserted via caplog."
+    },
+    {
+     "name": "test_max_position_never_exceeded",
+     "outline": "max_position set \u2014 no command all day exceeds it (sim corroboration of the engine clamp)."
+    }
+   ],
+   "acceptance": [
+    "tests/simulation alone (this file) kills mutations M15, M35, M36, M37, M38 \u2014 including the caught-by-nothing interpolation xp/fp swap and sunset-transform skip.",
+    "Uses only the base harness (no new extensions) \u2014 may start as soon as the harness package's shared files are stable; asserts exclusively on timeline service-call values."
+   ]
+  },
+  {
+   "id": "wp6-manual-override-multiday",
+   "test_file": "tests/simulation/test_manual_override_behavior.py",
+   "harness_deps": [
+    "multi-day sun regeneration",
+    "device failure APIs (jam, strip_position_attr)",
+    "eid/entity accessors + toggle/press"
+   ],
+   "gap_ids": [
+    "manual-threshold",
+    "manual-toggle-off-clears",
+    "reset-button",
+    "manual-override-binary",
+    "ignore-intermediate-option",
+    "day-rollover-clears-overrides",
+    "solar-day-table-regen"
+   ],
+   "scenarios": [
+    {
+     "name": "test_manual_threshold",
+     "outline": "threshold=10: a 5% remote nudge does not stop auto control; a 15% move latches \u2014 both asserted via subsequent auto_moves on the timeline."
+    },
+    {
+     "name": "test_manual_switch_off_clears",
+     "outline": "Latch via remote move; turn the Manual Override switch entity off \u2014 next sun change re-commands; reload variant: startup None state preserves the override."
+    },
+    {
+     "name": "test_reset_button_resumes",
+     "outline": "Latch; press the real button entity \u2014 commanded back to computed position, auto control resumes after landing; jammed-shade variant returns within the travel timeout."
+    },
+    {
+     "name": "test_manual_override_binary_sensor",
+     "outline": "After a remote move: binary sensor on, cover listed in manual_controlled attr; after expiry: off."
+    },
+    {
+     "name": "test_ignore_intermediate_option",
+     "outline": "Option on: a remote move's opening transition doesn't latch at motion start (only landing mismatch may), contrasted with the default motion-start latch."
+    },
+    {
+     "name": "test_rollover_resumes_auto_moves",
+     "outline": "Override latched in the evening; cross midnight \u2014 next-morning auto_moves reposition the shade (timeline-level; replaces the manager.is_cover_manual internal assert)."
+    },
+    {
+     "name": "test_day_two_solar_schedule",
+     "outline": "Two-day run \u2014 day-two sunset close and solar-time sensor values match day-two astral data."
+    }
+   ],
+   "acceptance": [
+    "tests/simulation alone (this file) kills mutations M08, M09, M10, M11, M12 \u2014 currently killed only by implementation-coupled or single-point tests.",
+    "Override state is never read from coordinator.manager; latching/clearing proven via subsequent auto_moves, the manual-override binary sensor, and real button/switch entities.",
+    "Day-rollover and day-two schedules assert against real astral day-two data through the regenerated sun table."
+   ]
+  },
+  {
+   "id": "wp7-device-failures",
+   "test_file": "tests/simulation/test_device_failures.py",
+   "harness_deps": [
+    "device failure APIs (fail_next_command, shade_goes_unavailable/returns, strip_position_attr, drop_landing_report)"
+   ],
+   "gap_ids": [
+    "delivery-failure-non-fatal",
+    "unknown-position-commands-anyway",
+    "no-position-no-latch"
+   ],
+   "scenarios": [
+    {
+     "name": "test_service_raise_non_fatal",
+     "outline": "One shade's handler raises \u2014 warning logged, later ticks still command the other covers, failed cover re-commanded (latch cleared) at the next eligible tick."
+    },
+    {
+     "name": "test_unknown_position_still_commanded",
+     "outline": "Shade state without current_position at end time \u2014 close still sent."
+    },
+    {
+     "name": "test_no_position_event_no_latch",
+     "outline": "Cover state event lacking current_position during the day \u2014 no override latches, auto continues."
+    },
+    {
+     "name": "test_pending_end_snap_real_retry",
+     "outline": "Service call actually raises at end time (fail_next_command), shade returns \u2014 close re-delivered while control on; NOT re-delivered when control off. Replaces the vacuous test_symptoms retry path with a real one."
+    }
+   ],
+   "acceptance": [
+    "tests/simulation alone (this file) kills mutation M16 (previously caught by nothing) via a genuinely raising service call.",
+    "Files a suite-bug report (not a fix) documenting that tests/simulation/test_symptoms.py::test_end_time_close_retries_after_unavailable is vacuous \u2014 the fake service never raises for unavailable shades, so _pending_end_snap was dead code under the old harness."
+   ]
+  },
+  {
+   "id": "wp8-tilt-behavior",
+   "test_file": "tests/simulation/test_tilt_behavior.py",
+   "harness_deps": [
+    "tilt fidelity (FakeShade.tilt, handle_set_tilt, position(tilt=True))"
+   ],
+   "gap_ids": [
+    "tilt-service-call",
+    "climate-tilt-presets"
+   ],
+   "scenarios": [
+    {
+     "name": "test_tilt_commands_use_tilt_service",
+     "outline": "Tilt house, full day \u2014 all commands via set_cover_tilt_position, none via set_cover_position."
+    },
+    {
+     "name": "test_tilt_manual_detection",
+     "outline": "Remote tilt move (current_tilt_position) \u2014 override latches; the landing of the integration's own tilt command does not."
+    },
+    {
+     "name": "test_climate_tilt_preset_day",
+     "outline": "Climate tilt house \u2014 preset positions (80/45/closed) appear on the timeline as temp/presence/weather conditions change."
+    }
+   ],
+   "acceptance": [
+    "tests/simulation alone (this file) kills mutation M43 and corroborates M22 and M32 at the service-call level.",
+    "Manual tilt detection asserted purely via timeline auto_moves after remote vs own-landing tilt changes."
+   ]
+  },
+  {
+   "id": "wp9-entity-surfaces",
+   "test_file": "tests/test_entity_surfaces.py",
+   "harness_deps": [],
+   "gap_ids": [
+    "position-sensor",
+    "sun-time-sensors",
+    "next-change-sensor",
+    "last-change-sensor",
+    "state-reason",
+    "sun-infront-binary",
+    "conditional-entity-creation",
+    "contextual-logging",
+    "diagnostics-export"
+   ],
+   "scenarios": [
+    {
+     "name": "test_position_sensor_state",
+     "outline": "hass.states.get('sensor\u2026cover_position') equals the computed value and updates after a sun change."
+    },
+    {
+     "name": "test_sun_time_sensors_honor_band",
+     "outline": "Entry with an elevation band \u2014 Start/End Sun sensor states match engage/disengage times."
+    },
+    {
+     "name": "test_next_change_sensor",
+     "outline": "Fixed times \u2014 sensor matches the known astral schedule (enters-FOV, sunset+offset, end time, override expiry). Absorbs the next-events golden from test_coordinator_gating at entity level, keeping goldens/next_events.txt."
+    },
+    {
+     "name": "test_last_change_sensor_format",
+     "outline": "After an adaptive move and after a manual move \u2014 'old% -> new%: reason' format for both."
+    },
+    {
+     "name": "test_state_reason_attribute",
+     "outline": "Reason attribute at night (sunset), midday (sun in window), and during an override."
+    },
+    {
+     "name": "test_sun_infront_binary",
+     "outline": "Off pre-dawn, on at solar noon, off after FOV exit."
+    },
+    {
+     "name": "test_conditional_entity_sets",
+     "outline": "Entries with/without covers and climate entities \u2014 exactly the documented switch set exists."
+    },
+    {
+     "name": "test_log_prefix",
+     "outline": "caplog: coordinator log line starts with the entry-name prefix."
+    },
+    {
+     "name": "test_diagnostics_shape",
+     "outline": "async_get_config_entry_diagnostics payload shape."
+    }
+   ],
+   "acceptance": [
+    "Kills mutations M40, M41, M42 through hass.states reads only.",
+    "Plain HA behavior test (real entry, mocked cover services) with no simulation-harness dependency \u2014 may start immediately, in parallel with the harness package."
+   ]
+  },
+  {
+   "id": "wp10-hub-behavior",
+   "test_file": "tests/test_hub_behavior.py",
+   "harness_deps": [],
+   "gap_ids": [
+    "aggregate-set-marks-manual",
+    "reset-all-button",
+    "house-mode-select",
+    "aggregate-cover"
+   ],
+   "scenarios": [
+    {
+     "name": "test_aggregate_set_marks_manual",
+     "outline": "Set the aggregate cover position; fire a sun change \u2014 no adaptive command reverts either member cover; manual-override binary turns on."
+    },
+    {
+     "name": "test_reset_all_button",
+     "outline": "Latch overrides via real foreign cover state changes (not hand-seeded manager); press the hub reset-all button entity \u2014 adaptive positions re-applied to every cover, zero internal manager reads."
+    },
+    {
+     "name": "test_house_mode_mixed_and_adaptive",
+     "outline": "One entry's control off \u2014 hub select shows Mixed; select Adaptive \u2014 the overridden cover is not commanded."
+    },
+    {
+     "name": "test_aggregate_state_rules",
+     "outline": "Members at 0/0 vs 0/40 \u2014 closed vs open with correct open/partial/closed count attributes; tilt entry excluded from the average."
+    }
+   ],
+   "acceptance": [
+    "Covers the critical aggregate-set-marks-manual gap with zero simulation-harness dependency (deliberately NOT sim \u2014 the harness bypasses the hub by design) and zero manager/private reads.",
+    "May start immediately, in parallel with the harness package; also corroborates M08 at hub level."
+   ]
+  }
+ ],
+ "migration_package": [
+  {
+   "file": "tests/characterization/test_coordinator_gating.py",
+   "action": "retire-after-replacement",
+   "why": "The object.__new__ + ~20 hand-set private attrs fixture is the single worst refactor coupling. Replacements: wp2 (gates, mutations M01\u2013M07), wp5 (transforms). _render_next_events/test_next_event_golden migrate to wp9's entity-level next-change test, keeping goldens/next_events.txt. Delete last \u2014 it currently carries M01\u2013M03 alone."
+  },
+  {
+   "file": "tests/test_coordinator.py",
+   "action": "migrate",
+   "why": "Split: TestDurationFormatVariants and TestInverseState survive as pure-function unit tests (the load-bearing inverse pin becomes wp5's sim day, mutation M35). TestAdaptiveCoverManager latch semantics replaced by wp6 (M08, M11, M12); TestUpdateManagerAndCovers (private method bound to a MagicMock) and TestSetLastUpdated retire after wp2/wp4 toggle-off/restore tests (M13)."
+  },
+  {
+   "file": "tests/test_calculation.py",
+   "action": "retire-after-replacement",
+   "why": "Hand-computed math values are ported into wp1 (test_geometry_contracts.py) driving evaluate()/geometry \u2014 port the sole-killer M31 case first. calculation.py is a legacy adapter the refactor may delete; nothing may pin its constructors."
+  },
+  {
+   "file": "tests/test_button.py",
+   "action": "retire-after-replacement",
+   "why": "MagicMock coordinator encodes wait_for_target/TARGET_TIMEOUT privates. Replacement: wp6's real-button-entity tests (reset resumes auto control, jammed-shade variant via the failure-mode harness API)."
+  },
+  {
+   "file": "tests/test_live_tunables.py",
+   "action": "migrate",
+   "why": "TestNumberEntities and TestGateVisibility are already behavior-level (real entities, move_blocked_by) \u2014 keep. TestModeSelect asserts coordinator.control_toggle/switch_mode \u2014 rewrite those asserts to switch-entity states and commanded positions."
+  },
+  {
+   "file": "tests/test_smoothing_and_privacy.py",
+   "action": "migrate",
+   "why": "TestQuietHours/TestMoveBudget import make_coordinator from the gating file \u2014 retire after wp2's quiet-hours (midnight-crossing + snap bypass) and move-budget days (M02, M03). Keep the ~10 entity-level tests; sweep out manager.is_cover_manual asserts in favor of the manual-override binary sensor."
+  },
+  {
+   "file": "tests/test_regression_fixes.py",
+   "action": "migrate",
+   "why": "SunData tests keep \u2014 sun.py's public API is a contract seam. Climate resilience via direct ClimateCoverData retires after wp3's garbage-resilience sim day; solar-times constructor tests retire after wp9's Start/End-sun sensor test."
+  },
+  {
+   "file": "tests/characterization/test_service_calls.py",
+   "action": "keep",
+   "why": "Real entry + hass surfaces; sole killer of override mutations M08\u2013M09 today. Once wp6 also kills them it becomes redundancy, not debt."
+  },
+  {
+   "file": "tests/characterization/golden_lib.py",
+   "action": "migrate",
+   "why": "Re-point the renderer at engine.evaluate() instead of constructing AdaptiveVerticalCover/NormalCoverState/ClimateCoverState. Golden files must not change by a byte \u2014 that diff is the review artifact. Until then goldens are constructor-coupled and would false-fail an adapter-signature change."
+  },
+  {
+   "file": "tests/characterization/truth_table_lib.py",
+   "action": "migrate",
+   "why": "Same driver re-point at evaluate(CoverConfig, SunSnapshot, TimeContext, ClimateInputs); climate_truth_table.json must be byte-identical after the switch."
+  },
+  {
+   "file": "tests/characterization/generate_truth_table.py",
+   "action": "migrate",
+   "why": "Follows the truth_table_lib re-point and adopts golden_lib.patch_sun_data (single-seam rule)."
+  },
+  {
+   "file": "tests/simulation/test_symptoms.py",
+   "action": "migrate",
+   "why": "Delete the vacuous test_end_time_close_retries_after_unavailable once wp7's test_pending_end_snap_real_retry lands (the fake service never raised for unavailable shades, so the retry path was never exercised); rest of the file keeps."
+  },
+  {
+   "file": "tests/test_hub.py",
+   "action": "migrate",
+   "why": "Replace the hand-seeded manager override asserts in test_reset_all_button_clears_overrides with remote-move latching + binary-sensor asserts (wp10 provides the pattern)."
+  },
+  {
+   "file": "tests/engine/ + tests/simulation/ (remaining) + remaining root entity tests (test_hub, test_provenance, test_change_settings, test_config_flow, test_add_entry, test_init, test_one_page_options, test_night_born_entries, test_forecast_and_trace, test_helpers)",
+   "action": "keep",
+   "why": "Already on public seams (engine evaluate/models, SimHouse surfaces, hass states/services/registries). test_purity.py stays as a structural guard."
+  }
+ ],
+ "behavior_tier": [
+  "A test is behavior-tier iff it touches the code only through the Refactor Contract seams: (1) engine.evaluate(config, sun, ctx, climate=None) -> Decision, the engine/models.py dataclasses and field names, the Intent enum, and the documented geometry functions gamma/valid_elevation/sunlit_top/tilt_percentage/profile_angle (trace strings semi-stable, pinned by goldens); (2) the config surface \u2014 const.py CONF_* keys and defaults, entry data/options shapes, options-over-data merge rule; (3) the entity surface \u2014 unique-id/entity-id scheme, sensor states and attributes (intent, decision_trace, move_blocked_by, forecast_today, manual_controlled, last/next-change formats), switch/select/button/binary-sensor semantics, RestoreEntity behavior; (4) the service surface \u2014 outbound cover.set_cover_position / cover.set_cover_tilt_position / homeassistant.update_entity calls (targets, values, timing) and inbound adaptive_cover.get_forecast + settings services; (5) SunData's public API (sun.py) as pinned by test_regression_sun_data_public_api_intact.",
+  "IN the tier: tests/simulation/** (SimHouse drives a real config entry through HA surfaces; its two internal couplings \u2014 coordinator._our_context_ids and patch('...calculation.SunData') \u2014 are centralized behind the golden_lib.is_integration_context / patch_sun_data helpers by the harness package, the only sanctioned exceptions until the refactor's first commit makes them public seams; the vacuous test_symptoms end-time-retry test is replaced by wp7's real one).",
+  "IN the tier: tests/characterization/test_golden_days.py + goldens/*.txt and test_climate_truth_table.py + climate_truth_table.json \u2014 counting only AFTER the migration package re-points golden_lib/truth_table_lib at engine.evaluate() with byte-identical outputs (the no-diff is itself the migration's verification).",
+  "IN the tier: tests/engine/** tests that call evaluate() or the documented geometry functions with models.py dataclasses; test_purity.py stays as a structural guard (not behavior, never a false positive).",
+  "IN the tier: root entity-surface tests that set up a real entry and assert only via hass.states, entity service calls, registries, and mocked cover services: test_service_calls.py, test_hub.py, test_provenance.py, test_change_settings.py, test_night_born_entries.py, test_add_entry.py, test_init.py, test_one_page_options.py, test_config_flow.py, test_forecast_and_trace.py, test_live_tunables.py::TestNumberEntities/TestGateVisibility, and the entity-level half of test_smoothing_and_privacy.py \u2014 plus the new wp9/wp10 files.",
+  "EXCLUDED (implementation tier \u2014 a refactor may freely break these; zero weight in the acceptance gate): tests/characterization/test_coordinator_gating.py; tests/test_coordinator.py (manager built directly, private method bound onto a MagicMock); tests/test_calculation.py (legacy-adapter constructors); tests/test_button.py (MagicMock coordinator encoding wait_for_target/TARGET_TIMEOUT); tests/test_smoothing_and_privacy.py::TestQuietHours/::TestMoveBudget (import make_coordinator); test_regression_fixes.py's direct ClimateCoverData / cover-constructor tests (its SunData tests stay behavior-tier); and any assert anywhere on coordinator.control_toggle, coordinator.manager.is_cover_manual, coordinator.data internals, or _-prefixed attributes.",
+  "Acceptance criterion (the deletion drill, run at refactor time): with the implementation tier entirely deleted (git rm the excluded files/classes), the behavior tier passes on trunk and kills 100% of the standard mutation set. That drill is the definition of done for 'refactor-safe'."
+ ],
+ "mutation_set": [
+  {
+   "id": "M01",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "check_position_delta",
+   "change": "`abs(position - state) >= self.min_change` -> `>` (audit #1: move exactly at threshold now blocked)"
+  },
+  {
+   "id": "M02",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "check_quiet_hours",
+   "change": "remove the `if self._is_snap_position(state, options): return True` early-return (audit #2: evening close swallowed in quiet window)"
+  },
+  {
+   "id": "M03",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "check_move_budget",
+   "change": "`>= self.max_moves_hour` -> `>` (audit #3: one extra move per rolling hour)"
+  },
+  {
+   "id": "M04",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "check_time_delta",
+   "change": "unconfigured-delta branch `return True` -> `return False`"
+  },
+  {
+   "id": "M05",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "timing-window resolution",
+   "change": "static CONF_START_TIME wins over the start-time entity (precedence swap)"
+  },
+  {
+   "id": "M06",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "end-time arming",
+   "change": "drop the `00:00`-means-next-midnight normalization"
+  },
+  {
+   "id": "M07",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "gate ordering",
+   "change": "evaluate position-delta before the manual-override check, so move_blocked_by names the wrong gate"
+  },
+  {
+   "id": "M08",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "handle_state_change",
+   "change": "`new_position != our_state` -> `==` (audit #4: manual detection inverted)"
+  },
+  {
+   "id": "M09",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "_is_own_landing",
+   "change": "`<= TARGET_TOLERANCE` -> `>` (audit #5: own landings latch as manual)"
+  },
+  {
+   "id": "M10",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "travel-window direction check",
+   "change": "expected opening/closing swapped (audit #6)"
+  },
+  {
+   "id": "M11",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "manual threshold",
+   "change": "`abs(diff) > self.manual_threshold` -> `abs(diff) > 0`"
+  },
+  {
+   "id": "M12",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "override expiry scheduling",
+   "change": "`timedelta(minutes=...)` -> `timedelta(hours=...)`"
+  },
+  {
+   "id": "M13",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "_update_manager_and_covers",
+   "change": "swap the `None` (restart: preserve) and `False` (toggle-off: clear) branches"
+  },
+  {
+   "id": "M14",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_timed_end_time",
+   "change": "catch-up flag inversion `<=` -> `>` (audit #7, previously caught by nothing)"
+  },
+  {
+   "id": "M15",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_handle_timed_refresh",
+   "change": "skip the sunset-position transform (audit #8, previously caught by nothing)"
+  },
+  {
+   "id": "M16",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "pending-snap retry",
+   "change": "`and self.control_toggle` -> `and not self.control_toggle` (audit #9, previously caught by nothing)"
+  },
+  {
+   "id": "M17",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "end-time re-arm on options change",
+   "change": "keep the stale timer (skip cancel/re-arm)"
+  },
+  {
+   "id": "M18",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_timed_end_time",
+   "change": "add `if now < self._end_time: return` at the top (late delivery becomes a no-op)"
+  },
+  {
+   "id": "M19",
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "gamma",
+   "change": "operand swap (audit #10)"
+  },
+  {
+   "id": "M20",
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "valid_elevation",
+   "change": "drop the horizon floor (audit #11)"
+  },
+  {
+   "id": "M21",
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "sunlit_top",
+   "change": "sign flip (audit #12)"
+  },
+  {
+   "id": "M22",
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "tilt_percentage",
+   "change": "mode1/mode2 divisor swap (audit #13)"
+  },
+  {
+   "id": "M23",
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "FOV boundary",
+   "change": "`gamma < fov_left` -> `<=` (and mirror on -fov_right)"
+  },
+  {
+   "id": "M24",
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "vertical percentage",
+   "change": "`distance / cos(gamma)` -> `distance * cos(gamma)`"
+  },
+  {
+   "id": "M25",
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "valid_elevation",
+   "change": "min and max band comparisons swapped"
+  },
+  {
+   "id": "M26",
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "sunset_valid",
+   "change": "offset sign flip (audit #19)"
+  },
+  {
+   "id": "M27",
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "sunrise-offset fallback",
+   "change": "falls back to `sunset_offset` -> falls back to `0`"
+  },
+  {
+   "id": "M28",
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "privacy offset",
+   "change": "`offset or DEFAULT` coercion so privacy_offset=0 becomes 30"
+  },
+  {
+   "id": "M29",
+   "file": "custom_components/adaptive_cover/engine/evaluate.py",
+   "function": "away/summer branch",
+   "change": "`return 0` -> `return 100` (audit #14)"
+  },
+  {
+   "id": "M30",
+   "file": "custom_components/adaptive_cover/engine/evaluate.py",
+   "function": "evaluate",
+   "change": "privacy-first ordering dropped for climate mode (audit #15)"
+  },
+  {
+   "id": "M31",
+   "file": "custom_components/adaptive_cover/engine/evaluate.py",
+   "function": "_apply_limits",
+   "change": "max-clamp comparison flip (audit #18)"
+  },
+  {
+   "id": "M32",
+   "file": "custom_components/adaptive_cover/engine/evaluate.py",
+   "function": "climate tilt presets",
+   "change": "dim-summer 80 <-> presence 45 preset swap"
+  },
+  {
+   "id": "M33",
+   "file": "custom_components/adaptive_cover/engine/evaluate.py",
+   "function": "sunlit-band asymmetry",
+   "change": "ADMIT_NO_GLARE compares band non-empty instead of band-top vs eye height (collapses cold-vs-hot-day asymmetry)"
+  },
+  {
+   "id": "M34",
+   "file": "custom_components/adaptive_cover/engine/evaluate.py",
+   "function": "season boundary",
+   "change": "summer test `temp > temp_high` -> `temp > temp_low`"
+  },
+  {
+   "id": "M35",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "inverse_state",
+   "change": "`100 - state` -> `state` (audit #16)"
+  },
+  {
+   "id": "M36",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "interpolate_states",
+   "change": "np.interp xp/fp swap (audit #17, previously caught by nothing)"
+  },
+  {
+   "id": "M37",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "interpolate_states",
+   "change": "interpolation endpoint snap-to-0/100 removed"
+  },
+  {
+   "id": "M38",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "transform ordering",
+   "change": "inverse-skipped-when-interp rule inverted (apply both transforms)"
+  },
+  {
+   "id": "M39",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "config merge",
+   "change": "`{**data, **options}` -> `{**options, **data}`"
+  },
+  {
+   "id": "M40",
+   "file": "custom_components/adaptive_cover/sensor.py",
+   "function": "position sensor",
+   "change": "state reports the raw pre-transform value"
+  },
+  {
+   "id": "M41",
+   "file": "custom_components/adaptive_cover/sensor.py",
+   "function": "control-method sensor",
+   "change": "winter/summer branch swap"
+  },
+  {
+   "id": "M42",
+   "file": "custom_components/adaptive_cover/binary_sensor.py",
+   "function": "sun-in-front binary sensor",
+   "change": "inverted"
+  },
+  {
+   "id": "M43",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "cover service routing",
+   "change": "tilt entries routed to set_cover_position instead of set_cover_tilt_position"
+  }
+ ],
+ "acceptance": {
+  "kill_rate_bar": "Behavior tier kills 43/43 (100%) \u2014 non-negotiable; a surviving mutation is a missing work package, not a waiver. tests/simulation/ ALONE must kill all coordinator-lifecycle mutations: groups A, B, C, F (M01\u2013M18, M35\u2013M39) plus M43 \u2014 coordinator internals are what the refactor reshapes most, and the sim is the only tier that survives that reshaping by construction. Group G's entity mutations (M40\u2013M42) may be killed by sim or the entity-surface behavior tests. Engine mutations (D, E: M19\u2013M34) may be killed by any of goldens / truth table / tests/engine \u2014 the evaluate() seam is itself frozen. Baseline for comparison: today the sim kills 5/24 (21%) and 4/24 were killed by nothing; those four (M14, M15, M16, M36) are first-priority and are each named in a package's acceptance (wp4, wp5, wp7). Kill rates are measured with the tests/mutation_set/ patch files + apply-run-revert runner landed by the harness package, so the number is reproducible.",
+  "notes": "SCHEDULING (fits ~10 parallel agents): Phase 1 \u2014 harness-ext package runs ALONE as the sole owner of shared files (harness.py, simulation/conftest.py, golden_lib.py seam helpers, root conftest, test_regressions.py call-site migration, README, mutation_set/, its smoke file); wp1-engine-geometry, wp9-entity-surfaces, and wp10-hub-behavior may run concurrently with it since they touch no shared file. Phase 2 \u2014 the remaining seven packages in parallel, each confined to its one new test file, priority tier A: wp2, wp3, wp4; tier B: wp5, wp6; tier C: wp7, wp8. Phase 3 \u2014 the migration package runs sequentially last (it edits many existing shared test files): golden/truth-table driver re-point with byte-identical outputs, assert rewrites, then retirements \u2014 each retirement only after the mutation runner shows the named replacement package killing that file's mutations \u2014 finishing with the section-defining deletion drill. CONSTRAINTS: tests only; production code must not change \u2014 a package that discovers a real production bug reports it instead of fixing (one known suite bug is pre-registered: the vacuous test_symptoms end-time-retry test, owned by wp7). DEFERRED TO THE REFACTOR'S FIRST COMMIT (spec for those agents): public coordinator.is_own_context(ctx) and a module-level sun_data_factory hook in calculation.py; until then the two golden_lib helpers are the single sanctioned coupling points. DROPPED WITH REASONS: E10 hub-inclusive sim mode and the \u00a79 fake-service hub delegation (plain-HA wp10 covers those gaps), E11 streamed-position shade, per-listener timer targeting / sub-minute races, blueprint/translations harness support, and the low lovelace-card-registration gap. Gap coverage: 25/25 critical, 24/24 high, 14/14 medium, 2/3 low (lovelace excluded)."
+ },
+ "behavior_tier_note": "merged"
+}
