@@ -968,6 +968,16 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
     async def async_handle_first_refresh(self, state: int, options):
         """Handle first refresh."""
+        if self.control_toggle is None:
+            # The first refresh runs before the switch platform restores,
+            # so the toggle is not known yet. Consuming the one-shot flag
+            # here silently skipped startup positioning; keep it pending —
+            # the switch's restore triggers another refresh that lands
+            # here with the toggle resolved.
+            self.logger.debug(
+                "First refresh deferred: control switch not restored yet"
+            )
+            return
         if self.control_toggle:
             for cover in self.entities:
                 if (
@@ -989,6 +999,15 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             "This is a timed refresh, using sunset position: %s",
             options.get(CONF_SUNSET_POS),
         )
+        if self.control_toggle is None:
+            # Startup/reload race: the timed close (or its catch-up) fired
+            # before the switch platform restored the control toggle.
+            # Keep timed_refresh and the catch-up flag pending — the
+            # switch's restore refresh completes the close.
+            self.logger.debug(
+                "Timed refresh deferred: control switch not restored yet"
+            )
+            return
         if self.control_toggle:
             # Same transform pipeline as every other move (interpolation +
             # inversion) — a raw sunset position is out of calibration for

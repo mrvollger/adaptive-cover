@@ -59,24 +59,33 @@ async def test_privacy_closes_after_dusk(hass, mock_sun_data, mock_sun_entity):
         },
     )
     entry.add_to_hass(hass)
-    calls = async_mock_service(hass, "cover", "set_cover_position")
+    async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
 
-    # Sunset was 40 minutes ago, sunrise long past: privacy window active.
+    # Sunset still hours away at setup: the fixed startup refresh tracks
+    # the sun instead of closing for privacy, so the transition into the
+    # privacy window below is what must command the close.
     now = dt.datetime.now(dt.UTC)
-    mock_sun_data.sunset.return_value = now - dt.timedelta(minutes=40)
+    mock_sun_data.sunset.return_value = now + dt.timedelta(hours=4)
     mock_sun_data.sunrise.return_value = now - dt.timedelta(hours=12)
 
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    # Land the startup move so its travel window clears.
+    hass.states.async_set(
+        COVER, "open", {"current_position": coordinator.target_call[COVER]}
+    )
+    await hass.async_block_till_done()
     calls = async_mock_service(hass, "cover", "set_cover_position")
 
+    # Sunset was 40 minutes ago, sunrise long past: privacy window active.
+    mock_sun_data.sunset.return_value = now - dt.timedelta(minutes=40)
     hass.states.async_set(
         "sun.sun", "below_horizon", {"azimuth": 300.0, "elevation": -8.0}
     )
     await hass.async_block_till_done()
 
-    coordinator = hass.data[DOMAIN][entry.entry_id]
     assert coordinator.data.states["state"] == 7
     assert len(calls) == 1
     assert calls[0].data == {"entity_id": COVER, "position": 7}
@@ -107,14 +116,25 @@ async def test_privacy_offset_zero_engages_at_sunset(
     entry.add_to_hass(hass)
     hass.states.async_set(COVER, "open", {"current_position": 60})
 
+    # Sunset still ahead at setup: the fixed startup refresh tracks the
+    # sun; the move commanded after sunset is the behavior under test.
     now = dt.datetime.now(dt.UTC)
-    mock_sun_data.sunset.return_value = now - dt.timedelta(minutes=10)
+    mock_sun_data.sunset.return_value = now + dt.timedelta(hours=4)
     mock_sun_data.sunrise.return_value = now - dt.timedelta(hours=12)
 
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    # Land the startup move so its travel window clears.
+    hass.states.async_set(
+        COVER, "open", {"current_position": coordinator.target_call[COVER]}
+    )
+    await hass.async_block_till_done()
     calls = async_mock_service(hass, "cover", "set_cover_position")
 
+    # Sunset 10 minutes ago with privacy_offset=0: already inside the
+    # privacy window; an `offset or 30` coercion would still be waiting.
+    mock_sun_data.sunset.return_value = now - dt.timedelta(minutes=10)
     hass.states.async_set(
         "sun.sun", "below_horizon", {"azimuth": 300.0, "elevation": -8.0}
     )
@@ -160,6 +180,14 @@ async def test_sunrise_offset_falls_back_to_sunset_offset(
     mock_sun_data.sunset.return_value = now + dt.timedelta(hours=8)
 
     await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    # The fixed startup refresh already tracks the sun (the inherited -60
+    # offset released the before-sunrise hold); land that move so its
+    # travel window clears before the nudge under test.
+    hass.states.async_set(
+        COVER, "open", {"current_position": coordinator.target_call[COVER]}
+    )
     await hass.async_block_till_done()
     calls = async_mock_service(hass, "cover", "set_cover_position")
 
@@ -357,8 +385,14 @@ async def test_no_recommand_while_awaiting_target(
     hass.states.async_set(COVER, "open", {"current_position": 60})
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    calls = async_mock_service(hass, "cover", "set_cover_position")
     coordinator = hass.data[DOMAIN][entry.entry_id]
+    # Land the startup move (fixed first refresh) so its travel window
+    # clears; the in-flight command under test is the nudge's own.
+    hass.states.async_set(
+        COVER, "open", {"current_position": coordinator.target_call[COVER]}
+    )
+    await hass.async_block_till_done()
+    calls = async_mock_service(hass, "cover", "set_cover_position")
 
     hass.states.async_set(
         "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}

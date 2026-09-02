@@ -19,7 +19,6 @@ Every restart goes through ``house.restart()`` and every options change
 through ``house.set_options()`` or the production settings service.
 """
 
-import pytest
 
 from custom_components.adaptive_cover.const import (
     CONF_DISTANCE,
@@ -270,19 +269,6 @@ async def test_end_time_rearm_via_settings_service(hass, freezer):
 # ----------------------------------------------------- catch-up close
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "PROD BUG: the catch-up end-time close is dropped on a late setup. "
-        "async_config_entry_first_refresh arms the past end time, whose "
-        "listener fires BEFORE the switch platform restores the control "
-        "switch; async_handle_timed_refresh then sees control_toggle=None "
-        "(falsy), logs 'Timed refresh but control toggle is off', and "
-        "consumes timed_refresh/_end_time_is_catchup without closing. "
-        "After a real HA restart landing past the end time the shades "
-        "stay up all night."
-    ),
-)
 async def test_catchup_close_on_late_setup(hass, freezer):
     """HA starting at 21:00 with end time 20:00 closes immediately (catch-up)."""
     house = await SimHouse.create(
@@ -375,19 +361,6 @@ async def test_catchup_skips_overridden_cover(hass, freezer):
 # ------------------------------------------------- startup positioning
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "PROD BUG: first-refresh startup positioning never runs. The "
-        "config-entry first refresh executes before the switch platform "
-        "is forwarded, so control_toggle is still None (falsy) and "
-        "async_handle_first_refresh logs 'First refresh but control "
-        "toggle is off' and consumes the one-shot first_refresh flag; "
-        "the switch restore afterwards deliberately skips force_apply "
-        "(added=True). Covers are only positioned by the NEXT sun "
-        "change, with source='adaptive' instead of 'startup'."
-    ),
-)
 async def test_daytime_startup_positions(hass, freezer):
     """HA starting mid-day immediately positions covers (source=startup)."""
     house = await SimHouse.create(hass, freezer, date=DATE, start_at="13:00")

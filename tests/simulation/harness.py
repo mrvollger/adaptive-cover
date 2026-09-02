@@ -29,7 +29,7 @@ from dataclasses import dataclass
 import pandas as pd
 import pytz
 from astral import sun as astral_sun
-from homeassistant.core import Context, ServiceCall, State
+from homeassistant.core import Context, ServiceCall, State, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import (
@@ -366,6 +366,13 @@ class SimHouse:
         await self.hass.async_block_till_done()
 
     async def teardown(self) -> None:
+        # Disarm the service re-win guard FIRST: a dead house must never
+        # steal the cover services back from a house created after it.
+        unsub = getattr(self, "_service_guard_unsub", None)
+        if unsub is not None:
+            unsub()
+            self._service_guard_unsub = None
+        self._registering_services = True  # belt: guard body no-ops too
         if self.entry is not None:
             await self.hass.config_entries.async_unload(self.entry.entry_id)
             await self.hass.async_block_till_done()
@@ -465,10 +472,20 @@ class SimHouse:
     def _actor_for(self, ctx: Context | None) -> str:
         if ctx is not None and getattr(ctx, "user_id", None) == SIM_USER_ID:
             return "human"
-        if self.coordinator is not None and is_integration_context(
-            self.coordinator, ctx
-        ):
-            return "integration"
+        # Commands can fire DURING entry setup/reload (startup positioning,
+        # catch-up close) before self.coordinator is (re)assigned — and
+        # after a reload self.coordinator briefly points at the STALE
+        # object. Check the live coordinator from hass.data as well.
+        live = (
+            self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id)
+            if self.entry is not None
+            else None
+        )
+        for coordinator in (live, self.coordinator):
+            if coordinator is not None and is_integration_context(
+                coordinator, ctx
+            ):
+                return "integration"
         return "device"
 
     def _shade_state_str(self, shade: FakeShade) -> str:
@@ -530,15 +547,39 @@ class SimHouse:
                         actor="device",
                     )
 
-        self.hass.services.async_register(
-            "cover", "set_cover_position", handle_set_position
-        )
-        self.hass.services.async_register(
-            "cover", "set_cover_tilt_position", handle_set_tilt
-        )
-        self.hass.services.async_register(
-            "homeassistant", "update_entity", handle_update_entity
-        )
+        self._registering_services = True
+        try:
+            self.hass.services.async_register(
+                "cover", "set_cover_position", handle_set_position
+            )
+            self.hass.services.async_register(
+                "cover", "set_cover_tilt_position", handle_set_tilt
+            )
+            self.hass.services.async_register(
+                "homeassistant", "update_entity", handle_update_entity
+            )
+        finally:
+            self._registering_services = False
+
+        # The hub bootstrap loads the real cover component DURING entry
+        # setup and its registration steals the services mid-setup —
+        # exactly when startup positioning and catch-up closes fire.
+        # Keep winning: whenever someone else registers a cover service,
+        # immediately re-register the fakes.
+        if not getattr(self, "_service_guard_installed", False):
+            self._service_guard_installed = True
+
+            @callback
+            def _rewin(event) -> None:
+                if event.data.get("domain") != "cover":
+                    return
+                if self._registering_services:
+                    return  # our own registration event
+                self._register_services()
+
+            self._service_guard_unsub = self.hass.bus.async_listen(
+                "service_registered", _rewin
+            )
 
     async def _handle_cover_command(
         self, call: ServiceCall, *, travel_field: str, attr: str, service: str

@@ -203,6 +203,10 @@ async def test_inverse_state_commands(hass, freezer):
         (m.time, m.position) for m in baseline.auto_moves(SHADE)
     ]
     await baseline.teardown()
+    # The harness's service re-win guard keeps its bus listener after
+    # teardown; disarm it so the dead house cannot steal the cover
+    # services back from the inverse house created next.
+    baseline._registering_services = True
 
     inverse = await make_house(
         hass,

@@ -309,6 +309,10 @@ async def test_ignore_intermediate_option(hass, freezer):
         "default config did not latch at motion start"
     )
     await house.teardown()
+    # The harness's service re-win guard keeps its bus listener after
+    # teardown; disarm it so the dead house cannot steal the cover
+    # services back from the second house created next.
+    house._registering_services = True
 
     # ignore_intermediate: the opening transition alone must NOT latch.
     house = await SimHouse.create(

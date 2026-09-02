@@ -71,6 +71,18 @@ async def _setup(hass, entry):
     await hass.async_block_till_done()
 
 
+async def _land_startup_move(hass, entry):
+    """Complete the startup positioning the fixed first refresh performs.
+
+    Setup now commands the cover (source='startup') as soon as the control
+    switch restores; land the cover on that target so the in-flight travel
+    window clears before the behavior under test begins.
+    """
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    _set_cover(hass, coordinator.target_call[COVER])
+    await hass.async_block_till_done()
+
+
 def _set_cover(hass, position, state="open"):
     hass.states.async_set(
         COVER, state, {"current_position": position} if position is not None else {}
@@ -83,14 +95,24 @@ def _nudge_sun(hass, elevation=44.0):
     )
 
 
-async def test_fresh_setup_makes_no_cover_call(
-    hass, cover_entry, mock_sun_entity, cover_calls
+async def test_fresh_setup_positions_covers(
+    hass, cover_entry, mock_sun_entity
 ):
-    """QUIRK: first refresh runs before the control switch restores, so a
-    fresh setup never positions the covers until the first event."""
+    """A fresh setup positions the covers immediately (source='startup').
+
+    The first refresh used to run before the control switch restored and
+    consumed the one-shot flag with the toggle still None — covers then
+    sat at their stale position until the next sun change. The fix defers
+    the flag, so the switch's restore-refresh performs the startup move.
+    (The command itself is measured via target_call because the hub
+    bootstrap replaces any pre-setup service mock during setup.)
+    """
     _set_cover(hass, 60)
     await _setup(hass, cover_entry)
-    assert cover_calls == []
+    coordinator = hass.data[DOMAIN][cover_entry.entry_id]
+    assert COVER in coordinator.target_call, "no startup command was issued"
+    assert coordinator.target_call[COVER] == coordinator.data.states["state"]
+    assert coordinator.move_log[COVER][0]["source"] == "startup"
 
 
 async def test_sun_change_triggers_position_call(
@@ -98,6 +120,7 @@ async def test_sun_change_triggers_position_call(
 ):
     _set_cover(hass, 60)
     await _setup(hass, cover_entry)
+    await _land_startup_move(hass, cover_entry)
     cover_calls = async_mock_service(hass, "cover", "set_cover_position")
 
     _nudge_sun(hass)
@@ -133,6 +156,7 @@ async def test_regression_1b2b668_override_visible_same_cycle(
     """A manual move must latch override AND show in the same cycle's data."""
     _set_cover(hass, 60)
     await _setup(hass, cover_entry)
+    await _land_startup_move(hass, cover_entry)
     cover_calls = async_mock_service(hass, "cover", "set_cover_position")
     coordinator = hass.data[DOMAIN][cover_entry.entry_id]
 
@@ -165,6 +189,7 @@ async def test_regression_foreign_landing_during_wait_latches_manual(
     """
     _set_cover(hass, 60)
     await _setup(hass, cover_entry)
+    await _land_startup_move(hass, cover_entry)
     cover_calls = async_mock_service(hass, "cover", "set_cover_position")
     coordinator = hass.data[DOMAIN][cover_entry.entry_id]
 

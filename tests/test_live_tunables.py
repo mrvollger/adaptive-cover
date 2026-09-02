@@ -216,14 +216,24 @@ class TestGateVisibility:
             **{CONF_QUIET_START: "00:00:00", CONF_QUIET_END: "23:59:00"},
         )
         await _setup(hass, entry)
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        # The fixed first refresh commands a startup position (it bypasses
+        # the quiet-hours gate by design); land the cover on that target so
+        # the in-flight travel window cannot mask the gate under test.
+        hass.states.async_set(
+            COVER,
+            "open",
+            {"current_position": coordinator.target_call[COVER]},
+        )
+        await hass.async_block_till_done()
+        calls = async_mock_service(hass, "cover", "set_cover_position")
 
         hass.states.async_set(
             "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
         )
         await hass.async_block_till_done()
 
-        coordinator = hass.data[DOMAIN][entry.entry_id]
-        assert cover_calls_stub == []
+        assert calls == []
         assert (
             coordinator.data.attributes["move_blocked_by"].get(COVER)
             == "quiet_hours"
@@ -234,6 +244,15 @@ class TestGateVisibility:
     ):
         entry = _entry(hass)
         await _setup(hass, entry)
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        # Land the startup move (fixed first refresh) so its travel window
+        # clears and the nudge below is judged by the ordinary gates.
+        hass.states.async_set(
+            COVER,
+            "open",
+            {"current_position": coordinator.target_call[COVER]},
+        )
+        await hass.async_block_till_done()
         cover_calls_stub = async_mock_service(hass, "cover", "set_cover_position")
 
         hass.states.async_set(

@@ -79,19 +79,46 @@ def mock_sun_data():
     now_utc = datetime.now(UTC)
     tomorrow = now_utc + timedelta(days=1)
     yesterday = now_utc - timedelta(days=1)
-    mock_instance = MagicMock()
+
+    class _LocalDaySunData(MagicMock):
+        """MagicMock whose solar table always spans TODAY in HA's local tz.
+
+        The table was previously built once on the UTC date; between local
+        17:00 and midnight (with the US/Pacific default test timezone) that
+        date is already "tomorrow", so every coordinator refresh looked like
+        a new solar day and cleared manual overrides mid-test. Lazy
+        properties keep the table pinned to the same local date the
+        coordinator's day-rollover check compares against, at any wall-clock
+        hour and for any per-test timezone.
+        """
+
+        _N = 289  # 24h of 5-minute samples, inclusive
+
+        @property
+        def times(self):
+            from homeassistant.util import dt as dt_util
+
+            tz = dt_util.DEFAULT_TIME_ZONE
+            today_local = datetime.now(tz).date()
+            return pd.date_range(
+                start=today_local, periods=self._N, freq="5min", tz=str(tz)
+            )
+
+        @property
+        def solar_azimuth(self):
+            return [180.0] * self._N
+
+        @property
+        def solar_elevation(self):
+            return [45.0] * self._N
+
+    mock_instance = _LocalDaySunData()
     mock_instance.sunset.return_value = datetime(
         tomorrow.year, tomorrow.month, tomorrow.day, 23, 59, 59, tzinfo=UTC
     )
     mock_instance.sunrise.return_value = datetime(
         yesterday.year, yesterday.month, yesterday.day, 0, 0, 1, tzinfo=UTC
     )
-    # Provide solar data for solar_times() method
-    today = now_utc.date()
-    times = pd.date_range(start=today, periods=289, freq="5min", tz="UTC")
-    mock_instance.times = times
-    mock_instance.solar_azimuth = [180.0] * len(times)
-    mock_instance.solar_elevation = [45.0] * len(times)
 
     with patch_sun_data(mock_instance):
         yield mock_instance

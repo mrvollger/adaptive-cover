@@ -154,6 +154,14 @@ class TestPositionSensor:
         eid = _eid(hass, "sensor", entry, "Cover Position")
         assert hass.states.get(eid).state == str(100 - POS_AT_45)
 
+        # The fixed startup refresh already commanded the (inverse) startup
+        # position; land the cover on it so the travel window clears and
+        # the sun change below produces the command under test.
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        assert coordinator.target_call[COVER] == 100 - POS_AT_45
+        _set_cover(hass, 100 - POS_AT_45)
+        await hass.async_block_till_done()
+
         # Re-mock: the hub bootstrap during setup registers real cover
         # services on top of the pre-setup mock (same as test_service_calls).
         calls = async_mock_service(hass, "cover", "set_cover_position")

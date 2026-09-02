@@ -59,6 +59,14 @@ async def test_adaptive_move_records_source_and_intent(
 ):
     entry = _entry(hass)
     coordinator = await _setup(hass, entry)
+    # The fixed first refresh positions the cover right at setup: make
+    # that startup move explicit, then land the cover on its target so
+    # the travel window clears and the adaptive nudge below commands.
+    assert coordinator.move_log[COVER][0]["source"] == "startup"
+    hass.states.async_set(
+        COVER, "open", {"current_position": coordinator.target_call[COVER]}
+    )
+    await hass.async_block_till_done()
     events = []
     hass.bus.async_listen(
         "adaptive_cover_moved", lambda e: events.append(e.data)
@@ -109,6 +117,12 @@ async def test_hub_gesture_recorded_as_all_covers(hass, mock_sun_entity):
 async def test_last_moves_attribute(hass, mock_sun_entity):
     entry = _entry(hass)
     coordinator = await _setup(hass, entry)
+    # Land the startup move (fixed first refresh) so its travel window
+    # clears and the nudge below produces the adaptive move under test.
+    hass.states.async_set(
+        COVER, "open", {"current_position": coordinator.target_call[COVER]}
+    )
+    await hass.async_block_till_done()
 
     _nudge_sun(hass)
     await hass.async_block_till_done()

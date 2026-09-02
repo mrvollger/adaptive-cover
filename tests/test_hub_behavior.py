@@ -177,7 +177,17 @@ async def test_aggregate_set_marks_manual_control_case(hass, mock_sun_entity):
 
     Proves the empty-calls assert above is not vacuous.
     """
-    await _setup_two_entries(hass)
+    e1, e2 = await _setup_two_entries(hass)
+
+    # The fixed startup refresh commanded both members at setup; land each
+    # cover on its target so the travel windows clear and the elevation-50
+    # tick below (~28%, differing from the landed positions) re-commands.
+    for entry, cover in ((e1, "cover.a"), (e2, "cover.b")):
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        hass.states.async_set(
+            cover, "open", {"current_position": coordinator.target_call[cover]}
+        )
+    await hass.async_block_till_done()
 
     calls = async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(
