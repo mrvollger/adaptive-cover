@@ -8,11 +8,11 @@ import { t } from './i18n';
  * back to its calculated position, which is easy to trigger by accident from
  * the badge/panel right after a manual move.
  */
-export function confirmResume(hass?: HomeAssistant, targetPosition?: number | null): boolean {
+export function confirmResume(targetPosition?: number | null): boolean {
   const msg =
     targetPosition != null && Number.isFinite(targetPosition)
-      ? t('overrides.resume_confirm_pos', hass, { position: String(Math.round(targetPosition)) })
-      : t('overrides.resume_confirm', hass);
+      ? t('overrides.resume_confirm_pos', { position: String(Math.round(targetPosition)) })
+      : t('overrides.resume_confirm');
   return window.confirm(msg);
 }
 

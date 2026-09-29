@@ -57,9 +57,7 @@ describe('cover-position helpers (Adaptive Cover sensor contract)', () => {
 
   it('returns null when the sensor state is not numeric or the sensor is missing', () => {
     expect(coverHeldPosition(makeHass({ state: 'unavailable' }), discovered())).toBeNull();
-    expect(
-      coverHeldPosition(makeHass({ state: '44' }), discovered({ entities: {} })),
-    ).toBeNull();
+    expect(coverHeldPosition(makeHass({ state: '44' }), discovered({ entities: {} }))).toBeNull();
   });
 
   it('coverSolarTarget is an alias of the held/engine target', () => {

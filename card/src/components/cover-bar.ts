@@ -53,15 +53,15 @@ export class CoverBar extends LitElement {
     const overrideDivergence = isOverrideDivergence(this.hass, this.discovered);
     const entries = Object.entries(covers);
     if (entries.length === 0) {
-      return html`<div class="placeholder">${t('covers.placeholder', this.hass)}</div>`;
+      return html`<div class="placeholder">${t('covers.placeholder')}</div>`;
     }
     return html`
       <div class="wrap" style=${this.coverColor ? `--acp-cover-color:${this.coverColor}` : nothing}>
         <div class="head">
-          <span class="label">${t('covers.title', this.hass)}</span>
+          <span class="label">${t('covers.title')}</span>
           <span class="targets">
             <span class="target"
-              >${t(overrideDivergence ? 'covers.target_solar' : 'covers.target', this.hass, {
+              >${t(overrideDivergence ? 'covers.target_solar' : 'covers.target', {
                 pct: formatPercent(target),
               })}</span
             >
@@ -93,7 +93,7 @@ export class CoverBar extends LitElement {
         <div
           class="track"
           @click=${(e: MouseEvent) => this._handleTrackClick(e, entityId)}
-          ${tooltip(t('covers.click_to_set', this.hass))}
+          ${tooltip(t('covers.click_to_set'))}
         >
           <div class="fill" style="width:${actualPct}%"></div>
           <div class="fill-closed" style="width:${100 - actualPct}%"></div>
@@ -104,7 +104,6 @@ export class CoverBar extends LitElement {
                 ${tooltip(
                   t(
                     overrideDivergence ? 'covers.target_tooltip_override' : 'covers.target_tooltip',
-                    this.hass,
                     { pct: targetPct },
                   ),
                 )}

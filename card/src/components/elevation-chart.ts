@@ -111,7 +111,7 @@ export class ElevationChart extends LitElement {
       time_zone?: string;
     };
     if (latitude === undefined || longitude === undefined || !firstAttrs) {
-      return html`<div class="placeholder">${t('elevation.placeholder', this.hass)}</div>`;
+      return html`<div class="placeholder">${t('elevation.placeholder')}</div>`;
     }
 
     const day = startOfDayInZone(time_zone);
@@ -197,8 +197,8 @@ export class ElevationChart extends LitElement {
         anchor,
         label: formatClock(iso, time_zone),
         tooltip: isStart
-          ? t('elevation.schedule_start_tooltip', this.hass)
-          : t('elevation.schedule_end_tooltip', this.hass),
+          ? t('elevation.schedule_start_tooltip')
+          : t('elevation.schedule_end_tooltip'),
       };
     });
     // Head summary line: "Schedule 07:30 – 21:00" with open-ended variants.
@@ -206,9 +206,9 @@ export class ElevationChart extends LitElement {
       if (!bounds) return null;
       const from = bounds.start ? formatClock(bounds.start.toISOString(), time_zone) : null;
       const to = bounds.end ? formatClock(bounds.end.toISOString(), time_zone) : null;
-      if (from && to) return t('elevation.schedule', this.hass, { from, to });
-      if (from) return t('elevation.schedule_from', this.hass, { from });
-      if (to) return t('elevation.schedule_until', this.hass, { to });
+      if (from && to) return t('elevation.schedule', { from, to });
+      if (from) return t('elevation.schedule_from', { from });
+      if (to) return t('elevation.schedule_until', { to });
       return null;
     })();
 
@@ -292,7 +292,7 @@ export class ElevationChart extends LitElement {
     return html`
       <div class="wrap">
         <div class="head">
-          <span class="label">${t('elevation.title', this.hass)}</span>
+          <span class="label">${t('elevation.title')}</span>
           <span class="head-meta">
             ${
               // Multi-window: no per-window legend here — the sky-compass legend
@@ -302,9 +302,9 @@ export class ElevationChart extends LitElement {
                 ? nothing
                 : anyFov
                   ? html`<span class="dim"
-                      >${t('elevation.fov_windows', this.hass, { windows: windows[0].label })}</span
+                      >${t('elevation.fov_windows', { windows: windows[0].label })}</span
                     >`
-                  : html`<span class="dim">${t('elevation.no_fov_today', this.hass)}</span>`
+                  : html`<span class="dim">${t('elevation.no_fov_today')}</span>`
             }
             ${scheduleSummary
               ? html`<span class="dim schedule">${scheduleSummary}</span>`
@@ -363,9 +363,9 @@ export class ElevationChart extends LitElement {
               // dropped from the head legend live here on hover instead).
               const trackTitle = w.runs.length
                 ? w.d.entry_title
-                : t('elevation.fov_window_named', this.hass, {
+                : t('elevation.fov_window_named', {
                     name: w.d.entry_title,
-                    windows: t('elevation.no_fov_today', this.hass),
+                    windows: t('elevation.no_fov_today'),
                   });
               const track = svg`<rect
                 class="ribbon-track"
@@ -386,7 +386,7 @@ export class ElevationChart extends LitElement {
                   rx="2"
                   style=${`fill:${w.color}`}
                   ${tooltip(
-                    t('elevation.fov_window_named', this.hass, {
+                    t('elevation.fov_window_named', {
                       name: w.d.entry_title,
                       windows: b.range,
                     }),

@@ -144,7 +144,8 @@ trap cleanup EXIT
 sed -i.bak "s/export const CARD_VERSION = '.*'/export const CARD_VERSION = '${DEV_VERSION}'/" src/const.ts
 rm -f src/const.ts.bak
 echo "==> Building (version ${DEV_VERSION})"
-npm run build
+# Build into dist/ (not the committed www/ bundle) so the dev stamp never lands there.
+CARD_OUT_DIR=dist npm run build
 echo "$ORIGINAL_CONST" > src/const.ts
 ORIGINAL_CONST=""  # disarm cleanup restore
 

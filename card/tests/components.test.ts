@@ -38,11 +38,7 @@ const baseDiscovered: DiscoveredEntities = {
 };
 
 describe('acp-decision-strip', () => {
-  function traceHass(
-    lines: string[],
-    intent = 'calculated',
-    state = '42',
-  ): HomeAssistant {
+  function traceHass(lines: string[], intent = 'calculated', state = '42'): HomeAssistant {
     return {
       states: {
         'sensor.cover_position': {
@@ -60,11 +56,7 @@ describe('acp-decision-strip', () => {
 
   it('renders one row per decision_trace line with the final line highlighted', async () => {
     const el = await mount<LitLike>('acp-decision-strip');
-    el.hass = traceHass([
-      'privacy: not configured',
-      'climate: mode off',
-      'sun in view: tracking',
-    ]);
+    el.hass = traceHass(['privacy: not configured', 'climate: mode off', 'sun in view: tracking']);
     el.discovered = traceDiscovered;
     await flush(el);
     const rows = el.shadowRoot!.querySelectorAll('.row');

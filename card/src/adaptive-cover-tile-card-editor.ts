@@ -210,7 +210,7 @@ export class AdaptiveCoverTileCardEditor extends LitElement implements LovelaceC
 
   private _computeLabel = (schema: HaFormSchemaItem): string => {
     const key = LABEL_KEYS[schema.name];
-    return key ? t(key, this.hass) : schema.name;
+    return key ? t(key) : schema.name;
   };
 
   private _valueChanged = (e: ValueChangedEvent): void => {
@@ -260,25 +260,23 @@ export class AdaptiveCoverTileCardEditor extends LitElement implements LovelaceC
       // Fall back to the same manual-entry input the main editor uses.
       return html`
         <div class="form">
-          <div class="error">
-            ${t('editor.common.load_failed', this.hass, { error: this._entriesError })}
-          </div>
+          <div class="error">${t('editor.common.load_failed', { error: this._entriesError })}</div>
           <label class="field-label" for="entry-id-fallback"
-            >${t('editor.common.entry_id_fallback_label', this.hass)}</label
+            >${t('editor.common.entry_id_fallback_label')}</label
           >
           <input
             id="entry-id-fallback"
             type="text"
             class="text-input"
             .value=${this._config.entry_id ?? ''}
-            placeholder=${t('editor.common.entry_id_manual_placeholder', this.hass)}
+            placeholder=${t('editor.common.entry_id_manual_placeholder')}
             @change=${(e: Event) =>
               this._emit({
                 ...(this._config ?? { type: '', entry_id: '' }),
                 entry_id: (e.target as HTMLInputElement).value,
               })}
           />
-          ${renderEditorFooter(this.hass)}
+          ${renderEditorFooter()}
         </div>
       `;
     }
@@ -303,9 +301,9 @@ export class AdaptiveCoverTileCardEditor extends LitElement implements LovelaceC
           @value-changed=${this._valueChanged}
         ></ha-form>
         ${this._managedCovers.length > 1 && !this._config?.cover
-          ? html`<div class="hint">${t('editor.tile.cover_blank_hint', this.hass)}</div>`
+          ? html`<div class="hint">${t('editor.tile.cover_blank_hint')}</div>`
           : nothing}
-        ${renderEditorFooter(this.hass)}
+        ${renderEditorFooter()}
       </div>
     `;
   }
@@ -314,8 +312,8 @@ export class AdaptiveCoverTileCardEditor extends LitElement implements LovelaceC
     const entryOptions = this._entries?.map((e) => ({ value: e.entry_id, label: e.title })) ?? [];
 
     const layoutOptions = [
-      { value: 'one-line', label: t('editor.tile.layout_option_one_line', this.hass) },
-      { value: 'detailed', label: t('editor.tile.layout_option_detailed', this.hass) },
+      { value: 'one-line', label: t('editor.tile.layout_option_one_line') },
+      { value: 'detailed', label: t('editor.tile.layout_option_detailed') },
     ];
 
     // Filter the cover picker to the entry's managed covers once we have
@@ -358,7 +356,7 @@ export class AdaptiveCoverTileCardEditor extends LitElement implements LovelaceC
         // stay flat in the form value (ha-form does not nest unnamed groups).
         type: 'expandable',
         name: '',
-        title: t('editor.tile.badge_section', this.hass),
+        title: t('editor.tile.badge_section'),
         icon: 'mdi:label-multiple-outline',
         schema: [
           {

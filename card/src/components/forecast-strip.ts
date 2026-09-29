@@ -82,7 +82,7 @@ export class ForecastStrip extends LitElement {
           return null;
         const x = xAt(eventTime);
         const colorClass = `evt-${e.kind}`;
-        const ttText = describeEvent(e, this.hass);
+        const ttText = describeEvent(e);
         return svg`<g class="event-group" ${tooltip(ttText)}>
           <line
             class="event-hit"
@@ -307,9 +307,9 @@ function clampPercent(value: number): number {
   return value;
 }
 
-function describeEvent(e: ForecastEvent, hass: HomeAssistant | undefined): string {
+function describeEvent(e: ForecastEvent): string {
   const key = `forecast.event.${e.kind}`;
-  const translated = t(key, hass);
+  const translated = t(key);
   // `t()` echoes the key when missing — treat that as "no translation found".
   const meaning = translated === key ? (e.label ?? e.kind) : translated;
   const time = formatClock(e.t);

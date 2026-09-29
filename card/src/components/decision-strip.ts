@@ -38,14 +38,14 @@ export class DecisionStrip extends LitElement {
 
   private _winnerLabel(intent: string): string {
     const key = normalizeHandler(intent);
-    return isKnownIntent(key) ? t(HANDLER_I18N_KEYS[key], this.hass) : intent;
+    return isKnownIntent(key) ? t(HANDLER_I18N_KEYS[key]) : intent;
   }
 
   protected render(): TemplateResult | typeof nothing {
     if (!this.hass || !this.discovered) return nothing;
     const attrs = readTraceAttrs(this.hass, this.discovered);
     if (!attrs || attrs.trace.length === 0) {
-      return html`<div class="placeholder">${t('decision.placeholder', this.hass)}</div>`;
+      return html`<div class="placeholder">${t('decision.placeholder')}</div>`;
     }
     const winnerLabel = this._winnerLabel(attrs.winner);
     const summary = buildDecisionSentence(
@@ -59,13 +59,11 @@ export class DecisionStrip extends LitElement {
     return html`
       <div class="wrap">
         <div class="head">
-          <span class="label">${t('decision.pipeline', this.hass)}</span>
-          <span class="winner">${t('decision.winner', this.hass, { name: winnerLabel })}</span>
+          <span class="label">${t('decision.pipeline')}</span>
+          <span class="winner">${t('decision.winner', { name: winnerLabel })}</span>
         </div>
         ${this.showSummary && summary
-          ? html`<div class="summary" ${tooltip(t('decision.summary_tooltip', this.hass))}>
-              ${summary}
-            </div>`
+          ? html`<div class="summary" ${tooltip(t('decision.summary_tooltip'))}>${summary}</div>`
           : nothing}
         <div class="rows">${visible.map((step, i) => this._row(step, i))}</div>
       </div>
@@ -75,7 +73,7 @@ export class DecisionStrip extends LitElement {
   private _labels(): Record<string, string> {
     const labels: Record<string, string> = {};
     for (const [key, dotted] of Object.entries(HANDLER_I18N_KEYS)) {
-      labels[key] = t(dotted, this.hass);
+      labels[key] = t(dotted);
     }
     return labels;
   }

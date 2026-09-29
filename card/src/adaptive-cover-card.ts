@@ -262,8 +262,8 @@ export class AdaptiveCoverCard extends LitElement {
           ? html`<acp-header-pill
               .on=${autoOn}
               .readonly=${!flags.automatic_control}
-              .label=${t('header.auto', this.hass)}
-              title=${t('header.automatic_control', this.hass)}
+              .label=${t('header.auto')}
+              title=${t('header.automatic_control')}
               @pill-click=${() => this._toggle(autoId)}
             ></acp-header-pill>`
           : nothing}
@@ -280,7 +280,7 @@ export class AdaptiveCoverCard extends LitElement {
     return html`
       <ha-card>
         <div class="empty">
-          <p class="dim">${t('root.loading_registry', this.hass)}</p>
+          <p class="dim">${t('root.loading_registry')}</p>
         </div>
       </ha-card>
     `;
@@ -295,7 +295,7 @@ export class AdaptiveCoverCard extends LitElement {
     return html`
       <ha-card>
         <div class="empty">
-          <p><strong>${t('root.no_entities_title', this.hass)}</strong></p>
+          <p><strong>${t('root.no_entities_title')}</strong></p>
           <p class="dim">Configured <code>entry_id</code>: <code>${entryId}</code></p>
           <ul class="diag">
             <li>Reason: <code>${reason}</code></li>
