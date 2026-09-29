@@ -1818,6 +1818,8 @@ tests/test_init.py::test_setup_and_unload_vertical
 tests/test_live_tunables.py::TestGateVisibility::test_allowed_move_clears_the_gate
 tests/test_live_tunables.py::TestGateVisibility::test_blocked_move_names_the_gate
 tests/test_live_tunables.py::TestNumberEntities::test_geometry_numbers_created_for_blinds
+tests/test_live_tunables.py::TestNumberEntities::test_regression_threshold_numbers_follow_unit_system[celsius]
+tests/test_live_tunables.py::TestNumberEntities::test_regression_threshold_numbers_follow_unit_system[fahrenheit]
 tests/test_live_tunables.py::TestNumberEntities::test_setting_number_persists_and_reloads
 tests/test_live_tunables.py::TestNumberEntities::test_temp_numbers_only_with_climate
 tests/test_live_tunables.py::TestNumberEntities::test_temp_numbers_with_climate_show_defaults

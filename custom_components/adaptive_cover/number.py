@@ -7,10 +7,11 @@ the same values, so there is one source of truth.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -127,6 +128,33 @@ TUNABLES: tuple[TunableSpec, ...] = (
     ),
 )
 
+# Climate thresholds are stored and compared in HA's temperature unit
+# (v1.13.5), so their numbers must show that unit with a range that fits
+# it. TUNABLES hold the °C shape; other units swap in
+# (min, max, step, default). The stored value is never converted.
+TEMPERATURE_SHAPES: dict[str, dict[str, tuple[float, float, float, float]]] = {
+    UnitOfTemperature.FAHRENHEIT: {
+        CONF_TEMP_LOW: (40, 90, 0.5, 72),
+        CONF_TEMP_HIGH: (50, 100, 0.5, 75),
+    },
+}
+
+
+def spec_for_unit(spec: TunableSpec, temperature_unit: str | None) -> TunableSpec:
+    """Return ``spec`` shaped for HA's temperature unit (unchanged otherwise)."""
+    shape = TEMPERATURE_SHAPES.get(temperature_unit or "", {}).get(spec.key)
+    if shape is None:
+        return spec
+    min_value, max_value, step, default = shape
+    return replace(
+        spec,
+        min_value=min_value,
+        max_value=max_value,
+        step=step,
+        unit=temperature_unit,
+        default=default,
+    )
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -139,9 +167,12 @@ async def async_setup_entry(
     ]
     is_blind = config_entry.data.get(CONF_SENSOR_TYPE) == SensorType.BLIND
     is_climate = bool(config_entry.options.get(CONF_CLIMATE_MODE))
+    temperature_unit = hass.config.units.temperature_unit
 
     entities = [
-        AdaptiveCoverNumber(config_entry, coordinator, spec)
+        AdaptiveCoverNumber(
+            config_entry, coordinator, spec_for_unit(spec, temperature_unit)
+        )
         for spec in TUNABLES
         if (not spec.blind_only or is_blind) and (not spec.climate_only or is_climate)
     ]
