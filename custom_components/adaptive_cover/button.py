@@ -14,6 +14,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import _LOGGER, CONF_ENTITIES, DOMAIN
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info
+from .entity_surface import apply_surface, window_surface
 
 
 async def async_setup_entry(
@@ -75,6 +76,7 @@ class AdaptiveCoverButton(
         super().__init__(coordinator=coordinator)
         self._name = config_entry.data["name"]
         self._attr_unique_id = f"{unique_id}_{button_name}"
+        apply_surface(self, window_surface("button", button_name))
         self._device_id = unique_id
         self._button_name = button_name
         self._display_name = display_name or button_name

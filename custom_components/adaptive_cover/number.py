@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -31,6 +30,7 @@ from .const import (
 )
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info
+from .entity_surface import apply_surface, window_surface
 
 
 @dataclass(frozen=True)
@@ -112,7 +112,6 @@ class AdaptiveCoverNumber(
 
     _attr_has_entity_name = True
     _attr_should_poll = False
-    _attr_entity_category = EntityCategory.CONFIG
     _attr_mode = NumberMode.BOX
 
     def __init__(
@@ -131,6 +130,7 @@ class AdaptiveCoverNumber(
         self._attr_native_unit_of_measurement = spec.unit
         self._attr_icon = spec.icon
         self._attr_unique_id = f"{config_entry.entry_id}_number_{spec.key}"
+        apply_surface(self, window_surface("number", f"number_{spec.key}"))
         self._device_id = config_entry.entry_id
         self._name = config_entry.data["name"]
         self._attr_device_info = adaptive_cover_device_info(config_entry)

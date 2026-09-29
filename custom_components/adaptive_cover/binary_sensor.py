@@ -17,6 +17,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info
+from .entity_surface import apply_surface, window_surface
 
 
 async def async_setup_entry(
@@ -71,10 +72,10 @@ class AdaptiveCoverBinarySensor(
         """Initialize the binary sensor."""
         super().__init__(coordinator=coordinator)
         self._key = key
-        self._attr_translation_key = key
         self._name = config_entry.data["name"]
         self._binary_name = binary_name
         self._attr_unique_id = f"{unique_id}_{binary_name}"
+        apply_surface(self, window_surface("binary_sensor", binary_name))
         self._device_id = unique_id
         self._state = state
         self._attr_device_class = device_class

@@ -1,7 +1,7 @@
 """Shared fixtures for adaptive_cover tests."""
 
 from datetime import datetime, timedelta, UTC
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
@@ -183,3 +183,18 @@ def tilt_config_entry(hass):
     )
     entry.add_to_hass(hass)
     return entry
+
+
+@pytest.fixture
+def entity_registry_enabled_by_default():
+    """Create every entity enabled, including the disabled-by-default ones.
+
+    Start sun, End sun, Next change and Last change are diagnostic and
+    disabled by default (refactor plan, "Entity surface"). Tests that read
+    their states request this fixture, as Home Assistant core tests do.
+    """
+    with patch(
+        "homeassistant.helpers.entity.Entity.entity_registry_enabled_default",
+        return_value=True,
+    ):
+        yield

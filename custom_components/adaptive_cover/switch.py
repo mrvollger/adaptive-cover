@@ -23,6 +23,7 @@ from .const import (
 )
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info
+from .entity_surface import apply_surface, window_surface
 
 
 async def async_setup_entry(
@@ -129,11 +130,11 @@ class AdaptiveCoverSwitch(
         self._name = config_entry.data["name"]
         self._state: bool | None = None
         self._key = key
-        self._attr_translation_key = key
         self._switch_name = switch_name
         self._attr_device_class = device_class
         self._initial_state = initial_state
         self._attr_unique_id = f"{unique_id}_{switch_name}"
+        apply_surface(self, window_surface("switch", switch_name))
         self._device_id = unique_id
         self._attr_device_info = adaptive_cover_device_info(config_entry)
 

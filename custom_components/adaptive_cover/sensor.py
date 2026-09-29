@@ -20,6 +20,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info
+from .entity_surface import apply_surface, window_surface
 
 
 async def async_setup_entry(
@@ -94,6 +95,7 @@ class AdaptiveCoverSensorEntity(
         self.data = self.coordinator.data
         self._sensor_name = "Cover Position"
         self._attr_unique_id = f"{unique_id}_{self._sensor_name}"
+        apply_surface(self, window_surface("sensor", self._sensor_name))
         self.hass = hass
         self.config_entry = config_entry
         self._name = name
@@ -154,6 +156,7 @@ class AdaptiveCoverTimeSensorEntity(
         self._name = name
         self._cover_type = self.config_entry.data["sensor_type"]
         self._sensor_name = sensor_name
+        apply_surface(self, window_surface("sensor", sensor_name))
         self._attr_device_info = adaptive_cover_device_info(config_entry)
 
     @callback
@@ -180,7 +183,6 @@ class AdaptiveCoverControlSensorEntity(
 
     _attr_has_entity_name = True
     _attr_should_poll = False
-    _attr_translation_key = "control"
 
     def __init__(
         self,
@@ -196,6 +198,7 @@ class AdaptiveCoverControlSensorEntity(
         self.data = self.coordinator.data
         self._sensor_name = "Control Method"
         self._attr_unique_id = f"{unique_id}_{self._sensor_name}"
+        apply_surface(self, window_surface("sensor", self._sensor_name))
         self._device_id = unique_id
         self.id = unique_id
         self.hass = hass
@@ -244,6 +247,7 @@ class AdaptiveCoverNextChangeSensorEntity(
         self.data = self.coordinator.data
         self._sensor_name = "Next State Change"
         self._attr_unique_id = f"{unique_id}_{self._sensor_name}"
+        apply_surface(self, window_surface("sensor", self._sensor_name))
         self._device_id = unique_id
         self.hass = hass
         self.config_entry = config_entry
@@ -309,6 +313,7 @@ class AdaptiveCoverLastChangeSensorEntity(
         self.data = self.coordinator.data
         self._sensor_name = "Last State Change"
         self._attr_unique_id = f"{unique_id}_{self._sensor_name}"
+        apply_surface(self, window_surface("sensor", self._sensor_name))
         self._device_id = unique_id
         self.hass = hass
         self.config_entry = config_entry

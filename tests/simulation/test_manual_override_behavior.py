@@ -11,6 +11,8 @@ Roadmap: wp6-manual-override-multiday. Kills mutations M08-M12.
 
 import datetime as dt
 
+import pytest
+
 from custom_components.adaptive_cover.const import (
     CONF_MANUAL_IGNORE_INTERMEDIATE,
     CONF_MANUAL_OVERRIDE_DURATION,
@@ -434,6 +436,7 @@ async def test_rollover_resumes_auto_moves(hass, freezer):
     await house.teardown()
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_day_two_solar_schedule(hass, freezer):
     """Day-two solar-time sensors and sunset close use day-two astral data."""
     house = await SimHouse.create(hass, freezer, date="2026-03-20", start_at="18:00")
