@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
-from collections import deque
 from dataclasses import dataclass
 
 from homeassistant.components.cover import DOMAIN as COVER_DOMAIN
@@ -31,6 +30,7 @@ from .runtime.clock import SYSTEM_CLOCK, Clock
 from .runtime.command_tracker import CommandTracker
 from .runtime.decider import Decider
 from .runtime.end_of_day import EndOfDay
+from .runtime.events import RefreshEvent, RefreshQueue
 from .runtime.explainer import Explainer
 from .runtime.gates import CoverFacts, GatePolicy
 from .runtime.manual_detector import ManualDetector
@@ -162,16 +162,12 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             lambda entity_id: get_safe_state(self.hass, entity_id), self.logger
         )
         self.gates = GatePolicy(self.logger)
-        self.state_change = False
-        self.cover_state_change = False
-        self.first_refresh = False
-        self.timed_refresh = False
+        # Why the next refresh runs (entity change, cover report, startup,
+        # end-of-day timer).
+        self.events: RefreshQueue[StateChangedData] = RefreshQueue()
         self.climate_state = None
         self.control_method = "intermediate"
         self.state_change_data: StateChangedData | None = None
-        # Cover events queue up per refresh: a single mutable slot dropped
-        # events when two covers (room-group remote) moved simultaneously.
-        self._pending_cover_events: deque[StateChangedData] = deque()
         # Override bookkeeping lives in hass.data so options reloads (which
         # rebuild the coordinator) do not silently wipe active overrides.
         _manual_store = self.hass.data.setdefault(f"{DOMAIN}_manual_state", {})
@@ -211,13 +207,13 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
     async def async_config_entry_first_refresh(self) -> None:
         """Config entry first refresh."""
-        self.first_refresh = True
+        self.events.push(RefreshEvent.STARTUP)
         await super().async_config_entry_first_refresh()
         self.logger.debug("Config entry first refresh")
 
     async def _request_end_close(self) -> None:
         """Run the end-of-day close on a refresh (EndOfDay calls this)."""
-        self.timed_refresh = True
+        self.events.push(RefreshEvent.END_TIME)
         self.logger.debug("Timed refresh triggered")
         await self.async_refresh()
 
@@ -226,7 +222,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     ) -> None:
         """Fetch and process state change event."""
         self.logger.debug("Entity state change")
-        self.state_change = True
+        self.events.push(RefreshEvent.ENTITY_CHANGED)
         await self.async_request_refresh()
 
     def is_own_context(self, context: Context | None) -> bool:
@@ -358,8 +354,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             )
         if self.wait_for_target.get(entity_id):
             return
-        self._pending_cover_events.append(self.state_change_data)
-        self.cover_state_change = True
+        # Cover events queue up per refresh: a single mutable slot dropped
+        # events when two covers (room-group remote) moved simultaneously.
+        self.events.push_cover(self.state_change_data)
         await self.async_refresh()
 
     def process_entity_state_change(self, own_context: bool = False) -> str | None:
@@ -441,7 +438,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
     async def _async_update_data(self) -> AdaptiveCoverData:
         self.logger.debug("Updating data")
-        if self.first_refresh:
+        if self.events.pending(RefreshEvent.STARTUP):
             self._cached_options = self.config_entry.options
 
         options = self.config_entry.options
@@ -475,24 +472,23 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.end_of_day.ensure_armed(self._end_time, self._track_end_time)
 
         # Capture flags before handlers reset them
-        had_cover_state_change = self.cover_state_change
+        had_cover_state_change = self.events.pending(RefreshEvent.COVER_CHANGED)
 
         # Handle types of changes
-        if self.state_change:
+        if self.events.pending(RefreshEvent.ENTITY_CHANGED):
             await self.async_handle_state_change(state)
-        if self.cover_state_change:
+        if self.events.pending(RefreshEvent.COVER_CHANGED):
             # Drain ALL queued cover events: concurrent moves (a room-group
             # remote driving several covers) each deserve manual detection.
-            pending = list(self._pending_cover_events)
-            self._pending_cover_events.clear()
+            pending = self.events.take_covers()
             if not pending and self.state_change_data is not None:
                 pending = [self.state_change_data]
             for cover_event in pending:
                 self.state_change_data = cover_event
                 await self.async_handle_cover_state_change(state)
-        if self.first_refresh:
+        if self.events.pending(RefreshEvent.STARTUP):
             await self.async_handle_first_refresh(state)
-        if self.timed_refresh:
+        if self.events.pending(RefreshEvent.END_TIME):
             await self.async_handle_timed_refresh(options)
 
         normal_cover = self.normal_cover_state.cover
@@ -507,13 +503,14 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # for western timezones (18:00 in Denver), which regenerated the sun
         # table 6 hours early.
         _local_date = self._now_local().date()
+        starting = self.events.pending(RefreshEvent.STARTUP)
         solar_day_stale = (
-            self.first_refresh
+            starting
             or self._sun_start_time is None
             or _local_date != self._sun_start_time.date()
         )
         if (
-            not self.first_refresh
+            not starting
             and self._sun_start_time is not None
             and _local_date != self._sun_start_time.date()
         ):
@@ -642,7 +639,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 await self.async_handle_call_service(cover, state)
         else:
             self.logger.debug("State change but control toggle is off")
-        self.state_change = False
+        self.events.done(RefreshEvent.ENTITY_CHANGED)
         self.logger.debug("State change handled")
 
     async def async_handle_cover_state_change(self, state: int):
@@ -670,7 +667,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     "manual",
                     "manual change detected",
                 )
-        self.cover_state_change = False
+        self.events.done(RefreshEvent.COVER_CHANGED)
         self.logger.debug("Cover state change handled")
 
     async def async_handle_first_refresh(self, state: int):
@@ -697,7 +694,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     )
         else:
             self.logger.debug("First refresh but control toggle is off")
-        self.first_refresh = False
+        self.events.done(RefreshEvent.STARTUP)
         self.logger.debug("First refresh handled")
 
     async def async_handle_timed_refresh(self, options):
@@ -709,7 +706,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         if self.control_toggle is None:
             # Startup/reload race: the timed close (or its catch-up) fired
             # before the switch platform restored the control toggle.
-            # Keep timed_refresh and the catch-up flag pending — the
+            # Keep END_TIME and the catch-up flag pending — the
             # switch's restore refresh completes the close.
             self.logger.debug("Timed refresh deferred: control switch not restored yet")
             return
@@ -724,7 +721,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         else:
             self.logger.debug("Timed refresh but control toggle is off")
         self.end_of_day.finish()
-        self.timed_refresh = False
+        self.events.done(RefreshEvent.END_TIME)
         self.logger.debug("Timed refresh handled")
 
     async def _send_end_close(self, cover: str, target: int) -> bool:
