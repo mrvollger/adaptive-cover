@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/entity_surface.py b/custom_components/adaptive_cover/entity_surface.py
 --- a/custom_components/adaptive_cover/entity_surface.py
 +++ b/custom_components/adaptive_cover/entity_surface.py
-@@ -223,7 +223,7 @@
+@@ -256,7 +256,7 @@
      device = dev_reg.async_get_device_by_identifier(
          (DOMAIN, entry.entry_id), config_entry_id=entry.entry_id
      )

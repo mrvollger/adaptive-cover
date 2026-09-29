@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
+from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import Any
 
 from homeassistant.components.cover import DOMAIN as COVER_DOMAIN
 from homeassistant.config_entries import ConfigEntry
@@ -52,13 +54,16 @@ from .const import (
     ATTR_POSITION,
     ATTR_TILT_POSITION,
     CONF_CLIMATE_MODE,
+    CONF_CLIMATE_ON,
     CONF_INTERP,
     CONF_INVERSE_STATE,
-    CONF_MANUAL_IGNORE_INTERMEDIATE,
-    CONF_RETURN_SUNSET,
+    CONF_MANUAL_DETECTION,
     CONF_SUNSET_POS,
     CONF_TEMP_HIGH,
     CONF_TEMP_LOW,
+    CONF_USE_IRRADIANCE,
+    CONF_USE_LUX,
+    CONF_USE_OUTSIDE_TEMP,
     DOMAIN,
     LOGGER,
 )
@@ -66,6 +71,8 @@ from .helpers import (
     get_safe_attr,
     get_safe_state,
 )
+from .layers import SETUP_KEYS, effective_settings
+from .settings.lift import same_value
 
 
 # Seam: the clock a coordinator reads when none is passed in. Production
@@ -147,18 +154,25 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.logger = ConfigContextAdapter(_LOGGER)
         self.logger.set_config_name(self.config_entry.data.get("name"))
         self._cover_type = self.config_entry.data.get("sensor_type")
-        self._climate_mode = self.config_entry.options.get(CONF_CLIMATE_MODE, False)
+        # What the window acts on: its resolved settings (P5 flip,
+        # layers.py), re-read on every refresh (_update_options).
+        settings = effective_settings(self.hass, self.config_entry)
+        self.options: dict[str, Any] = settings.options
+        self.provenance: dict[str, str] | None = settings.provenance
+        # Read once: they decide the window's entities and listeners; a
+        # change reloads the window (SETUP_KEYS).
+        self._setup_values = {key: self.options.get(key) for key in SETUP_KEYS}
+        self._climate_mode = self.options.get(CONF_CLIMATE_MODE, False)
         self.controls = ControlState(climate=True if self._climate_mode else False)
+        self._apply_toggles(self.options)
         self.decider = Decider(
-            self.config_entry.options.get(CONF_INTERP, False),
-            self.config_entry.options.get(CONF_INVERSE_STATE, False),
+            self.options.get(CONF_INTERP, False),
+            self.options.get(CONF_INVERSE_STATE, False),
             self.logger,
         )
-        self._track_end_time = self.config_entry.options.get(CONF_RETURN_SUNSET)
         self._sun_end_time = None
         self._sun_start_time = None
-        # Re-read on every refresh (_update_options).
-        self.config = ShadeConfig.from_options(self.config_entry.options)
+        self.config = ShadeConfig.from_options(self.options)
         self.schedule = Schedule(
             lambda entity_id: get_safe_state(self.hass, entity_id),
             self.logger,
@@ -193,9 +207,6 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.modes = ModeControl(self, self.logger)
         self._sun_table = None
         self._missing_warned: set[str] = set()
-        self.ignore_intermediate_states = self.config_entry.options.get(
-            CONF_MANUAL_IGNORE_INTERMEDIATE, False
-        )
         self.end_of_day = EndOfDay(
             lambda action, point: async_track_point_in_time(self.hass, action, point),
             self._now_local,
@@ -204,7 +215,6 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self.logger,
         )
 
-        self._cached_options = None
         self._basic_decision = None
         self._climate_decision = None
         # This refresh's climate snapshot (climate_mode_data builds it once).
@@ -217,6 +227,59 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.events.push(RefreshEvent.STARTUP)
         await super().async_config_entry_first_refresh()
         self.logger.debug("Config entry first refresh")
+
+    @property
+    def _track_end_time(self) -> bool | None:
+        """Close at the end time (``return_sunset``), as this refresh reads it."""
+        return self.config.return_sunset
+
+    @property
+    def ignore_intermediate_states(self) -> bool:
+        """Skip opening/closing reports (``manual_ignore_intermediate``)."""
+        return bool(self.config.ignore_intermediate)
+
+    def _apply_toggles(self, options: Mapping[str, Any]) -> None:
+        """Set the switch-era toggles from the resolved settings (P5 flip).
+
+        Climate needs climate mode as well: a window without it had no
+        Climate Mode switch, and its toggle followed the option.
+        """
+        self.controls.climate = bool(
+            options.get(CONF_CLIMATE_MODE) and options.get(CONF_CLIMATE_ON)
+        )
+        self.controls.outside_temp = bool(options.get(CONF_USE_OUTSIDE_TEMP))
+        self.controls.lux = bool(options.get(CONF_USE_LUX))
+        self.controls.irradiance = bool(options.get(CONF_USE_IRRADIANCE))
+        self.controls.manual = bool(options.get(CONF_MANUAL_DETECTION))
+
+    def _read_settings(self) -> dict[str, Any]:
+        """Re-read the window's resolved settings (every refresh).
+
+        A change to what the window read at setup (its listeners and which
+        entities it has) reloads it.
+        """
+        settings = effective_settings(self.hass, self.config_entry)
+        self.options = settings.options
+        self.provenance = settings.provenance
+        changed = sorted(
+            key
+            for key in SETUP_KEYS
+            if not same_value(self.options.get(key), self._setup_values[key])
+        )
+        if changed:
+            self.logger.info("Settings %s changed: reloading the window", changed)
+            self._setup_values = {key: self.options.get(key) for key in SETUP_KEYS}
+            self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
+        return self.options
+
+    async def async_settings_changed(self) -> None:
+        """Act on changed settings now (layers.async_settings_changed).
+
+        The refresh re-reads the settings; a target that changed goes out
+        through the usual gates, as after a sensor change.
+        """
+        self.events.push(RefreshEvent.ENTITY_CHANGED)
+        await self.async_refresh()
 
     async def _request_end_close(self) -> None:
         """Run the end-of-day close on a refresh (EndOfDay calls this)."""
@@ -432,9 +495,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             end=end,
             sun_table=self._sun_table,
             configured_end=configured_end,
-            end_position=self.config_entry.options.get(
-                CONF_SUNSET_POS, cover_data.sunset_pos
-            ),
+            end_position=self.options.get(CONF_SUNSET_POS, cover_data.sunset_pos),
             override_expiries=[
                 expiry
                 for cover in list(self.manager.manual_control_time)
@@ -444,11 +505,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
     async def _async_update_data(self) -> AdaptiveCoverData:
         self.logger.debug("Updating data")
-        if self.events.pending(RefreshEvent.STARTUP):
-            self._cached_options = self.config_entry.options
-
-        options = self.config_entry.options
+        options = self._read_settings()
         self._update_options(options)
+        self._apply_toggles(options)
 
         # Get data for the blind
         cover_data = self.get_blind_data()

@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/layers.py b/custom_components/adaptive_cover/layers.py
+--- a/custom_components/adaptive_cover/layers.py
++++ b/custom_components/adaptive_cover/layers.py
+@@ -410,7 +410,7 @@
+     if level is Level.HOUSE:
+         options[HOUSE] = stored
+     else:
+-        bucket = FLOORS if level is Level.FLOOR else AREAS
++        bucket = AREAS if level is Level.FLOOR else FLOORS
+         profiles = dict(options.get(bucket) or {})
+         if stored:
+             profiles[scope_id or ""] = stored

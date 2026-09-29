@@ -298,17 +298,12 @@ def _surface_translation_keys() -> set[tuple[str, str]]:
     from custom_components.adaptive_cover.entity_surface import (
         HUB_SURFACE,
         WINDOW_SURFACE,
-        window_surface,
     )
-    from custom_components.adaptive_cover.number import TUNABLES
 
+    # The house settings (numbers and switches) are hub rows (P5 flip).
     specs = [
         (platform, spec)
         for (platform, _suffix), spec in (WINDOW_SURFACE | HUB_SURFACE).items()
-    ]
-    specs += [
-        ("number", window_surface("number", f"number_{tunable.key}"))
-        for tunable in TUNABLES
     ]
     return {
         (platform, spec.translation_key)

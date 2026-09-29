@@ -130,26 +130,10 @@
    "weather_state",
    "window_height"
   ],
-  "number [types=cover_awning|cover_tilt; climate=off]": [
-   "privacy_offset"
-  ],
-  "number [types=cover_awning|cover_tilt; climate=on]": [
-   "privacy_offset",
-   "temp_high",
-   "temp_low"
-  ],
-  "number [types=cover_blind; climate=off]": [
+  "number": [
    "eye_height",
+   "manual_override_duration",
    "occupied_distance",
-   "overhang_depth",
-   "overhang_height",
-   "privacy_offset"
-  ],
-  "number [types=cover_blind; climate=on]": [
-   "eye_height",
-   "occupied_distance",
-   "overhang_depth",
-   "overhang_height",
    "privacy_offset",
    "temp_high",
    "temp_low"
@@ -1117,8 +1101,9 @@
    },
    {
     "where": [
-     "number [types=cover_blind]"
+     "number"
     ],
+    "default": 1.2,
     "kind": "number",
     "max": 3,
     "min": 0.5,
@@ -1640,6 +1625,18 @@
    },
    {
     "where": [
+     "number"
+    ],
+    "default": 120,
+    "kind": "number",
+    "max": 1440,
+    "min": 1,
+    "mode": "box",
+    "step": 1,
+    "unit": "min"
+   },
+   {
+    "where": [
      "options.init.automation_timing"
     ],
     "kind": "duration",
@@ -1951,8 +1948,9 @@
    },
    {
     "where": [
-     "number [types=cover_blind]"
+     "number"
     ],
+    "default": 2,
     "kind": "number",
     "max": 10,
     "min": 0.1,
@@ -2078,17 +2076,6 @@
    },
    {
     "where": [
-     "number [types=cover_blind]"
-    ],
-    "kind": "number",
-    "max": 5,
-    "min": 0,
-    "mode": "box",
-    "step": 0.05,
-    "unit": "m"
-   },
-   {
-    "where": [
      "options.init.covers_geometry [types=cover_awning|cover_blind]"
     ],
     "kind": "number",
@@ -2134,17 +2121,6 @@
     "kind": "float",
     "nullable": true,
     "required": false
-   },
-   {
-    "where": [
-     "number [types=cover_blind]"
-    ],
-    "kind": "number",
-    "max": 10,
-    "min": 0.5,
-    "mode": "box",
-    "step": 0.05,
-    "unit": "m"
    },
    {
     "where": [
@@ -2904,7 +2880,7 @@
    },
    {
     "where": [
-     "number [climate=on; units=°C]"
+     "number [units=°C]"
     ],
     "default": 24,
     "kind": "number",
@@ -2916,7 +2892,7 @@
    },
    {
     "where": [
-     "number [climate=on; units=°F]"
+     "number [units=°F]"
     ],
     "default": 75,
     "kind": "number",
@@ -3015,7 +2991,7 @@
    },
    {
     "where": [
-     "number [climate=on; units=°C]"
+     "number [units=°C]"
     ],
     "default": 22,
     "kind": "number",
@@ -3027,7 +3003,7 @@
    },
    {
     "where": [
-     "number [climate=on; units=°F]"
+     "number [units=°F]"
     ],
     "default": 72,
     "kind": "number",

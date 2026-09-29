@@ -1,6 +1,6 @@
 {
   "pyright": "1.1.414",
-  "total": 31,
+  "total": 30,
   "errors": [
     {
       "file": "custom_components/adaptive_cover/__init__.py",
@@ -85,12 +85,6 @@
       "rule": "reportArgumentType",
       "message": "Argument of type \"Unknown | None\" cannot be assigned to parameter \"x\" of type \"ConvertibleToInt\" in function \"__new__\"",
       "count": 2
-    },
-    {
-      "file": "custom_components/adaptive_cover/switch.py",
-      "rule": "reportArgumentType",
-      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"obj\" of type \"Sized\" in function \"len\"",
-      "count": 1
     }
   ]
 }

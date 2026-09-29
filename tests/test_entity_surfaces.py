@@ -555,8 +555,15 @@ class TestDiagnostics:
             "identifier",
             "config_data",
             "config_options",
+            "settings",
+            "settings_provenance",
         }
         assert payload["type"] == "config_entry"
         assert payload["identifier"] == entry.entry_id
         assert dict(payload["config_data"]) == dict(entry.data)
         assert dict(payload["config_options"]) == dict(entry.options)
+        # P5 flip: what the window acts on (every option, resolved) and the
+        # non-house sources (none: the house was lifted from this window).
+        assert payload["settings"]["set_azimuth"] == entry.options["set_azimuth"]
+        assert payload["settings"]["climate_on"] is True
+        assert payload["settings_provenance"] == {}

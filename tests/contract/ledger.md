@@ -834,3 +834,199 @@ The example below is inside an HTML comment. The checker ignores it.
   everywhere. Only string aliases count now. The new pin fails without the
   fix (no row hidden) and checks that a row with a typed alias stays
   visible. Goldens, truth table and house replay unchanged.
+
+## L0028 · 2026-09-29 · The runtime acts on the layered settings; edits store sparsely (C6, P5 flip)
+- **Removed:**
+  - `tests/test_shadow_settings.py::test_hub_created_at_1_4_is_not_lifted`
+  - `tests/simulation/test_shadow_settings.py::test_legacy_option_change_raises_a_repair_issue`
+  - `tests/simulation/test_shadow_settings.py::test_dropped_switch_flip_raises_a_repair_issue`
+- **Renamed:** none
+- **Replacements:** `tests/test_shadow_settings.py::test_hub_created_at_1_4_lifts_itself`,
+  `tests/simulation/test_shadow_settings.py::test_recurring_change_is_a_window_override`
+  (a recurring change is the window's own sparse value, acted on without
+  a reload; changed back, the override goes away),
+  `tests/simulation/test_shadow_settings.py::test_dropped_switch_writes_through`
+  (the hidden detection switch writes the window's own value; detection
+  stops and starts), the new pin
+  `tests/test_shadow_settings.py::test_live_house_runs_on_the_same_settings`
+  (all 15 live windows, running on the layers, act on exactly their legacy
+  options and switch states: the diagnostics settings, `ShadeConfig` and
+  the toggles) and `tests/test_layered_settings.py::*` (the options form
+  and `change_settings` store sparse overrides and leave the legacy keys
+  alone, the form shows what the window acts on, a new window starts from
+  the house, a copy copies what the source acts on, invalid layers leave
+  the window on its options). The house replay now asserts that every
+  replayed window is lifted (a provenance), so the unchanged goldens pin
+  the window acting on its resolved settings.
+  Behavior-tier test bodies changed without changing ids (the storage
+  assertions read what the window acts on, via the diagnostics settings,
+  instead of the flat option key an edit no longer writes):
+  `tests/test_change_settings.py::test_lookup_by_title_and_name`,
+  `::test_rename_combines_with_option_changes`,
+  `::test_regression_change_settings_enables_climate_mode`;
+  `tests/test_live_tunables.py::TestNumberEntities::test_setting_number_persists_and_reloads`,
+  `::test_regression_threshold_numbers_follow_unit_system[*]`;
+  `tests/test_units_and_defaults.py::test_regression_thresholds_unit_aware_everywhere[*]`;
+  `tests/test_one_page_options.py::test_submit_flattens_sections_and_preserves_rest`;
+  `tests/simulation/test_lifecycle.py::test_end_time_rearm_via_settings_service`;
+  `tests/test_window_setup_form.py::test_window_from_only_a_cover_and_azimuth_resolves_to_house_defaults`
+  (the lifted window stores no override of its own);
+  `tests/test_shadow_settings.py::test_lift_does_not_reload_a_running_window`
+  (the window lifts the never-lifted house at its setup; enabling the hub
+  migrates it without a second lift);
+  `tests/simulation/test_harness_smoke.py::test_set_options_survives_reload`
+  (a recurring edit does not reload, a one-time edit does);
+  `tests/test_entity_surfaces.py::TestDiagnostics::test_diagnostics_shape`
+  (two new keys). Implementation tier: `tests/settings/test_round_trip.py`
+  (a copy has overrides of its own) and the spec-parity fakes.
+  SimHouse: `set_options(**changes)` calls `change_settings` per window.
+- **Mutations re-targeted:** added M90 (`layers.py` `effective_settings`:
+  the runtime ignores a window's own values; killed by the simulation and
+  entity tiers). M39 re-anchored from `__init__.handle_change_settings` to
+  `layers.window_options_after` (same description: the merge of a window's
+  edits into its options moved there). M13, M70 and M71 keep their
+  anchors. Run with `--mutations M90,M39,M70,M71,M13 --jobs 3`: 5/5 killed.
+- **Contract change:** C6 (the runtime acts on `resolve()`; plan P5
+  v1.18.1 flip, batch 2)
+- **Reason:** plan P5 flip. `layers.py` is the runtime side of the layered
+  settings.
+  - The runtime acts on `resolve()`: every refresh the coordinator reads
+    `layers.effective_settings` (house -> floor -> area -> window, plus the
+    lift's legacy values; one-time settings from the window's options) and
+    sets the switch-era toggles (`climate_on`, `use_*`, `manual_detection`)
+    from it. Values read only at setup (the listened-to entities, climate
+    mode, the lux / irradiance / outside-temperature entities) reload the
+    window when they change; everything else applies at the next refresh.
+    Before the house is lifted, or when a stored layer breaks the spec
+    (logged), a window acts on its legacy options and switch states as
+    before.
+  - A house that was never lifted lifts itself: at hub setup and at a
+    window's setup (a hub created at 1.4 or later, a new install).
+    Migration 1.4 no longer lifts a house that is already lifted: a second
+    lift would rebuild the layers from the legacy keys and lose every edit
+    since the flip. A window without its own overrides is adopted at its
+    setup, before its coordinator reads the layers.
+  - Edits: the options form (it shows the resolved values) and
+    `change_settings` store one-time settings in the window's options and
+    recurring ones in its `overrides`, sparsely: `values` where the spec
+    lets a window override the option, `legacy` otherwise (a per-window
+    exception, the lift's bucket for the same thing); a value equal to
+    what the window inherits, or a cleared field / `None`, removes the
+    override. An overrides-only update does not reload the window; it acts
+    on it at once. The legacy flat keys are left as they are: a downgrade
+    reads them, i.e. the settings as of the lift; edits made after the
+    flip do not reach a downgraded install. `change_settings` keeps its
+    schema and response.
+  - The hidden per-window toggle switches show the value the window acts
+    on and write through to the window's own value (a legacy value: the
+    spec lets no window override them), removed when it equals the
+    inherited one. Before the lift a switch is the setting, as before.
+  - A new window (the add form, `add_entry` without `copy_from`) starts
+    from the house's settings; "Copy from" / `copy_from` copy what the
+    source window acts on.
+  - The `settings_differ` repair issue (L0022) is retired: with the
+    runtime on the layers there is no second set of values to compare.
+    Setup deletes a leftover issue; its strings are gone. The pure
+    comparison stays (`settings.shadow.compare`): it checks that a lift or
+    an adoption is exact.
+  - The Position sensor's `provenance` now comes from the refresh
+    (`coordinator.provenance`); the diagnostics download gains `settings`
+    (what the window acts on) and `settings_provenance`.
+  - Goldens, truth table and house replay byte-identical, with every
+    replayed window running on its resolved settings.
+
+## L0029 · 2026-09-29 · adaptive_cover.set_profile: house, floor and room settings (C6, P5 flip)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins `tests/test_set_profile.py::*` (a house
+  setting reaches every window without a reload; a room setting beats the
+  house for its windows only and `null` removes it; floor < area < window
+  precedence; a window moved to another room takes that room's settings at
+  its next refresh; values a level may not hold, an id the house does not
+  take, an unknown area, a floor without an id, an empty call and an empty
+  house value are refused and store nothing)
+- **Mutations re-targeted:** added M91 (`layers.py` `async_set_profile`:
+  a floor's values are stored under the area of that id and an area's
+  under the floor; killed by the entity tier, `--mutations M91 --jobs 3`).
+- **Contract change:** C6 (a new service; plan "Services":
+  `adaptive_cover.set_profile(scope, **opts)`)
+- **Reason:** plan P5 flip ("The `hold` service and `set_profile` are
+  added"). `set_profile(scope: house|floor|area, id?, **settings)` stores
+  recurring settings in the hub's layered profiles. The schema takes every
+  recurring setting (the change_settings validators, plus booleans for the
+  toggles and entity ids for the entity fields, all nullable); which level
+  may hold which setting is checked against the spec's home and
+  overridable_at levels, the floor or area id against HA's registries. On
+  a floor or an area `null` removes the value (the rooms inherit again);
+  the house keeps an explicit empty value only for options that may be
+  empty (entity fields, nullable service fields). Every window acts on the
+  change at once (`layers.async_settings_changed`: a refresh; a setup-only
+  value reloads the window). Response: `{scope, id, changed}`. The
+  services.yaml entry lists the common settings; the schema accepts all.
+  Goldens, truth table and house replay unchanged.
+
+## L0030 · 2026-09-29 · House settings on the hub device; the window numbers are gone (C7, P5 flip)
+- **Removed:**
+  - `tests/test_live_tunables.py::TestNumberEntities::*`
+- **Renamed:** none
+- **Replacements:** `tests/test_house_settings.py::*` (the five house
+  switches and six house numbers sit on the hub device, Climate primary,
+  the rest CONFIG, and the windows have no numbers; the numbers show the
+  house's values, the thresholds and privacy delay their spec default
+  while unset; `test_regression_threshold_numbers_follow_unit_system[*]`
+  moves here from the window numbers: HA's unit, its range, stored as
+  given; a house number or switch reaches every window without a reload,
+  and the window's hidden alias follows; a window with its own value keeps
+  it) and `tests/simulation/test_house_settings.py::test_house_threshold_change_reaches_every_window`
+  (the plan's scenario: a house cooling threshold change flips every
+  window's season at once, no reload, before the next sun tick).
+  Behavior-tier test bodies changed without changing ids:
+  `tests/test_units_and_defaults.py::test_regression_thresholds_unit_aware_everywhere[*]`
+  (reads the house threshold numbers); in `tests/test_entity_surface_v2.py`,
+  `TestTranslations::test_number_names_match_tunable_specs` (every number
+  name is a house number's), `TestMigration::test_migration_applies_surface_to_legacy_rows`
+  (the legacy number rows are gone after setup; the other rows keep their
+  identity) and `test_live_house_upgrade` (the live house loses its 105
+  window number rows and the hub gains 11 house-setting rows; every other
+  row keeps its entity_id). Implementation tier: `tests/settings/test_spec.py`
+  (the live-number rows are the house numbers; the overhang's number drift
+  is gone), `tests/test_translations.py` (numbers come from the hub table).
+  `tests/contract/spec_parity.json` regenerated: the `number` surface is
+  the house's six numbers (the same shapes for the thresholds, eye height,
+  seat distance and privacy delay; the override duration new, in minutes
+  1-1440; the overhang numbers gone), for every cover type and climate
+  mode.
+- **Mutations re-targeted:** added M92 (`house_settings.py`
+  `HouseSetting._store`: a house entity's change is stored but not
+  propagated; killed by the simulation and entity tiers). M52 re-run
+  (its surface table changed around it): killed. `--mutations M92,M52
+  --jobs 3`: 2/2.
+- **Contract change:** C7 (the window numbers become house entities; plan
+  "Entity surface": "7 numbers | removed in P5")
+- **Reason:** plan P5 flip ("The house CONFIG entities go live", "The
+  window numbers are removed, and their registry rows are cleaned up").
+  - The hub device carries the house settings (`house_settings.py`): the
+    Climate switch (`climate_on`, primary), the manual-move detection and
+    the outside-temperature / lux / irradiance switches, and the numbers
+    for the heating and cooling thresholds (HA's unit and range, from the
+    spec), the manual override duration (minutes), the eye height, the
+    seat distance and the privacy delay (CONFIG). Each shows the house's
+    value in the layered settings and stores a change through
+    `layers.async_set_profile`; every window acts on it at once
+    (`async_settings_changed`), without a reload. They follow the settings
+    signal, so a `set_profile` or a lift updates them too; they are
+    unavailable before the house is lifted.
+  - The seven window numbers are removed; a window's old number rows are
+    removed at its setup (`entity_surface.async_remove_window_numbers`,
+    idempotent, no config version needed). Their values live in the
+    layers: the thresholds, eye height, seat distance and privacy delay are
+    house settings (a floor, room or window can still set its own through
+    `set_profile` and the options form), the overhang is window geometry
+    (the options form, Reconfigure). A downgrade creates the window numbers
+    again.
+  - Card: the house Climate control uses the house Climate switch when the
+    card acts through the hub (a card showing some rooms still toggles
+    their windows' hidden Climate mode aliases), and "House settings"
+    opens the house device page. Bundle rebuilt.
+  - Goldens, truth table and house replay unchanged (no replay reads a
+    number entity).

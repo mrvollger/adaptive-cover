@@ -25,7 +25,7 @@ from custom_components.adaptive_cover.const import (
 )
 
 from .conftest import COMMON_OPTIONS
-from .window_handle import internal_coordinator
+from .window_handle import internal_coordinator, window_settings
 
 COVER = "cover.test_cover"
 
@@ -99,7 +99,8 @@ async def test_lookup_by_title_and_name(hass, entry, mock_sun_entity):
             blocking=True,
         )
         await hass.async_block_till_done()
-        assert entry.options[CONF_EYE_HEIGHT] == 1.0
+        # A recurring setting: the window's own value (P5 flip: an override).
+        assert (await window_settings(hass, entry.entry_id))[CONF_EYE_HEIGHT] == 1.0
 
 
 async def test_unknown_entry_raises(hass, entry, mock_sun_entity):
@@ -178,7 +179,7 @@ async def test_rename_combines_with_option_changes(hass, entry, mock_sun_entity)
     )
     await hass.async_block_till_done()
     assert entry.title == "Renamed"
-    assert entry.options[CONF_EYE_HEIGHT] == 1.4
+    assert (await window_settings(hass, entry.entry_id))[CONF_EYE_HEIGHT] == 1.4
 
 
 async def test_regression_change_settings_enables_climate_mode(
@@ -216,9 +217,11 @@ async def test_regression_change_settings_enables_climate_mode(
     )
     await hass.async_block_till_done()
 
-    assert entry.options["climate_mode"] is True
-    assert entry.options["temp_entity"] == "sensor.room_temp"
-    assert entry.options["weather_state"] == ["sunny", "clear"]
+    # Recurring settings: the window's own values (P5 flip: overrides).
+    settings = await window_settings(hass, entry.entry_id)
+    assert settings["climate_mode"] is True
+    assert settings["temp_entity"] == "sensor.room_temp"
+    assert settings["weather_state"] == ["sunny", "clear"]
     # The reload created the climate-mode switch and the season resolves
     # in the sensor's own unit: 68 °F < 70 → winter.
     registry = er.async_get(hass)

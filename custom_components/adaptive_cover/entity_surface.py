@@ -91,24 +91,57 @@ WINDOW_SURFACE: dict[tuple[str, str], SurfaceSpec] = {
     ("switch", "Irradiance"): _alias("irradiance_toggle"),
 }
 
-# Number entities: unique_id suffix f"number_{option_key}", translation key
-# = the option key.
+# The retired window number entities (removed in the P5 flip): unique_id
+# suffix f"number_{option_key}".
 NUMBER_SUFFIX_PREFIX = "number_"
 
 # Hub entities, keyed by (platform, unique_id suffix after HUB_UNIQUE_ID_).
-# All primary: the plan's house-level primary set.
+# The plan's house-level primary set, then the house settings (P5 flip,
+# house_settings.py): the Climate switch is primary, the rest CONFIG.
 HUB_SURFACE: dict[tuple[str, str], SurfaceSpec] = {
     ("cover", "cover"): SurfaceSpec(None),  # takes the device name
     ("select", "house_mode"): SurfaceSpec("house_mode"),
     ("button", "reset_all"): SurfaceSpec("return_all_to_auto"),
+    ("switch", "climate_on"): SurfaceSpec("climate_on"),
+    ("switch", "manual_detection"): SurfaceSpec("manual_detection", _CONFIG),
+    ("switch", "use_outside_temp"): SurfaceSpec("use_outside_temp", _CONFIG),
+    ("switch", "use_lux"): SurfaceSpec("use_lux", _CONFIG),
+    ("switch", "use_irradiance"): SurfaceSpec("use_irradiance", _CONFIG),
+    ("number", "temp_low"): SurfaceSpec("temp_low", _CONFIG),
+    ("number", "temp_high"): SurfaceSpec("temp_high", _CONFIG),
+    ("number", "manual_override_duration"): SurfaceSpec(
+        "manual_override_duration", _CONFIG
+    ),
+    ("number", "eye_height"): SurfaceSpec("eye_height", _CONFIG),
+    ("number", "occupied_distance"): SurfaceSpec("occupied_distance", _CONFIG),
+    ("number", "privacy_offset"): SurfaceSpec("privacy_offset", _CONFIG),
 }
 
 
 def window_surface(platform: str, suffix: str) -> SurfaceSpec | None:
     """Return the surface of a per-window entity, or None if unknown."""
-    if platform == "number" and suffix.startswith(NUMBER_SUFFIX_PREFIX):
-        return SurfaceSpec(suffix.removeprefix(NUMBER_SUFFIX_PREFIX), _CONFIG)
     return WINDOW_SURFACE.get((platform, suffix))
+
+
+@callback
+def async_remove_window_numbers(hass: HomeAssistant, entry: ConfigEntry) -> int:
+    """Remove a window's retired number rows (P5 flip); return how many.
+
+    The seven window numbers became house settings (``house_settings.py``)
+    and layered-settings edits. Idempotent; a downgrade creates them again.
+    """
+    registry = er.async_get(hass)
+    prefix = f"{entry.entry_id}_{NUMBER_SUFFIX_PREFIX}"
+    rows = [
+        row
+        for row in er.async_entries_for_config_entry(registry, entry.entry_id)
+        if row.platform == DOMAIN
+        and row.domain == "number"
+        and row.unique_id.startswith(prefix)
+    ]
+    for row in rows:
+        registry.async_remove(row.entity_id)
+    return len(rows)
 
 
 def apply_surface(entity: Entity, spec: SurfaceSpec | None) -> None:

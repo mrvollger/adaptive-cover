@@ -1,16 +1,16 @@
-"""Shadow release of the layered settings (P5, v1.18.0): the pure part.
+"""The layered settings store (P5): the pure part.
 
-v1.18.0 stores the layered model next to the legacy flat options and
-compares the two; the runtime still acts on the legacy options and the
-switches. ``../shadow.py`` does the Home Assistant side (registries,
-restore state, repair issues); this module holds everything that is a
-function of its inputs:
+The P5 shadow release (v1.18.0) stored the layered model next to the
+legacy flat options; since the flip the runtime acts on it
+(``../layers.py``). ``../shadow.py`` does the Home Assistant side of the
+store (registries, restore state, the lift at migration and at setup);
+this module holds everything that is a function of its inputs:
 
 - **Toggles.** The per-window switches P5 drops become recurring
   settings (``TOGGLE_OPTS``; plan: "Climate on/off", the outside temp /
   lux / irradiance "use-flags", "Manual-move detection"). They are not in
-  ``spec.OPTS`` yet, so no form or service shows them; ``SHADOW_SPEC`` is
-  the spec the lift, the stored profiles and the comparison use.
+  ``spec.OPTS``, so no window form shows them; ``SHADOW_SPEC`` is the
+  spec the lift, the stored profiles and the runtime resolve with.
   ``TOGGLE_SWITCHES`` says which switch feeds each toggle and when a
   window has that switch (the same conditions as ``switch.py``).
 - **Legacy values.** ``legacy_values`` is what a window acts on today:
@@ -26,7 +26,8 @@ function of its inputs:
   window's own.
 - **Comparison.** ``compare`` resolves one window from the stored layers
   and lists every option whose value differs from ``legacy_values``
-  (the lift's equality: 30 == 30.0, True != 1).
+  (the lift's equality: 30 == 30.0, True != 1). The v1.18.x repair issue
+  used it; now it checks that a lift or an adoption is exact.
 - **Adoption.** A window that has no ``overrides`` of its own (created
   after the lift) is lifted alone against the stored layers
   (``adopt``): every value it does not inherit becomes a window override

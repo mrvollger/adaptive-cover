@@ -474,12 +474,6 @@
       "occupied_distance": {
         "name": "Seat distance from window"
       },
-      "overhang_depth": {
-        "name": "Overhang depth"
-      },
-      "overhang_height": {
-        "name": "Overhang height above sill"
-      },
       "privacy_offset": {
         "name": "Privacy delay after sunset"
       },
@@ -488,6 +482,9 @@
       },
       "temp_low": {
         "name": "Heating threshold"
+      },
+      "manual_override_duration": {
+        "name": "Manual override duration"
       }
     },
     "select": {
@@ -547,6 +544,21 @@
       },
       "temp_toggle": {
         "name": "Outside temperature"
+      },
+      "climate_on": {
+        "name": "Climate"
+      },
+      "manual_detection": {
+        "name": "Manual-move detection"
+      },
+      "use_outside_temp": {
+        "name": "Use outside temperature"
+      },
+      "use_lux": {
+        "name": "Use lux sensor"
+      },
+      "use_irradiance": {
+        "name": "Use irradiance sensor"
       }
     }
   },
@@ -564,10 +576,6 @@
           "entry_removed": "This window no longer exists."
         }
       }
-    },
-    "settings_differ": {
-      "title": "{window}: the house settings differ from its own settings",
-      "description": "{window} still runs on its own settings. The house, floor and room settings that will replace them in a later version give a different value for: {keys}. Nothing changes yet. Set these options back, or tell the maintainer, so the switch-over keeps the window as it is. This notice goes away when the values agree again."
     }
   }
 }

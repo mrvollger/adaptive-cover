@@ -8,6 +8,7 @@ from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.adaptive_cover.const import (
     CONF_DELTA_TIME,
+    CONF_DISTANCE,
     CONF_END_TIME,
     CONF_IRRADIANCE_ENTITY,
     CONF_LUX_ENTITY,
@@ -131,14 +132,23 @@ async def test_press_reset_button_resumes_auto(hass, freezer):
 
 
 async def test_set_options_survives_reload(hass, freezer):
-    """set_options() reloads the entry, re-wins services, keeps attribution."""
+    """set_options() reloads the entry, re-wins services, keeps attribution.
+
+    A one-time setting (the window's distance) reloads the window; a
+    recurring one (delta time) becomes the window's own value without a
+    reload (P5 flip).
+    """
     house = await SimHouse.create(hass, freezer, date="2026-03-20")
     await house.advance_to("11:00")
     teardowns_before = house.window().teardowns
 
     await house.set_options(**{CONF_DELTA_TIME: 5})
+    assert (await house.window().settings())[CONF_DELTA_TIME] == 5
+    assert house.window().teardowns == teardowns_before
 
-    assert house.entry.options[CONF_DELTA_TIME] == 5
+    await house.set_options(**{CONF_DISTANCE: 0.6})
+
+    assert house.entry.options[CONF_DISTANCE] == 0.6
     # The entry reloaded (entities torn down once, rebuilt, live again);
     # the closes below are attributed to the integration, so the harness
     # follows the rebuilt window.

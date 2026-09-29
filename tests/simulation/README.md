@@ -86,10 +86,12 @@ async def test_my_scenario(hass, freezer):
 
 ## Lifecycle
 
-- `await house.set_options(**changes)` — the user edits options in the UI:
-  merges into every window's options, waits for the reloads, re-wins the
-  fake cover services, and keeps attributing commands to the rebuilt
-  windows. With no changes it models saving the dialog unchanged (still a
+- `await house.set_options(**changes)` — the user edits every window's
+  settings: one `adaptive_cover.change_settings` call per window (P5 flip:
+  one-time settings go to the options and reload the window, recurring
+  ones become the window's own values without a reload), then re-wins the
+  fake cover services and keeps attributing commands to the rebuilt
+  windows. With no changes it models saving the dialog unchanged (a
   reload).
 - `await house.restart(at=None, restore=True, seed_states=None, cold=False)`
   — HA restart: optionally advance first, capture every window's entity

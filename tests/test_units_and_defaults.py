@@ -40,6 +40,7 @@ from custom_components.adaptive_cover.settings.schema import add_entry_baseline
 
 from .conftest import COMMON_OPTIONS
 from .window_form import start_add
+from .window_handle import window_settings
 
 COVER = "cover.test_cover"
 TEMP = "sensor.room_temp"
@@ -264,10 +265,9 @@ async def test_regression_thresholds_unit_aware_everywhere(
     registry = er.async_get(hass)
     for key, (low, high, default) in shapes.items():
         assert _selector_shape(climate, key) == (low, high, 0.5, unit)
+        # The house's threshold numbers (P5 flip: on the hub device).
         state = hass.states.get(
-            registry.async_get_entity_id(
-                "number", DOMAIN, f"{entry.entry_id}_number_{key}"
-            )
+            registry.async_get_entity_id("number", DOMAIN, f"adaptive_cover_hub_{key}")
         )
         assert float(state.state) == default
         assert (
@@ -283,7 +283,7 @@ async def test_regression_thresholds_unit_aware_everywhere(
         blocking=True,
     )
     await hass.async_block_till_done()
-    assert entry.options[CONF_TEMP_LOW] == inside
+    assert (await window_settings(hass, entry.entry_id))[CONF_TEMP_LOW] == inside
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
             DOMAIN,
@@ -291,4 +291,4 @@ async def test_regression_thresholds_unit_aware_everywhere(
             {"config_entry": entry.entry_id, CONF_TEMP_LOW: outside},
             blocking=True,
         )
-    assert entry.options[CONF_TEMP_LOW] == inside
+    assert (await window_settings(hass, entry.entry_id))[CONF_TEMP_LOW] == inside

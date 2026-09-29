@@ -119,6 +119,14 @@ RULES: list[tuple[str, str]] = [
     # the hidden switch aliases, through entity states, registries, the
     # restore cache and real service calls.
     ("tests/test_mode_select.py::*", BEHAVIOR),
+    # P5 flip (C6): the runtime acts on the layered settings; the options
+    # form, change_settings and add_entry store edits sparsely in them.
+    # Through config entries, the diagnostics download and entity states.
+    ("tests/test_layered_settings.py::*", BEHAVIOR),
+    ("tests/test_set_profile.py::*", BEHAVIOR),  # P5 flip: set_profile (C6)
+    # P5 flip (C7): the house settings on the hub device, through entity
+    # states, registries, the hub's config entry and the diagnostics.
+    ("tests/test_house_settings.py::*", BEHAVIOR),
     # P5 layered settings: `resolve` is a contract v2 seam (ADR 0004).
     # Precedence, provenance, the lift's rules and the P5 guarantee on the
     # live snapshot (resolve(w) == legacy_flat(w)) are behavior; the purity

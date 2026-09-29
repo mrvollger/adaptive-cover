@@ -15,6 +15,13 @@ The form is ``WindowForm`` plus plain functions (``setup_errors``,
 ``new_window_options``, ``reconfigured_window``), so a ConfigSubentryFlow
 (P7) can drive it too; the flow classes only show it and store the result.
 
+Since the P5 flip the forms show what a window acts on (its resolved
+settings, ``layers.py``) and store edits where they belong: one-time
+settings in the window's options, recurring ones as the window's sparse
+overrides (a value equal to what it inherits, or a cleared field, means
+"inherit"). A new window starts from the house's settings, and "Copy
+from" copies what the source window acts on.
+
 A window drives one cover (ADR 0002): the forms refuse a cover another
 window drives (window_cover.cover_problem), and a new entry's unique_id is
 its cover's entity-registry id.
@@ -49,6 +56,14 @@ from .const import (
     DOMAIN,
     SensorType,
 )
+from .layers import (
+    copied_options,
+    effective_options,
+    is_layered,
+    new_window_values,
+    window_options_after,
+)
+from .settings.lift import same_value
 from .settings.normalize import normalize_cover, window_cover, with_cover
 from .settings.schema import (
     CLEARABLE_KEYS,
@@ -310,7 +325,7 @@ class WindowForm:
         source = picked[FIELD_COPY_FROM]
         if source and source != self._applied[FIELD_COPY_FROM]:
             if (entry := self.hass.config_entries.async_get_entry(source)) is not None:
-                filled |= copy_from_values(entry.data, entry.options)
+                filled |= copy_from_values(entry.data, copied_options(self.hass, entry))
         preset = picked[FIELD_PRESET]
         if preset and preset in PRESETS and preset != self._applied[FIELD_PRESET]:
             filled |= preset_values(preset)
@@ -393,9 +408,9 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Add a window: the one-screen form."""
+        """Add a window: the one-screen form (pre-filled from the house)."""
         if self._form is None:
-            self._form = WindowForm(self.hass)
+            self._form = WindowForm(self.hass, values=new_window_values(self.hass))
         if user_input is not None:
             if (values := self._form.submit(user_input)) is not None:
                 await self._async_set_cover_unique_id(values[CONF_COVER_ENTITY])
@@ -438,11 +453,17 @@ class OptionsFlowHandler(OptionsFlow):
         """Initialize options flow."""
         self._entry_id = config_entry.entry_id
         self.current_config: dict = dict(config_entry.data)
-        self.options = dict(config_entry.options)
+        # What the form shows: the settings the window acts on (P5 flip).
+        self.options: dict[str, Any] = {}
         self.sensor_type: str = (
             self.current_config.get(CONF_SENSOR_TYPE) or SensorType.BLIND
         )
         self._shown_keys: set[str] = set()
+
+    def _entry(self) -> ConfigEntry:
+        entry = self.hass.config_entries.async_get_entry(self._entry_id)
+        assert entry is not None
+        return entry
 
     def _section_fields(self) -> dict[str, dict]:
         """Build {section_name: fields} for this entry's type and features."""
@@ -459,6 +480,13 @@ class OptionsFlowHandler(OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Show and process the single options page."""
+        entry = self._entry()
+        # Before the house is lifted the window acts on its options.
+        self.options = (
+            effective_options(self.hass, entry)
+            if is_layered(self.hass, entry)
+            else dict(entry.options)
+        )
         section_fields = self._section_fields()
         self._shown_keys = {
             marker.schema for fields in section_fields.values() for marker in fields
@@ -487,27 +515,26 @@ class OptionsFlowHandler(OptionsFlow):
                     data_schema=self._build_schema(section_fields),
                     errors={"base": next(iter(errors.values()))},
                 )
-            changed = {
+            edits = {
                 key: value
                 for key, value in flat.items()
-                if self.options.get(key) != value and value is not None
+                if not same_value(value, self.options.get(key))
             }
-            cleared = sorted(
-                key
-                for key, value in flat.items()
-                if value is None and self.options.get(key) is not None
-            )
+            changed = sorted(key for key, value in edits.items() if value is not None)
+            cleared = sorted(key for key, value in edits.items() if value is None)
             if changed or cleared:
                 _LOGGER.info(
                     "Options updated for '%s': changed=%s cleared=%s",
                     self.current_config.get("name"),
-                    sorted(changed),
+                    changed,
                     cleared,
                 )
-            self.options.update(flat)
-            if CONF_COVER_ENTITY in flat:
-                self.options = with_cover(self.options, flat[CONF_COVER_ENTITY])
-            return await self._update_options()
+            # One-time settings to the options, recurring ones to the
+            # window's overrides (layers.window_options_after).
+            options = window_options_after(self.hass, entry, edits)
+            if CONF_COVER_ENTITY in edits:
+                options = with_cover(options, edits[CONF_COVER_ENTITY])
+            return self.async_create_entry(title="", data=options)
 
         return self.async_show_form(
             step_id="init", data_schema=self._build_schema(section_fields)
@@ -524,7 +551,3 @@ class OptionsFlowHandler(OptionsFlow):
                 for name, fields in section_fields.items()
             }
         )
-
-    async def _update_options(self) -> FlowResult:
-        """Update config entry options."""
-        return self.async_create_entry(title="", data=self.options)

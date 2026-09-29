@@ -55,7 +55,7 @@ from custom_components.adaptive_cover.const import (
     DOMAIN,
     SensorType,
 )
-from custom_components.adaptive_cover.number import TUNABLES
+from custom_components.adaptive_cover.house_settings import HOUSE_NUMBERS
 
 from .characterization.golden_lib import (
     GOLDENS_DIR,
@@ -95,26 +95,19 @@ WINDOW_SURFACE = {
     ("switch", "Outside Temperature"): (CONFIG, True, "Outside temperature"),
     ("switch", "Lux"): (CONFIG, True, "Lux"),
     ("switch", "Irradiance"): (CONFIG, True, "Irradiance"),
-    ("number", "number_eye_height"): (CONFIG, True, "Eye height"),
-    ("number", "number_occupied_distance"): (
-        CONFIG,
-        True,
-        "Seat distance from window",
-    ),
-    ("number", "number_overhang_depth"): (CONFIG, True, "Overhang depth"),
-    ("number", "number_overhang_height"): (
-        CONFIG,
-        True,
-        "Overhang height above sill",
-    ),
-    ("number", "number_temp_low"): (CONFIG, True, "Heating threshold"),
-    ("number", "number_temp_high"): (CONFIG, True, "Cooling threshold"),
-    ("number", "number_privacy_offset"): (
-        CONFIG,
-        True,
-        "Privacy delay after sunset",
-    ),
 }
+
+# The seven window numbers of v1.14-v1.19 (P5 flip: house settings and
+# layered edits; a window's old rows are removed at its setup).
+RETIRED_NUMBERS = (
+    "eye_height",
+    "occupied_distance",
+    "overhang_depth",
+    "overhang_height",
+    "temp_low",
+    "temp_high",
+    "privacy_offset",
+)
 
 # Hidden by default but enabled (P5 flip): the switch aliases of the Mode
 # select and the house toggles (migration 1.5 hides existing rows).
@@ -298,10 +291,10 @@ class TestTranslations:
         )
 
     def test_number_names_match_tunable_specs(self):
+        """Every number is a house number (P5 flip) and has a name."""
         numbers = self._entity_strings(PKG / "strings.json")["number"]
-        assert {spec.key: spec.name for spec in TUNABLES} == {
-            key: value["name"] for key, value in numbers.items()
-        }
+        assert {spec.key for spec in HOUSE_NUMBERS} == set(numbers)
+        assert all(value["name"] for value in numbers.values())
 
 
 # ------------------------------------------------------------------ areas
@@ -418,8 +411,8 @@ LEGACY_ROWS = {
     ),
     ("select", "mode_select"): ("office_door_mode", CONFIG),
     **{
-        ("number", f"number_{spec.key}"): (f"office_door_{spec.key}", CONFIG)
-        for spec in TUNABLES
+        ("number", f"number_{key}"): (f"office_door_{key}", CONFIG)
+        for key in RETIRED_NUMBERS
     },
 }
 
@@ -480,10 +473,11 @@ class TestMigration:
         assert entry.state is ConfigEntryState.LOADED
         assert (entry.version, entry.minor_version) == (1, 5)
         rows = _rows(hass, entry)
-        # Identity is frozen: same unique_ids, same entity_ids.
-        assert {
-            key: (row.entity_id, row.unique_id) for key, row in rows.items()
-        } == legacy_ids
+        # Identity is frozen: same unique_ids, same entity_ids; the retired
+        # window numbers are gone (P5 flip).
+        assert {key: (row.entity_id, row.unique_id) for key, row in rows.items()} == {
+            key: ids for key, ids in legacy_ids.items() if key[0] != "number"
+        }
         # Only the old select/number categories and the four diagnostic
         # sensors change visibly; everything lands on the plan's surface.
         for key, (category, enabled, name) in WINDOW_SURFACE.items():
@@ -746,18 +740,28 @@ async def test_live_house_upgrade(hass, cover_calls):
         assert entry.state is ConfigEntryState.LOADED, entry.title
         assert (entry.version, entry.minor_version) == (1, 5), entry.title
 
-    # Identity is frozen: the same 318 (platform, unique_id) -> entity_id
-    # rows, no more. ("X_Manual Override" is both a switch and a sensor.)
+    # Identity is frozen: the same (platform, unique_id) -> entity_id rows,
+    # no more, but for the P5 flip: the 105 window number rows are gone and
+    # the hub gained its 11 house settings (5 switches, 6 numbers).
+    # ("X_Manual Override" is both a switch and a sensor.)
     ent_reg = er.async_get(hass)
     after = {
         (row.domain, row.unique_id): row.entity_id
         for row in ent_reg.entities.values()
         if row.platform == DOMAIN
     }
-    assert after == {
-        (row["domain"], row["unique_id"]): row["entity_id"] for row in rows
+    kept = {
+        (row["domain"], row["unique_id"]): row["entity_id"]
+        for row in rows
+        if row["domain"] != "number"
     }
-    assert len(after) == 318
+    assert len(rows) - len(kept) == 105
+    house_settings = {key for key in after if key not in kept}
+    assert {domain for domain, _uid in house_settings} == {"switch", "number"}
+    assert len(house_settings) == 11
+    assert all(uid.startswith("adaptive_cover_hub_") for _d, uid in house_settings)
+    assert {key: after[key] for key in kept} == kept
+    rows = [row for row in rows if row["domain"] != "number"]
 
     # The surface lands on every window row; the hub stays primary.
     window_ids = {entry["entry_id"] for entry in windows}

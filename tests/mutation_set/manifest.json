@@ -330,11 +330,11 @@
  },
  {
   "id": "M39",
-  "file": "custom_components/adaptive_cover/__init__.py",
-  "function": "handle_change_settings",
+  "file": "custom_components/adaptive_cover/layers.py",
+  "function": "window_options_after",
   "description": "options merge inverted: existing options win over the requested changes",
   "patch": "M39_settings_merge_inverted.patch",
-  "deviation": "roadmap filed this under coordinator.py 'config merge'; no literal data/options merge exists there \u2014 the real options-over-changes merge lives in __init__.handle_change_settings."
+  "deviation": "roadmap filed this under coordinator.py 'config merge'; no literal data/options merge exists there. Since the P5 flip the merge of a window's edits (change_settings, the options form) into its options lives in layers.window_options_after."
  },
  {
   "id": "M40",
@@ -398,6 +398,27 @@
   "function": "restored_mode",
   "description": "Mode restore ignores the legacy switch fallback: a window whose Toggle Control was off comes back in auto on the first boot after the flip",
   "patch": "M51_mode_restore_ignores_switch_fallback.patch"
+ },
+ {
+  "id": "M90",
+  "file": "custom_components/adaptive_cover/layers.py",
+  "function": "effective_settings",
+  "description": "the runtime ignores a window's own values: every window acts on what it would inherit from its area, floor and the house",
+  "patch": "M90_runtime_ignores_window_override.patch"
+ },
+ {
+  "id": "M91",
+  "file": "custom_components/adaptive_cover/layers.py",
+  "function": "async_set_profile",
+  "description": "set_profile writes the wrong level: a floor's values are stored as the area of that id and an area's as the floor",
+  "patch": "M91_set_profile_writes_the_wrong_level.patch"
+ },
+ {
+  "id": "M92",
+  "file": "custom_components/adaptive_cover/house_settings.py",
+  "function": "HouseSetting._store",
+  "description": "a house entity's change is stored but not propagated: the windows act on it only at their next refresh",
+  "patch": "M92_house_setting_change_does_not_propagate.patch"
  },
  {
   "id": "M70",

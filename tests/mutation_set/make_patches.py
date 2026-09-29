@@ -63,6 +63,8 @@ CONFIG_FLOW = "custom_components/adaptive_cover/config_flow.py"
 SETTINGS_SHADOW = "custom_components/adaptive_cover/settings/shadow.py"
 SHADOW = "custom_components/adaptive_cover/shadow.py"
 MODE = "custom_components/adaptive_cover/runtime/mode.py"
+LAYERS = "custom_components/adaptive_cover/layers.py"
+HOUSE_SETTINGS = "custom_components/adaptive_cover/house_settings.py"
 
 
 @dataclass
@@ -656,14 +658,15 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M39",
         "settings_merge_inverted",
-        INIT,
-        "handle_change_settings",
+        LAYERS,
+        "window_options_after",
         "options merge inverted: existing options win over the requested changes",
-        '            update_kwargs["options"] = {**entry.options, **changes}',
-        '            update_kwargs["options"] = {**changes, **entry.options}',
+        "            options[key] = value\n            continue\n",
+        "            options.setdefault(key, value)\n            continue\n",
         deviation="roadmap filed this under coordinator.py 'config merge'; no "
-        "literal data/options merge exists there — the real options-over-"
-        "changes merge lives in __init__.handle_change_settings.",
+        "literal data/options merge exists there. Since the P5 flip the "
+        "merge of a window's edits (change_settings, the options form) into "
+        "its options lives in layers.window_options_after.",
     ),
     # ---- group G: entity surfaces & routing ----------------------------
     Mutation(
@@ -764,6 +767,39 @@ MUTATIONS: list[Mutation] = [
         "flip",
         '    if legacy_switch == "off":\n        return Restored(Mode.OFF)\n',
         "    if False:\n        return Restored(Mode.OFF)\n",
+    ),
+    # P5 flip, batch 2: the runtime acts on the layered settings.
+    Mutation(
+        "M90",
+        "runtime_ignores_window_override",
+        LAYERS,
+        "effective_settings",
+        "the runtime ignores a window's own values: every window acts on "
+        "what it would inherit from its area, floor and the house",
+        "                hub.options,\n                overrides,\n",
+        "                hub.options,\n                WindowOverrides(),\n",
+    ),
+    Mutation(
+        "M91",
+        "set_profile_writes_the_wrong_level",
+        LAYERS,
+        "async_set_profile",
+        "set_profile writes the wrong level: a floor's values are stored as "
+        "the area of that id and an area's as the floor",
+        "        bucket = FLOORS if level is Level.FLOOR else AREAS\n"
+        "        profiles = dict(options.get(bucket) or {})\n",
+        "        bucket = AREAS if level is Level.FLOOR else FLOORS\n"
+        "        profiles = dict(options.get(bucket) or {})\n",
+    ),
+    Mutation(
+        "M92",
+        "house_setting_change_does_not_propagate",
+        HOUSE_SETTINGS,
+        "HouseSetting._store",
+        "a house entity's change is stored but not propagated: the windows "
+        "act on it only at their next refresh",
+        "        await async_settings_changed(self.hass)\n",
+        "        pass\n",
     ),
     # P5 shadow release (v1.18.0): the diff repair and the switch capture.
     Mutation(

@@ -43,8 +43,9 @@ export type WindowRole =
   | 'controlSwitch'
   | 'climateSwitch';
 
-/** The house device's entities ("Adaptive Cover All"). */
-export type HubRole = 'cover' | 'modeSelect' | 'returnButton';
+/** The house device's entities ("Adaptive Cover All"); the Climate switch is
+ *  the house's `climate_on` setting (P5 flip). */
+export type HubRole = 'cover' | 'modeSelect' | 'returnButton' | 'climateSwitch';
 
 /** (domain, translation_key) of each window role. Mirrors
  *  custom_components/adaptive_cover/entity_surface.py WINDOW_SURFACE. */
@@ -79,6 +80,7 @@ const ROLE_SUFFIX: Record<WindowRole, string> = Object.fromEntries(
 const HUB_TRANSLATION_KEYS: Record<string, HubRole> = {
   'select:house_mode': 'modeSelect',
   'button:return_all_to_auto': 'returnButton',
+  'switch:climate_on': 'climateSwitch',
 };
 
 export const HUB_UNIQUE_ID_PREFIX = 'adaptive_cover_hub_';
@@ -86,6 +88,7 @@ const HUB_UNIQUE_ID_SUFFIXES: Record<string, HubRole> = {
   'cover:cover': 'cover',
   'select:house_mode': 'modeSelect',
   'button:reset_all': 'returnButton',
+  'switch:climate_on': 'climateSwitch',
 };
 
 /** One row of the frontend display registry (`hass.entities`). */
@@ -175,6 +178,8 @@ export interface HouseModel {
   /** Every window in display order (floor, room, name). */
   windows: HouseWindow[];
   hub: HouseHub;
+  /** The house device (its page holds the house settings), when known. */
+  hubDeviceId: string | null;
   /** True when some adaptive_cover rows need the full registry to classify
    *  (no translation key) and none was passed in. */
   needsRegistry: boolean;
@@ -366,7 +371,11 @@ export function discoverHouse(
 
   // Hub roles.
   const hub: HouseHub = {};
-  for (const c of classified) if (c.hub && !hub[c.hub]) hub[c.hub] = c.row.entity_id;
+  let hubDeviceId: string | null = null;
+  for (const c of classified) {
+    if (c.hub && !hub[c.hub]) hub[c.hub] = c.row.entity_id;
+    if (c.hub && !hubDeviceId && nonEmpty(c.row.device_id)) hubDeviceId = c.row.device_id;
+  }
 
   // One window per Position sensor.
   interface Draft {
@@ -503,7 +512,13 @@ export function discoverHouse(
   if (floors.length === 1 && floors[0].id === null) floors[0].name = '';
 
   const ordered = floors.flatMap((f) => f.rooms.flatMap((r) => r.windows));
-  return { floors, windows: ordered, hub, needsRegistry: needsRegistry && !registry };
+  return {
+    floors,
+    windows: ordered,
+    hub,
+    hubDeviceId,
+    needsRegistry: needsRegistry && !registry,
+  };
 }
 
 /** Every entity id the house card reads for `model` (for change detection). */

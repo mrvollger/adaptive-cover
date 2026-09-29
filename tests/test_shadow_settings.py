@@ -10,8 +10,10 @@ attribute names where each non-house value comes from.
 
 Also pinned here: the switch capture reads the restored state when the
 switches are not up; the lift is idempotent; a window added after the
-lift (a copy of another window) joins the layered settings; a hub created
-at 1.4 is not lifted.
+lift (a copy of another window) joins the layered settings; since the P5
+flip a house that was never lifted lifts itself (a hub created at 1.4, a
+window that sets up while the hub is disabled), and the retired
+``settings_differ`` issue never appears.
 """
 
 from __future__ import annotations
@@ -40,9 +42,12 @@ from custom_components.adaptive_cover.const import (
     DOMAIN,
 )
 from custom_components.adaptive_cover.migration import options_1_3
+from custom_components.adaptive_cover.runtime.shade_config import ShadeConfig
+from custom_components.adaptive_cover.settings.lift import same_value
+from custom_components.adaptive_cover.settings.shadow import legacy_values
 
 from .test_entity_surface_v2 import COVER, _entry, _load_live_house, _set_world, _setup
-from .window_handle import WindowHandle
+from .window_handle import WindowHandle, window_settings
 
 SNAPSHOT = Path(__file__).parent / "fixtures" / "house_snapshot"
 UP = "sensor.upstairs_indoor_temperature"
@@ -248,6 +253,51 @@ async def test_live_house_switch_that_is_on_is_recorded(hass, cover_calls):
     assert _differ_issues(hass) == {}
 
 
+# The toggles every window of the snapshot acts on (its switches'
+# restored states; no window has a lux or irradiance sensor).
+LIVE_TOGGLES = {
+    "climate_on": True,
+    "use_outside_temp": False,
+    "use_lux": True,
+    "use_irradiance": True,
+    "manual_detection": True,
+}
+
+
+async def test_live_house_runs_on_the_same_settings(hass, cover_calls):
+    """P5 flip: every live window acts on exactly what it acted on before.
+
+    After migration 1.4 the runtime resolves each window from the house,
+    floor, area and window layers. For all 15 windows the running window's
+    settings (the diagnostics download) equal its legacy options plus its
+    switch states, and so do the runtime's typed reads (``ShadeConfig``,
+    which every gate, schedule and cover adapter reads) and the switch-era
+    toggles.
+    """
+    windows, hub = await _set_up_live_house(hass)
+    snapshot = {
+        e["entry_id"]: e
+        for e in json.loads((SNAPSHOT / "config_entries.json").read_text())["entries"]
+    }
+    assert "house" in hub.options
+    assert len(windows) == 15
+    for title, entry_id in windows.items():
+        legacy_options = options_1_3(snapshot[entry_id]["options"])
+        expected = legacy_values(legacy_options, LIVE_TOGGLES, temperature_unit="°F")
+        settings = await window_settings(hass, entry_id)
+        differing = sorted(
+            key for key in expected if not same_value(settings[key], expected[key])
+        )
+        assert differing == [], title
+        assert ShadeConfig.from_options(settings) == ShadeConfig.from_options(
+            legacy_options
+        ), title
+        diagnostics_provenance = WindowHandle.by_key(hass, entry_id).attributes[
+            "provenance"
+        ]
+        assert diagnostics_provenance is not None, title
+
+
 @pytest.mark.parametrize(
     ("title", "provenance"),
     [
@@ -410,25 +460,35 @@ async def test_lift_reads_the_restored_switch_state(hass, cover_calls):
 
 
 async def test_lift_does_not_reload_a_running_window(hass, cover_calls):
+    """A window lifts a never-lifted house at its setup (the hub is disabled).
+
+    Enabling the hub later migrates it without lifting again (a second
+    lift would rebuild the layers from the legacy keys), and the running
+    window is not reloaded.
+    """
     _set_world(hass)
     hub = _hub(hass, minor_version=3, disabled=True)
     window = _entry(hass, minor_version=3)
     handle = WindowHandle(hass, COVER)
     await _setup(hass, window)
-    assert handle.attributes["provenance"] is None
+    assert "house" in hub.options
+    assert _overrides(hass, window.entry_id) == ({}, {})
+    assert handle.attributes["provenance"] == {}
+    house = dict(hub.options["house"])
 
     assert await hass.config_entries.async_set_disabled_by(hub.entry_id, None)
     await hass.async_block_till_done()
 
     assert hub.minor_version == 5
+    assert hub.options["house"] == house
     assert _overrides(hass, window.entry_id) == ({}, {})
     assert handle.teardowns == 0
-    # The new provenance reached the Position sensor without a reload.
     assert handle.attributes["provenance"] == {}
     assert _differ_issues(hass) == {}
 
 
-async def test_hub_created_at_1_4_is_not_lifted(hass, cover_calls):
+async def test_hub_created_at_1_4_lifts_itself(hass, cover_calls):
+    """P5 flip: a new install's hub lifts its windows when it sets up."""
     _set_world(hass)
     window = _entry(hass, minor_version=3)
     handle = WindowHandle(hass, COVER)
@@ -437,8 +497,8 @@ async def test_hub_created_at_1_4_is_not_lifted(hass, cover_calls):
     (hub,) = [
         e for e in hass.config_entries.async_entries(DOMAIN) if e.data.get("is_hub")
     ]
-    assert hub.minor_version == 5
-    assert "house" not in hub.options
-    assert "overrides" not in window.options
-    assert handle.attributes["provenance"] is None
+    assert "house" in hub.options
+    assert _overrides(hass, window.entry_id) == ({}, {})
+    assert handle.attributes["provenance"] == {}
+    assert handle.teardowns == 0
     assert _differ_issues(hass) == {}

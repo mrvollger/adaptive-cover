@@ -232,9 +232,10 @@ async def test_end_time_moved_later_while_withheld_waits(hass, freezer):
 async def test_end_time_rearm_via_settings_service(hass, freezer):
     """adaptive_cover.change_settings moves the end time and re-arms.
 
-    Drives the real inbound service surface: the option change must land
-    in entry.options (options win over the previous value) and the close
-    must follow the NEW end time after the reload.
+    Drives the real inbound service surface: the change must become what
+    the window acts on (P5 flip: the window's own value in the layered
+    settings, which beats the previous one) and the close must follow the
+    NEW end time.
     """
     house = await SimHouse.create(
         hass, freezer, date=DATE, options=end_time_options("20:00:00")
@@ -247,8 +248,9 @@ async def test_end_time_rearm_via_settings_service(hass, freezer):
         blocking=True,
     )
     await hass.async_block_till_done()
-    assert house.entry.options[CONF_END_TIME] == "18:00:00", (
-        "change_settings did not update the entry options"
+    settings = await house.window().settings()
+    assert settings[CONF_END_TIME] == "18:00:00", (
+        "change_settings did not change what the window acts on"
     )
     # Re-point the harness at the reloaded entry (models the user saving
     # the options dialog unchanged; still only public lifecycle APIs).
