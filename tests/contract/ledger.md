@@ -22,6 +22,8 @@ here. `tests/contract/check_behavior_tier.py` fails CI when an id leaves
   re-anchors, re-targets or adds, and where it now lives. Write "none" if
   there are none.
 - "Contract change" is the row in the plan's table (C1 to C8), or "none".
+  An entry that retires no tests is allowed only when it names a contract
+  change (it records a deliberate change that only adds or re-anchors pins).
 - "Reason" is required.
 
 After you add the entry, run

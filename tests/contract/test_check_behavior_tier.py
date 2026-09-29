@@ -237,3 +237,23 @@ def test_parse_collect_output_stops_at_summary():
 def test_committed_ledger_parses_cleanly():
     ledger = cbt.parse_ledger(cbt.LEDGER_FILE.read_text(encoding="utf-8"))
     assert ledger.errors == []
+
+
+def test_contract_change_entry_without_removals_is_valid():
+    """An entry may retire no tests when it records a named contract change."""
+    ledger = _ledger(
+        "## L0001 · 2026-10-14 · adds pins\n"
+        "- **Removed:** none\n"
+        "- **Contract change:** C1\n"
+        "- **Reason:** additive surface change\n"
+    )
+    assert ledger.errors == []
+
+
+def test_entry_without_removals_or_contract_change_is_invalid():
+    ledger = _ledger(
+        "## L0001 · 2026-10-14 · nothing\n"
+        "- **Contract change:** none\n"
+        "- **Reason:** r\n"
+    )
+    assert any("no contract change" in e for e in ledger.errors)
