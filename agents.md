@@ -46,6 +46,7 @@ custom_components/adaptive_cover/
 │   ├── schedule.py          # Schedule: start/end time window (no hass; state reader + "now" passed in)
 │   ├── gates.py             # GatePolicy: delta/time/quiet/budget gates and their order (no hass)
 │   ├── command_tracker.py   # CommandTracker: commands in flight, travel latch, late delivery, arrival polls
+│   ├── decider.py           # Decider: basic vs climate position, interpolation / inverse transforms
 │   ├── manual_detector.py   # ManualDetector: motion-start, redirect-in-travel and landing rules
 │   ├── override_tracker.py  # OverrideTracker: per-cover manual latch + override clock (hass.data store)
 │   └── end_of_day.py        # EndOfDay: end-time timer, catch-up close, retry of missed closes
@@ -161,6 +162,8 @@ cover state change ────┘         ▼
 **`ShadeConfig`** / **`ControlState`** / **`Schedule`** / **`GatePolicy`** (runtime/, P4 batch 1) — Split out of the coordinator, no `hass`. The coordinator rebuilds `self.config = ShadeConfig.from_options(options)` each refresh, keeps the switch toggles in `self.controls` (the switch platform still sets `control_toggle`, `manual_toggle`, ... by name through `ControlToggle` forwards), asks `self.schedule` for the start/end window and `self.gates.first_blocking_gate(...)` for each automatic move.
 
 **`CommandTracker`** / **`ManualDetector`** / **`OverrideTracker`** / **`EndOfDay`** (runtime/, P4 batch 2) — Also no `hass`. `self.commands` holds the commands in flight (`wait_for_target`, `target_call`, `target_call_time`, our context ids, failed sends that may still arrive) and classifies cover reports against them; the coordinator exposes `wait_for_target`, `target_call_time` and `TARGET_TIMEOUT` for the reset button. `self.detector` holds the manual-move rules and latches into `self.manager` (the `OverrideTracker`: latch, override clock, the `hass.data` store). `self.end_of_day` arms the end-time timer, runs the close and keeps undelivered closes for a retry. HA calls (services, timers) reach them as callables the coordinator passes in.
+
+**`Decider`** (runtime/decider.py, P4 batch 3) — Picks the basic or climate position and applies the output transforms (interpolation, or inversion; the min/max clamp stays in the engine). `coordinator.state` and `_transform_state` delegate to `self.decider`, so tracking moves, the forecast and the end-of-day close share one transform chain.
 
 ### Config Flow (config_flow.py)
 
