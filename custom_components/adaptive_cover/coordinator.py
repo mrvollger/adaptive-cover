@@ -461,7 +461,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             # move (99 -> 100) is within tolerance of the target: counting
             # it cleared the latch, and the next refresh re-sent the same
             # snap position (snaps bypass the delta and time gates).
-            settled = event.new_state.state not in ("opening", "closing")
+            settled = (
+                event is not None
+                and event.new_state is not None
+                and event.new_state.state not in ("opening", "closing")
+            )
             arrived = (
                 settled
                 and position is not None
