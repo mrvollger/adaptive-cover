@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.entity_component import async_update_entity
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     async_mock_service,
@@ -51,6 +52,11 @@ async def _setup_two_entries(hass, delta_time_a=0):
     await hass.async_block_till_done()  # bootstrap may set up the component
     if e2.state is not ConfigEntryState.LOADED:
         await hass.config_entries.async_setup(e2.entry_id)
+    await hass.async_block_till_done()
+    # The aggregate cover polls. When the hub loads before Room B, its first
+    # state misses B (a ~1% setup-order race); poll once so every test sees
+    # both rooms.
+    await async_update_entity(hass, "cover.adaptive_cover_all")
     await hass.async_block_till_done()
     return e1, e2
 
