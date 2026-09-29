@@ -1,379 +1,2055 @@
 {
- "date": "2026-09-01",
- "total": 43,
- "survivors": [],
- "sim_kills": 32,
- "matrix": [
-  {
+ "generated": "2026-09-29T04:06:26+00:00",
+ "tiers": [
+  "simulation",
+  "characterization",
+  "engine",
+  "entity"
+ ],
+ "aborted": false,
+ "timing": {
+  "started": "2026-09-29T03:48:53+00:00",
+  "jobs": 16,
+  "cpu_count": 16,
+  "xdist": {
+   "simulation": null,
+   "characterization": null,
+   "engine": null,
+   "entity": null
+  },
+  "scheduled_longest_first": false,
+  "wall_seconds": 1053.5
+ },
+ "control": {
+  "id": "CONTROL",
+  "tiers": {
+   "simulation": {
+    "caught": false,
+    "exit_code": 0,
+    "timeout": false,
+    "seconds": 162.5,
+    "tail": "........................................................................ [ 66%]\n.....................................                                    [100%]\n109 passed in 159.12s (0:02:39)"
+   },
+   "characterization": {
+    "caught": false,
+    "exit_code": 0,
+    "timeout": false,
+    "seconds": 7.8,
+    "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 5.47s"
+   },
+   "engine": {
+    "caught": false,
+    "exit_code": 0,
+    "timeout": false,
+    "seconds": 54.4,
+    "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 52.09s"
+   },
+   "entity": {
+    "caught": false,
+    "exit_code": 0,
+    "timeout": false,
+    "seconds": 332.3,
+    "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 328.05s (0:05:28)"
+   }
+  },
+  "caught_by": [],
+  "missed_by": [
+   "simulation",
+   "characterization",
+   "engine",
+   "entity"
+  ],
+  "seconds": 557.9
+ },
+ "results": {
+  "M01": {
    "id": "M01",
-   "caught": true,
-   "caught_by_tiers": [
-    "simulation"
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "check_position_delta",
+   "description": ">= min_change -> > (move exactly at threshold now blocked)",
+   "patch": "M01_delta_gate_ge.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 42.9,
+     "tail": "FAILED tests/simulation/test_gates_and_windows.py::test_delta_gate_threshold_is_inclusive - AssertionError: a change of exactly delta_position must move (>= not >): []\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 30 passed in 38.85s"
+    },
+    "characterization": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 9.9,
+     "tail": "FAILED tests/characterization/test_service_calls.py::test_sun_change_triggers_position_call - assert 0 == 1\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 229 passed in 7.90s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 40.8,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 38.73s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 5.0,
+     "tail": "FAILED tests/replay/test_house_replay.py::test_house_replay[den_south-dst_start] - Failed: House replay changed for Den south on dst_start:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1 passed in 2.53s"
+    }
+   },
+   "caught_by": [
+    "simulation",
+    "characterization",
+    "entity"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "engine"
+   ],
+   "seconds": 99.4
   },
-  {
+  "M02": {
    "id": "M02",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "check_quiet_hours",
+   "description": "remove the snap-position early return (evening close swallowed in quiet window)",
+   "patch": "M02_quiet_hours_snap_bypass.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 61.6,
+     "tail": "FAILED tests/simulation/test_gates_and_windows.py::test_quiet_hours_midnight_span_snap_bypass - AssertionError: expected exactly the sunset snap (and nothing else) after 1...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 35 passed in 57.99s"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 9.7,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 7.47s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 39.0,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 37.03s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 347.0,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 344.49s (0:05:44)"
+    }
+   },
+   "caught_by": [
     "simulation"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine",
+    "entity"
+   ],
+   "seconds": 458.3
   },
-  {
+  "M03": {
    "id": "M03",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "check_move_budget",
+   "description": ">= max_moves_hour -> > (one extra move per rolling hour)",
+   "patch": "M03_move_budget_ge.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 64.0,
+     "tail": "FAILED tests/simulation/test_gates_and_windows.py::test_move_budget - AssertionError: a third tracking move fired inside the rolling hour\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 36 passed in 60.38s (0:01:00)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 8.5,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 6.46s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 40.8,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 37.90s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 345.4,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 342.52s (0:05:42)"
+    }
+   },
+   "caught_by": [
     "simulation"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine",
+    "entity"
+   ],
+   "seconds": 459.6
   },
-  {
+  "M04": {
    "id": "M04",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "check_time_delta",
+   "description": "no-previous-command branch return True -> return False",
+   "patch": "M04_time_delta_default_false.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 43.8,
+     "tail": "FAILED tests/simulation/test_gates_and_windows.py::test_time_window_gates_tracking - AssertionError: no command once the window opened\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 31 passed in 39.40s"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.9,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 9.37s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 40.0,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 36.90s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 58.8,
+     "tail": "FAILED tests/replay/test_house_replay.py::test_house_replay[family_door-dst_start] - Failed: House replay changed for Family door on dst_start:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 19 passed in 56.58s"
+    }
+   },
+   "caught_by": [
     "simulation",
-    "characterization",
     "entity"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "seconds": 156.3
   },
-  {
+  "M05": {
    "id": "M05",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "after_start_time",
+   "description": "static CONF_START_TIME wins over the start-time entity (precedence swap)",
+   "patch": "M05_start_time_precedence_swap.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 46.2,
+     "tail": "FAILED tests/simulation/test_gates_and_windows.py::test_time_window_start_entity_precedence - AssertionError: the static 08:00 start won over the 12:00 start entity\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 32 passed in 41.93s"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 13.5,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 10.62s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 37.4,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 35.33s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 347.9,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 345.75s (0:05:45)"
+    }
+   },
+   "caught_by": [
     "simulation"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine",
+    "entity"
+   ],
+   "seconds": 446.2
   },
-  {
+  "M06": {
    "id": "M06",
-   "caught": true,
-   "caught_by_tiers": [
-    "simulation"
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "_end_time",
+   "description": "drop the 00:00-means-next-midnight normalization",
+   "patch": "M06_midnight_end_time_normalization.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 57.9,
+     "tail": "FAILED tests/simulation/test_gates_and_windows.py::test_midnight_end_time - AssertionError: no daytime tracking: the 00:00 end time closed the window a...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 34 passed in 53.58s"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.6,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 9.22s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 36.9,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 35.13s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 7.9,
+     "tail": "FAILED tests/replay/test_house_replay.py::test_house_replay[den_south-dst_start] - Failed: House replay changed for Den south on dst_start:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1 passed in 4.71s"
+    }
+   },
+   "caught_by": [
+    "simulation",
+    "entity"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "seconds": 115.3
   },
-  {
+  "M07": {
    "id": "M07",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "_first_blocking_gate",
+   "description": "evaluate position-delta before the manual-override check (move_blocked_by names the wrong gate)",
+   "patch": "M07_gate_order_delta_before_manual.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 66.4,
+     "tail": "FAILED tests/simulation/test_gates_and_windows.py::test_gate_precedence_order - AssertionError: manual override must be named before position_delta/quiet_h...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 37 passed in 62.15s (0:01:02)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 8.4,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 6.13s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 41.1,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 37.77s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 343.7,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 340.25s (0:05:40)"
+    }
+   },
+   "caught_by": [
     "simulation"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine",
+    "entity"
+   ],
+   "seconds": 460.5
   },
-  {
+  "M08": {
    "id": "M08",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "AdaptiveCoverManager.handle_state_change",
+   "description": "new_position != our_state -> == (manual detection inverted)",
+   "patch": "M08_manual_detection_inverted.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 118.4,
+     "tail": "FAILED tests/simulation/test_manual_override_behavior.py::test_manual_threshold_large_move_latches - AssertionError: an above-threshold remote move never latched a manual override\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 77 passed in 115.10s (0:01:55)"
+    },
+    "characterization": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 13.3,
+     "tail": "FAILED tests/characterization/test_service_calls.py::test_regression_1b2b668_override_visible_same_cycle - assert False is True\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 231 passed in 9.00s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 27.9,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 25.57s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 341.7,
+     "tail": "FAILED tests/test_provenance.py::test_manual_takeover_recorded - AssertionError: assert 'startup' == 'manual'\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 207 passed in 339.35s (0:05:39)"
+    }
+   },
+   "caught_by": [
     "simulation",
     "characterization",
     "entity"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "engine"
+   ],
+   "seconds": 502.2
   },
-  {
+  "M09": {
    "id": "M09",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "_is_own_landing",
+   "description": "<= TARGET_TOLERANCE -> > (own landings latch as manual)",
+   "patch": "M09_own_landing_tolerance_flip.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 100.9,
+     "tail": "FAILED tests/simulation/test_lifecycle.py::test_end_time_rearm_later_no_stale_close - AssertionError: assert 50 == 0\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 65 passed in 96.89s (0:01:36)"
+    },
+    "characterization": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 13.3,
+     "tail": "FAILED tests/characterization/test_service_calls.py::test_regression_1b2b668_override_visible_same_cycle - assert False is True\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 231 passed in 9.54s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 34.8,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 31.86s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 18.1,
+     "tail": "FAILED tests/replay/test_house_replay.py::test_house_replay[den_south-winter_solstice] - Failed: House replay changed for Den south on winter_solstice:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 6 passed in 16.07s"
+    }
+   },
+   "caught_by": [
     "simulation",
     "characterization",
     "entity"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "engine"
+   ],
+   "seconds": 168.0
   },
-  {
+  "M10": {
    "id": "M10",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_check_cover_state_change",
+   "description": "expected opening/closing swapped in the travel-window direction check",
+   "patch": "M10_travel_direction_swap.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 131.7,
+     "tail": "FAILED tests/simulation/test_manual_override_behavior.py::test_takeover_during_travel_latches_at_motion_start - AssertionError: a counter-direction move inside the travel window did not l...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 84 passed in 127.96s (0:02:07)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 7.4,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 5.03s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 28.3,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 26.43s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 347.2,
+     "tail": "FAILED tests/test_smoothing_and_privacy.py::test_regression_no_latch_when_movement_is_ours - assert not True\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 227 passed in 344.98s (0:05:44)"
+    }
+   },
+   "caught_by": [
     "simulation",
     "entity"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "seconds": 515.4
   },
-  {
+  "M11": {
    "id": "M11",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "AdaptiveCoverManager.handle_state_change",
+   "description": "threshold check neutered: any nonzero diff latches",
+   "patch": "M11_manual_threshold_zero.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 116.3,
+     "tail": "FAILED tests/simulation/test_manual_override_behavior.py::test_manual_threshold_small_nudge_keeps_auto - AssertionError: a below-threshold nudge stopped auto control: no integratio...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 76 passed in 111.93s (0:01:51)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 14.9,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 10.90s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 27.8,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 25.71s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 347.9,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 345.04s (0:05:45)"
+    }
+   },
+   "caught_by": [
     "simulation"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine",
+    "entity"
+   ],
+   "seconds": 507.8
   },
-  {
+  "M12": {
    "id": "M12",
-   "caught": true,
-   "caught_by_tiers": [
-    "simulation"
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "_update_manager_and_covers",
+   "description": "override duration unit blown up 60x (minutes behave like hours)",
+   "patch": "M12_override_duration_minutes_to_hours.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 114.0,
+     "tail": "FAILED tests/simulation/test_lifecycle.py::test_restart_preserves_latched_override - AssertionError: auto control never resumed after the override expired post-...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 75 passed in 110.16s (0:01:50)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 14.9,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 12.20s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 28.1,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 25.42s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 5.9,
+     "tail": "FAILED tests/replay/test_house_replay.py::test_house_replay[den_south-dst_start] - Failed: House replay changed for Den south on dst_start:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1 passed in 2.92s"
+    }
+   },
+   "caught_by": [
+    "simulation",
+    "entity"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "seconds": 163.8
   },
-  {
+  "M13": {
    "id": "M13",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "_update_manager_and_covers",
+   "description": "swap the None (restart: preserve) and False (toggle-off: clear) branches",
+   "patch": "M13_toggle_none_false_branch_swap.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 70.7,
+     "tail": "FAILED tests/simulation/test_gates_and_windows.py::test_control_on_force_apply - AssertionError: the manual override was lost across the restart\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 40 passed in 66.60s (0:01:06)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.0,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 9.13s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 43.2,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 40.89s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 340.0,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 337.07s (0:05:37)"
+    }
+   },
+   "caught_by": [
     "simulation"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine",
+    "entity"
+   ],
+   "seconds": 465.9
   },
-  {
+  "M14": {
    "id": "M14",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_timed_end_time",
+   "description": "catch-up flag inversion <= -> > (on-time closes skip overridden covers)",
+   "patch": "M14_catchup_flag_inverted.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 96.5,
+     "tail": "FAILED tests/simulation/test_lifecycle.py::test_close_beats_live_override - AssertionError: the on-time end close was swallowed by a live manual overri...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 62 passed in 92.77s (0:01:32)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 10.0,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 7.92s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 38.9,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 35.68s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 348.0,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 345.95s (0:05:45)"
+    }
+   },
+   "caught_by": [
     "simulation"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine",
+    "entity"
+   ],
+   "seconds": 494.2
   },
-  {
+  "M15": {
    "id": "M15",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_handle_timed_refresh",
+   "description": "skip the sunset-position transform (raw value sent to interpolated/inverse covers)",
+   "patch": "M15_end_close_skips_transform.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 137.4,
+     "tail": "FAILED tests/simulation/test_mutation_holes.py::test_end_close_applies_inverse_transform - AssertionError: inverse cover: end close must command 100 (inverse of sunse...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 88 passed in 133.72s (0:02:13)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 7.2,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 5.22s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 30.5,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 28.49s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 349.0,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 345.94s (0:05:45)"
+    }
+   },
+   "caught_by": [
     "simulation"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine",
+    "entity"
+   ],
+   "seconds": 525.0
   },
-  {
+  "M16": {
    "id": "M16",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_check_cover_state_change",
+   "description": "pending-snap retry control_toggle condition inverted",
+   "patch": "M16_pending_snap_retry_inverted.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 42.3,
+     "tail": "FAILED tests/simulation/test_device_failures.py::test_pending_end_snap_real_retry[control-on] - AssertionError: missed end-of-day close was not re-delivered after the shad...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 27 passed in 40.34s"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 7.3,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 5.20s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 31.9,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 29.85s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 349.1,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 346.95s (0:05:46)"
+    }
+   },
+   "caught_by": [
     "simulation"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine",
+    "entity"
+   ],
+   "seconds": 430.7
   },
-  {
+  "M17": {
    "id": "M17",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "_async_update_data",
+   "description": "keep the stale timer: only arm once, never re-arm on an options change",
+   "patch": "M17_end_time_rearm_skipped.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 100.7,
+     "tail": "FAILED tests/simulation/test_lifecycle.py::test_end_time_rearm_earlier_via_entity - AssertionError: end time moved 20:00 -> 18:00 but no close fired at 18:00 (...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 64 passed in 97.76s (0:01:37)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 17.4,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 14.14s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 63.6,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 60.45s (0:01:00)"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 283.7,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 280.00s (0:04:39)"
+    }
+   },
+   "caught_by": [
     "simulation"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine",
+    "entity"
+   ],
+   "seconds": 465.5
   },
-  {
+  "M18": {
    "id": "M18",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_timed_refresh",
+   "description": "late delivery becomes a no-op (the historical 1-second-equality bug)",
+   "patch": "M18_late_fire_noop.patch",
+   "deviation": "roadmap wrote the guard as 'if now < end_time: return'; the kill-relevant behavior (a LATE fire is dropped) needs the inverse comparison, implemented here against the armed time.",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 121.3,
+     "tail": "FAILED tests/simulation/test_harness_smoke.py::test_hold_release_timers_delivers_close_late - AssertionError: released timer never delivered the (late) close\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 53 passed in 118.12s (0:01:58)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 16.9,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 12.47s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 33.1,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 28.81s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 302.8,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 300.94s (0:05:00)"
+    }
+   },
+   "caught_by": [
     "simulation"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine",
+    "entity"
+   ],
+   "seconds": 474.3
   },
-  {
+  "M19": {
    "id": "M19",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "gamma",
+   "description": "operand swap in the relative sun angle",
+   "patch": "M19_gamma_operand_swap.patch",
+   "tiers": {
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 200.3,
+     "tail": "........................................................................ [ 66%]\n.....................................                                    [100%]\n109 passed in 198.11s (0:03:18)"
+    },
+    "characterization": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 10.3,
+     "tail": "FAILED tests/characterization/test_golden_days.py::test_golden_day[slc_south_summer_solstice] - Failed: Schedule changed for slc_south_summer_solstice:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 218 passed in 7.71s"
+    },
+    "engine": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 3.4,
+     "tail": "FAILED tests/engine/test_geometry_contracts.py::TestGammaSignConvention::test_sun_from_left_positive - assert -45 == 45 \u00b1 4.5e-05\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1 passed in 0.81s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 76.0,
+     "tail": "FAILED tests/replay/test_house_replay.py::test_house_replay[family_east-dst_start] - Failed: House replay changed for Family east on dst_start:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 25 passed in 73.64s (0:01:13)"
+    }
+   },
+   "caught_by": [
     "characterization",
-    "engine"
+    "engine",
+    "entity"
    ],
-   "sim_caught": false
+   "missed_by": [
+    "simulation"
+   ],
+   "seconds": 290.1
   },
-  {
+  "M20": {
    "id": "M20",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "valid_elevation",
+   "description": "drop the unconditional horizon floor",
+   "patch": "M20_horizon_floor_dropped.patch",
+   "tiers": {
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 204.1,
+     "tail": "........................................................................ [ 66%]\n.....................................                                    [100%]\n109 passed in 201.90s (0:03:21)"
+    },
+    "characterization": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 9.4,
+     "tail": "FAILED tests/characterization/test_golden_days.py::test_golden_day[slc_south_winter_solstice] - Failed: Schedule changed for slc_south_winter_solstice:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 217 passed in 7.06s"
+    },
+    "engine": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 3.1,
+     "tail": "FAILED tests/engine/test_geometry_contracts.py::TestFovBoundaries::test_elevation_below_zero_is_not - AssertionError: assert <Intent.CALCU... 'calculated'> == <Intent.DEFAULT: '...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 13 passed in 0.81s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 189.2,
+     "tail": "FAILED tests/replay/test_house_replay.py::test_house_replay[master_trap-dst_start] - Failed: House replay changed for Master trap on dst_start:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 67 passed in 187.17s (0:03:07)"
+    }
+   },
+   "caught_by": [
     "characterization",
-    "engine"
+    "engine",
+    "entity"
    ],
-   "sim_caught": false
+   "missed_by": [
+    "simulation"
+   ],
+   "seconds": 406.0
   },
-  {
+  "M21": {
    "id": "M21",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "sunlit_top",
+   "description": "overhang shadow-line sign flip",
+   "patch": "M21_sunlit_top_sign_flip.patch",
+   "tiers": {
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 138.1,
+     "tail": "........................................................................ [ 66%]\n.....................................                                    [100%]\n109 passed in 135.15s (0:02:15)"
+    },
+    "characterization": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 10.1,
+     "tail": "FAILED tests/characterization/test_golden_days.py::test_golden_day[house_summer_overhang] - Failed: Schedule changed for house_summer_overhang:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 226 passed in 8.27s"
+    },
+    "engine": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 6.5,
+     "tail": "FAILED tests/engine/test_geometry_contracts.py::TestOverhangShadowLine::test_shadow_line_hand_computed - assert 2.44 == 1.83 \u00b1 1.8e-06\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 65 passed in 3.06s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 77.7,
+     "tail": "FAILED tests/replay/test_house_replay.py::test_house_replay[family_door-dst_start] - Failed: House replay changed for Family door on dst_start:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 19 passed in 73.93s (0:01:13)"
+    }
+   },
+   "caught_by": [
     "characterization",
-    "engine"
+    "engine",
+    "entity"
    ],
-   "sim_caught": false
+   "missed_by": [
+    "simulation"
+   ],
+   "seconds": 232.6
   },
-  {
+  "M22": {
    "id": "M22",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "tilt_percentage",
+   "description": "mode1/mode2 divisor swap",
+   "patch": "M22_tilt_mode_divisor_swap.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 126.1,
+     "tail": "FAILED tests/simulation/test_tilt_behavior.py::test_tilt_commands_use_tilt_service - AssertionError: solar-noon tilt: []\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 100 passed in 123.18s (0:02:03)"
+    },
+    "characterization": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 2.6,
+     "tail": "FAILED tests/characterization/test_climate_truth_table.py::test_climate_state_matches_recorded_behavior[presence=none|temp=cold|weather=cloudy|blind=tilt_mode1|valid=True|transparent=False] - AssertionError: assert {'is_presence..., 'state': 59} == {'is_presence... '...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 20 passed in 0.68s"
+    },
+    "engine": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 3.1,
+     "tail": "FAILED tests/engine/test_geometry_contracts.py::TestClimateTiltPresets::test_home_dim_winter_falls_back_to_basic - AssertionError: assert np.int64(100) == 59\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 58 passed in 1.19s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 334.1,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 331.98s (0:05:31)"
+    }
+   },
+   "caught_by": [
     "simulation",
     "characterization",
     "engine"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "entity"
+   ],
+   "seconds": 466.0
   },
-  {
+  "M23": {
    "id": "M23",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "sun_in_fov",
+   "description": "FOV boundary < -> <= (and mirror on -fov_right)",
+   "patch": "M23_fov_boundary_inclusive.patch",
+   "tiers": {
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 138.3,
+     "tail": "........................................................................ [ 66%]\n.....................................                                    [100%]\n109 passed in 136.28s (0:02:16)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 13.5,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 9.78s"
+    },
+    "engine": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 5.9,
+     "tail": "FAILED tests/engine/test_geometry_contracts.py::TestFovBoundaries::test_exactly_at_left_edge_is_outside - AssertionError: assert <Intent.CALCU... 'calculated'> == <Intent.DEFAULT: '...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 6 passed in 1.64s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 114.6,
+     "tail": "FAILED tests/replay/test_house_replay.py::test_house_replay[family_south-summer_solstice] - Failed: House replay changed for Family south on summer_solstice:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 33 passed in 109.51s (0:01:49)"
+    }
+   },
+   "caught_by": [
     "engine",
     "entity"
    ],
-   "sim_caught": false
+   "missed_by": [
+    "simulation",
+    "characterization"
+   ],
+   "seconds": 272.4
   },
-  {
+  "M24": {
    "id": "M24",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "vertical_blind_height",
+   "description": "distance / cos(gamma) -> distance * cos(gamma)",
+   "patch": "M24_vertical_cos_multiply.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 28.1,
+     "tail": "FAILED tests/simulation/test_cover_types.py::test_awning_day_tracks_sun - AssertionError: assert 10 == 11\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 18 passed in 26.01s"
+    },
+    "characterization": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 9.0,
+     "tail": "FAILED tests/characterization/test_golden_days.py::test_golden_day[slc_south_winter_solstice] - Failed: Schedule changed for slc_south_winter_solstice:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 217 passed in 6.17s"
+    },
+    "engine": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 3.1,
+     "tail": "FAILED tests/engine/test_geometry_contracts.py::TestVerticalPositionHandComputed::test_position[135.0-45.0-0.5-2.0-35] - AssertionError: assert np.int64(18) == 35\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 15 passed in 0.69s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 4.5,
+     "tail": "FAILED tests/replay/test_house_replay.py::test_house_replay[den_south-dst_start] - Failed: House replay changed for Den south on dst_start:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1 passed in 2.45s"
+    }
+   },
+   "caught_by": [
     "simulation",
     "characterization",
-    "engine"
+    "engine",
+    "entity"
    ],
-   "sim_caught": true
+   "missed_by": [],
+   "seconds": 44.8
   },
-  {
+  "M25": {
    "id": "M25",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "valid_elevation",
+   "description": "min and max band comparisons swapped",
+   "patch": "M25_elevation_band_swapped.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 6.2,
+     "tail": "FAILED tests/simulation/test_climate_scenarios.py::test_away_summer_closes - AssertionError: away+summer+sun in FOV must close fully; moves: [<04:00 ser...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 3.13s"
+    },
+    "characterization": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 2.1,
+     "tail": "FAILED tests/characterization/test_climate_truth_table.py::test_climate_state_matches_recorded_behavior[presence=none|temp=cold|weather=none|blind=cover_blind|valid=True|transparent=False] - AssertionError: assert {'is_presence..., 'state': 60} == {'is_presence..., ...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.23s"
+    },
+    "engine": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 3.6,
+     "tail": "FAILED tests/engine/test_geometry_contracts.py::TestFovBoundaries::test_just_inside_left_edge_tracks - AssertionError: assert <Intent.DEFAULT: 'default'> == <Intent.CALCU... 'cal...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 5 passed in 1.16s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 7.3,
+     "tail": "FAILED tests/replay/test_house_replay.py::test_house_replay[den_south-dst_start] - Failed: House replay changed for Den south on dst_start:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1 passed in 3.95s"
+    }
+   },
+   "caught_by": [
     "simulation",
     "characterization",
     "engine",
     "entity"
    ],
-   "sim_caught": true
+   "missed_by": [],
+   "seconds": 19.3
   },
-  {
+  "M26": {
    "id": "M26",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "sunset_valid",
+   "description": "sunset offset sign flip",
+   "patch": "M26_sunset_offset_sign_flip.patch",
+   "tiers": {
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 140.5,
+     "tail": "........................................................................ [ 66%]\n.....................................                                    [100%]\n109 passed in 138.18s (0:02:18)"
+    },
+    "characterization": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 14.7,
+     "tail": "FAILED tests/characterization/test_golden_days.py::test_golden_day[slc_south_userstyle_equinox] - Failed: Schedule changed for slc_south_userstyle_equinox:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 220 passed in 10.94s"
+    },
+    "engine": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 7.9,
+     "tail": "FAILED tests/engine/test_geometry_contracts.py::TestSunsetSunriseOffsets::test_positive_sunset_offset_delays_engagement - AssertionError: assert <Intent.SUNSET: 'sunset'> == <Intent.DEFAULT: 'defau...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 41 passed in 2.70s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 11.1,
+     "tail": "FAILED tests/replay/test_house_replay.py::test_house_replay[den_south-dst_start] - Failed: House replay changed for Den south on dst_start:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1 passed in 7.25s"
+    }
+   },
+   "caught_by": [
     "characterization",
-    "engine"
-   ],
-   "sim_caught": false
-  },
-  {
-   "id": "M27",
-   "caught": true,
-   "caught_by_tiers": [
-    "entity"
-   ],
-   "sim_caught": false
-  },
-  {
-   "id": "M28",
-   "caught": true,
-   "caught_by_tiers": [
-    "entity"
-   ],
-   "sim_caught": false
-  },
-  {
-   "id": "M29",
-   "caught": true,
-   "caught_by_tiers": [
-    "simulation",
-    "characterization",
-    "engine"
-   ],
-   "sim_caught": true
-  },
-  {
-   "id": "M30",
-   "caught": true,
-   "caught_by_tiers": [
     "engine",
     "entity"
    ],
-   "sim_caught": false
-  },
-  {
-   "id": "M31",
-   "caught": true,
-   "caught_by_tiers": [
-    "simulation",
-    "engine"
+   "missed_by": [
+    "simulation"
    ],
-   "sim_caught": true
+   "seconds": 174.2
   },
-  {
-   "id": "M32",
-   "caught": true,
-   "caught_by_tiers": [
+  "M27": {
+   "id": "M27",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "common_data",
+   "description": "sunrise-offset fallback falls back to 0 instead of sunset_offset",
+   "patch": "M27_sunrise_fallback_zero.patch",
+   "deviation": "roadmap filed this under engine/geometry.py; the fallback actually lives in coordinator.common_data.",
+   "tiers": {
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 152.9,
+     "tail": "........................................................................ [ 66%]\n.....................................                                    [100%]\n109 passed in 149.02s (0:02:29)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 15.9,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 11.22s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 34.9,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 31.56s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 266.2,
+     "tail": "FAILED tests/test_smoothing_and_privacy.py::test_sunrise_offset_falls_back_to_sunset_offset - assert []\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 218 passed in 263.51s (0:04:23)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
     "simulation",
     "characterization",
     "engine"
    ],
-   "sim_caught": true
+   "seconds": 470.1
   },
-  {
-   "id": "M33",
-   "caught": true,
-   "caught_by_tiers": [
+  "M28": {
+   "id": "M28",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "_apply_extended_config",
+   "description": "'offset or DEFAULT' coercion so privacy_offset=0 becomes 30",
+   "patch": "M28_privacy_offset_or_coercion.patch",
+   "deviation": "roadmap filed this under engine/geometry.py; the None-check actually lives in coordinator._apply_extended_config.",
+   "tiers": {
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 156.1,
+     "tail": "........................................................................ [ 66%]\n.....................................                                    [100%]\n109 passed in 153.83s (0:02:33)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 9.7,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 6.32s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 33.9,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 30.83s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 260.1,
+     "tail": "FAILED tests/test_smoothing_and_privacy.py::test_privacy_offset_zero_engages_at_sunset - AssertionError: assert {'entity_id':...'position': 0} == {'entity_id':...'p...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 217 passed in 256.68s (0:04:16)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "simulation",
+    "characterization",
     "engine"
    ],
-   "sim_caught": false
+   "seconds": 460.0
   },
-  {
+  "M29": {
+   "id": "M29",
+   "file": "custom_components/adaptive_cover/engine/evaluate.py",
+   "function": "_evaluate_climate_normal",
+   "description": "away/summer branch return 0 -> return 100",
+   "patch": "M29_away_summer_opens.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 4.5,
+     "tail": "FAILED tests/simulation/test_climate_scenarios.py::test_away_summer_closes - AssertionError: away+summer+sun in FOV must close fully; moves: [<04:00 ser...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 2.55s"
+    },
+    "characterization": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 8.9,
+     "tail": "FAILED tests/characterization/test_climate_truth_table.py::test_climate_state_matches_recorded_behavior[presence=away|temp=hot|weather=none|blind=cover_blind|valid=True|transparent=False] - AssertionError: assert {'is_presence... 'state': 100} == {'is_presence...e,...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 192 passed in 5.75s"
+    },
+    "engine": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 4.5,
+     "tail": "FAILED tests/engine/test_geometry_contracts.py::TestClimateOutputUnclipped::test_min_limit_pushes_climate_close_up - AssertionError: assert 100 == 25\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 76 passed in 2.44s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 308.7,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 305.34s (0:05:05)"
+    }
+   },
+   "caught_by": [
+    "simulation",
+    "characterization",
+    "engine"
+   ],
+   "missed_by": [
+    "entity"
+   ],
+   "seconds": 326.7
+  },
+  "M30": {
+   "id": "M30",
+   "file": "custom_components/adaptive_cover/engine/evaluate.py",
+   "function": "evaluate",
+   "description": "privacy-first ordering dropped for climate mode",
+   "patch": "M30_privacy_not_first_in_climate.patch",
+   "tiers": {
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 161.4,
+     "tail": "........................................................................ [ 66%]\n.....................................                                    [100%]\n109 passed in 157.72s (0:02:37)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 9.3,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 6.93s"
+    },
+    "engine": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 32.2,
+     "tail": "FAILED tests/engine/test_privacy_and_intents.py::TestPrivacy::test_overrides_climate_winter_open - AssertionError: assert <Intent.SUNSET: 'sunset'> == <Intent.PRIVACY: 'priva...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1265 passed in 30.23s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 90.4,
+     "tail": "FAILED tests/replay/test_house_replay.py::test_house_replay[family_south-dst_start] - Failed: House replay changed for Family south on dst_start:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 31 passed in 88.16s (0:01:28)"
+    }
+   },
+   "caught_by": [
+    "engine",
+    "entity"
+   ],
+   "missed_by": [
+    "simulation",
+    "characterization"
+   ],
+   "seconds": 293.5
+  },
+  "M31": {
+   "id": "M31",
+   "file": "custom_components/adaptive_cover/engine/evaluate.py",
+   "function": "_apply_limits",
+   "description": "max-clamp comparison flip",
+   "patch": "M31_max_clamp_flip.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 160.7,
+     "tail": "FAILED tests/simulation/test_transforms.py::test_max_position_never_exceeded - AssertionError: commands exceeded max_position=20: [20, 100, 38, 31, 30, 29...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 108 passed in 157.66s (0:02:37)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 8.4,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 5.61s"
+    },
+    "engine": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 2.9,
+     "tail": "FAILED tests/engine/test_geometry_contracts.py::TestMinMaxLimits::test_max_clamps_tracking_ported - AssertionError: assert np.int64(100) == 50\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 48 passed in 1.03s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 58.0,
+     "tail": "FAILED tests/replay/test_house_replay.py::test_house_replay[family_door-dst_start] - Failed: House replay changed for Family door on dst_start:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 19 passed in 55.05s"
+    }
+   },
+   "caught_by": [
+    "simulation",
+    "engine",
+    "entity"
+   ],
+   "missed_by": [
+    "characterization"
+   ],
+   "seconds": 230.2
+  },
+  "M32": {
+   "id": "M32",
+   "file": "custom_components/adaptive_cover/engine/evaluate.py",
+   "function": "_evaluate_climate_tilt",
+   "description": "dim-summer 45 <-> presence 80 preset swap (trace strings untouched)",
+   "patch": "M32_tilt_preset_swap.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 24.5,
+     "tail": "FAILED tests/simulation/test_climate_scenarios.py::test_climate_tilt_presence_presets - AssertionError: home + bright: expected the 80-degree preset (89 %); moves:...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 17 passed in 22.32s"
+    },
+    "characterization": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 3.4,
+     "tail": "FAILED tests/characterization/test_climate_truth_table.py::test_climate_state_matches_recorded_behavior[presence=none|temp=cold|weather=none|blind=tilt_mode1|valid=True|transparent=False] - AssertionError: assert {'is_presence..., 'state': 50} == {'is_presence..., ...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 4 passed in 0.56s"
+    },
+    "engine": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 5.3,
+     "tail": "FAILED tests/engine/test_geometry_contracts.py::TestClimateTiltPresets::test_home_sunny_uses_80_preset - assert 25.0 == 44.44444444444444 \u00b1 4.4e-05\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 56 passed in 2.40s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 315.0,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 312.14s (0:05:12)"
+    }
+   },
+   "caught_by": [
+    "simulation",
+    "characterization",
+    "engine"
+   ],
+   "missed_by": [
+    "entity"
+   ],
+   "seconds": 348.4
+  },
+  "M33": {
+   "id": "M33",
+   "file": "custom_components/adaptive_cover/engine/geometry.py",
+   "function": "admit_no_glare_percentage",
+   "description": "ADMIT_NO_GLARE compares band non-empty instead of band-top vs eye height",
+   "patch": "M33_glare_band_nonempty_check.patch",
+   "deviation": "roadmap filed this under engine/evaluate.py; the comparison actually lives in geometry.admit_no_glare_percentage.",
+   "tiers": {
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 158.0,
+     "tail": "........................................................................ [ 66%]\n.....................................                                    [100%]\n109 passed in 155.53s (0:02:35)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 9.9,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 6.41s"
+    },
+    "engine": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 34.2,
+     "tail": "FAILED tests/engine/test_overhang_glare.py::TestAdmitNoGlareBandTopComparison::test_partial_band_below_safe_height_fully_open[42] - AssertionError: assert 84 == 100\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1253 passed in 31.92s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 55.2,
+     "tail": "FAILED tests/replay/test_house_replay.py::test_house_replay[family_door-dst_start] - Failed: House replay changed for Family door on dst_start:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 19 passed in 53.00s"
+    }
+   },
+   "caught_by": [
+    "engine",
+    "entity"
+   ],
+   "missed_by": [
+    "simulation",
+    "characterization"
+   ],
+   "seconds": 257.3
+  },
+  "M34": {
    "id": "M34",
-   "caught": true,
-   "caught_by_tiers": [
-    "simulation"
+   "file": "custom_components/adaptive_cover/calculation.py",
+   "function": "ClimateCoverData.is_summer",
+   "description": "summer test temp > temp_high -> temp > temp_low",
+   "patch": "M34_season_boundary_low.patch",
+   "deviation": "roadmap filed this under engine/evaluate.py; the season threshold comparison actually lives in calculation.ClimateCoverData.",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 5.1,
+     "tail": "FAILED tests/simulation/test_climate_scenarios.py::test_away_cloudy_default_then_sunset - AssertionError: away+intermediate day must rest at the default position; mo...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1 passed in 2.10s"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.4,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 9.29s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 23.5,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 20.89s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 124.3,
+     "tail": "FAILED tests/replay/test_house_replay.py::test_house_replay[leanne_s_door-dst_start] - Failed: House replay changed for Leanne's door on dst_start:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 37 passed in 122.40s (0:02:02)"
+    }
+   },
+   "caught_by": [
+    "simulation",
+    "entity"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "seconds": 165.5
   },
-  {
+  "M35": {
    "id": "M35",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "inverse_state",
+   "description": "100 - state -> state",
+   "patch": "M35_inverse_state_identity.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 125.4,
+     "tail": "FAILED tests/simulation/test_mutation_holes.py::test_end_close_applies_inverse_transform - AssertionError: inverse cover: end close must command 100 (inverse of sunse...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 88 passed in 123.32s (0:02:03)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 9.4,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 6.54s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 35.7,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 33.29s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 231.7,
+     "tail": "FAILED tests/test_coordinator.py::TestInverseState::test_zero_becomes_100 - assert 0 == 100\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 122 passed in 229.41s (0:03:49)"
+    }
+   },
+   "caught_by": [
     "simulation",
     "entity"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "seconds": 402.3
   },
-  {
+  "M36": {
    "id": "M36",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "interpolate_states",
+   "description": "np.interp xp/fp argument swap",
+   "patch": "M36_interp_xp_fp_swap.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 138.0,
+     "tail": "FAILED tests/simulation/test_mutation_holes.py::test_interpolation_maps_tracking_commands - AssertionError: command outside the interpolation range: <07:45 service_cal...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 89 passed in 136.08s (0:02:16)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.7,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 9.11s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 30.9,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 28.72s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 224.3,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 221.61s (0:03:41)"
+    }
+   },
+   "caught_by": [
     "simulation"
    ],
-   "sim_caught": true
-  },
-  {
-   "id": "M37",
-   "caught": true,
-   "caught_by_tiers": [
-    "simulation"
-   ],
-   "sim_caught": true
-  },
-  {
-   "id": "M38",
-   "caught": true,
-   "caught_by_tiers": [
-    "simulation"
-   ],
-   "sim_caught": true
-  },
-  {
-   "id": "M39",
-   "caught": true,
-   "caught_by_tiers": [
-    "simulation"
-   ],
-   "sim_caught": true
-  },
-  {
-   "id": "M40",
-   "caught": true,
-   "caught_by_tiers": [
+   "missed_by": [
+    "characterization",
+    "engine",
     "entity"
    ],
-   "sim_caught": false
+   "seconds": 406.0
   },
-  {
-   "id": "M41",
-   "caught": true,
-   "caught_by_tiers": [
+  "M37": {
+   "id": "M37",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "interpolate_states",
+   "description": "interpolation endpoint snap-to-0/100 removed",
+   "patch": "M37_interp_endpoint_snap_removed.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 164.6,
+     "tail": "FAILED tests/simulation/test_transforms.py::test_interpolation_remaps_all_commands - AssertionError: pre-dawn snap must command a true full close (0): [20]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 103 passed in 162.67s (0:02:42)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 8.9,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 6.95s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 32.6,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 30.74s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 220.5,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 218.68s (0:03:38)"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "entity"
+   ],
+   "seconds": 426.7
+  },
+  "M38": {
+   "id": "M38",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "_transform_state",
+   "description": "inverse-skipped-when-interp rule inverted (apply both transforms)",
+   "patch": "M38_inverse_applied_with_interp.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 155.1,
+     "tail": "FAILED tests/simulation/test_transforms.py::test_interp_wins_over_inverse - AssertionError: close must be interp-snapped 0, not inverted to 100: [<18:0...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 107 passed in 151.20s (0:02:31)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 9.4,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 7.49s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 50.9,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 47.99s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 170.6,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 166.79s (0:02:46)"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "entity"
+   ],
+   "seconds": 386.1
+  },
+  "M39": {
+   "id": "M39",
+   "file": "custom_components/adaptive_cover/__init__.py",
+   "function": "handle_change_settings",
+   "description": "options merge inverted: existing options win over the requested changes",
+   "patch": "M39_settings_merge_inverted.patch",
+   "deviation": "roadmap filed this under coordinator.py 'config merge'; no literal data/options merge exists there \u2014 the real options-over-changes merge lives in __init__.handle_change_settings.",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 96.2,
+     "tail": "FAILED tests/simulation/test_lifecycle.py::test_end_time_rearm_via_settings_service - AssertionError: change_settings did not update the entry options\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 67 passed in 92.20s (0:01:32)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 10.1,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 6.81s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 34.5,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 32.53s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 201.5,
+     "tail": "FAILED tests/test_change_settings.py::test_regression_change_settings_enables_climate_mode - assert False is True\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 114 passed in 199.16s (0:03:19)"
+    }
+   },
+   "caught_by": [
     "simulation",
     "entity"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "seconds": 342.4
   },
-  {
-   "id": "M42",
-   "caught": true,
-   "caught_by_tiers": [
+  "M40": {
+   "id": "M40",
+   "file": "custom_components/adaptive_cover/sensor.py",
+   "function": "AdaptiveCoverSensorEntity",
+   "description": "position sensor reports the raw pre-transform value",
+   "patch": "M40_position_sensor_raw_value.patch",
+   "tiers": {
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 161.4,
+     "tail": "........................................................................ [ 66%]\n.....................................                                    [100%]\n109 passed in 159.39s (0:02:39)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 15.0,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 10.37s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 22.1,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 18.59s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 6.7,
+     "tail": "FAILED tests/replay/test_house_replay.py::test_house_replay[den_south-dst_start] - Failed: House replay changed for Den south on dst_start:\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1 passed in 4.79s"
+    }
+   },
+   "caught_by": [
     "entity"
    ],
-   "sim_caught": false
+   "missed_by": [
+    "simulation",
+    "characterization",
+    "engine"
+   ],
+   "seconds": 205.3
   },
-  {
+  "M41": {
+   "id": "M41",
+   "file": "custom_components/adaptive_cover/sensor.py",
+   "function": "AdaptiveCoverControlSensorEntity",
+   "description": "winter/summer branch swap at the sensor surface",
+   "patch": "M41_control_method_swap.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 8.3,
+     "tail": "FAILED tests/simulation/test_climate_scenarios.py::test_season_flips_across_thresholds - AssertionError: assert 'summer' == 'winter'\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 3 passed in 4.79s"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 9.7,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 6.48s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 34.0,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 30.91s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 218.0,
+     "tail": "FAILED tests/test_change_settings.py::test_regression_change_settings_enables_climate_mode - AssertionError: assert 'summer' == 'winter'\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 114 passed in 215.29s (0:03:35)"
+    }
+   },
+   "caught_by": [
+    "simulation",
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "seconds": 270.2
+  },
+  "M42": {
+   "id": "M42",
+   "file": "custom_components/adaptive_cover/binary_sensor.py",
+   "function": "AdaptiveCoverBinarySensor",
+   "description": "sun-in-front binary sensor inverted",
+   "patch": "M42_sun_infront_inverted.patch",
+   "tiers": {
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 155.5,
+     "tail": "........................................................................ [ 66%]\n.....................................                                    [100%]\n109 passed in 153.51s (0:02:33)"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.7,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 8.37s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 30.8,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 26.12s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 124.5,
+     "tail": "FAILED tests/test_entity_surfaces.py::TestSunInfrontBinary::test_sun_infront_binary[pre_dawn] - AssertionError: assert 'on' == 'off'\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 144 passed in 122.98s (0:02:02)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "simulation",
+    "characterization",
+    "engine"
+   ],
+   "seconds": 322.7
+  },
+  "M43": {
    "id": "M43",
-   "caught": true,
-   "caught_by_tiers": [
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_set_manual_position",
+   "description": "tilt entries routed to set_cover_position instead of set_cover_tilt_position",
+   "patch": "M43_tilt_routed_to_position.patch",
+   "tiers": {
+    "simulation": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 23.3,
+     "tail": "FAILED tests/simulation/test_climate_scenarios.py::test_climate_tilt_presence_presets - AssertionError: home + bright: expected the 80-degree preset (89 %); moves: []\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 17 passed in 20.05s"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 9.3,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 7.04s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 30.9,
+     "tail": "........................................................................ [ 98%]\n....................                                                     [100%]\n1316 passed in 28.25s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 209.4,
+     "tail": "........................................................................ [ 86%]\n..................................                                       [100%]\n250 passed in 206.18s (0:03:26)"
+    }
+   },
+   "caught_by": [
     "simulation"
    ],
-   "sim_caught": true
+   "missed_by": [
+    "characterization",
+    "engine",
+    "entity"
+   ],
+   "seconds": 273.0
   }
- ]
+ },
+ "summary": {
+  "run": 43,
+  "killed": 43,
+  "survivors": [],
+  "errors": [],
+  "control_failed": []
+ }
 }
