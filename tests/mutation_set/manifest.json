@@ -405,5 +405,33 @@
   "function": "cover_problem",
   "description": "a duplicate/second cover is accepted (the one-cover guard never objects)",
   "patch": "M59_second_cover_accepted.patch"
+ },
+ {
+  "id": "M80",
+  "file": "custom_components/adaptive_cover/settings/schema.py",
+  "function": "copy_from_values",
+  "description": "\"Copy from\" also copies the source window's cover (its identity)",
+  "patch": "M80_copy_from_copies_the_cover.patch"
+ },
+ {
+  "id": "M81",
+  "file": "custom_components/adaptive_cover/settings/schema.py",
+  "function": "setup_section",
+  "description": "recurring settings other than climate land in the one-time sections",
+  "patch": "M81_recurring_settings_outside_exceptions.patch"
+ },
+ {
+  "id": "M82",
+  "file": "custom_components/adaptive_cover/settings/schema.py",
+  "function": "_setup_marker",
+  "description": "the setup form gives no field its spec default (a new window stores None)",
+  "patch": "M82_setup_form_drops_spec_defaults.patch"
+ },
+ {
+  "id": "M83",
+  "file": "custom_components/adaptive_cover/config_flow.py",
+  "function": "WindowForm.submit",
+  "description": "picking another cover type saves at once instead of showing its geometry",
+  "patch": "M83_cover_type_switch_not_shown.patch"
  }
 ]

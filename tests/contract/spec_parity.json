@@ -273,7 +273,128 @@
    "temp_low",
    "temp_high"
   ],
-  "wizard.automation": [
+  "setup.reconfigure": [
+   "window",
+   "sun_limits",
+   "advanced"
+  ],
+  "setup.reconfigure.advanced": [
+   "max_position",
+   "enable_max_position",
+   "min_position",
+   "enable_min_position",
+   "inverse_state",
+   "interp",
+   "interp_start",
+   "interp_end",
+   "interp_list",
+   "interp_list_new",
+   "privacy_mode",
+   "transparent_blind"
+  ],
+  "setup.reconfigure.sun_limits": [
+   "min_elevation",
+   "max_elevation",
+   "blind_spot",
+   "blind_spot_left",
+   "blind_spot_right",
+   "blind_spot_elevation"
+  ],
+  "setup.reconfigure.window [types=cover_awning]": [
+   "copy_from",
+   "preset",
+   "name",
+   "cover_entity_id",
+   "sensor_type",
+   "set_azimuth",
+   "fov_left",
+   "fov_right",
+   "length_awning",
+   "angle",
+   "window_height",
+   "distance_shaded_area",
+   "overhang_depth",
+   "overhang_height"
+  ],
+  "setup.reconfigure.window [types=cover_blind]": [
+   "copy_from",
+   "preset",
+   "name",
+   "cover_entity_id",
+   "sensor_type",
+   "set_azimuth",
+   "fov_left",
+   "fov_right",
+   "window_height",
+   "distance_shaded_area",
+   "overhang_depth",
+   "overhang_height"
+  ],
+  "setup.reconfigure.window [types=cover_tilt]": [
+   "copy_from",
+   "preset",
+   "name",
+   "cover_entity_id",
+   "sensor_type",
+   "set_azimuth",
+   "fov_left",
+   "fov_right",
+   "slat_depth",
+   "slat_distance",
+   "tilt_mode"
+  ],
+  "setup.user": [
+   "window",
+   "sun_limits",
+   "advanced",
+   "exceptions_positions",
+   "exceptions_schedule",
+   "exceptions_climate"
+  ],
+  "setup.user.advanced": [
+   "max_position",
+   "enable_max_position",
+   "min_position",
+   "enable_min_position",
+   "inverse_state",
+   "interp",
+   "interp_start",
+   "interp_end",
+   "interp_list",
+   "interp_list_new",
+   "privacy_mode",
+   "transparent_blind"
+  ],
+  "setup.user.exceptions_climate": [
+   "climate_mode",
+   "temp_entity",
+   "temp_low",
+   "temp_high",
+   "outside_temp",
+   "outside_threshold",
+   "presence_entity",
+   "lux_entity",
+   "lux_threshold",
+   "irradiance_entity",
+   "irradiance_threshold",
+   "weather_entity",
+   "weather_state"
+  ],
+  "setup.user.exceptions_positions [types=cover_awning|cover_blind]": [
+   "eye_height",
+   "occupied_distance",
+   "default_percentage",
+   "sunset_position",
+   "sunset_offset",
+   "sunrise_offset"
+  ],
+  "setup.user.exceptions_positions [types=cover_tilt]": [
+   "default_percentage",
+   "sunset_position",
+   "sunset_offset",
+   "sunrise_offset"
+  ],
+  "setup.user.exceptions_schedule": [
    "delta_position",
    "delta_time",
    "start_time",
@@ -285,121 +406,62 @@
    "end_time",
    "end_entity",
    "return_sunset",
-   "privacy_mode",
    "privacy_offset",
    "privacy_position",
    "quiet_start",
    "quiet_end",
    "max_moves_hour"
   ],
-  "wizard.blind_spot": [
+  "setup.user.sun_limits": [
+   "min_elevation",
+   "max_elevation",
+   "blind_spot",
    "blind_spot_left",
    "blind_spot_right",
    "blind_spot_elevation"
   ],
-  "wizard.climate": [
-   "temp_entity",
-   "temp_low",
-   "temp_high",
-   "outside_temp",
-   "outside_threshold",
-   "presence_entity",
-   "lux_entity",
-   "lux_threshold",
-   "irradiance_entity",
-   "irradiance_threshold",
-   "transparent_blind",
-   "weather_entity"
-  ],
-  "wizard.horizontal [types=cover_awning]": [
-   "climate_mode",
+  "setup.user.window [types=cover_awning]": [
+   "copy_from",
+   "preset",
+   "name",
+   "cover_entity_id",
+   "sensor_type",
+   "set_azimuth",
+   "fov_left",
+   "fov_right",
    "length_awning",
    "angle",
-   "cover_entity_id",
    "window_height",
    "distance_shaded_area",
    "overhang_depth",
-   "overhang_height",
-   "eye_height",
-   "occupied_distance",
+   "overhang_height"
+  ],
+  "setup.user.window [types=cover_blind]": [
+   "copy_from",
+   "preset",
+   "name",
+   "cover_entity_id",
+   "sensor_type",
    "set_azimuth",
-   "default_percentage",
-   "max_position",
-   "enable_max_position",
-   "min_position",
-   "enable_min_position",
-   "min_elevation",
-   "max_elevation",
    "fov_left",
    "fov_right",
-   "sunset_position",
-   "sunset_offset",
-   "sunrise_offset",
-   "inverse_state",
-   "blind_spot",
-   "interp"
+   "window_height",
+   "distance_shaded_area",
+   "overhang_depth",
+   "overhang_height"
   ],
-  "wizard.interp": [
-   "interp_start",
-   "interp_end",
-   "interp_list",
-   "interp_list_new"
-  ],
-  "wizard.tilt [types=cover_tilt]": [
-   "climate_mode",
+  "setup.user.window [types=cover_tilt]": [
+   "copy_from",
+   "preset",
+   "name",
    "cover_entity_id",
+   "sensor_type",
+   "set_azimuth",
+   "fov_left",
+   "fov_right",
    "slat_depth",
    "slat_distance",
-   "tilt_mode",
-   "set_azimuth",
-   "default_percentage",
-   "max_position",
-   "enable_max_position",
-   "min_position",
-   "enable_min_position",
-   "min_elevation",
-   "max_elevation",
-   "fov_left",
-   "fov_right",
-   "sunset_position",
-   "sunset_offset",
-   "sunrise_offset",
-   "inverse_state",
-   "blind_spot",
-   "interp"
-  ],
-  "wizard.user": [
-   "name",
-   "mode"
-  ],
-  "wizard.vertical [types=cover_blind]": [
-   "climate_mode",
-   "cover_entity_id",
-   "window_height",
-   "distance_shaded_area",
-   "overhang_depth",
-   "overhang_height",
-   "eye_height",
-   "occupied_distance",
-   "set_azimuth",
-   "default_percentage",
-   "max_position",
-   "enable_max_position",
-   "min_position",
-   "enable_min_position",
-   "min_elevation",
-   "max_elevation",
-   "fov_left",
-   "fov_right",
-   "sunset_position",
-   "sunset_offset",
-   "sunrise_offset",
-   "inverse_state",
-   "blind_spot",
-   "interp"
-  ],
-  "wizard.weather": [
-   "weather_state"
+   "tilt_mode"
   ]
  },
  "keys": {
@@ -428,7 +490,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]"
+     "setup.reconfigure.window [types=cover_awning]",
+     "setup.user.window [types=cover_awning]"
     ],
     "kind": "number",
     "max": 45,
@@ -457,9 +520,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.tilt [types=cover_tilt]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.reconfigure.sun_limits",
+     "setup.user.sun_limits"
     ],
     "kind": "boolean",
     "required": true,
@@ -479,7 +541,8 @@
    },
    {
     "where": [
-     "wizard.blind_spot"
+     "setup.reconfigure.sun_limits",
+     "setup.user.sun_limits"
     ],
     "kind": "int",
     "min": 0,
@@ -502,7 +565,8 @@
    },
    {
     "where": [
-     "wizard.blind_spot"
+     "setup.reconfigure.sun_limits",
+     "setup.user.sun_limits"
     ],
     "kind": "number",
     "max": 179,
@@ -529,7 +593,8 @@
    },
    {
     "where": [
-     "wizard.blind_spot"
+     "setup.reconfigure.sun_limits",
+     "setup.user.sun_limits"
     ],
     "kind": "number",
     "max": 180,
@@ -567,9 +632,7 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.tilt [types=cover_tilt]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.user.exceptions_climate"
     ],
     "kind": "boolean",
     "required": false,
@@ -607,6 +670,24 @@
     "kind": "text",
     "multiline": false,
     "multiple": false,
+    "required": false
+   },
+   {
+    "where": [
+     "setup.reconfigure.window",
+     "setup.user.window"
+    ],
+    "kind": "select",
+    "custom_value": false,
+    "mode": "dropdown",
+    "multiple": false,
+    "options": [
+     {
+      "value": "window",
+      "label": "Spec parity window"
+     }
+    ],
+    "sort": false,
     "required": false
    }
   ],
@@ -675,8 +756,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.reconfigure.window",
+     "setup.user.window [types=cover_blind]"
     ],
     "kind": "entity",
     "filter": [
@@ -685,32 +766,35 @@
        "cover"
       ],
       "supported_features": [
-       4
-      ]
-     }
-    ],
-    "multiple": false,
-    "reorder": false,
-    "required": false
-   },
-   {
-    "where": [
-     "wizard.tilt [types=cover_tilt]"
-    ],
-    "kind": "entity",
-    "filter": [
-     {
-      "domain": [
-       "cover"
-      ],
-      "supported_features": [
+       4,
        128
       ]
      }
     ],
     "multiple": false,
     "reorder": false,
-    "required": false
+    "required": true
+   },
+   {
+    "where": [
+     "setup.user.window [types=cover_awning|cover_tilt]"
+    ],
+    "kind": "entity",
+    "filter": [
+     {
+      "domain": [
+       "cover"
+      ],
+      "supported_features": [
+       4,
+       128
+      ]
+     }
+    ],
+    "multiple": false,
+    "reorder": false,
+    "required": true,
+    "suggested": true
    }
   ],
   "covers": [
@@ -767,9 +851,7 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.tilt [types=cover_tilt]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.user.exceptions_positions"
     ],
     "kind": "number",
     "max": 100,
@@ -813,7 +895,7 @@
    },
    {
     "where": [
-     "wizard.automation"
+     "setup.user.exceptions_schedule"
     ],
     "kind": "number",
     "max": 90,
@@ -855,7 +937,7 @@
    },
    {
     "where": [
-     "wizard.automation"
+     "setup.user.exceptions_schedule"
     ],
     "kind": "number",
     "min": 0,
@@ -898,8 +980,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.reconfigure.window [types=cover_awning|cover_blind]",
+     "setup.user.window [types=cover_awning|cover_blind]"
     ],
     "kind": "number",
     "max": 10,
@@ -928,9 +1010,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.tilt [types=cover_tilt]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.reconfigure.advanced",
+     "setup.user.advanced"
     ],
     "kind": "boolean",
     "required": false,
@@ -954,9 +1035,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.tilt [types=cover_tilt]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.reconfigure.advanced",
+     "setup.user.advanced"
     ],
     "kind": "boolean",
     "required": false,
@@ -980,7 +1060,7 @@
    },
    {
     "where": [
-     "wizard.automation"
+     "setup.user.exceptions_schedule"
     ],
     "kind": "entity",
     "domain": [
@@ -1018,7 +1098,7 @@
    },
    {
     "where": [
-     "wizard.automation"
+     "setup.user.exceptions_schedule"
     ],
     "kind": "time",
     "required": false,
@@ -1072,8 +1152,7 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.user.exceptions_positions [types=cover_awning|cover_blind]"
     ],
     "kind": "number",
     "max": 3,
@@ -1117,9 +1196,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.tilt [types=cover_tilt]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.reconfigure.window",
+     "setup.user.window"
     ],
     "kind": "number",
     "max": 90,
@@ -1163,9 +1241,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.tilt [types=cover_tilt]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.reconfigure.window",
+     "setup.user.window"
     ],
     "kind": "number",
     "max": 90,
@@ -1194,9 +1271,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.tilt [types=cover_tilt]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.reconfigure.advanced",
+     "setup.user.advanced"
     ],
     "kind": "boolean",
     "required": true,
@@ -1216,7 +1292,8 @@
    },
    {
     "where": [
-     "wizard.interp"
+     "setup.reconfigure.advanced",
+     "setup.user.advanced"
     ],
     "kind": "int",
     "min": 0,
@@ -1249,7 +1326,8 @@
    },
    {
     "where": [
-     "wizard.interp"
+     "setup.reconfigure.advanced",
+     "setup.user.advanced"
     ],
     "kind": "select",
     "custom_value": true,
@@ -1289,7 +1367,8 @@
    },
    {
     "where": [
-     "wizard.interp"
+     "setup.reconfigure.advanced",
+     "setup.user.advanced"
     ],
     "kind": "select",
     "custom_value": true,
@@ -1317,7 +1396,8 @@
    },
    {
     "where": [
-     "wizard.interp"
+     "setup.reconfigure.advanced",
+     "setup.user.advanced"
     ],
     "kind": "int",
     "min": 0,
@@ -1342,9 +1422,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.tilt [types=cover_tilt]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.reconfigure.advanced",
+     "setup.user.advanced"
     ],
     "kind": "boolean",
     "required": true,
@@ -1370,7 +1449,7 @@
    },
    {
     "where": [
-     "wizard.climate"
+     "setup.user.exceptions_climate"
     ],
     "kind": "entity",
     "device_class": [
@@ -1407,7 +1486,7 @@
    },
    {
     "where": [
-     "wizard.climate"
+     "setup.user.exceptions_climate"
     ],
     "kind": "number",
     "mode": "box",
@@ -1442,7 +1521,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]"
+     "setup.reconfigure.window [types=cover_awning]",
+     "setup.user.window [types=cover_awning]"
     ],
     "kind": "number",
     "max": 6,
@@ -1473,7 +1553,7 @@
    },
    {
     "where": [
-     "wizard.climate"
+     "setup.user.exceptions_climate"
     ],
     "kind": "entity",
     "device_class": [
@@ -1510,7 +1590,7 @@
    },
    {
     "where": [
-     "wizard.climate"
+     "setup.user.exceptions_climate"
     ],
     "kind": "number",
     "mode": "box",
@@ -1531,7 +1611,7 @@
    },
    {
     "where": [
-     "wizard.automation"
+     "setup.user.exceptions_schedule"
     ],
     "kind": "boolean",
     "required": false,
@@ -1569,7 +1649,7 @@
    },
    {
     "where": [
-     "wizard.automation"
+     "setup.user.exceptions_schedule"
     ],
     "kind": "duration",
     "enable_second": true,
@@ -1606,7 +1686,7 @@
    },
    {
     "where": [
-     "wizard.automation"
+     "setup.user.exceptions_schedule"
     ],
     "kind": "boolean",
     "required": true,
@@ -1637,7 +1717,7 @@
    },
    {
     "where": [
-     "wizard.automation"
+     "setup.user.exceptions_schedule"
     ],
     "kind": "int",
     "min": 0,
@@ -1667,9 +1747,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.tilt [types=cover_tilt]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.reconfigure.sun_limits",
+     "setup.user.sun_limits"
     ],
     "kind": "int",
     "min": 0,
@@ -1701,7 +1780,7 @@
    },
    {
     "where": [
-     "wizard.automation"
+     "setup.user.exceptions_schedule"
     ],
     "kind": "int",
     "min": 1,
@@ -1733,9 +1812,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.tilt [types=cover_tilt]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.reconfigure.advanced",
+     "setup.user.advanced"
     ],
     "kind": "int",
     "min": 1,
@@ -1765,9 +1843,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.tilt [types=cover_tilt]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.reconfigure.sun_limits",
+     "setup.user.sun_limits"
     ],
     "kind": "int",
     "min": 0,
@@ -1799,9 +1876,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.tilt [types=cover_tilt]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.reconfigure.advanced",
+     "setup.user.advanced"
     ],
     "kind": "int",
     "min": 0,
@@ -1815,22 +1891,6 @@
      "add_entry.baseline"
     ],
     "default": "basic"
-   },
-   {
-    "where": [
-     "wizard.user"
-    ],
-    "kind": "select",
-    "custom_value": false,
-    "multiple": false,
-    "options": [
-     "cover_blind",
-     "cover_awning",
-     "cover_tilt"
-    ],
-    "sort": false,
-    "translation_key": "mode",
-    "required": false
    }
   ],
   "name": [
@@ -1851,8 +1911,7 @@
    },
    {
     "where": [
-     "services_yaml.add_entry",
-     "wizard.user"
+     "services_yaml.add_entry"
     ],
     "kind": "text",
     "multiline": false,
@@ -1861,12 +1920,23 @@
    },
    {
     "where": [
-     "services_yaml.change_settings"
+     "services_yaml.change_settings",
+     "setup.user.window"
     ],
     "kind": "text",
     "multiline": false,
     "multiple": false,
     "required": false
+   },
+   {
+    "where": [
+     "setup.reconfigure.window"
+    ],
+    "kind": "text",
+    "multiline": false,
+    "multiple": false,
+    "required": false,
+    "suggested": true
    }
   ],
   "occupied_distance": [
@@ -1916,8 +1986,7 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.user.exceptions_positions [types=cover_awning|cover_blind]"
     ],
     "kind": "number",
     "max": 10,
@@ -1955,7 +2024,7 @@
    },
    {
     "where": [
-     "wizard.climate"
+     "setup.user.exceptions_climate"
     ],
     "kind": "entity",
     "domain": [
@@ -1988,7 +2057,7 @@
    },
    {
     "where": [
-     "wizard.climate"
+     "setup.user.exceptions_climate"
     ],
     "kind": "int",
     "min": 0,
@@ -2044,8 +2113,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.reconfigure.window [types=cover_awning|cover_blind]",
+     "setup.user.window [types=cover_awning|cover_blind]"
     ],
     "kind": "number",
     "max": 5,
@@ -2103,8 +2172,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.reconfigure.window [types=cover_awning|cover_blind]",
+     "setup.user.window [types=cover_awning|cover_blind]"
     ],
     "kind": "number",
     "max": 10,
@@ -2145,7 +2214,7 @@
    {
     "where": [
      "services_yaml.change_settings",
-     "wizard.climate"
+     "setup.user.exceptions_climate"
     ],
     "kind": "entity",
     "domain": [
@@ -2156,6 +2225,26 @@
     ],
     "multiple": false,
     "reorder": false,
+    "required": false
+   }
+  ],
+  "preset": [
+   {
+    "where": [
+     "setup.reconfigure.window",
+     "setup.user.window"
+    ],
+    "kind": "select",
+    "custom_value": false,
+    "mode": "dropdown",
+    "multiple": false,
+    "options": [
+     "window",
+     "window_overhang",
+     "glass_door_overhang"
+    ],
+    "sort": false,
+    "translation_key": "preset",
     "required": false
    }
   ],
@@ -2179,7 +2268,8 @@
    },
    {
     "where": [
-     "wizard.automation"
+     "setup.reconfigure.advanced",
+     "setup.user.advanced"
     ],
     "kind": "boolean",
     "required": false,
@@ -2235,7 +2325,7 @@
    },
    {
     "where": [
-     "wizard.automation"
+     "setup.user.exceptions_schedule"
     ],
     "kind": "number",
     "max": 180,
@@ -2273,7 +2363,7 @@
    },
    {
     "where": [
-     "wizard.automation"
+     "setup.user.exceptions_schedule"
     ],
     "kind": "number",
     "max": 100,
@@ -2305,7 +2395,7 @@
    },
    {
     "where": [
-     "wizard.automation"
+     "setup.user.exceptions_schedule"
     ],
     "kind": "time",
     "required": false
@@ -2331,7 +2421,7 @@
    },
    {
     "where": [
-     "wizard.automation"
+     "setup.user.exceptions_schedule"
     ],
     "kind": "time",
     "required": false
@@ -2348,7 +2438,7 @@
    },
    {
     "where": [
-     "wizard.automation"
+     "setup.user.exceptions_schedule"
     ],
     "kind": "boolean",
     "required": false,
@@ -2367,6 +2457,60 @@
      "cover_tilt"
     ],
     "required": false
+   },
+   {
+    "where": [
+     "setup.reconfigure.window [types=cover_awning]",
+     "setup.user.window [types=cover_awning]"
+    ],
+    "kind": "select",
+    "custom_value": false,
+    "multiple": false,
+    "options": [
+     "cover_blind",
+     "cover_awning",
+     "cover_tilt"
+    ],
+    "sort": false,
+    "translation_key": "sensor_type",
+    "required": true,
+    "default": "cover_awning"
+   },
+   {
+    "where": [
+     "setup.reconfigure.window [types=cover_blind]",
+     "setup.user.window [types=cover_blind]"
+    ],
+    "kind": "select",
+    "custom_value": false,
+    "multiple": false,
+    "options": [
+     "cover_blind",
+     "cover_awning",
+     "cover_tilt"
+    ],
+    "sort": false,
+    "translation_key": "sensor_type",
+    "required": true,
+    "default": "cover_blind"
+   },
+   {
+    "where": [
+     "setup.reconfigure.window [types=cover_tilt]",
+     "setup.user.window [types=cover_tilt]"
+    ],
+    "kind": "select",
+    "custom_value": false,
+    "multiple": false,
+    "options": [
+     "cover_blind",
+     "cover_awning",
+     "cover_tilt"
+    ],
+    "sort": false,
+    "translation_key": "sensor_type",
+    "required": true,
+    "default": "cover_tilt"
    }
   ],
   "set_azimuth": [
@@ -2412,9 +2556,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.tilt [types=cover_tilt]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.reconfigure.window",
+     "setup.user.window"
     ],
     "kind": "number",
     "max": 359,
@@ -2451,7 +2594,8 @@
    },
    {
     "where": [
-     "wizard.tilt [types=cover_tilt]"
+     "setup.reconfigure.window [types=cover_tilt]",
+     "setup.user.window [types=cover_tilt]"
     ],
     "kind": "number",
     "max": 15,
@@ -2488,7 +2632,8 @@
    },
    {
     "where": [
-     "wizard.tilt [types=cover_tilt]"
+     "setup.reconfigure.window [types=cover_tilt]",
+     "setup.user.window [types=cover_tilt]"
     ],
     "kind": "number",
     "max": 15,
@@ -2517,7 +2662,7 @@
    },
    {
     "where": [
-     "wizard.automation"
+     "setup.user.exceptions_schedule"
     ],
     "kind": "entity",
     "domain": [
@@ -2555,7 +2700,7 @@
    },
    {
     "where": [
-     "wizard.automation"
+     "setup.user.exceptions_schedule"
     ],
     "kind": "time",
     "required": false,
@@ -2590,9 +2735,7 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.tilt [types=cover_tilt]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.user.exceptions_positions"
     ],
     "kind": "number",
     "mode": "box",
@@ -2630,9 +2773,7 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.tilt [types=cover_tilt]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.user.exceptions_positions"
     ],
     "kind": "number",
     "mode": "box",
@@ -2674,9 +2815,7 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.tilt [types=cover_tilt]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.user.exceptions_positions"
     ],
     "kind": "number",
     "max": 100,
@@ -2728,7 +2867,7 @@
    },
    {
     "where": [
-     "wizard.climate"
+     "setup.user.exceptions_climate"
     ],
     "kind": "entity",
     "domain": [
@@ -2737,7 +2876,7 @@
     ],
     "multiple": false,
     "reorder": false,
-    "required": true
+    "required": false
    }
   ],
   "temp_high": [
@@ -2826,7 +2965,7 @@
    },
    {
     "where": [
-     "wizard.climate [units=°C]"
+     "setup.user.exceptions_climate [units=°C]"
     ],
     "kind": "number",
     "max": 40,
@@ -2839,7 +2978,7 @@
    },
    {
     "where": [
-     "wizard.climate [units=°F]"
+     "setup.user.exceptions_climate [units=°F]"
     ],
     "kind": "number",
     "max": 100,
@@ -2937,7 +3076,7 @@
    },
    {
     "where": [
-     "wizard.climate [units=°C]"
+     "setup.user.exceptions_climate [units=°C]"
     ],
     "kind": "number",
     "max": 30,
@@ -2950,7 +3089,7 @@
    },
    {
     "where": [
-     "wizard.climate [units=°F]"
+     "setup.user.exceptions_climate [units=°F]"
     ],
     "kind": "number",
     "max": 90,
@@ -2994,7 +3133,8 @@
    },
    {
     "where": [
-     "wizard.tilt [types=cover_tilt]"
+     "setup.reconfigure.window [types=cover_tilt]",
+     "setup.user.window [types=cover_tilt]"
     ],
     "kind": "select",
     "custom_value": false,
@@ -3020,7 +3160,8 @@
    },
    {
     "where": [
-     "wizard.climate"
+     "setup.reconfigure.advanced",
+     "setup.user.advanced"
     ],
     "kind": "boolean",
     "required": false,
@@ -3054,7 +3195,7 @@
    {
     "where": [
      "services_yaml.change_settings",
-     "wizard.climate"
+     "setup.user.exceptions_climate"
     ],
     "kind": "entity",
     "domain": [
@@ -3115,7 +3256,7 @@
    },
    {
     "where": [
-     "wizard.weather"
+     "setup.user.exceptions_climate"
     ],
     "kind": "select",
     "custom_value": false,
@@ -3181,8 +3322,8 @@
    },
    {
     "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.vertical [types=cover_blind]"
+     "setup.reconfigure.window [types=cover_awning|cover_blind]",
+     "setup.user.window [types=cover_awning|cover_blind]"
     ],
     "kind": "number",
     "max": 10,

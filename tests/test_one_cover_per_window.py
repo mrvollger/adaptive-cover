@@ -1,6 +1,6 @@
 """One window drives one cover, and a cover belongs to one window (ADR 0002).
 
-Through the public surfaces: the setup wizard, the options form, the
+Through the public surfaces: the setup form, the options form, the
 ``add_entry`` service. A cover another window already drives is refused
 with a clear error; ``add_entry`` takes ``cover`` (and still ``covers``
 with exactly one item). Every writer stores the cover as
@@ -26,7 +26,6 @@ from custom_components.adaptive_cover.const import (
     CONF_DISTANCE,
     CONF_ENTITIES,
     CONF_HEIGHT_WIN,
-    CONF_MODE,
     CONF_SENSOR_TYPE,
     DOMAIN,
     SensorType,
@@ -34,6 +33,7 @@ from custom_components.adaptive_cover.const import (
 
 from .conftest import COMMON_OPTIONS
 from .test_config_flow import AUTOMATION_STEP_INPUT, VERTICAL_STEP_INPUT
+from .window_form import add_window, start_add, submit
 
 TAKEN = "cover.taken"
 FREE = "cover.free"
@@ -76,39 +76,27 @@ def _register(hass, cover: str) -> str:
     return row.id
 
 
-async def _wizard_to_geometry(hass):
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
-    )
-    return await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"name": "New window", CONF_MODE: SensorType.BLIND}
-    )
-
-
-# ------------------------------------------------------------------ wizard
+# ------------------------------------------------------------ setup form
 
 
 @pytest.mark.usefixtures("stub_sun_integration")
 async def test_wizard_refuses_a_cover_another_window_drives(hass):
     _window(hass, TAKEN)
-    result = await _wizard_to_geometry(hass)
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {**VERTICAL_STEP_INPUT, CONF_COVER_ENTITY: TAKEN}
+    result = await start_add(hass)
+    result = await submit(
+        hass, result, {**VERTICAL_STEP_INPUT, CONF_COVER_ENTITY: TAKEN}
     )
     assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "vertical"
-    assert result["errors"] == {CONF_COVER_ENTITY: "cover_in_use"}
+    assert result["step_id"] == "user"
+    # Shown above the form: HA shows no error on a field inside a section.
+    assert result["errors"] == {"base": "cover_in_use"}
 
 
 @pytest.mark.usefixtures("stub_sun_integration")
 async def test_wizard_stores_one_cover_and_keys_the_entry_by_it(hass):
     registry_id = _register(hass, FREE)
-    result = await _wizard_to_geometry(hass)
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {**VERTICAL_STEP_INPUT, CONF_COVER_ENTITY: FREE}
-    )
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], AUTOMATION_STEP_INPUT
+    result = await add_window(
+        hass, {**VERTICAL_STEP_INPUT, **AUTOMATION_STEP_INPUT, CONF_COVER_ENTITY: FREE}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["options"][CONF_COVER_ENTITY] == FREE
@@ -126,12 +114,8 @@ async def test_wizard_aborts_a_second_window_for_a_registered_cover(hass):
         unique_id=registry_id,
         disabled_by=config_entries.ConfigEntryDisabler.USER,
     )
-    result = await _wizard_to_geometry(hass)
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {**VERTICAL_STEP_INPUT, CONF_COVER_ENTITY: FREE}
-    )
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], AUTOMATION_STEP_INPUT
+    result = await add_window(
+        hass, {**VERTICAL_STEP_INPUT, **AUTOMATION_STEP_INPUT, CONF_COVER_ENTITY: FREE}
     )
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "already_configured"

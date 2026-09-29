@@ -56,6 +56,8 @@ RESOLVE = "custom_components/adaptive_cover/settings/resolve.py"
 LIFT = "custom_components/adaptive_cover/settings/lift.py"
 DECIDER = "custom_components/adaptive_cover/runtime/decider.py"
 WINDOW_COVER = "custom_components/adaptive_cover/window_cover.py"
+SCHEMA = "custom_components/adaptive_cover/settings/schema.py"
+CONFIG_FLOW = "custom_components/adaptive_cover/config_flow.py"
 
 
 @dataclass
@@ -762,6 +764,44 @@ MUTATIONS: list[Mutation] = [
         "a duplicate/second cover is accepted (the one-cover guard never objects)",
         "        problem = ERROR_COVER_IN_USE\n    return problem\n",
         "        problem = ERROR_COVER_IN_USE\n    return None\n",
+    ),
+    # ---- group K: the one-screen window form (P6; M80+) --------------------
+    Mutation(
+        "M80",
+        "copy_from_copies_the_cover",
+        SCHEMA,
+        "copy_from_values",
+        '"Copy from" also copies the source window\'s cover (its identity)',
+        "        if opt.key in SETUP_OPTION_KEYS and opt.key not in IDENTITY_KEYS\n",
+        "        if opt.key in SETUP_OPTION_KEYS\n",
+    ),
+    Mutation(
+        "M81",
+        "recurring_settings_outside_exceptions",
+        SCHEMA,
+        "setup_section",
+        "recurring settings other than climate land in the one-time sections",
+        "    if opt.scope is Scope.RECURRING:\n",
+        "    if opt.scope is Scope.RECURRING and opt.group is Group.CLIMATE:\n",
+    ),
+    Mutation(
+        "M82",
+        "setup_form_drops_spec_defaults",
+        SCHEMA,
+        "_setup_marker",
+        "the setup form gives no field its spec default (a new window stores None)",
+        "    if default is not NO_DEFAULT:\n"
+        '        kwargs["default"] = _default_factory(default)\n',
+        '    if False:\n        kwargs["default"] = _default_factory(default)\n',
+    ),
+    Mutation(
+        "M83",
+        "cover_type_switch_not_shown",
+        CONFIG_FLOW,
+        "WindowForm.submit",
+        "picking another cover type saves at once instead of showing its geometry",
+        "        if filled or cover_type != self.cover_type:\n",
+        "        if filled:\n",
     ),
 ]
 

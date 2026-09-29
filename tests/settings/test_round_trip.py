@@ -1,4 +1,4 @@
-"""Spec round trip: wizard <-> options <-> service <-> normalize (plan P3).
+"""Spec round trip: setup form <-> options <-> service <-> normalize (plan P3).
 
 A value one settings surface accepts and stores must read back unchanged
 through every other surface: the options form shows it and saves it
@@ -9,7 +9,7 @@ Property style, seeded: each case draws a random valid value for every
 option of a cover type from the spec's own shapes (the range every
 surface accepts), then pushes it through the generated validators
 (``settings/schema.py``). The flow-level cases at the bottom drive the
-real wizard, options form and services for a few draws.
+real setup form, options form and services for a few draws.
 """
 
 from __future__ import annotations
@@ -37,7 +37,6 @@ from custom_components.adaptive_cover.const import (
     CONF_INTERP_LIST_NEW,
     CONF_MAX_ELEVATION,
     CONF_MIN_ELEVATION,
-    CONF_MODE,
     CONF_WEATHER_ENTITY,
     DOMAIN,
     SensorType,
@@ -57,6 +56,8 @@ from custom_components.adaptive_cover.settings.spec import (
     Opt,
 )
 from custom_components.adaptive_cover.settings.validate import cross_field_errors
+
+from ..window_form import add_window
 
 COVER_TYPES = (SensorType.BLIND, SensorType.AWNING, SensorType.TILT)
 UNITS = ("°C", "°F")
@@ -146,19 +147,17 @@ def test_wizard_options_and_service_keep_every_value(seed, cover_type, unit):
     values = draw_options(seed, cover_type, unit)
     fov_span = values[CONF_FOV_LEFT] + values[CONF_FOV_RIGHT]
 
-    # wizard: the cover-type page, then every later page
-    wizard = dict(
-        schema.wizard_type_schema(cover_type, unit)(
-            {k: v for k, v in values.items() if k in _page_keys_type(cover_type)}
+    # setup form: every section takes its values as they are
+    wizard: dict[str, Any] = {}
+    setup = schema.setup_section_fields(cover_type, values={}, temperature_unit=unit)
+    for fields in setup.values():
+        keys = {str(m) for m in fields}
+        wizard.update(
+            vol.Schema(fields)({k: v for k, v in values.items() if k in keys})
         )
-    )
-    for page in schema.WIZARD_PAGES:
-        page_schema = schema.wizard_schema(
-            page, temperature_unit=unit, fov_span=fov_span
-        )
-        keys = {str(m) for m in page_schema.schema}
-        wizard.update(page_schema({k: v for k, v in values.items() if k in keys}))
     _same(wizard, values)
+    # (the drawn blind spot fits the drawn FOV, inside the form's full span)
+    assert fov_span <= schema.FULL_FOV_SPAN
 
     # options form: every section shows the stored value and saves it as is
     sections = schema.options_section_fields(
@@ -181,10 +180,6 @@ def test_wizard_options_and_service_keep_every_value(seed, cover_type, unit):
         {"name": "x", "cover": saved[CONF_COVER_ENTITY], **call}
     )
     _same(added, call)
-
-
-def _page_keys_type(cover_type: str) -> set[str]:
-    return {str(m) for m in schema.wizard_type_schema(cover_type, "°C").schema}
 
 
 @pytest.mark.parametrize(("seed", "cover_type", "unit"), _cases())
@@ -220,21 +215,10 @@ async def unload_all(hass):
 
 
 async def _wizard(hass, cover_type: str, values: dict[str, Any]):
-    type_keys = _page_keys_type(cover_type)
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    """Add a window through the one-screen setup form."""
+    result = await add_window(
+        hass, {"name": "Round trip", schema.FIELD_SENSOR_TYPE: cover_type, **values}
     )
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"name": "Round trip", CONF_MODE: cover_type}
-    )
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {k: v for k, v in values.items() if k in type_keys}
-    )
-    while result["type"] is FlowResultType.FORM:
-        keys = {str(m) for m in result["data_schema"].schema}
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {k: v for k, v in values.items() if k in keys}
-        )
     assert result["type"] is FlowResultType.CREATE_ENTRY, result
     return result["result"]
 
@@ -245,7 +229,7 @@ async def _wizard(hass, cover_type: str, values: dict[str, Any]):
 async def test_real_flows_round_trip(hass, seed, cover_type):
     unit = hass.config.units.temperature_unit
     values = draw_options(seed, cover_type, unit)
-    # every optional wizard page runs, so every value is collected
+    # every feature on (the form shows every field either way)
     values.update({CONF_INTERP: True, CONF_ENABLE_BLIND_SPOT: True})
     values[CONF_CLIMATE_MODE] = True
     values[CONF_WEATHER_ENTITY] = "weather.round_trip"

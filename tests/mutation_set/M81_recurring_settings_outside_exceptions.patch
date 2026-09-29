@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/settings/schema.py b/custom_components/adaptive_cover/settings/schema.py
+--- a/custom_components/adaptive_cover/settings/schema.py
++++ b/custom_components/adaptive_cover/settings/schema.py
+@@ -280,7 +280,7 @@
+ 
+ def setup_section(opt: Opt) -> str:
+     """Return the setup-form section that shows ``opt`` (see the table above)."""
+-    if opt.scope is Scope.RECURRING:
++    if opt.scope is Scope.RECURRING and opt.group is Group.CLIMATE:
+         return _EXCEPTIONS_BY_GROUP[opt.group]
+     if opt.key in _FACING or opt.group is Group.COVER:
+         return WINDOW_SECTION

@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/settings/schema.py b/custom_components/adaptive_cover/settings/schema.py
+--- a/custom_components/adaptive_cover/settings/schema.py
++++ b/custom_components/adaptive_cover/settings/schema.py
+@@ -323,7 +323,7 @@
+     values: dict[str, Any] = {
+         opt.key: copy.deepcopy(options.get(opt.key))
+         for opt in OPTS
+-        if opt.key in SETUP_OPTION_KEYS and opt.key not in IDENTITY_KEYS
++        if opt.key in SETUP_OPTION_KEYS
+     }
+     values[FIELD_SENSOR_TYPE] = data.get(CONF_SENSOR_TYPE) or SensorType.BLIND
+     return values

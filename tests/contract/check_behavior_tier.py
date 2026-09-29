@@ -102,6 +102,9 @@ RULES: list[tuple[str, str]] = [
     ("tests/test_translations.py::*", BEHAVIOR),
     ("tests/test_entity_surface_v2.py::*", BEHAVIOR),  # P1 entity surface (C1)
     ("tests/test_one_cover_per_window.py::*", BEHAVIOR),  # P3 one cover (C4)
+    # P6 one-screen window form (add + reconfigure) through the flow manager
+    # (the config surface), incl. "cover + azimuth resolves to the house".
+    ("tests/test_window_setup_form.py::*", BEHAVIOR),
     # P3 config migration 1.3 on the live snapshot. "No runtime read
     # changes" is checked with ShadeConfig.from_options, P3's resolve();
     # P5 re-targets it to settings/resolve.py.

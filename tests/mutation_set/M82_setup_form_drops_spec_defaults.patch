@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/settings/schema.py b/custom_components/adaptive_cover/settings/schema.py
+--- a/custom_components/adaptive_cover/settings/schema.py
++++ b/custom_components/adaptive_cover/settings/schema.py
+@@ -355,7 +355,7 @@
+     )
+     marker_cls = vol.Required if required else vol.Optional
+     kwargs = _suggested(values.get(opt.key))
+-    if default is not NO_DEFAULT:
++    if False:
+         kwargs["default"] = _default_factory(default)
+     return marker_cls(opt.key, **kwargs)
+ 

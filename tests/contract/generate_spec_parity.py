@@ -9,8 +9,9 @@ accepts it describes it today: kind, default, min, max, step, unit and the
 places (surface, form, cover type, climate mode, HA temperature unit) where
 it appears. The surfaces are:
 
-- ``wizard.<step>``: the setup wizard (ConfigFlow), walked page by page for
-  each cover type with every optional page opted into;
+- ``setup.user.<section>`` / ``setup.reconfigure.<section>``: the
+  one-screen window form (ConfigFlow add and Reconfigure steps), for each
+  cover type (it replaced the page-by-page wizard in P6);
 - ``options.init.<section>``: the one-page options form, for each cover type
   with climate mode off and on;
 - ``change_settings`` / ``add_entry``: the service schemas as registered;
@@ -40,7 +41,7 @@ import asyncio
 import json
 import sys
 from collections import defaultdict
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -266,63 +267,61 @@ def _form(result: dict[str, Any], step_id: str) -> vol.Schema:
     return result["data_schema"]
 
 
-TYPE_STEPS = {
-    "cover_blind": "vertical",
-    "cover_awning": "horizontal",
-    "cover_tilt": "tilt",
-}
+def _fake_window(entry_id: str, cover_type: str) -> SimpleNamespace:
+    """A window config entry, as the setup form reads one."""
+    return SimpleNamespace(
+        entry_id=entry_id,
+        title=f"Spec parity {entry_id}",
+        domain="adaptive_cover",
+        data={"name": f"Spec parity {entry_id}", "sensor_type": cover_type},
+        options={},
+    )
 
 
-async def _walk_wizard(obs: Observations) -> None:
-    """Every page of the setup wizard, per cover type and unit."""
+def _entries(*windows: SimpleNamespace) -> SimpleNamespace:
+    """The config-entry registry calls the setup form makes."""
+    by_id = {window.entry_id: window for window in windows}
+    return SimpleNamespace(
+        async_entries=lambda *_a, **_kw: list(windows),
+        async_get_entry=by_id.get,
+        async_get_known_entry=by_id.__getitem__,
+    )
+
+
+async def _walk_setup(obs: Observations) -> None:
+    """The one-screen window form, per cover type and unit.
+
+    ``setup.user``: the add form (one window exists, so "Copy from" shows),
+    shown for each cover type the way a user gets there: the blind form
+    first, then the type picked. ``setup.reconfigure``: the Reconfigure
+    form of a window of each type. Neither depends on climate mode.
+    """
     from custom_components.adaptive_cover.config_flow import ConfigFlowHandler
 
+    source = _fake_window("window", "cover_blind")
     for unit in UNITS:
-        for cover_type, type_step in TYPE_STEPS.items():
+        for cover_type in COVER_TYPES:
             ctx = _contexts(types=[cover_type], units=[unit])
-            flow = _prepare_flow(ConfigFlowHandler(), _fake_hass(unit), "wizard")
-            obs.add_form(
-                "wizard.user", _form(await flow.async_step_user(), "user"), ctx
-            )
-            result = await flow.async_step_user(
-                {"name": "Spec parity", "mode": cover_type}
-            )
-            obs.add_form(f"wizard.{type_step}", _form(result, type_step), ctx)
-            # Opt into every optional page: interp -> blind_spot ->
-            # automation -> climate -> weather. FOV 90/90 (the defaults)
-            # sizes the blind-spot sliders.
-            steps: list[tuple[Callable[..., Any], dict[str, Any], str]] = [
-                (
-                    getattr(flow, f"async_step_{type_step}"),
+            hass = _fake_hass(unit, config_entries=_entries(source))
+            flow = _prepare_flow(ConfigFlowHandler(), hass, "setup")
+            result = await flow.async_step_user()
+            if cover_type != "cover_blind":
+                result = await flow.async_step_user(
                     {
-                        "climate_mode": True,
-                        "interp": True,
-                        "blind_spot": True,
-                        "fov_left": 90,
-                        "fov_right": 90,
-                    },
-                    "interp",
-                ),
-                (
-                    flow.async_step_interp,
-                    {"interp_list": [], "interp_list_new": []},
-                    "blind_spot",
-                ),
-                (
-                    flow.async_step_blind_spot,
-                    {"blind_spot_left": 0, "blind_spot_right": 1},
-                    "automation",
-                ),
-                (flow.async_step_automation, {}, "climate"),
-                (
-                    flow.async_step_climate,
-                    {"weather_entity": "weather.spec_parity"},
-                    "weather",
-                ),
-            ]
-            for step, user_input, next_step in steps:
-                result = await step(user_input)
-                obs.add_form(f"wizard.{next_step}", _form(result, next_step), ctx)
+                        "window": {
+                            "cover_entity_id": "cover.spec_parity",
+                            "sensor_type": cover_type,
+                        }
+                    }
+                )
+            obs.add_form("setup.user", _form(result, "user"), ctx)
+
+            target = _fake_window("reconfigured", cover_type)
+            hass = _fake_hass(unit, config_entries=_entries(source, target))
+            flow = _prepare_flow(ConfigFlowHandler(), hass, "setup")
+            flow.context = {"source": "reconfigure", "entry_id": target.entry_id}
+            result = await flow.async_step_reconfigure()
+            obs.add_form("setup.reconfigure", _form(result, "reconfigure"), ctx)
 
 
 async def _walk_options(obs: Observations) -> None:
@@ -543,7 +542,7 @@ def collapse(obs: Observations) -> dict[str, Any]:
 async def build_snapshot() -> dict[str, Any]:
     """Walk every surface and return the snapshot (JSON-ready)."""
     obs = Observations()
-    await _walk_wizard(obs)
+    await _walk_setup(obs)
     await _walk_options(obs)
     await _walk_services(obs)
     _walk_services_yaml(obs)
