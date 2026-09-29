@@ -1,0 +1,308 @@
+{
+  "automations": [],
+  "helpers": [],
+  "physical_cover_consumers": {
+    "automations": [
+      {
+        "alias": "Workday",
+        "entity_id": "automation.meeting",
+        "summary": "09:00 Mon-Fri: office lights 100%, timer.start [timer.office_lights_manual_override, timer.office_shades_manual_override] 4h, then cover.close_cover target area_id=office (hits the 3 physical office covers)."
+      },
+      {
+        "alias": "Smartwings shade battery alerts",
+        "entity_id": "automation.smartwings_shade_low_battery_alert_weekly",
+        "summary": "matched '_shades' (battery sensors); not inspected further"
+      },
+      {
+        "alias": "Smartwings shade low battery alert - auto dismiss on charging",
+        "entity_id": "automation.smartwings_shade_low_battery_alert_auto_dismiss_on_charging",
+        "summary": "matched '_shades' (battery sensors); not inspected further"
+      }
+    ],
+    "helpers": [
+      {
+        "entities": [
+          "cover.family_door_shades",
+          "cover.family_east_shades",
+          "cover.family_south_shades"
+        ],
+        "entry_id": "01KAD5METKSHG3NQ6HPC0J75NA",
+        "helper_type": "group",
+        "name": "Family room shades"
+      },
+      {
+        "entities": [
+          "cover.master_door_shades",
+          "cover.master_east_shades",
+          "cover.master_south_shades",
+          "cover.master_trap_shades"
+        ],
+        "entry_id": "01KAD5QHP766YN1RC82BWEDTZS",
+        "helper_type": "group",
+        "name": "Master bedroom shades"
+      },
+      {
+        "entities": [
+          "cover.office_door_shades",
+          "cover.office_east_shades",
+          "cover.office_north_shades"
+        ],
+        "entry_id": "01KAD5RW8XCVWEXPDA9HDEFR98",
+        "helper_type": "group",
+        "name": "Office shades"
+      },
+      {
+        "entities": [
+          "cover.sw_south_shade",
+          "cover.sw_sw_shade"
+        ],
+        "entry_id": "01KSBEMV1WKAPK9MX9MTZM8B4J",
+        "helper_type": "group",
+        "name": "Leannes shades"
+      },
+      {
+        "entities": [
+          "cover.den_south_shades",
+          "cover.den_west_shades",
+          "cover.sw_sw_1st_floor_bed"
+        ],
+        "entry_id": "01KVJGXPD77X5KNVQZPF43BMPY",
+        "helper_type": "group",
+        "name": "Den shades"
+      }
+    ],
+    "note": "Not adaptive_cover entities, but they move/aggregate the covers that adaptive_cover controls (relevant to manual-override detection).",
+    "scenes": [
+      {
+        "covers": {
+          "cover.office_door_shades": {
+            "current_position": 0,
+            "state": "closed"
+          },
+          "cover.office_east_shades": {
+            "current_position": 0,
+            "state": "closed"
+          },
+          "cover.office_north_shades": {
+            "current_position": 0,
+            "state": "closed"
+          }
+        },
+        "entity_id": "scene.meeting",
+        "name": "Meeting mode"
+      }
+    ]
+  },
+  "queries": [
+    {
+      "config_hits": 0,
+      "query": "adaptive_cover",
+      "search_types": [
+        "automation",
+        "script",
+        "scene",
+        "helper"
+      ],
+      "tool": "ha_search"
+    },
+    {
+      "config_hits": 0,
+      "query": "cover.adaptive_cover_all",
+      "search_types": [
+        "automation",
+        "script",
+        "scene",
+        "helper"
+      ],
+      "tool": "ha_search"
+    },
+    {
+      "config_hits": 0,
+      "query": "select.adaptive_cover_all_cover_control_mode",
+      "search_types": [
+        "automation",
+        "script",
+        "scene",
+        "helper"
+      ],
+      "tool": "ha_search"
+    },
+    {
+      "config_hits": 0,
+      "query": "switch.master_east_manual_override",
+      "search_types": [
+        "automation",
+        "script",
+        "scene",
+        "helper"
+      ],
+      "tool": "ha_search"
+    },
+    {
+      "config_hits": 0,
+      "query": "binary_sensor.master_trap_manual_override_master_trap",
+      "search_types": [
+        "automation",
+        "script",
+        "scene",
+        "helper"
+      ],
+      "tool": "ha_search"
+    },
+    {
+      "config_hits": 0,
+      "query": "toggle_control",
+      "search_types": [
+        "automation",
+        "script",
+        "scene",
+        "helper"
+      ],
+      "tool": "ha_search"
+    },
+    {
+      "config_hits": 0,
+      "query": "cover_position",
+      "search_types": [
+        "automation",
+        "script",
+        "scene",
+        "helper"
+      ],
+      "tool": "ha_search"
+    },
+    {
+      "config_hits": 0,
+      "query": "climate_mode",
+      "search_types": [
+        "automation",
+        "script",
+        "scene",
+        "helper"
+      ],
+      "tool": "ha_search"
+    },
+    {
+      "config_hits": 0,
+      "query": "shade_mode",
+      "search_types": [
+        "automation",
+        "script",
+        "scene",
+        "helper"
+      ],
+      "tool": "ha_search"
+    },
+    {
+      "config_hits": 0,
+      "query": "reset_manual_override",
+      "search_types": [
+        "automation",
+        "script",
+        "scene",
+        "helper"
+      ],
+      "tool": "ha_search"
+    },
+    {
+      "config_hits": 0,
+      "query": "return_to_auto",
+      "search_types": [
+        "automation",
+        "script",
+        "scene",
+        "helper"
+      ],
+      "tool": "ha_search"
+    },
+    {
+      "config_hits": 5,
+      "note": "all 5 are light automations (timer.*_lights_manual_override); none reference adaptive_cover entities",
+      "query": "_manual_override",
+      "search_types": [
+        "automation",
+        "script",
+        "scene",
+        "helper"
+      ],
+      "tool": "ha_search"
+    },
+    {
+      "config_hits": 4,
+      "query": "_shades",
+      "search_types": [
+        "automation",
+        "script",
+        "scene"
+      ],
+      "tool": "ha_search"
+    },
+    {
+      "config_hits": 7,
+      "query": "cover.",
+      "search_types": [
+        "automation",
+        "script",
+        "scene",
+        "helper"
+      ],
+      "tool": "ha_search"
+    },
+    {
+      "hits": "19 (all dashboard-shades)",
+      "mode": "search",
+      "query": "adaptive",
+      "tool": "ha_config_get_dashboard"
+    },
+    {
+      "hits": "16 (all dashboard-shades)",
+      "mode": "search",
+      "query": "adaptive-cover",
+      "tool": "ha_config_get_dashboard"
+    },
+    {
+      "hits": 0,
+      "mode": "search",
+      "query": "select.master_master_trap_shade_mode_master_trap",
+      "tool": "ha_config_get_dashboard"
+    },
+    {
+      "hits": 0,
+      "mode": "search",
+      "query": "button.master_trap_reset_manual_override_master_trap",
+      "tool": "ha_config_get_dashboard"
+    },
+    {
+      "hits": 0,
+      "mode": "search",
+      "query": "sensor.master_trap_cover_position_master_trap",
+      "tool": "ha_config_get_dashboard"
+    },
+    {
+      "hits": 0,
+      "mode": "search",
+      "query": "cover_position",
+      "tool": "ha_config_get_dashboard"
+    },
+    {
+      "hits": "1 (dashboard-shades hub reset button)",
+      "mode": "search",
+      "query": "manual_override",
+      "tool": "ha_config_get_dashboard"
+    },
+    {
+      "hits": 0,
+      "mode": "search",
+      "query": "toggle_control",
+      "tool": "ha_config_get_dashboard"
+    },
+    {
+      "hits": 0,
+      "mode": "search",
+      "query": "sun_infront",
+      "tool": "ha_config_get_dashboard"
+    }
+  ],
+  "scenes": [],
+  "scripts": []
+}
