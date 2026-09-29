@@ -534,6 +534,33 @@ class TestMigration:
         for key, (category, _enabled, _name) in WINDOW_SURFACE.items():
             assert rows[key].entity_category == category, key
 
+    async def test_regression_default_alias_is_not_a_user_choice(
+        self, hass, cover_calls
+    ):
+        """HA's computed name alias is not a user alias (fixed in a9eb63c).
+
+        Home Assistant lists the entity's own name as a computed alias on
+        every registry row. The "user touched this row" rule counted it, so
+        on HA 2026.x the surface migration treated every row as the user's
+        and could never hide (or disable) one. A typed alias still counts.
+        """
+        _set_world(hass)
+        entry = _legacy_entry(
+            hass,
+            {("switch", "Climate Mode"): {"aliases": [er.COMPUTED_NAME, "heat"]}},
+        )
+        await _setup(hass, entry)
+        rows = _rows(hass, entry)
+
+        # Default rows (only the computed alias) are hidden by the migration.
+        assert rows[("switch", "Toggle Control")].aliases == [er.COMPUTED_NAME]
+        assert (
+            rows[("switch", "Toggle Control")].hidden_by
+            is er.RegistryEntryHider.INTEGRATION
+        )
+        # A row the user gave an alias is theirs: left visible.
+        assert rows[("switch", "Climate Mode")].hidden_by is None
+
     async def test_migration_is_idempotent(self, hass, cover_calls):
         _set_world(hass)
         entry = _legacy_entry(hass)

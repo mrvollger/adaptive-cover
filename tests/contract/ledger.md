@@ -773,3 +773,22 @@ The example below is inside an HTML comment. The checker ignores it.
   - Goldens, truth table and house replay byte-identical: with no manual
     action every window restores `auto`, which is the old Toggle Control
     on.
+
+## L0025 · 2026-09-29 · A row's computed name alias is not a user choice (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pin
+  `tests/test_entity_surface_v2.py::TestMigration::test_regression_default_alias_is_not_a_user_choice`
+- **Mutations re-targeted:** none
+- **Contract change:** C5
+- **Reason:** defect fix, landed with the hide rule in a9eb63c (L0024)
+  because only a hidden- or disabled-by-default role makes it observable.
+  `entity_surface._user_touched` keeps the surface migrations away from
+  rows the user adopted (renamed, aliased, ...). Home Assistant 2026.x
+  lists the entity's own name as a computed alias (`er.COMPUTED_NAME`, not
+  a string) on every registry row, and `any(row.aliases)` counted it, so
+  every row looked user-touched: migration 1.5 hid none of the switch
+  aliases, and a P6 disabled-by-default role would have stayed enabled
+  everywhere. Only string aliases count now. The new pin fails without the
+  fix (no row hidden) and checks that a row with a typed alias stays
+  visible. Goldens, truth table and house replay unchanged.

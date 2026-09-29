@@ -2005,6 +2005,7 @@ tests/test_entity_surface_v2.py::TestMigration::test_migration_is_idempotent
 tests/test_entity_surface_v2.py::TestMigration::test_migration_keeps_user_choices
 tests/test_entity_surface_v2.py::TestMigration::test_newer_major_version_is_refused
 tests/test_entity_surface_v2.py::TestMigration::test_newer_minor_version_loads_unchanged
+tests/test_entity_surface_v2.py::TestMigration::test_regression_default_alias_is_not_a_user_choice
 tests/test_entity_surface_v2.py::TestMigration::test_user_reenabled_entity_stays_enabled
 tests/test_entity_surface_v2.py::TestPositionAttributes::test_multi_cover_entry_lists_every_cover
 tests/test_entity_surface_v2.py::TestPositionAttributes::test_next_move_matches_next_change_golden[2026-03-20 04:00:00]
