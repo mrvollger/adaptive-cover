@@ -2,6 +2,7 @@
 
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResultType
+import pytest
 
 from custom_components.adaptive_cover.const import (
     CONF_AWNING_ANGLE,
@@ -103,6 +104,23 @@ AUTOMATION_STEP_INPUT = {
     CONF_END_TIME: "00:00:00",
     CONF_RETURN_SUNSET: False,
 }
+
+
+pytestmark = pytest.mark.usefixtures("stub_sun_integration")
+
+
+@pytest.fixture(autouse=True)
+async def unload_all_entries(hass):
+    """Unload every entry the flow created (incl. the auto-created hub).
+
+    Completing a flow sets the entry up, and the hub's aggregate cover
+    polls on an interval; leaving it loaded leaks that timer past teardown.
+    """
+    yield
+    for entry in hass.config_entries.async_entries():
+        if entry.state is config_entries.ConfigEntryState.LOADED:
+            await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
 
 
 async def test_user_step_shows_form(hass):
