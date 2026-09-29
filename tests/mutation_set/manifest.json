@@ -342,5 +342,12 @@
   "function": "_adopt_late_delivery",
   "description": "motion toward a failed-but-delivered command is never adopted as ours",
   "patch": "M57_late_delivery_never_adopted.patch"
+ },
+ {
+  "id": "M58",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "async_set_manual_position",
+  "description": "a window whose cover entity no longer exists still commands it",
+  "patch": "M58_missing_cover_commanded.patch"
  }
 ]

@@ -156,6 +156,36 @@ async def test_late_delivery_window_still_sees_humans(hass, freezer):
     await house.teardown()
 
 
+async def test_regression_missing_cover_not_commanded(hass, freezer, caplog):
+    """A window whose cover entity no longer exists sends it nothing.
+
+    House, 2026-09-29: while a physical cover was being renamed, its window
+    still named the old id and commanded it on the next state change
+    ("Referenced entities ... are missing"). The guard meant to stop this
+    compared get_safe_state() - which maps missing to None - against
+    "unavailable"/"unknown", so it never fired.
+    """
+    house = await SimHouse.create(hass, freezer, date="2026-03-20")
+    await house.advance_to("07:40")
+    await settle_idle(house)  # a landing report would re-create the entity
+    removed_at = house.now
+    hass.states.async_remove(SHADE)
+    await hass.async_block_till_done()
+
+    await house.advance_to("10:00")
+
+    calls = [
+        e
+        for e in house.timeline
+        if e.kind == "service_call" and e.entity_id == SHADE and e.time > removed_at
+    ]
+    assert calls == [], f"commanded a cover that does not exist: {calls}"
+    assert caplog.text.count("no such entity") == 1, (
+        "the missing cover should be reported once, not on every tick"
+    )
+    await house.teardown()
+
+
 # --------------------------------------------- unknown-position-commands-anyway
 
 

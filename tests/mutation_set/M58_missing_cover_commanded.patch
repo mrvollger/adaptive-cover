@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -1265,7 +1265,7 @@
+         # raw state. "unknown" stays commandable - a shade that has not
+         # reported since a restart must still get the end-of-day close.
+         current = self.hass.states.get(entity)
+-        if current is None:
++        if False:
+             if entity not in self._missing_warned:
+                 self._missing_warned.add(entity)
+                 self.logger.warning(

@@ -649,6 +649,15 @@ MUTATIONS: list[Mutation] = [
         "        sent = self._unconfirmed_sends.get(entity_id)\n",
         "        sent = None\n",
     ),
+    Mutation(
+        "M58",
+        "missing_cover_commanded",
+        COORD,
+        "async_set_manual_position",
+        "a window whose cover entity no longer exists still commands it",
+        "        if current is None:\n            if entity not in self._missing_warned:\n",
+        "        if False:\n            if entity not in self._missing_warned:\n",
+    ),
 ]
 
 
