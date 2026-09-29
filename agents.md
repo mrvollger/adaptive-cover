@@ -32,7 +32,7 @@ custom_components/adaptive_cover/
 ├── manifest.json            # Integration metadata & dependencies
 ├── strings.json             # English UI strings
 ├── icons.json               # MDI icon mappings
-├── translations/            # NL, DE, SK, ES, FR translations
+├── translations/            # en.json only (English-only by choice)
 ├── blueprints/              # HA automation blueprints
 └── simulation/              # Simulation utilities
 ```
