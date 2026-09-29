@@ -4,7 +4,8 @@ import type { HomeAssistant, LovelaceCardEditor } from 'custom-card-helpers';
 
 import { CARD_EDITOR_NAME } from './const';
 import type { ControlFlags } from './const';
-import { fetchAcpConfigEntries, type AcpConfigEntry } from './lib/config-entries';
+import { fetchWindowOptions, type WindowOption } from './lib/window-options';
+import { configuredWindowKey, withWindowKey } from './lib/window-binding';
 import { renderEditorFooter } from './lib/editor-footer';
 import { colorForIndex } from './lib/palette';
 import { t } from './lib/i18n';
@@ -63,8 +64,8 @@ const DEFAULT_SECTIONS: CardSection[] = SECTION_ROWS.filter(
 export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardEditor {
   @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private _config?: AdaptiveCoverCardConfig;
-  @state() private _entries: AcpConfigEntry[] | null = null;
-  @state() private _entriesError: string | null = null;
+  @state() public _windows: WindowOption[] | null = null;
+  @state() private _windowsError: string | null = null;
   private _fetchInFlight = false;
 
   public setConfig(config: AdaptiveCoverCardConfig): void {
@@ -72,22 +73,20 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
   }
 
   protected updated(changed: Map<string, unknown>): void {
-    if (changed.has('hass') && this.hass && !this._entries && !this._fetchInFlight) {
+    if (changed.has('hass') && this.hass && !this._windows && !this._fetchInFlight) {
       this._fetchInFlight = true;
-      fetchAcpConfigEntries(this.hass)
-        .then((entries) => {
-          this._entries = entries;
-          this._entriesError = null;
-          if (!this._config?.entry_id && entries.length === 1) {
-            // Single instance → auto-select.
-            this._emit({
-              ...(this._config ?? { type: '', entry_id: '' }),
-              entry_id: entries[0].entry_id,
-            });
+      fetchWindowOptions(this.hass)
+        .then((windows) => {
+          this._windows = windows;
+          this._windowsError = null;
+          const bound = this._config?.window || this._config?.entry_id || this._config?.cover;
+          if (!bound && windows.length === 1) {
+            // Single window → auto-select.
+            this._emit(withWindowKey(this._config ?? { type: '' }, windows[0].window_key));
           }
         })
         .catch((err: Error) => {
-          this._entriesError = err?.message ?? 'failed to load config entries';
+          this._windowsError = err?.message ?? 'failed to load windows';
         })
         .finally(() => {
           this._fetchInFlight = false;
@@ -110,9 +109,11 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
     );
   }
 
-  private _onEntryChange(e: Event): void {
+  /** A picked window is saved as `window:`; a legacy `entry_id` is dropped. */
+  private _onWindowChange(e: Event): void {
     const value = (e.target as HTMLSelectElement).value;
-    this._emit({ ...(this._config ?? { type: '', entry_id: '' }), entry_id: value });
+    if (value === configuredWindowKey(this._config)) return;
+    this._emit(withWindowKey(this._config ?? { type: '' }, value));
   }
 
   private _onSectionToggle(key: CardSection, enabled: boolean): void {
@@ -121,28 +122,28 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
     else current.delete(key);
     // Preserve SECTION_ROWS ordering for consistency
     const ordered = SECTION_ROWS.map((r) => r.key).filter((k) => current.has(k));
-    this._emit({ ...(this._config ?? { type: '', entry_id: '' }), show_sections: ordered });
+    this._emit({ ...(this._config ?? { type: '' }), show_sections: ordered });
   }
 
   private _onCompactToggle(enabled: boolean): void {
-    this._emit({ ...(this._config ?? { type: '', entry_id: '' }), compact: enabled });
+    this._emit({ ...(this._config ?? { type: '' }), compact: enabled });
   }
 
   private _onCompassStatsToggle(enabled: boolean): void {
-    this._emit({ ...(this._config ?? { type: '', entry_id: '' }), show_compass_stats: enabled });
+    this._emit({ ...(this._config ?? { type: '' }), show_compass_stats: enabled });
   }
 
   private _onCompassLegendToggle(enabled: boolean): void {
-    this._emit({ ...(this._config ?? { type: '', entry_id: '' }), show_compass_legend: enabled });
+    this._emit({ ...(this._config ?? { type: '' }), show_compass_legend: enabled });
   }
 
   private _onMoonToggle(enabled: boolean): void {
-    this._emit({ ...(this._config ?? { type: '', entry_id: '' }), show_moon: enabled });
+    this._emit({ ...(this._config ?? { type: '' }), show_moon: enabled });
   }
 
   private _onHideInactiveToggle(enabled: boolean): void {
     this._emit({
-      ...(this._config ?? { type: '', entry_id: '' }),
+      ...(this._config ?? { type: '' }),
       hide_inactive_handlers: enabled,
     });
   }
@@ -150,23 +151,23 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
   _onNorthOffsetChange(e: Event): void {
     const raw = parseFloat((e.target as HTMLInputElement).value);
     const value = Number.isFinite(raw) ? raw : 0;
-    this._emit({ ...(this._config ?? { type: '', entry_id: '' }), north_offset: value });
+    this._emit({ ...(this._config ?? { type: '' }), north_offset: value });
   }
 
   private _onControlToggle(key: keyof ControlFlags, enabled: boolean): void {
-    const cfg = this._config ?? { type: '', entry_id: '' };
+    const cfg = this._config ?? { type: '' };
     this._emit({ ...cfg, controls: { ...cfg.controls, [key]: enabled } });
   }
 
   // The main card embeds a single sky-compass overlay, so cover colors are a
   // single slot bound to index 0 of the cover_colors array.
   private _onCoverColorChange(value: string): void {
-    const cfg = this._config ?? { type: '', entry_id: '' };
+    const cfg = this._config ?? { type: '' };
     this._emit({ ...cfg, cover_colors: [value] });
   }
 
   private _onCoverColorReset(): void {
-    const cfg = { ...(this._config ?? { type: '', entry_id: '' }) };
+    const cfg = { ...(this._config ?? { type: '' }) };
     delete (cfg as { cover_colors?: unknown }).cover_colors;
     this._emit(cfg);
   }
@@ -178,8 +179,8 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
     return html`
       <div class="form">
         <div class="section">
-          <label class="field-label">${t('editor.common.entry_id')}</label>
-          ${this._renderEntryPicker()}
+          <label class="field-label">${t('editor.common.window')}</label>
+          ${this._renderWindowPicker()}
         </div>
 
         <div class="section">
@@ -250,7 +251,7 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
           </label>
         </div>
 
-        ${this._config.entry_id
+        ${configuredWindowKey(this._config) || this._config.cover
           ? html`
               <div class="section">
                 <label class="field-label">${t('editor.compass.cover_colors')}</label>
@@ -365,23 +366,24 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
     `;
   }
 
-  private _renderEntryPicker(): TemplateResult {
-    if (this._entriesError) {
+  private _renderWindowPicker(): TemplateResult {
+    const current = configuredWindowKey(this._config);
+    if (this._windowsError) {
       return html`
-        <div class="error">${t('editor.common.load_failed', { error: this._entriesError })}</div>
+        <div class="error">${t('editor.common.load_failed', { error: this._windowsError })}</div>
         <input
           type="text"
-          .value=${this._config?.entry_id ?? ''}
-          placeholder=${t('editor.common.entry_id_manual_placeholder')}
-          @change=${this._onEntryChange}
+          .value=${current}
+          placeholder=${t('editor.common.window_manual_placeholder')}
+          @change=${this._onWindowChange}
           class="text-input"
         />
       `;
     }
-    if (!this._entries) {
+    if (!this._windows) {
       return html`<div class="hint">${t('editor.common.loading_entries')}</div>`;
     }
-    if (this._entries.length === 0) {
+    if (this._windows.length === 0) {
       return html`
         <div class="error">
           ${t('editor.common.no_entries')}
@@ -390,18 +392,15 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
       `;
     }
     return html`
-      <select class="select" .value=${this._config?.entry_id ?? ''} @change=${this._onEntryChange}>
-        ${this._config?.entry_id &&
-        !this._entries.some((e) => e.entry_id === this._config!.entry_id)
-          ? html`<option value=${this._config.entry_id}>
-              ${t('editor.common.unknown_entry', { entry: this._config.entry_id })}
+      <select class="select" .value=${current} @change=${this._onWindowChange}>
+        ${current && !this._windows.some((w) => w.window_key === current)
+          ? html`<option value=${current}>
+              ${t('editor.common.unknown_entry', { entry: current })}
             </option>`
           : nothing}
-        ${this._entries.map(
-          (e) => html`
-            <option value=${e.entry_id} ?selected=${e.entry_id === this._config?.entry_id}>
-              ${e.title}
-            </option>
+        ${this._windows.map(
+          (w) => html`
+            <option value=${w.window_key} ?selected=${w.window_key === current}>${w.title}</option>
           `,
         )}
       </select>

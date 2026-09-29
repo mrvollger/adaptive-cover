@@ -22,6 +22,7 @@ interface StripLike extends HTMLElement {
 }
 
 const discovered: DiscoveredEntities = {
+  window_key: 'entry1',
   entry_id: 'entry1',
   entry_title: 'Test',
   cover_type: 'cover_blind',

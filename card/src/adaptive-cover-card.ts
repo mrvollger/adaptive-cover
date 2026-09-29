@@ -9,18 +9,23 @@ import {
   CARD_NAME,
   CARD_VERSION,
   COVER_TYPE_ICONS,
-  INTEGRATION_DOMAIN,
   resolveControlFlags,
 } from './const';
 import { t } from './lib/i18n';
 import { setTooltipDefaults } from './lib/tooltip';
-import { createDiscoveryMemo } from './lib/entity-discovery';
-import { fetchAcpConfigEntries } from './lib/config-entries';
+import { createDiscoveryMemo, windowRegistrySlice } from './lib/entity-discovery';
+import { fetchWindowOptions } from './lib/window-options';
+import {
+  windowRefFromConfig,
+  windowRefId,
+  windowRefLabel,
+  type WindowRef,
+} from './lib/window-binding';
 import { normalizeAzimuth } from './lib/geometry';
 import { subscribeEntityRegistry, type EntityRegistryEntry } from './lib/entity-registry';
 import { loadEntityRegistry, getCachedRegistry } from './lib/registry-store';
 import { registryCache } from './lib/registry-cache';
-import { registryChanged, isAcpRegistryEvent, filterAcp } from './lib/registry-diff';
+import { registryChanged, isAcpRegistryEvent } from './lib/registry-diff';
 import type { AdaptiveCoverCardConfig, CardSection, DiscoveredEntities } from './types';
 
 import './components/header-pill';
@@ -68,16 +73,30 @@ export class AdaptiveCoverCard extends LitElement {
   private readonly _DEBOUNCE_MAX = 2000;
 
   public setConfig(config: AdaptiveCoverCardConfig): void {
-    if (!config?.entry_id) {
-      throw new Error('adaptive-cover-card: `entry_id` is required');
+    const ref = windowRefFromConfig(config);
+    if (!ref) {
+      throw new Error(
+        'adaptive-cover-card: set `window` (window key) or `cover` (cover entity); ' +
+          'a legacy `entry_id` also works.',
+      );
     }
     this._config = { ...config };
     if (config.tooltips) setTooltipDefaults(config.tooltips);
     // Warm-start: synchronously hydrate registry from cache so first render skips loading state.
     if (this._registry === null) {
-      const cached = registryCache.get(config.entry_id);
+      const cached = registryCache.get(windowRefId(ref));
       if (cached) this._registry = cached.entries;
     }
+  }
+
+  private get _ref(): WindowRef | null {
+    return windowRefFromConfig(this._config);
+  }
+
+  /** This window's registry rows in `registry` (empty when it does not resolve). */
+  private _slice(registry: EntityRegistryEntry[]): EntityRegistryEntry[] {
+    const ref = this._ref;
+    return ref && this.hass ? windowRegistrySlice(this.hass, ref, registry) : [];
   }
 
   public getCardSize(): number {
@@ -101,16 +120,16 @@ export class AdaptiveCoverCard extends LitElement {
   }
 
   public static async getStubConfig(hass: HomeAssistant): Promise<AdaptiveCoverCardConfig> {
-    let entry_id = '';
+    let window = '';
     try {
-      const entries = await fetchAcpConfigEntries(hass);
-      entry_id = entries[0]?.entry_id ?? '';
+      const windows = await fetchWindowOptions(hass);
+      window = windows[0]?.window_key ?? '';
     } catch {
       /* none discoverable — picker falls back to name + description */
     }
     return {
       type: `custom:${CARD_NAME}`,
-      entry_id,
+      window,
     };
   }
 
@@ -177,9 +196,7 @@ export class AdaptiveCoverCard extends LitElement {
 
     if (!this._unsubRegistry) {
       this._unsubRegistry = subscribeEntityRegistry(this.hass, (payload) => {
-        const acpIds = new Set(
-          filterAcp(this._registry ?? [], this._config?.entry_id ?? '').map((e) => e.entity_id),
-        );
+        const acpIds = new Set(this._slice(this._registry ?? []).map((e) => e.entity_id));
         if (!isAcpRegistryEvent(payload, acpIds)) return;
         this._scheduleRefetch();
       });
@@ -194,15 +211,12 @@ export class AdaptiveCoverCard extends LitElement {
         // Shared cache returned the same array we already hold — nothing changed, so the
         // per-tick revalidation path costs O(1) instead of re-filtering the registry.
         if (entries === this._registry) return;
-        const entryId = this._config?.entry_id;
-        if (entryId) {
-          const slice = filterAcp(entries, entryId);
-          if (
-            this._registry === null ||
-            registryChanged(filterAcp(this._registry, entryId), slice)
-          ) {
+        const ref = this._ref;
+        if (ref) {
+          const slice = this._slice(entries);
+          if (this._registry === null || registryChanged(this._slice(this._registry), slice)) {
             this._registry = entries;
-            if (slice.length) registryCache.set(entryId, slice);
+            if (slice.length) registryCache.set(windowRefId(ref), slice);
           }
         } else {
           this._registry = entries;
@@ -287,28 +301,30 @@ export class AdaptiveCoverCard extends LitElement {
   }
 
   private _renderEmpty(reason: string): TemplateResult {
-    const entryId = this._config!.entry_id;
+    const ref = this._ref;
+    const bindingKey =
+      ref?.kind === 'cover' ? 'cover' : ref?.kind === 'entry' ? 'entry_id' : 'window';
     const registrySize = this._registry?.length ?? 0;
-    const acpCount = this._registry?.filter(
-      (e) => e.config_entry_id === entryId && e.platform === INTEGRATION_DOMAIN,
-    ).length;
+    const acpCount = this._registry ? this._slice(this._registry).length : undefined;
     return html`
       <ha-card>
         <div class="empty">
           <p><strong>${t('root.no_entities_title')}</strong></p>
-          <p class="dim">Configured <code>entry_id</code>: <code>${entryId}</code></p>
+          <p class="dim">
+            Configured <code>${bindingKey}</code>: <code>${ref ? windowRefLabel(ref) : ''}</code>
+          </p>
           <ul class="diag">
             <li>Reason: <code>${reason}</code></li>
             <li>Registry entries loaded: <code>${registrySize}</code></li>
-            <li>ACP entities matching entry_id: <code>${acpCount ?? '—'}</code></li>
+            <li>Adaptive Cover entities of this window: <code>${acpCount ?? '—'}</code></li>
             ${this._registryError
               ? html`<li>Registry fetch error: <code>${this._registryError}</code></li>`
               : nothing}
           </ul>
           <p class="dim">
-            If the count is 0, the <code>entry_id</code> is wrong. Find it at
-            <code>/config/integrations</code> → click the Adaptive Cover entry → the URL bar shows
-            <code>config_entry=…</code>.
+            If the count is 0, the window key is wrong. The Cover Position sensor of each window
+            shows its key in the <code>window_key</code> attribute; or pick the window in the card
+            editor.
           </p>
         </div>
       </ha-card>
@@ -325,7 +341,7 @@ export class AdaptiveCoverCard extends LitElement {
     }
 
     const discovered = this._discovered;
-    if (!discovered) return this._renderEmpty('no matching entities after unique_id lookup');
+    if (!discovered) return this._renderEmpty('no window matches the configured key or cover');
 
     const flags = resolveControlFlags(this._config);
     const sections = this._sections;

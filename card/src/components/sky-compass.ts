@@ -190,7 +190,7 @@ export class SkyCompass extends LitElement {
     }
 
     // Filter at render boundary so stats and legend still see all entries
-    const visibleOverlays = overlays.filter((ov) => !this._hiddenEntries.has(ov.d.entry_id));
+    const visibleOverlays = overlays.filter((ov) => !this._hiddenEntries.has(ov.d.window_key));
 
     const o = normalizeAzimuth(this.northOffsetDeg);
     const multi = overlays.length > 1;
@@ -757,10 +757,10 @@ export class SkyCompass extends LitElement {
                 type="button"
                 class=${classMap({
                   'entry-toggle': true,
-                  hidden: this._hiddenEntries.has(o.d.entry_id),
+                  hidden: this._hiddenEntries.has(o.d.window_key),
                 })}
-                aria-pressed=${!this._hiddenEntries.has(o.d.entry_id)}
-                @click=${() => this._toggleEntry(o.d.entry_id)}
+                aria-pressed=${!this._hiddenEntries.has(o.d.window_key)}
+                @click=${() => this._toggleEntry(o.d.window_key)}
               >
                 <span class="licell"
                   ><span class="swatch entry" style="background: ${o.color}"></span

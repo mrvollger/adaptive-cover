@@ -53,6 +53,7 @@ function makeDiscovered(
   } = {},
 ): DiscoveredEntities {
   return {
+    window_key: entryId,
     entry_id: entryId,
     entry_title: title,
     cover_type: opts.coverType ?? 'cover_blind',

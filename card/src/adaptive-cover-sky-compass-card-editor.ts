@@ -3,7 +3,13 @@ import { customElement, property, state } from 'lit/decorators.js';
 import type { HomeAssistant, LovelaceCardEditor } from 'custom-card-helpers';
 
 import { SKY_COMPASS_CARD_EDITOR_NAME, SKY_COMPASS_CARD_NAME } from './const';
-import { fetchAcpConfigEntries, type AcpConfigEntry } from './lib/config-entries';
+import { fetchWindowOptions, type WindowOption } from './lib/window-options';
+import {
+  windowRefId,
+  windowRefLabel,
+  windowRefsFromConfig,
+  type WindowRef,
+} from './lib/window-binding';
 import { renderEditorFooter } from './lib/editor-footer';
 import { colorForIndex } from './lib/palette';
 import { t } from './lib/i18n';
@@ -102,8 +108,8 @@ const TOGGLE_ROWS: ToggleRow[] = [
 export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements LovelaceCardEditor {
   @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private _config?: SkyCompassCardConfig;
-  @state() private _entries: AcpConfigEntry[] | null = null;
-  @state() private _entriesError: string | null = null;
+  @state() public _windows: WindowOption[] | null = null;
+  @state() private _windowsError: string | null = null;
   private _fetchInFlight = false;
 
   public setConfig(config: SkyCompassCardConfig): void {
@@ -111,15 +117,15 @@ export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements Lov
   }
 
   protected updated(changed: Map<string, unknown>): void {
-    if (changed.has('hass') && this.hass && !this._entries && !this._fetchInFlight) {
+    if (changed.has('hass') && this.hass && !this._windows && !this._fetchInFlight) {
       this._fetchInFlight = true;
-      fetchAcpConfigEntries(this.hass)
-        .then((entries) => {
-          this._entries = entries;
-          this._entriesError = null;
+      fetchWindowOptions(this.hass)
+        .then((windows) => {
+          this._windows = windows;
+          this._windowsError = null;
         })
         .catch((err: Error) => {
-          this._entriesError = err?.message ?? 'failed to load config entries';
+          this._windowsError = err?.message ?? 'failed to load windows';
         })
         .finally(() => {
           this._fetchInFlight = false;
@@ -139,7 +145,7 @@ export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements Lov
   }
 
   private _baseConfig(): SkyCompassCardConfig {
-    return this._config ?? { type: `custom:${SKY_COMPASS_CARD_NAME}`, entry_ids: [] };
+    return this._config ?? { type: `custom:${SKY_COMPASS_CARD_NAME}`, windows: [] };
   }
 
   private _trimColors(arr: (string | null)[]): (string | null)[] | undefined {
@@ -178,20 +184,42 @@ export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements Lov
     this._emitWithColors(base, colors);
   }
 
-  private _onEntryToggle(entryId: string, enabled: boolean): void {
+  /** Window keys the config selects: `windows` plus legacy `entry_ids`. */
+  private _selectedKeys(cfg: SkyCompassCardConfig): string[] {
+    return [...(cfg.windows ?? []), ...(cfg.entry_ids ?? [])];
+  }
+
+  /**
+   * Toggle one window. The selection is saved as `windows:` in picker order and
+   * a legacy `entry_ids` list is folded into it; `covers` is left alone.
+   */
+  private _onWindowToggle(key: string, enabled: boolean): void {
     const base = this._baseConfig();
-    const current = new Set(base.entry_ids);
-    if (enabled) current.add(entryId);
-    else current.delete(entryId);
-    // Preserve discovery order for consistency.
-    const ordered = (this._entries ?? []).map((e) => e.entry_id).filter((id) => current.has(id));
-    // Re-align cover_colors to new entry_ids order.
+    const current = new Set(this._selectedKeys(base));
+    if (enabled) current.add(key);
+    else current.delete(key);
+    // Preserve picker order for consistency.
+    const ordered = (this._windows ?? []).map((w) => w.window_key).filter((k) => current.has(k));
+    const next: SkyCompassCardConfig = { ...base, windows: ordered };
+    delete next.entry_ids;
+    // Re-align cover_colors (indexed by overlay order) to the new order. A
+    // legacy entry_id and the same key under `windows` share an id.
+    const oldOrder = windowRefsFromConfig(base).map(windowRefId);
     const oldColors = base.cover_colors ?? [];
-    const newColors: (string | null)[] = ordered.map((id) => {
-      const oldIdx = base.entry_ids.indexOf(id);
+    const newColors: (string | null)[] = windowRefsFromConfig(next).map((ref) => {
+      const oldIdx = oldOrder.indexOf(windowRefId(ref));
       return oldIdx >= 0 ? (oldColors[oldIdx] ?? null) : null;
     });
-    this._emitWithColors(base, newColors, { entry_ids: ordered });
+    this._emitWithColors(next, newColors);
+  }
+
+  /** Display name of an overlay in the color list. */
+  private _refTitle(ref: WindowRef): string {
+    if (ref.kind === 'cover') {
+      const name = this.hass?.states?.[ref.entity_id]?.attributes?.friendly_name;
+      return typeof name === 'string' && name ? name : ref.entity_id;
+    }
+    return this._windows?.find((w) => w.window_key === ref.key)?.title ?? windowRefLabel(ref);
   }
 
   private _onToggle(key: ToggleKey, enabled: boolean): void {
@@ -217,13 +245,14 @@ export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements Lov
 
   protected render(): TemplateResult | typeof nothing {
     if (!this._config) return nothing;
-    const selected = new Set(this._config.entry_ids);
+    const selected = new Set(this._selectedKeys(this._config));
+    const overlays = windowRefsFromConfig(this._config);
     return html`
       <div class="form">
         <div class="section">
           <label class="field-label">${t('editor.compass.instances')}</label>
           <div class="hint">${t('editor.compass.instances_hint')}</div>
-          ${this._renderEntryPicker(selected)}
+          ${this._renderWindowPicker(selected)}
         </div>
 
         <div class="section">
@@ -237,15 +266,14 @@ export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements Lov
           />
         </div>
 
-        ${this._config.entry_ids.length > 0
+        ${overlays.length > 0
           ? html`
               <div class="section">
                 <label class="field-label">${t('editor.compass.cover_colors')}</label>
                 <div class="hint">${t('editor.compass.cover_colors_hint')}</div>
-                ${this._config.entry_ids.map((id, i) => {
+                ${overlays.map((ref, i) => {
                   const override = this._config!.cover_colors?.[i] ?? null;
                   const resolved = override ?? colorForIndex(i);
-                  const entry = this._entries?.find((e) => e.entry_id === id);
                   return html`
                     <div class="color-row">
                       <input
@@ -255,7 +283,7 @@ export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements Lov
                           this._onCoverColorChange(i, (e.target as HTMLInputElement).value)}
                       />
                       <span class="toggle-text">
-                        <span class="toggle-label">${entry?.title ?? id}</span>
+                        <span class="toggle-label">${this._refTitle(ref)}</span>
                         <span class="toggle-desc"
                           >${override ? override : t('editor.compass.default_color')}</span
                         >
@@ -313,16 +341,16 @@ export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements Lov
     `;
   }
 
-  private _renderEntryPicker(selected: Set<string>): TemplateResult {
-    if (this._entriesError) {
+  private _renderWindowPicker(selected: Set<string>): TemplateResult {
+    if (this._windowsError) {
       return html`<div class="error">
-        ${t('editor.common.load_failed', { error: this._entriesError })}
+        ${t('editor.common.load_failed', { error: this._windowsError })}
       </div>`;
     }
-    if (!this._entries) {
+    if (!this._windows) {
       return html`<div class="hint">${t('editor.common.loading_entries')}</div>`;
     }
-    if (this._entries.length === 0) {
+    if (this._windows.length === 0) {
       return html`
         <div class="error">
           ${t('editor.common.no_entries')}
@@ -332,18 +360,18 @@ export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements Lov
     }
     return html`
       <div class="entry-list">
-        ${this._entries.map(
-          (e) => html`
+        ${this._windows.map(
+          (w) => html`
             <label class="toggle-row">
               <input
                 type="checkbox"
-                .checked=${selected.has(e.entry_id)}
+                .checked=${selected.has(w.window_key)}
                 @change=${(evt: Event) =>
-                  this._onEntryToggle(e.entry_id, (evt.target as HTMLInputElement).checked)}
+                  this._onWindowToggle(w.window_key, (evt.target as HTMLInputElement).checked)}
               />
               <span class="toggle-text">
-                <span class="toggle-label">${e.title}</span>
-                <span class="toggle-desc">${e.entry_id}</span>
+                <span class="toggle-label">${w.title}</span>
+                <span class="toggle-desc">${w.cover ?? w.window_key}</span>
               </span>
             </label>
           `,

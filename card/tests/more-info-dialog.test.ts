@@ -41,6 +41,7 @@ async function mount(props: Partial<DialogLike>): Promise<DialogLike> {
 
 function discovered(extra: Partial<DiscoveredEntities['entities']> = {}): DiscoveredEntities {
   return {
+    window_key: 'entry_xyz',
     entry_id: 'entry_xyz',
     entry_title: 'Living room',
     cover_type: 'cover_blind',

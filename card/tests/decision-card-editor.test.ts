@@ -11,7 +11,7 @@ interface EditorLike extends HTMLElement {
   updateComplete: Promise<boolean>;
   hass?: HomeAssistant;
   setConfig(config: AdaptiveCoverDecisionCardConfig): void;
-  _entries: { entry_id: string; title: string }[] | null;
+  _windows: { window_key: string; title: string }[] | null;
 }
 
 function makeEditor(): EditorLike {
@@ -56,7 +56,7 @@ describe('adaptive-cover-decision-card editor — setConfig', () => {
 describe('adaptive-cover-decision-card editor — value-changed', () => {
   it('emits entry_id, title and toggled options', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el.setConfig({ type: TYPE, entry_id: ENTRY });
     document.body.appendChild(el);
     await el.updateComplete;
@@ -96,7 +96,7 @@ describe('adaptive-cover-decision-card editor — value-changed', () => {
 
   it('keeps show_decision_summary:false in the emitted config', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el.setConfig({ type: TYPE, entry_id: ENTRY });
     document.body.appendChild(el);
     await el.updateComplete;
@@ -120,7 +120,7 @@ describe('adaptive-cover-decision-card editor — value-changed', () => {
 
   it('preserves existing config keys absent from the value-changed payload', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el.setConfig({ type: TYPE, entry_id: ENTRY, title: 'Original' });
     document.body.appendChild(el);
     await el.updateComplete;
@@ -147,7 +147,7 @@ describe('adaptive-cover-decision-card editor — value-changed', () => {
 describe('adaptive-cover-decision-card editor — schema', () => {
   it('builds an ha-form schema with the expected top-level field order', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el.setConfig({ type: TYPE, entry_id: ENTRY });
     document.body.appendChild(el);
     await el.updateComplete;
@@ -159,7 +159,7 @@ describe('adaptive-cover-decision-card editor — schema', () => {
     expect(haForm).toBeTruthy();
     const topNames = (haForm.schema ?? []).map((s) => s.name);
     expect(topNames).toEqual([
-      'entry_id',
+      'window',
       'title',
       'compact',
       'hide_inactive_handlers',

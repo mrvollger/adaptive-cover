@@ -8,14 +8,14 @@ import {
 } from 'custom-card-helpers';
 
 import { HANDLER_I18N_KEYS, TILE_CARD_NAME, TILE_CARD_EDITOR_NAME } from './const';
-import { createDiscoveryMemo } from './lib/entity-discovery';
+import { createDiscoveryMemo, windowRegistrySlice } from './lib/entity-discovery';
 import { entityStateChanged } from './lib/hass-change';
-import { fetchAcpConfigEntries } from './lib/config-entries';
+import { fetchWindowOptions } from './lib/window-options';
+import { windowRefFromConfig, windowRefId, windowRefLabel } from './lib/window-binding';
 import { pickCoverIcon } from './lib/icons';
 import { subscribeEntityRegistry, type EntityRegistryEntry } from './lib/entity-registry';
 import { loadEntityRegistry, getCachedRegistry } from './lib/registry-store';
 import { registryCache } from './lib/registry-cache';
-import { filterAcp } from './lib/registry-diff';
 import type { AdaptiveCoverTileCardConfig, DiscoveredEntities } from './types';
 import { buildDecisionSentence } from './lib/decision-summary';
 import { readIntent, readTraceAttrs, liveCoverPosition } from './lib/trace-adapter';
@@ -64,8 +64,12 @@ export class AdaptiveCoverTileCard extends LitElement {
   private _discovered: DiscoveredEntities | null = null;
 
   public setConfig(config: AdaptiveCoverTileCardConfig): void {
-    if (!config || typeof config.entry_id !== 'string' || config.entry_id.length === 0) {
-      throw new Error(`${TILE_CARD_NAME}: \`entry_id\` is required and must be a non-empty string`);
+    const ref = windowRefFromConfig(config);
+    if (!ref) {
+      throw new Error(
+        `${TILE_CARD_NAME}: set \`window\` (window key) or \`cover\` (cover entity); ` +
+          `a legacy \`entry_id\` also works. It must be a non-empty string.`,
+      );
     }
     let next: AdaptiveCoverTileCardConfig = { ...config };
     if (typeof next.tap_action === 'string') {
@@ -79,7 +83,7 @@ export class AdaptiveCoverTileCard extends LitElement {
     // Warm-start synchronously from the persisted registry slice so a reload skips the
     // Loading state; the shared fetch below revalidates.
     if (this._registry === null) {
-      const cached = registryCache.get(next.entry_id);
+      const cached = registryCache.get(windowRefId(ref));
       if (cached) this._registry = cached.entries;
     }
   }
@@ -101,14 +105,14 @@ export class AdaptiveCoverTileCard extends LitElement {
   }
 
   public static async getStubConfig(hass: HomeAssistant): Promise<AdaptiveCoverTileCardConfig> {
-    let entry_id = '';
+    let window = '';
     try {
-      const entries = await fetchAcpConfigEntries(hass);
-      entry_id = entries[0]?.entry_id ?? '';
+      const windows = await fetchWindowOptions(hass);
+      window = windows[0]?.window_key ?? '';
     } catch {
       /* none discoverable — picker falls back to name + description */
     }
-    return { type: `custom:${TILE_CARD_NAME}`, entry_id };
+    return { type: `custom:${TILE_CARD_NAME}`, window };
   }
 
   public static async getConfigElement(): Promise<HTMLElement> {
@@ -156,11 +160,7 @@ export class AdaptiveCoverTileCard extends LitElement {
       this._registry !== null &&
       (changed.has('hass') || changed.has('_registry') || changed.has('_config'))
     ) {
-      this._discovered = this._memo(
-        this.hass,
-        { type: this._config.type, entry_id: this._config.entry_id },
-        this._registry,
-      );
+      this._discovered = this._memo(this.hass, this._config, this._registry);
     }
   }
 
@@ -187,8 +187,9 @@ export class AdaptiveCoverTileCard extends LitElement {
         if (entries === this._registry) return; // unchanged shared cache → O(1) revalidation
         this._registry = entries;
         this._registryError = null;
-        if (this._config)
-          registryCache.set(this._config.entry_id, filterAcp(entries, this._config.entry_id));
+        const ref = windowRefFromConfig(this._config);
+        if (ref && this.hass)
+          registryCache.set(windowRefId(ref), windowRegistrySlice(this.hass, ref, entries));
       })
       .catch((err: Error) => {
         if (myGen !== this._fetchGen) return;
@@ -222,7 +223,7 @@ export class AdaptiveCoverTileCard extends LitElement {
         <div class="empty">
           <p class="dim">
             ${t('tile.entry_not_found', {
-              entry: this._config.entry_id,
+              entry: this._notFoundLabel(),
             })}
           </p>
         </div>
@@ -610,14 +611,13 @@ export class AdaptiveCoverTileCard extends LitElement {
   private _resolvedCoverFromState(): string | undefined {
     if (this._config?.cover) return this._config.cover;
     if (this._registry === null) return undefined;
-    const discovered =
-      this._discovered ??
-      this._memo(
-        this.hass,
-        { type: this._config!.type, entry_id: this._config!.entry_id },
-        this._registry,
-      );
+    const discovered = this._discovered ?? this._memo(this.hass, this._config, this._registry);
     return discovered?.managed_covers[0];
+  }
+
+  private _notFoundLabel(): string {
+    const ref = windowRefFromConfig(this._config);
+    return ref ? windowRefLabel(ref) : '';
   }
 
   private _stop(e: Event): void {

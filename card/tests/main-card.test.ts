@@ -244,3 +244,26 @@ describe('header Auto pill (Toggle Control switch)', () => {
     expect(el.shadowRoot!.querySelector('.header acp-header-pill')).toBeNull();
   });
 });
+
+describe('adaptive-cover-card window bindings', () => {
+  it('renders the same card for `window:` as for the legacy `entry_id:`', async () => {
+    const legacy = await mountWithRegistry({ type: 'custom:adaptive-cover-card', entry_id: ENTRY });
+    const modern = await mountWithRegistry({ type: 'custom:adaptive-cover-card', window: ENTRY });
+    expect(modern.shadowRoot!.querySelector('acp-sky-compass')).toBeTruthy();
+    expect(modern.shadowRoot!.querySelector('.header .title')?.textContent).toBe(
+      legacy.shadowRoot!.querySelector('.header .title')?.textContent,
+    );
+  });
+
+  it('shows the configured binding in the empty-state diagnostics', async () => {
+    const el = await mountWithRegistry({ type: 'custom:adaptive-cover-card', window: 'nope' });
+    const text = el.shadowRoot!.textContent ?? '';
+    expect(text).toContain('window');
+    expect(text).toContain('nope');
+  });
+
+  it('throws when no binding key is set', () => {
+    const el = document.createElement('adaptive-cover-card') as CardLike;
+    expect(() => el.setConfig({ type: 'custom:adaptive-cover-card' })).toThrow(/window/);
+  });
+});

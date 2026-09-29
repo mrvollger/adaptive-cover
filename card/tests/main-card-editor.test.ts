@@ -6,7 +6,7 @@ interface EditorLike extends HTMLElement {
   updateComplete: Promise<boolean>;
   hass?: unknown;
   setConfig(config: AdaptiveCoverCardConfig): void;
-  _entries: { entry_id: string; title: string }[] | null;
+  _windows: { window_key: string; title: string }[] | null;
   _onCoverColorChange(value: string): void;
   _onCoverColorReset(): void;
   _onSectionToggle(key: string, enabled: boolean): void;
@@ -21,7 +21,7 @@ function makeEditor(): EditorLike {
 describe('main-card editor cover colors (issue #132)', () => {
   it('renders a color input when entry_id is set', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: 'a', title: 'Kitchen' }];
+    el._windows = [{ window_key: 'a', title: 'Kitchen' }];
     el.setConfig({ type: 'custom:adaptive-cover-card', entry_id: 'a' });
     document.body.appendChild(el);
     await el.updateComplete;
@@ -30,7 +30,7 @@ describe('main-card editor cover colors (issue #132)', () => {
 
   it('does not render a color input when entry_id is empty', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: 'a', title: 'Kitchen' }];
+    el._windows = [{ window_key: 'a', title: 'Kitchen' }];
     el.setConfig({ type: 'custom:adaptive-cover-card', entry_id: '' });
     document.body.appendChild(el);
     await el.updateComplete;
@@ -39,7 +39,7 @@ describe('main-card editor cover colors (issue #132)', () => {
 
   it('emits cover_colors:[value] on color change', () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: 'a', title: 'Kitchen' }];
+    el._windows = [{ window_key: 'a', title: 'Kitchen' }];
     el.setConfig({ type: 'custom:adaptive-cover-card', entry_id: 'a' });
 
     let emitted: AdaptiveCoverCardConfig | null = null;
@@ -56,7 +56,7 @@ describe('main-card editor cover colors (issue #132)', () => {
   // the Adaptive Cover integration: the card has exactly six sections.
   it('renders the six section toggles and no Solar calculation section', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: 'a', title: 'Kitchen' }];
+    el._windows = [{ window_key: 'a', title: 'Kitchen' }];
     el.setConfig({ type: 'custom:adaptive-cover-card', entry_id: 'a' });
     document.body.appendChild(el);
     await el.updateComplete;
@@ -74,7 +74,7 @@ describe('main-card editor cover colors (issue #132)', () => {
 
   it('toggling a default-on section off emits show_sections without it, order preserved', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: 'a', title: 'Kitchen' }];
+    el._windows = [{ window_key: 'a', title: 'Kitchen' }];
     el.setConfig({ type: 'custom:adaptive-cover-card', entry_id: 'a' });
     document.body.appendChild(el);
     await el.updateComplete;
@@ -91,7 +91,7 @@ describe('main-card editor cover colors (issue #132)', () => {
 
   it('reset emits a config without cover_colors', () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: 'a', title: 'Kitchen' }];
+    el._windows = [{ window_key: 'a', title: 'Kitchen' }];
     el.setConfig({
       type: 'custom:adaptive-cover-card',
       entry_id: 'a',
