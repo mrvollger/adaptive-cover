@@ -74,7 +74,8 @@ export const de: EnDict = {
     reset_manual: 'Zur Automatik zurück',
     resume_confirm:
       'Automatische Steuerung fortsetzen? Der Behang fährt auf seine automatische Position zurück.',
-    resume_confirm_pos: 'Automatische Steuerung fortsetzen? Der Behang fährt jetzt auf {position} %.',
+    resume_confirm_pos:
+      'Automatische Steuerung fortsetzen? Der Behang fährt jetzt auf {position} %.',
   },
   climate: {
     title: 'Klima',

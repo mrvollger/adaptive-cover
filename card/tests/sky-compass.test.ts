@@ -58,7 +58,9 @@ function makeDiscovered(
     cover_type: opts.coverType ?? 'cover_blind',
     entities: {
       target_position_sensor: `sensor.pos_${entryId}`,
-      ...(opts.withSunInfront ? { sun_infront_binary: `binary_sensor.sun_infront_${entryId}` } : {}),
+      ...(opts.withSunInfront
+        ? { sun_infront_binary: `binary_sensor.sun_infront_${entryId}` }
+        : {}),
       ...(opts.withOverrideBinary ? { manual_override_binary: `binary_sensor.mo_${entryId}` } : {}),
       ...(opts.withStartEnd
         ? { start_sensor: `sensor.start_${entryId}`, end_sensor: `sensor.end_${entryId}` }
@@ -777,9 +779,7 @@ describe('acp-sky-compass visual toggles', () => {
       const el = await mountCompass([d()], hass(), { showSunriseSunset: true });
       const lines = sunPathLines(el);
       expect(lines.length).toBeGreaterThanOrEqual(1);
-      const idMatch = (lines[0].getAttribute('style') ?? '').match(
-        /url\(#(sun-path-grad-\d+)\)/,
-      );
+      const idMatch = (lines[0].getAttribute('style') ?? '').match(/url\(#(sun-path-grad-\d+)\)/);
       expect(idMatch).not.toBeNull();
       const stops = Array.from(
         el.shadowRoot!.querySelectorAll(`linearGradient#${idMatch![1]} stop`),

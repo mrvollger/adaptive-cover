@@ -303,19 +303,14 @@ describe('adaptive-cover-tile-card winner badge (intent-driven)', () => {
   });
 
   it('makes the badge resumable when manual override is on and a reset button exists', async () => {
-    const el = await mount(
-      { type: TYPE, entry_id: ENTRY },
-      makeHass({ manualOverrideOn: true }),
-    );
+    const el = await mount({ type: TYPE, entry_id: ENTRY }, makeHass({ manualOverrideOn: true }));
     const badge = el.shadowRoot!.querySelector('acp-tile-badge');
     expect(badge).toBeTruthy();
     expect(badge!.hasAttribute('resumable')).toBe(true);
   });
 
   it('keeps the badge non-resumable when the reset button role is not discovered', async () => {
-    const registryNoButton = REGISTRY.filter(
-      (e) => e.entity_id !== 'button.reset_manual_override',
-    );
+    const registryNoButton = REGISTRY.filter((e) => e.entity_id !== 'button.reset_manual_override');
     const el = await mount(
       { type: TYPE, entry_id: ENTRY },
       makeHass({ manualOverrideOn: true }),
@@ -327,10 +322,7 @@ describe('adaptive-cover-tile-card winner badge (intent-driven)', () => {
   });
 
   it('keeps the badge non-resumable when no manual override is active', async () => {
-    const el = await mount(
-      { type: TYPE, entry_id: ENTRY },
-      makeHass({ manualOverrideOn: false }),
-    );
+    const el = await mount({ type: TYPE, entry_id: ENTRY }, makeHass({ manualOverrideOn: false }));
     const badges = Array.from(
       el.shadowRoot!.querySelector('.tile-body')!.querySelectorAll('acp-tile-badge'),
     );
@@ -932,7 +924,6 @@ describe('AdaptiveCoverTileCard.getGridOptions', () => {
     expect(card.getGridOptions().rows).toBe('auto');
   });
 });
-
 
 describe('adaptive-cover-tile-card battery indicator', () => {
   it('healthy battery (>40%) is icon-only, no number, no tint', async () => {

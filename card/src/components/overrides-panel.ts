@@ -43,7 +43,12 @@ export class OverridesPanel extends LitElement {
   private _resetManual(): void {
     const id = this.discovered.entities.reset_override_button;
     if (!id) return;
-    if (!confirmResume(this.hass, resumeTarget(this.hass, this.discovered.entities.target_position_sensor)))
+    if (
+      !confirmResume(
+        this.hass,
+        resumeTarget(this.hass, this.discovered.entities.target_position_sensor),
+      )
+    )
       return;
     this.hass.callService('button', 'press', { entity_id: id });
   }

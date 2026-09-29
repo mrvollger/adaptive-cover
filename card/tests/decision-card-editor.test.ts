@@ -26,8 +26,7 @@ function makeEditor(): EditorLike {
 
 describe('adaptive-cover-decision-card editor — getConfigElement', () => {
   it('exposes a getConfigElement that returns the editor element', async () => {
-    const { AdaptiveCoverDecisionCard } =
-      await import('../src/adaptive-cover-decision-card');
+    const { AdaptiveCoverDecisionCard } = await import('../src/adaptive-cover-decision-card');
     const el = await AdaptiveCoverDecisionCard.getConfigElement();
     expect(el.tagName.toLowerCase()).toBe('adaptive-cover-decision-card-editor');
   });

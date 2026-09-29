@@ -198,7 +198,11 @@ describe('acp-more-info-dialog: header content', () => {
   });
 
   it('renders a single winner badge derived from the intent', async () => {
-    const el = await mount({ hass: hass({ intent: 'calculated' }), discovered: discovered(), open: true });
+    const el = await mount({
+      hass: hass({ intent: 'calculated' }),
+      discovered: discovered(),
+      open: true,
+    });
     expect(badgeKinds(el)).toEqual(['solar']);
   });
 

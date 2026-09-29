@@ -513,7 +513,9 @@ export class AdaptiveCoverTileCard extends LitElement {
   private _resume(discovered: DiscoveredEntities): void {
     const btn = discovered.entities.reset_override_button;
     if (!btn) return;
-    if (!confirmResume(this.hass, resumeTarget(this.hass, discovered.entities.target_position_sensor)))
+    if (
+      !confirmResume(this.hass, resumeTarget(this.hass, discovered.entities.target_position_sensor))
+    )
       return;
     this.hass.callService('button', 'press', { entity_id: btn });
   }

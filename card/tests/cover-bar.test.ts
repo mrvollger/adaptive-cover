@@ -279,10 +279,13 @@ describe('acp-cover-bar tilt entries (cover_type=cover_tilt)', () => {
 describe('acp-cover-bar track-click → cover.set_cover_position', () => {
   it('calls cover.set_cover_position with the clicked percentage', async () => {
     const callService = vi.fn();
-    const el = await mountBar(makeHass({ target: '40', covers: { 'cover.left': 40 }, callService }), {
-      ...baseDiscovered,
-      managed_covers: ['cover.left'],
-    });
+    const el = await mountBar(
+      makeHass({ target: '40', covers: { 'cover.left': 40 }, callService }),
+      {
+        ...baseDiscovered,
+        managed_covers: ['cover.left'],
+      },
+    );
     const track = el.shadowRoot!.querySelector('.track') as HTMLElement;
     // Simulate a click at 50% of the track.
     Object.defineProperty(track, 'getBoundingClientRect', {
@@ -298,10 +301,13 @@ describe('acp-cover-bar track-click → cover.set_cover_position', () => {
 
   it('clamps clicks past the track edges into 0..100', async () => {
     const callService = vi.fn();
-    const el = await mountBar(makeHass({ target: '40', covers: { 'cover.left': 40 }, callService }), {
-      ...baseDiscovered,
-      managed_covers: ['cover.left'],
-    });
+    const el = await mountBar(
+      makeHass({ target: '40', covers: { 'cover.left': 40 }, callService }),
+      {
+        ...baseDiscovered,
+        managed_covers: ['cover.left'],
+      },
+    );
     const track = el.shadowRoot!.querySelector('.track') as HTMLElement;
     Object.defineProperty(track, 'getBoundingClientRect', {
       value: () => ({ left: 10, width: 100, top: 0, bottom: 10, right: 110, height: 10 }),
