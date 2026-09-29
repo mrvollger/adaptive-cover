@@ -97,6 +97,7 @@ RULES: list[tuple[str, str]] = [
     ("tests/replay/test_house_replay.py::*", BEHAVIOR),
     ("tests/replay/test_house_snapshot.py::*", TOOLING),
     ("tests/test_translations.py::*", BEHAVIOR),
+    ("tests/test_entity_surface_v2.py::*", BEHAVIOR),  # P1 entity surface (C1)
     # Implementation tier: a refactor may freely break these.
     ("tests/test_coordinator.py::*", IMPLEMENTATION),
     ("tests/test_calculation.py::*", IMPLEMENTATION),
@@ -241,8 +242,13 @@ def parse_ledger(text: str) -> Ledger:
                 errors.append(f"{where}: invalid date {entry.date}")
         if not entry.reason:
             errors.append(f"{where}: missing 'Reason'")
-        if not entry.removed and not entry.renamed:
-            errors.append(f"{where}: names no removed or renamed test ids")
+        # An entry must either retire tests or record a named contract
+        # change (C1..C8) that only adds or re-anchors pins.
+        names_change = entry.contract_change.strip().lower() not in ("", "none")
+        if not entry.removed and not entry.renamed and not names_change:
+            errors.append(
+                f"{where}: names no removed or renamed test ids and no contract change"
+            )
         for node_id in [*entry.removed, *(o for o, _ in entry.renamed)]:
             if "::" not in node_id and "*" not in node_id:
                 errors.append(f"{where}: {node_id!r} is not a pytest node id")

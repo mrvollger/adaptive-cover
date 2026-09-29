@@ -3,7 +3,8 @@ import { customElement, property, state } from 'lit/decorators.js';
 import type { HomeAssistant, LovelaceCardEditor } from 'custom-card-helpers';
 
 import { DECISION_CARD_EDITOR_NAME } from './const';
-import { fetchAcpConfigEntries, type AcpConfigEntry } from './lib/config-entries';
+import { fetchWindowOptions, type WindowOption } from './lib/window-options';
+import { configuredWindowKey, withWindowKey } from './lib/window-binding';
 import { renderEditorFooter } from './lib/editor-footer';
 import { t } from './lib/i18n';
 import type { AdaptiveCoverDecisionCardConfig } from './types';
@@ -27,7 +28,7 @@ const FORM_DEFAULTS = {
 } as const;
 
 const LABEL_KEYS: Record<string, string> = {
-  entry_id: 'editor.common.entry_id',
+  window: 'editor.common.window',
   title: 'editor.decision.title',
   compact: 'editor.decision.compact_label',
   hide_inactive_handlers: 'editor.decision.hide_inactive_handlers_label',
@@ -45,38 +46,37 @@ export class AdaptiveCoverDecisionCardEditor extends LitElement implements Lovel
   @property({ attribute: false }) public hass!: HomeAssistant;
 
   @state() private _config?: AdaptiveCoverDecisionCardConfig;
-  @state() public _entries: AcpConfigEntry[] | null = null;
-  @state() private _entriesError: string | null = null;
+  @state() public _windows: WindowOption[] | null = null;
+  @state() private _windowsError: string | null = null;
 
-  private _entriesFetchInFlight = false;
+  private _windowsFetchInFlight = false;
 
   public setConfig(config: AdaptiveCoverDecisionCardConfig): void {
     this._config = { ...config };
   }
 
   protected updated(changed: Map<string, unknown>): void {
-    if (changed.has('hass') && this.hass) this._ensureEntries();
+    if (changed.has('hass') && this.hass) this._ensureWindows();
   }
 
-  private _ensureEntries(): void {
-    if (this._entries || this._entriesFetchInFlight) return;
-    this._entriesFetchInFlight = true;
-    fetchAcpConfigEntries(this.hass)
-      .then((entries) => {
-        this._entries = entries;
-        this._entriesError = null;
-        if (!this._config?.entry_id && entries.length === 1) {
-          this._emit({
-            ...(this._config ?? { type: '', entry_id: '' }),
-            entry_id: entries[0].entry_id,
-          });
+  private _ensureWindows(): void {
+    if (this._windows || this._windowsFetchInFlight) return;
+    this._windowsFetchInFlight = true;
+    fetchWindowOptions(this.hass)
+      .then((windows) => {
+        this._windows = windows;
+        this._windowsError = null;
+        // A new card with a single window to pick from → select it.
+        const bound = this._config?.window || this._config?.entry_id || this._config?.cover;
+        if (!bound && windows.length === 1) {
+          this._emit(withWindowKey(this._config ?? { type: '' }, windows[0].window_key));
         }
       })
       .catch((err: Error) => {
-        this._entriesError = err?.message ?? 'failed to load config entries';
+        this._windowsError = err?.message ?? 'failed to load windows';
       })
       .finally(() => {
-        this._entriesFetchInFlight = false;
+        this._windowsFetchInFlight = false;
       });
   }
 
@@ -113,35 +113,42 @@ export class AdaptiveCoverDecisionCardEditor extends LitElement implements Lovel
       if (!wasSet && cleaned[k] === def) delete cleaned[k];
     }
 
-    const next: Record<string, unknown> = {
-      ...(this._config ?? { type: '', entry_id: '' }),
+    // The form shows a legacy `entry_id` under the `window` picker. Leave the
+    // saved binding alone unless the user picked a different window; a new
+    // pick is saved as `window:` and drops the legacy key.
+    const picked = cleaned.window;
+    delete cleaned.window;
+    let next = {
+      ...(this._config ?? { type: '' }),
       ...cleaned,
-    };
-    this._emit(next as AdaptiveCoverDecisionCardConfig);
+    } as AdaptiveCoverDecisionCardConfig;
+    if (typeof picked === 'string' && picked && picked !== configuredWindowKey(this._config)) {
+      next = withWindowKey(next, picked);
+    }
+    this._emit(next);
   };
 
   protected render(): TemplateResult | typeof nothing {
     if (!this._config) return nothing;
 
-    if (this._entriesError && !this._entries) {
-      // Fall back to a manual entry_id text input.
+    if (this._windowsError && !this._windows) {
+      // Fall back to a manual window-key text input.
       return html`
         <div class="form">
-          <div class="error">${t('editor.common.load_failed', { error: this._entriesError })}</div>
+          <div class="error">${t('editor.common.load_failed', { error: this._windowsError })}</div>
           <label class="field-label" for="entry-id-fallback"
-            >${t('editor.common.entry_id_fallback_label')}</label
+            >${t('editor.common.window_fallback_label')}</label
           >
           <input
             id="entry-id-fallback"
             type="text"
             class="text-input"
-            .value=${this._config.entry_id ?? ''}
-            placeholder=${t('editor.common.entry_id_manual_placeholder')}
+            .value=${configuredWindowKey(this._config)}
+            placeholder=${t('editor.common.window_manual_placeholder')}
             @change=${(e: Event) =>
-              this._emit({
-                ...(this._config ?? { type: '', entry_id: '' }),
-                entry_id: (e.target as HTMLInputElement).value,
-              })}
+              this._emit(
+                withWindowKey(this._config ?? { type: '' }, (e.target as HTMLInputElement).value),
+              )}
           />
           ${renderEditorFooter()}
         </div>
@@ -149,7 +156,12 @@ export class AdaptiveCoverDecisionCardEditor extends LitElement implements Lovel
     }
 
     const schema = this._schema();
-    const data = { ...FORM_DEFAULTS, ...this._config };
+    // The picker shows the configured window, whether it is saved as `window`
+    // or as a legacy `entry_id`.
+    const { entry_id: _legacyEntryId, ...rest } = this._config;
+    void _legacyEntryId;
+    const windowKey = configuredWindowKey(this._config);
+    const data = { ...FORM_DEFAULTS, ...rest, ...(windowKey ? { window: windowKey } : {}) };
 
     return html`
       <div class="form">
@@ -167,12 +179,22 @@ export class AdaptiveCoverDecisionCardEditor extends LitElement implements Lovel
   }
 
   private _schema(): HaFormSchemaItem[] {
-    const entryOptions = this._entries?.map((e) => ({ value: e.entry_id, label: e.title })) ?? [];
+    const windowOptions = (this._windows ?? []).map((w) => ({
+      value: w.window_key,
+      label: w.title,
+    }));
+    const key = configuredWindowKey(this._config);
+    if (key && !windowOptions.some((o) => o.value === key)) {
+      windowOptions.unshift({
+        value: key,
+        label: t('editor.common.unknown_entry', { entry: key }),
+      });
+    }
     return [
       {
-        name: 'entry_id',
-        required: true,
-        selector: { select: { options: entryOptions, mode: 'dropdown' } },
+        name: 'window',
+        required: !this._config?.cover,
+        selector: { select: { options: windowOptions, mode: 'dropdown' } },
       },
       { name: 'title', selector: { text: {} } },
       { name: 'compact', selector: { boolean: {} } },

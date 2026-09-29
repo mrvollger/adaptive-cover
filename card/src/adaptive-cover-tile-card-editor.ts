@@ -3,7 +3,8 @@ import { customElement, property, state } from 'lit/decorators.js';
 import type { HomeAssistant, LovelaceCardEditor } from 'custom-card-helpers';
 
 import { TILE_CARD_EDITOR_NAME } from './const';
-import { fetchAcpConfigEntries, type AcpConfigEntry } from './lib/config-entries';
+import { fetchWindowOptions, type WindowOption } from './lib/window-options';
+import { configuredWindowKey, withWindowKey } from './lib/window-binding';
 import { renderEditorFooter } from './lib/editor-footer';
 import {
   fetchEntityRegistry,
@@ -67,7 +68,7 @@ const FORM_DEFAULTS = {
 } as const;
 
 const LABEL_KEYS: Record<string, string> = {
-  entry_id: 'editor.common.entry_id',
+  window: 'editor.common.window',
   name: 'editor.tile.name',
   icon: 'editor.tile.icon',
   cover: 'editor.tile.cover',
@@ -97,12 +98,12 @@ export class AdaptiveCoverTileCardEditor extends LitElement implements LovelaceC
   @property({ attribute: false }) public hass!: HomeAssistant;
 
   @state() private _config?: AdaptiveCoverTileCardConfig;
-  @state() private _entries: AcpConfigEntry[] | null = null;
-  @state() private _entriesError: string | null = null;
+  @state() public _windows: WindowOption[] | null = null;
+  @state() private _windowsError: string | null = null;
   @state() public _registry: EntityRegistryEntry[] | null = null;
   @state() private _managedCovers: string[] = [];
 
-  private _entriesFetchInFlight = false;
+  private _windowsFetchInFlight = false;
   private _registryFetchInFlight = false;
   private _unsubRegistry: (() => void) | null = null;
 
@@ -120,7 +121,7 @@ export class AdaptiveCoverTileCardEditor extends LitElement implements LovelaceC
 
   protected updated(changed: Map<string, unknown>): void {
     if (changed.has('hass') && this.hass) {
-      this._ensureEntries();
+      this._ensureWindows();
       this._ensureRegistry();
     }
     if (changed.has('_registry') && this._registry !== null) {
@@ -128,27 +129,30 @@ export class AdaptiveCoverTileCardEditor extends LitElement implements LovelaceC
     }
   }
 
-  private _ensureEntries(): void {
-    if (this._entries || this._entriesFetchInFlight) return;
-    this._entriesFetchInFlight = true;
-    fetchAcpConfigEntries(this.hass)
-      .then((entries) => {
-        this._entries = entries;
-        this._entriesError = null;
-        if (!this._config?.entry_id && entries.length === 1) {
-          this._emit({
-            ...(this._config ?? { type: '', entry_id: '' }),
-            entry_id: entries[0].entry_id,
-          });
+  private _ensureWindows(): void {
+    if (this._windows || this._windowsFetchInFlight) return;
+    this._windowsFetchInFlight = true;
+    fetchWindowOptions(this.hass)
+      .then((windows) => {
+        this._windows = windows;
+        this._windowsError = null;
+        // A new card with a single window to pick from → select it.
+        if (!this._hasBinding() && windows.length === 1) {
+          this._emit(withWindowKey(this._config ?? { type: '' }, windows[0].window_key));
         }
         this._maybePrefillCover();
       })
       .catch((err: Error) => {
-        this._entriesError = err?.message ?? 'failed to load config entries';
+        this._windowsError = err?.message ?? 'failed to load windows';
       })
       .finally(() => {
-        this._entriesFetchInFlight = false;
+        this._windowsFetchInFlight = false;
       });
+  }
+
+  /** True when the config already names its window (`window`, `entry_id` or `cover`). */
+  private _hasBinding(): boolean {
+    return !!(this._config?.window || this._config?.entry_id || this._config?.cover);
   }
 
   private _ensureRegistry(): void {
@@ -196,15 +200,12 @@ export class AdaptiveCoverTileCardEditor extends LitElement implements LovelaceC
   }
 
   private _maybePrefillCover(): void {
-    if (!this._config?.entry_id || this._config?.cover || !this._registry || !this.hass) return;
-    const discovered = discoverEntities(
-      this.hass,
-      { type: this._config.type, entry_id: this._config.entry_id },
-      this._registry,
-    );
+    const cfg = this._config;
+    if (!cfg || !configuredWindowKey(cfg) || cfg.cover || !this._registry || !this.hass) return;
+    const discovered = discoverEntities(this.hass, cfg, this._registry);
     this._managedCovers = discovered?.managed_covers ?? [];
     if (discovered?.managed_covers.length === 1) {
-      this._emit({ ...this._config, cover: discovered.managed_covers[0] });
+      this._emit({ ...cfg, cover: discovered.managed_covers[0] });
     }
   }
 
@@ -242,10 +243,19 @@ export class AdaptiveCoverTileCardEditor extends LitElement implements LovelaceC
       delete cleaned[flatKey];
     }
 
-    const next: Record<string, unknown> = {
-      ...(this._config ?? { type: '', entry_id: '' }),
+    // The form shows a legacy `entry_id` under the `window` picker. Leave the
+    // saved binding alone unless the user picked a different window; a new
+    // pick is saved as `window:` and drops the legacy key.
+    const picked = cleaned.window;
+    delete cleaned.window;
+
+    let next: Record<string, unknown> = {
+      ...(this._config ?? { type: '' }),
       ...cleaned,
     };
+    if (typeof picked === 'string' && picked && picked !== configuredWindowKey(this._config)) {
+      next = withWindowKey(next, picked);
+    }
     // Prune the object entirely when all nine badges are on (keeps YAML minimal).
     if (Object.keys(badges).length > 0) next.badges = badges;
     else delete next.badges;
@@ -256,25 +266,24 @@ export class AdaptiveCoverTileCardEditor extends LitElement implements LovelaceC
   protected render(): TemplateResult | typeof nothing {
     if (!this._config) return nothing;
 
-    if (this._entriesError && !this._entries) {
+    if (this._windowsError && !this._windows) {
       // Fall back to the same manual-entry input the main editor uses.
       return html`
         <div class="form">
-          <div class="error">${t('editor.common.load_failed', { error: this._entriesError })}</div>
+          <div class="error">${t('editor.common.load_failed', { error: this._windowsError })}</div>
           <label class="field-label" for="entry-id-fallback"
-            >${t('editor.common.entry_id_fallback_label')}</label
+            >${t('editor.common.window_fallback_label')}</label
           >
           <input
             id="entry-id-fallback"
             type="text"
             class="text-input"
-            .value=${this._config.entry_id ?? ''}
-            placeholder=${t('editor.common.entry_id_manual_placeholder')}
+            .value=${configuredWindowKey(this._config)}
+            placeholder=${t('editor.common.window_manual_placeholder')}
             @change=${(e: Event) =>
-              this._emit({
-                ...(this._config ?? { type: '', entry_id: '' }),
-                entry_id: (e.target as HTMLInputElement).value,
-              })}
+              this._emit(
+                withWindowKey(this._config ?? { type: '' }, (e.target as HTMLInputElement).value),
+              )}
           />
           ${renderEditorFooter()}
         </div>
@@ -284,12 +293,21 @@ export class AdaptiveCoverTileCardEditor extends LitElement implements LovelaceC
     const schema = this._schema();
     // Flatten the nested `badges` object into `badge_<kind>` form fields. The
     // `badges` key itself is not a form field, so drop it from `data`.
-    const { badges, ...rest } = this._config;
+    const { badges, entry_id: _legacyEntryId, ...rest } = this._config;
+    void _legacyEntryId;
     const flatBadges: Record<string, boolean> = {};
     for (const k of BADGE_KINDS) {
       if (badges && badges[k] === false) flatBadges[`badge_${k}`] = false;
     }
-    const data = { ...FORM_DEFAULTS, ...rest, ...flatBadges };
+    // The picker shows the configured window, whether it is saved as `window`
+    // or as a legacy `entry_id`.
+    const windowKey = configuredWindowKey(this._config);
+    const data = {
+      ...FORM_DEFAULTS,
+      ...rest,
+      ...flatBadges,
+      ...(windowKey ? { window: windowKey } : {}),
+    };
 
     return html`
       <div class="form">
@@ -309,23 +327,19 @@ export class AdaptiveCoverTileCardEditor extends LitElement implements LovelaceC
   }
 
   private _schema(): HaFormSchemaItem[] {
-    const entryOptions = this._entries?.map((e) => ({ value: e.entry_id, label: e.title })) ?? [];
+    const windowOptions = this._windowOptions();
 
     const layoutOptions = [
       { value: 'one-line', label: t('editor.tile.layout_option_one_line') },
       { value: 'detailed', label: t('editor.tile.layout_option_detailed') },
     ];
 
-    // Filter the cover picker to the entry's managed covers once we have
-    // registry + entry_id. Without those, fall back to any cover.* so the
+    // Filter the cover picker to the window's covers once we have the
+    // registry and a window. Without those, fall back to any cover.* so the
     // field is still usable.
     let coverSelector: Record<string, unknown> = { entity: { domain: 'cover' } };
-    if (this._registry && this._config?.entry_id) {
-      const discovered = discoverEntities(
-        this.hass,
-        { type: this._config.type, entry_id: this._config.entry_id },
-        this._registry,
-      );
+    if (this._registry && configuredWindowKey(this._config)) {
+      const discovered = discoverEntities(this.hass, this._config, this._registry);
       if (discovered && discovered.managed_covers.length > 0) {
         coverSelector = {
           entity: { domain: 'cover', include_entities: discovered.managed_covers },
@@ -335,9 +349,9 @@ export class AdaptiveCoverTileCardEditor extends LitElement implements LovelaceC
 
     return [
       {
-        name: 'entry_id',
-        required: true,
-        selector: { select: { options: entryOptions, mode: 'dropdown' } },
+        name: 'window',
+        required: !this._config?.cover,
+        selector: { select: { options: windowOptions, mode: 'dropdown' } },
       },
       { name: 'name', selector: { text: {} } },
       { name: 'icon', selector: { icon: {} } },
@@ -375,6 +389,17 @@ export class AdaptiveCoverTileCardEditor extends LitElement implements LovelaceC
       { name: 'hold_action', selector: { ui_action: {} } },
       { name: 'double_tap_action', selector: { ui_action: {} } },
     ];
+  }
+
+  /** Picker options: every window, plus the configured key when it is not
+   *  among them (so a stale key still shows instead of a blank select). */
+  private _windowOptions(): Array<{ value: string; label: string }> {
+    const options = (this._windows ?? []).map((w) => ({ value: w.window_key, label: w.title }));
+    const key = configuredWindowKey(this._config);
+    if (key && !options.some((o) => o.value === key)) {
+      options.unshift({ value: key, label: t('editor.common.unknown_entry', { entry: key }) });
+    }
+    return options;
   }
 
   public static styles = css`

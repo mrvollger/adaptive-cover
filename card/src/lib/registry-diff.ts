@@ -28,13 +28,3 @@ export function isAcpRegistryEvent(
   if (payload.action === 'create') return true;
   return acpEntityIds.has(payload.entity_id);
 }
-
-export function filterAcp(
-  entries: EntityRegistryEntry[],
-  entryId: string,
-  platform?: string,
-): EntityRegistryEntry[] {
-  return entries.filter(
-    (e) => e.config_entry_id === entryId && (platform === undefined || e.platform === platform),
-  );
-}

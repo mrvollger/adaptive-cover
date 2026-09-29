@@ -19,7 +19,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import AdaptiveDataUpdateCoordinator
-from .entity_shared import adaptive_cover_device_info
+from .entity_shared import adaptive_cover_device_info, window_attributes
+from .entity_surface import apply_surface, window_surface
 
 
 async def async_setup_entry(
@@ -94,6 +95,7 @@ class AdaptiveCoverSensorEntity(
         self.data = self.coordinator.data
         self._sensor_name = "Cover Position"
         self._attr_unique_id = f"{unique_id}_{self._sensor_name}"
+        apply_surface(self, window_surface("sensor", self._sensor_name))
         self.hass = hass
         self.config_entry = config_entry
         self._name = name
@@ -107,18 +109,17 @@ class AdaptiveCoverSensorEntity(
         self.async_write_ha_state()
 
     @property
-    def name(self):
-        """Name of the entity."""
-        return self._sensor_name
-
-    @property
     def native_value(self) -> str | None:
         """Handle when entity is added."""
         return self.data.states["state"]
 
     @property
-    def extra_state_attributes(self) -> Mapping[str, Any] | None:  # noqa: D102
-        return self.data.attributes
+    def extra_state_attributes(self) -> Mapping[str, Any] | None:
+        """Coordinator attributes plus the window identity (additive)."""
+        return {
+            **self.data.attributes,
+            **window_attributes(self.config_entry, self.coordinator),
+        }
 
 
 class AdaptiveCoverTimeSensorEntity(
@@ -154,6 +155,7 @@ class AdaptiveCoverTimeSensorEntity(
         self._name = name
         self._cover_type = self.config_entry.data["sensor_type"]
         self._sensor_name = sensor_name
+        apply_surface(self, window_surface("sensor", sensor_name))
         self._attr_device_info = adaptive_cover_device_info(config_entry)
 
     @callback
@@ -161,11 +163,6 @@ class AdaptiveCoverTimeSensorEntity(
         """Handle updated data from the coordinator."""
         self.data = self.coordinator.data
         self.async_write_ha_state()
-
-    @property
-    def name(self):
-        """Name of the entity."""
-        return self._sensor_name
 
     @property
     def native_value(self) -> str | None:
@@ -180,7 +177,6 @@ class AdaptiveCoverControlSensorEntity(
 
     _attr_has_entity_name = True
     _attr_should_poll = False
-    _attr_translation_key = "control"
 
     def __init__(
         self,
@@ -196,6 +192,7 @@ class AdaptiveCoverControlSensorEntity(
         self.data = self.coordinator.data
         self._sensor_name = "Control Method"
         self._attr_unique_id = f"{unique_id}_{self._sensor_name}"
+        apply_surface(self, window_surface("sensor", self._sensor_name))
         self._device_id = unique_id
         self.id = unique_id
         self.hass = hass
@@ -209,11 +206,6 @@ class AdaptiveCoverControlSensorEntity(
         """Handle updated data from the coordinator."""
         self.data = self.coordinator.data
         self.async_write_ha_state()
-
-    @property
-    def name(self):
-        """Name of the entity."""
-        return self._sensor_name
 
     @property
     def native_value(self) -> str | None:
@@ -244,6 +236,7 @@ class AdaptiveCoverNextChangeSensorEntity(
         self.data = self.coordinator.data
         self._sensor_name = "Next State Change"
         self._attr_unique_id = f"{unique_id}_{self._sensor_name}"
+        apply_surface(self, window_surface("sensor", self._sensor_name))
         self._device_id = unique_id
         self.hass = hass
         self.config_entry = config_entry
@@ -255,11 +248,6 @@ class AdaptiveCoverNextChangeSensorEntity(
         """Handle updated data from the coordinator."""
         self.data = self.coordinator.data
         self.async_write_ha_state()
-
-    @property
-    def name(self):
-        """Name of the entity."""
-        return self._sensor_name
 
     @property
     def native_value(self) -> str | None:
@@ -309,6 +297,7 @@ class AdaptiveCoverLastChangeSensorEntity(
         self.data = self.coordinator.data
         self._sensor_name = "Last State Change"
         self._attr_unique_id = f"{unique_id}_{self._sensor_name}"
+        apply_surface(self, window_surface("sensor", self._sensor_name))
         self._device_id = unique_id
         self.hass = hass
         self.config_entry = config_entry
@@ -320,11 +309,6 @@ class AdaptiveCoverLastChangeSensorEntity(
         """Handle updated data from the coordinator."""
         self.data = self.coordinator.data
         self.async_write_ha_state()
-
-    @property
-    def name(self):
-        """Name of the entity."""
-        return self._sensor_name
 
     @property
     def native_value(self) -> str | None:

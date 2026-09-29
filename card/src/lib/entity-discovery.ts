@@ -1,146 +1,193 @@
 import type { HomeAssistant } from 'custom-card-helpers';
-import { INTEGRATION_DOMAIN, UNIQUE_ID_ROLES } from '../const';
+import { INTEGRATION_DOMAIN, UNIQUE_ID_ROLES, type EntityRole } from '../const';
 import type { EntityRegistryEntry } from './entity-registry';
-import type { DiscoveredEntities, AdaptiveCoverCardConfig } from '../types';
+import type { CoverPositionAttributes, DiscoveredEntities, WindowBindingConfig } from '../types';
+import { windowRefFromConfig, windowRefId, type WindowRef } from './window-binding';
 
-/**
- * Memoized discovery for the root card, which re-runs on every HA state tick (HA
- * hands over a fresh `hass` object each time). Keying on `hass` identity would miss
- * every tick; instead this tracks the *real* inputs:
+/*
+ * Window discovery.
  *
- * - the **registry-derived base** (entities map + device_id) — memoized on
- *   `(registry, entryId)`, since the entity wiring only moves when the registry does;
- * - the three `hass`-derived references the result depends on: `hass.devices` (title),
- *   the target-position state (managed covers) and the control-status state (cover type).
+ * A card names its window by `window:` (window key), `cover:` (cover entity) or
+ * a legacy `entry_id:`. Discovery turns that into the window's entities
+ * WITHOUT filtering on the registry's `config_entry_id`: once windows are
+ * subentries of one house entry, every window shares that id (it is copied
+ * into the result only to build the settings link). The steps:
  *
- * When all of those are reference-equal to the previous call it returns the **same**
- * `DiscoveredEntities` object — so `_discovered` (and the child props derived from it)
- * stay stable across unrelated ticks instead of churning a new object every time.
+ * 1. Find the window's Position sensor. Attributes first: the sensor whose
+ *    `window_key` attribute equals the key, or whose `cover_entity` /
+ *    `cover_entities` attributes list the cover.
+ * 2. Fall back to the unique_id prefix. Every entity's unique_id is
+ *    `{window_key}_{suffix}` and never changes, so a `window:` / `entry_id:`
+ *    key still resolves when the Position sensor has no state (or an older
+ *    integration does not publish `window_key`). A migrated window's key is
+ *    its old entry_id, which is why legacy `entry_id:` configs keep working.
+ *    For `cover:` with an older integration, the last fallback is the keys of
+ *    the `last_moves` / `move_blocked_by` attributes.
+ * 3. Collect the window's other entities by the same unique_id prefix.
+ *
+ * The full entity registry is an async websocket fetch (`hass.entities` is a
+ * display-only subset that omits `unique_id`). The caller passes in the
+ * pre-fetched registry so discovery stays pure and sync.
  */
-export function createDiscoveryMemo(): (
-  hass: HomeAssistant,
-  config: AdaptiveCoverCardConfig,
-  registry: EntityRegistryEntry[],
-) => DiscoveredEntities | null {
-  let last: {
-    registry: EntityRegistryEntry[];
-    entryId: string;
-    base: DiscoverBase | null;
-    devices: unknown;
-    posState: unknown;
-    ctrlState: unknown;
-    result: DiscoveredEntities | null;
-  } | null = null;
 
-  return (hass, config, registry) => {
-    const entryId = config.entry_id ?? '';
-    if (!entryId) {
-      last = null;
-      return null;
+type DomainSuffixes = Array<{ suffix: string; role: EntityRole }>;
+
+/** UNIQUE_ID_ROLES regrouped by entity domain, longest suffix first. */
+const SUFFIXES_BY_DOMAIN: Record<string, DomainSuffixes> = (() => {
+  const out: Record<string, DomainSuffixes> = {};
+  for (const [key, role] of Object.entries(UNIQUE_ID_ROLES)) {
+    const sep = key.indexOf(':');
+    const domain = key.slice(0, sep);
+    (out[domain] ??= []).push({ suffix: key.slice(sep + 1), role });
+  }
+  for (const list of Object.values(out)) list.sort((a, b) => b.suffix.length - a.suffix.length);
+  return out;
+})();
+
+const KNOWN_COVER_TYPES = new Set(['cover_blind', 'cover_awning', 'cover_tilt']);
+
+/** The registry rows of one window, grouped by unique_id prefix. */
+interface WindowRows {
+  /** The unique_id prefix shared by the window's entities. */
+  key: string;
+  entities: Partial<Record<EntityRole, string>>;
+  /** Registry row of the Position sensor, when the window has one. */
+  position?: EntityRegistryEntry;
+  /** The Position sensor's device, else the first device seen for the window. */
+  deviceId?: string;
+}
+
+interface RegistryIndex {
+  /** Windows by unique_id prefix, in registry order. */
+  byKey: Map<string, WindowRows>;
+  /** Windows that have a Position sensor, in registry order. */
+  withPosition: WindowRows[];
+}
+
+// One index per registry array. The registry store hands every card the same
+// array, so a dashboard of N cards builds the index once per registry change.
+const indexCache = new WeakMap<EntityRegistryEntry[], RegistryIndex>();
+
+/** The window key and role of an adaptive_cover registry row, or null. */
+function classify(row: EntityRegistryEntry): { key: string; role: EntityRole } | null {
+  if (row.platform !== INTEGRATION_DOMAIN || typeof row.unique_id !== 'string') return null;
+  const domain = row.entity_id.split('.')[0];
+  for (const { suffix, role } of SUFFIXES_BY_DOMAIN[domain] ?? []) {
+    const tail = `_${suffix}`;
+    if (row.unique_id.length > tail.length && row.unique_id.endsWith(tail)) {
+      return { key: row.unique_id.slice(0, -tail.length), role };
     }
+  }
+  return null;
+}
 
-    const baseSame = last !== null && last.registry === registry && last.entryId === entryId;
-    const base = baseSame ? last!.base : discoverBase(entryId, registry);
-    if (!base) {
-      last = {
-        registry,
-        entryId,
-        base: null,
-        devices: null,
-        posState: null,
-        ctrlState: null,
-        result: null,
-      };
-      return null;
+function indexRegistry(registry: EntityRegistryEntry[]): RegistryIndex {
+  const cached = indexCache.get(registry);
+  if (cached) return cached;
+  const byKey = new Map<string, WindowRows>();
+  for (const row of registry) {
+    const hit = classify(row);
+    if (!hit) continue;
+    let win = byKey.get(hit.key);
+    if (!win) {
+      win = { key: hit.key, entities: {} };
+      byKey.set(hit.key, win);
     }
-
-    const devices = (hass as HassWithDevices).devices;
-    const posId = base.entities.target_position_sensor;
-    const ctrlId = base.entities.control_status_sensor;
-    const posState = posId ? hass.states[posId] : undefined;
-    const ctrlState = ctrlId ? hass.states[ctrlId] : undefined;
-
-    if (
-      baseSame &&
-      last !== null &&
-      last.result !== null &&
-      last.devices === devices &&
-      last.posState === posState &&
-      last.ctrlState === ctrlState
-    ) {
-      return last.result;
+    if (!win.entities[hit.role]) win.entities[hit.role] = row.entity_id;
+    if (hit.role === 'target_position_sensor' && !win.position) {
+      win.position = row;
+      if (row.device_id) win.deviceId = row.device_id;
     }
-
-    const result = assembleDiscovered(hass, entryId, base);
-    last = { registry, entryId, base, devices, posState, ctrlState, result };
-    return result;
+    if (!win.deviceId && row.device_id) win.deviceId = row.device_id;
+  }
+  const index: RegistryIndex = {
+    byKey,
+    withPosition: [...byKey.values()].filter((w) => w.position),
   };
+  indexCache.set(registry, index);
+  return index;
 }
 
-/** Result of multi-entry discovery: the entries that resolved, plus the ids that didn't. */
-export interface DiscoveryListResult {
-  list: DiscoveredEntities[];
-  missing: string[];
+function positionAttrs(hass: HomeAssistant, win: WindowRows): CoverPositionAttributes | undefined {
+  const id = win.position?.entity_id;
+  return id ? (hass.states[id]?.attributes as CoverPositionAttributes | undefined) : undefined;
 }
 
-/**
- * Memoized discovery for the multi-entry cards (sky-compass card, …) which accept a
- * list of `entry_ids`. Each id runs through its own {@link createDiscoveryMemo}, so a
- * per-entry result is reference-stable across ticks. This wrapper additionally returns
- * the **same `{ list, missing }` object** (and therefore the same `list` array) when the
- * id list and every per-entry result are unchanged — so the array handed to the child
- * compass/chart stays reference-stable and does not defeat their own `shouldUpdate`.
- */
-export function createDiscoveryListMemo(): (
+function nonEmpty(v: unknown): v is string {
+  return typeof v === 'string' && v.length > 0;
+}
+
+/** Covers the Position sensor's `cover_entity` / `cover_entities` attributes
+ *  name, primary first. Empty when the integration publishes neither. */
+function attributeCovers(attrs: CoverPositionAttributes | undefined): string[] {
+  const primary = nonEmpty(attrs?.cover_entity) ? attrs!.cover_entity! : null;
+  const list = Array.isArray(attrs?.cover_entities) ? attrs!.cover_entities!.filter(nonEmpty) : [];
+  const out = primary ? [primary, ...list] : list;
+  return [...new Set(out)];
+}
+
+/** Covers the integration has moved or gated, from the `last_moves` /
+ *  `move_blocked_by` keys. Used only when the cover attributes are absent. */
+function historyCovers(attrs: CoverPositionAttributes | undefined): string[] {
+  const ids = new Set<string>([
+    ...Object.keys(attrs?.last_moves ?? {}),
+    ...Object.keys(attrs?.move_blocked_by ?? {}),
+  ]);
+  return [...ids].sort();
+}
+
+/** A resolved window: its registry rows and its canonical key. */
+interface ResolvedWindow {
+  rows: WindowRows;
+  windowKey: string;
+}
+
+function resolved(hass: HomeAssistant, rows: WindowRows): ResolvedWindow {
+  const attrKey = positionAttrs(hass, rows)?.window_key;
+  return { rows, windowKey: nonEmpty(attrKey) ? attrKey : rows.key };
+}
+
+/** Resolve a ref to its window: attributes first, then the unique_id prefix. */
+function resolveWindow(
   hass: HomeAssistant,
-  entryIds: string[],
-  registry: EntityRegistryEntry[],
-  type: string,
-) => DiscoveryListResult {
-  const memos = new Map<string, ReturnType<typeof createDiscoveryMemo>>();
-  let lastEntryIds: string[] = [];
-  let lastResults: (DiscoveredEntities | null)[] = [];
-  let cached: DiscoveryListResult = { list: [], missing: [] };
-
-  return (hass, entryIds, registry, type) => {
-    const results = entryIds.map((id) => {
-      let memo = memos.get(id);
-      if (!memo) {
-        memo = createDiscoveryMemo();
-        memos.set(id, memo);
+  ref: WindowRef,
+  index: RegistryIndex,
+): ResolvedWindow | null {
+  if (ref.kind === 'cover') {
+    const target = ref.entity_id;
+    // (a) Attributes: the primary cover first, then any listed cover.
+    for (const rows of index.withPosition) {
+      if (positionAttrs(hass, rows)?.cover_entity === target) return resolved(hass, rows);
+    }
+    for (const rows of index.withPosition) {
+      if (attributeCovers(positionAttrs(hass, rows)).includes(target)) {
+        return resolved(hass, rows);
       }
-      return memo(hass, { type, entry_id: id }, registry);
-    });
-    // Drop per-entry memos for ids no longer configured.
-    if (memos.size > entryIds.length) {
-      for (const id of memos.keys()) if (!entryIds.includes(id)) memos.delete(id);
     }
+    // (b) An integration that does not publish the cover attributes: the
+    // covers it has moved or gated. Skip sensors that do publish them.
+    for (const rows of index.withPosition) {
+      const attrs = positionAttrs(hass, rows);
+      if (attributeCovers(attrs).length > 0) continue;
+      if (historyCovers(attrs).includes(target)) return resolved(hass, rows);
+    }
+    return null;
+  }
 
-    const unchanged =
-      lastEntryIds.length === entryIds.length &&
-      lastEntryIds.every((id, i) => id === entryIds[i]) &&
-      lastResults.length === results.length &&
-      lastResults.every((r, i) => r === results[i]);
-    if (unchanged) return cached;
-
-    lastEntryIds = entryIds.slice();
-    lastResults = results;
-    const list: DiscoveredEntities[] = [];
-    const missing: string[] = [];
-    entryIds.forEach((id, i) => {
-      const d = results[i];
-      if (d) list.push(d);
-      else missing.push(id);
-    });
-    cached = { list, missing };
-    return cached;
-  };
+  // `window:` and legacy `entry_id:` both carry the window key.
+  // (a) Attributes: the Position sensor that reports this window_key.
+  for (const rows of index.withPosition) {
+    if (positionAttrs(hass, rows)?.window_key === ref.key) return { rows, windowKey: ref.key };
+  }
+  // (b) The unique_id prefix.
+  const rows = index.byKey.get(ref.key);
+  return rows ? { rows, windowKey: ref.key } : null;
 }
 
 interface DeviceDisplay {
   id: string;
-  name?: string;
-  name_by_user?: string;
+  name?: string | null;
+  name_by_user?: string | null;
   config_entries?: string[];
 }
 
@@ -148,95 +195,40 @@ type HassWithDevices = HomeAssistant & {
   devices?: Record<string, DeviceDisplay>;
 };
 
-/**
- * Identity is derived from `(platform, unique_id_suffix)`. The unique_id of
- * every ACP entity is `{entry_id}_{suffix}`; stripping the entry_id prefix
- * gives a stable, user-unrenameable identifier that the integration controls.
- *
- * The full entity registry is an async websocket fetch (`hass.entities` is a
- * display-only subset that omits `unique_id`/`config_entry_id`). The caller
- * passes in the pre-fetched registry so discovery stays pure and sync.
- *
- * `hass.devices` is used only for the *display title* and the list of managed
- * cover entity_ids (from the target-position sensor's `actual_positions`
- * attribute). It is not used for identity.
- */
-
-/** Registry-derived identity for an entry — the part that only moves when the entity
- *  registry does. Returned by {@link discoverBase} and reused across `hass` ticks. */
-interface DiscoverBase {
-  entities: DiscoveredEntities['entities'];
-  deviceId: string | undefined;
-}
-
-/** Walk the registry and resolve an entry's entities + device id. Pure in
- *  `(entryId, registry)`. Returns null when the entry has no matching entities. */
-function discoverBase(entryId: string, registry: EntityRegistryEntry[]): DiscoverBase | null {
-  const entities: DiscoveredEntities['entities'] = {};
-  const prefix = `${entryId}_`;
-  let anyEntryMatched = false;
-  let deviceId: string | undefined;
-
-  for (const entry of registry) {
-    if (entry.config_entry_id !== entryId) continue;
-    if (entry.platform !== INTEGRATION_DOMAIN) continue;
-    anyEntryMatched = true;
-    if (!deviceId && entry.device_id) deviceId = entry.device_id;
-
-    if (!entry.unique_id.startsWith(prefix)) continue;
-    const suffix = entry.unique_id.slice(prefix.length);
-    const platform = entry.entity_id.split('.')[0];
-    const role = UNIQUE_ID_ROLES[`${platform}:${suffix}`];
-    if (!role) continue;
-    entities[role] = entry.entity_id;
-  }
-
-  if (!anyEntryMatched || Object.keys(entities).length === 0) return null;
-  return { entities, deviceId };
-}
-
-/** Combine the registry-derived base with the `hass`-derived fields (title, managed
- *  covers, cover type) into a full {@link DiscoveredEntities}. */
-function assembleDiscovered(
-  hass: HomeAssistant,
-  entryId: string,
-  base: DiscoverBase,
-): DiscoveredEntities {
-  const { entities, deviceId } = base;
-
-  const h = hass as HassWithDevices;
-  let entryTitle = entryId;
-  if (h.devices) {
-    for (const device of Object.values(h.devices)) {
-      if (!device.config_entries?.includes(entryId)) continue;
-      entryTitle = device.name_by_user ?? device.name ?? entryId;
-      break;
+/** Display title: the window device's name, else the key. */
+function windowTitle(hass: HomeAssistant, win: ResolvedWindow): string {
+  const devices = (hass as HassWithDevices).devices;
+  if (devices) {
+    const dev = win.rows.deviceId ? devices[win.rows.deviceId] : undefined;
+    if (dev) return dev.name_by_user || dev.name || win.windowKey;
+    // Registry rows without a device: today's layout names the device after
+    // the config entry, whose id is the window key.
+    if (!win.rows.deviceId) {
+      for (const d of Object.values(devices)) {
+        if (d.config_entries?.includes(win.windowKey)) {
+          return d.name_by_user || d.name || win.windowKey;
+        }
+      }
     }
   }
+  return win.windowKey;
+}
 
-  // Managed covers are discovered from the Cover Position sensor's
-  // `last_moves` / `move_blocked_by` attribute keys — the integration does not
-  // expose its configured cover list directly. Until it has recorded at least
-  // one move or blocked gate the list is empty and the card renders the
-  // entry-level position only.
-  const managedCovers: string[] = [];
-  const positionSensorId = entities.target_position_sensor;
-  if (positionSensorId) {
-    const attrs = hass.states[positionSensorId]?.attributes as
-      | { last_moves?: Record<string, string>; move_blocked_by?: Record<string, string> }
-      | undefined;
-    const ids = new Set<string>([
-      ...Object.keys(attrs?.last_moves ?? {}),
-      ...Object.keys(attrs?.move_blocked_by ?? {}),
-    ]);
-    managedCovers.push(...[...ids].sort());
-  }
+/** Combine the registry-derived window with the `hass`-derived fields (title,
+ *  managed covers, cover type) into a full {@link DiscoveredEntities}. */
+function assembleDiscovered(hass: HomeAssistant, win: ResolvedWindow): DiscoveredEntities {
+  const attrs = positionAttrs(hass, win.rows);
 
-  // The integration does not expose its blind type (vertical/awning/tilt) on
-  // any entity attribute; default to the vertical-blind visuals. A managed
-  // cover that only reports `current_tilt_position` marks the entry as tilt.
+  const fromAttrs = attributeCovers(attrs);
+  const managedCovers = fromAttrs.length > 0 ? fromAttrs : historyCovers(attrs);
+
+  // The Position sensor's `cover_type` attribute is authoritative. For an
+  // integration that does not publish it, default to the vertical-blind
+  // visuals, and mark the window tilt when every managed cover is tilt-only.
   let coverType: DiscoveredEntities['cover_type'] = 'cover_blind';
-  if (managedCovers.length > 0) {
+  if (nonEmpty(attrs?.cover_type) && KNOWN_COVER_TYPES.has(attrs!.cover_type!)) {
+    coverType = attrs!.cover_type!;
+  } else if (managedCovers.length > 0) {
     const isTilt = managedCovers.every((id) => {
       const a = hass.states[id]?.attributes as
         | { current_position?: number; current_tilt_position?: number }
@@ -247,23 +239,225 @@ function assembleDiscovered(
   }
 
   return {
-    entry_id: entryId,
-    entry_title: entryTitle,
+    window_key: win.windowKey,
+    entry_id: win.windowKey,
+    entry_title: windowTitle(hass, win),
     cover_type: coverType,
-    entities,
+    entities: { ...win.rows.entities },
     managed_covers: managedCovers,
-    device_id: deviceId,
+    device_id: win.rows.deviceId,
+    config_entry_id: win.rows.position?.config_entry_id ?? null,
+    config_subentry_id: win.rows.position?.config_subentry_id ?? null,
   };
 }
 
+/** A single-window card config, or an already-parsed ref. */
+export type WindowTarget = (WindowBindingConfig & { type?: string }) | WindowRef | null | undefined;
+
+function toRef(target: WindowTarget): WindowRef | null {
+  if (!target) return null;
+  if ('kind' in target && typeof target.kind === 'string') return target as WindowRef;
+  return windowRefFromConfig(target as WindowBindingConfig);
+}
+
+/**
+ * Discover one window's entities. Accepts a card config (`window:`, `cover:` or
+ * legacy `entry_id:`) or a {@link WindowRef}. Null when nothing matches.
+ */
 export function discoverEntities(
   hass: HomeAssistant,
-  config: AdaptiveCoverCardConfig,
+  target: WindowTarget,
   registry: EntityRegistryEntry[],
 ): DiscoveredEntities | null {
-  const entryId = config.entry_id;
-  if (!entryId) return null;
-  const base = discoverBase(entryId, registry);
-  if (!base) return null;
-  return assembleDiscovered(hass, entryId, base);
+  const ref = toRef(target);
+  if (!ref) return null;
+  const win = resolveWindow(hass, ref, indexRegistry(registry));
+  return win ? assembleDiscovered(hass, win) : null;
+}
+
+/**
+ * The registry rows of the window a ref resolves to (every adaptive_cover row
+ * whose unique_id starts with the window's prefix). Cards persist this slice
+ * to warm-start the next page load. Empty when the ref does not resolve.
+ */
+export function windowRegistrySlice(
+  hass: HomeAssistant,
+  target: WindowTarget,
+  registry: EntityRegistryEntry[],
+): EntityRegistryEntry[] {
+  const ref = toRef(target);
+  if (!ref) return [];
+  const win = resolveWindow(hass, ref, indexRegistry(registry));
+  if (!win) return [];
+  const prefix = `${win.rows.key}_`;
+  return registry.filter(
+    (e) => e.platform === INTEGRATION_DOMAIN && e.unique_id?.startsWith(prefix),
+  );
+}
+
+/** One pickable window, for the card editors and the card picker stubs. */
+export interface WindowOption {
+  window_key: string;
+  title: string;
+  /** The window's primary cover, when the integration publishes it. */
+  cover?: string;
+}
+
+/**
+ * Every window in the registry: each adaptive_cover Position sensor that is not
+ * disabled. The title is the window device's name, else `fallbackTitles[key]`
+ * (for example a config entry title), else the key. Sorted by title.
+ */
+export function listWindows(
+  hass: HomeAssistant,
+  registry: EntityRegistryEntry[],
+  fallbackTitles: Record<string, string> = {},
+): WindowOption[] {
+  const out: WindowOption[] = [];
+  for (const rows of indexRegistry(registry).withPosition) {
+    if (rows.position?.disabled_by) continue;
+    const win = resolved(hass, rows);
+    let title = windowTitle(hass, win);
+    if (title === win.windowKey && fallbackTitles[win.windowKey]) {
+      title = fallbackTitles[win.windowKey];
+    }
+    const option: WindowOption = { window_key: win.windowKey, title };
+    const cover = attributeCovers(positionAttrs(hass, rows))[0];
+    if (cover) option.cover = cover;
+    out.push(option);
+  }
+  return out.sort(
+    (a, b) => a.title.localeCompare(b.title) || a.window_key.localeCompare(b.window_key),
+  );
+}
+
+/**
+ * Memoized discovery for single-window cards, which re-run on every HA state
+ * tick (HA hands over a fresh `hass` object each time). Resolving the ref is
+ * cheap (one attribute read per window), so it runs every call; the result is
+ * reused when the registry, the resolved window, `hass.devices` (title), the
+ * Position state (covers, type) and the control-status state are all
+ * reference-equal to the previous call. Returning the **same**
+ * `DiscoveredEntities` object keeps `_discovered` (and the child props derived
+ * from it) stable across unrelated ticks.
+ */
+export function createDiscoveryMemo(): (
+  hass: HomeAssistant,
+  target: WindowTarget,
+  registry: EntityRegistryEntry[],
+) => DiscoveredEntities | null {
+  let last: {
+    registry: EntityRegistryEntry[];
+    rows: WindowRows;
+    windowKey: string;
+    devices: unknown;
+    posState: unknown;
+    ctrlState: unknown;
+    result: DiscoveredEntities;
+  } | null = null;
+
+  return (hass, target, registry) => {
+    const ref = toRef(target);
+    const win = ref ? resolveWindow(hass, ref, indexRegistry(registry)) : null;
+    if (!win) {
+      last = null;
+      return null;
+    }
+
+    const devices = (hass as HassWithDevices).devices;
+    const posId = win.rows.entities.target_position_sensor;
+    const ctrlId = win.rows.entities.control_status_sensor;
+    const posState = posId ? hass.states[posId] : undefined;
+    const ctrlState = ctrlId ? hass.states[ctrlId] : undefined;
+
+    if (
+      last !== null &&
+      last.registry === registry &&
+      last.rows === win.rows &&
+      last.windowKey === win.windowKey &&
+      last.devices === devices &&
+      last.posState === posState &&
+      last.ctrlState === ctrlState
+    ) {
+      return last.result;
+    }
+
+    const result = assembleDiscovered(hass, win);
+    last = {
+      registry,
+      rows: win.rows,
+      windowKey: win.windowKey,
+      devices,
+      posState,
+      ctrlState,
+      result,
+    };
+    return result;
+  };
+}
+
+/** Result of multi-window discovery: the windows that resolved, plus the refs that didn't. */
+export interface DiscoveryListResult {
+  list: DiscoveredEntities[];
+  missing: WindowRef[];
+}
+
+/**
+ * Memoized discovery for the multi-window cards (sky-compass card), which accept
+ * a list of refs. Each ref runs through its own {@link createDiscoveryMemo}, so a
+ * per-window result is reference-stable across ticks. This wrapper additionally
+ * returns the **same `{ list, missing }` object** (and therefore the same `list`
+ * array) when the ref list and every per-window result are unchanged — so the
+ * array handed to the child compass/chart stays reference-stable and does not
+ * defeat their own `shouldUpdate`. Two refs that resolve to the same window
+ * produce one overlay.
+ */
+export function createDiscoveryListMemo(): (
+  hass: HomeAssistant,
+  refs: WindowRef[],
+  registry: EntityRegistryEntry[],
+) => DiscoveryListResult {
+  const memos = new Map<string, ReturnType<typeof createDiscoveryMemo>>();
+  let lastIds: string[] = [];
+  let lastResults: (DiscoveredEntities | null)[] = [];
+  let cached: DiscoveryListResult = { list: [], missing: [] };
+
+  return (hass, refs, registry) => {
+    const ids = refs.map(windowRefId);
+    const results = refs.map((ref, i) => {
+      let memo = memos.get(ids[i]);
+      if (!memo) {
+        memo = createDiscoveryMemo();
+        memos.set(ids[i], memo);
+      }
+      return memo(hass, ref, registry);
+    });
+    // Drop per-window memos for refs no longer configured.
+    if (memos.size > ids.length) {
+      for (const id of memos.keys()) if (!ids.includes(id)) memos.delete(id);
+    }
+
+    const unchanged =
+      lastIds.length === ids.length &&
+      lastIds.every((id, i) => id === ids[i]) &&
+      lastResults.length === results.length &&
+      lastResults.every((r, i) => r === results[i]);
+    if (unchanged) return cached;
+
+    lastIds = ids;
+    lastResults = results;
+    const list: DiscoveredEntities[] = [];
+    const missing: WindowRef[] = [];
+    const seen = new Set<string>();
+    refs.forEach((ref, i) => {
+      const d = results[i];
+      if (!d) missing.push(ref);
+      else if (!seen.has(d.window_key)) {
+        seen.add(d.window_key);
+        list.push(d);
+      }
+    });
+    cached = { list, missing };
+    return cached;
+  };
 }

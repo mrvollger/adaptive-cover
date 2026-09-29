@@ -28,9 +28,25 @@ export interface BadgesOptInConfig {
   off_schedule?: boolean;
 }
 
-export interface AdaptiveCoverCardConfig extends LovelaceCardConfig {
+/**
+ * How a single-window card names its window. Set one of these; when several
+ * are set, `window` wins, then `entry_id`, then `cover`.
+ *
+ * - `window`: the window key, which the Position sensor exposes as its
+ *   `window_key` attribute. Preferred for new configs.
+ * - `cover`: the cover entity the window controls. The card finds the window
+ *   whose Position sensor lists this cover.
+ * - `entry_id`: the legacy key. It still works because a window's key is the
+ *   entry_id of the config entry that created it.
+ */
+export interface WindowBindingConfig {
+  window?: string;
+  cover?: string;
+  entry_id?: string;
+}
+
+export interface AdaptiveCoverCardConfig extends LovelaceCardConfig, WindowBindingConfig {
   type: string;
-  entry_id: string;
   show_sections?: CardSection[];
   compact?: boolean;
   show_compass_stats?: boolean;
@@ -54,15 +70,15 @@ export interface AdaptiveCoverCardConfig extends LovelaceCardConfig {
   tooltips?: TooltipsConfig;
 }
 
-export interface AdaptiveCoverTileCardConfig extends LovelaceCardConfig {
+export interface AdaptiveCoverTileCardConfig extends LovelaceCardConfig, WindowBindingConfig {
   type: string;
-  entry_id: string;
   /** Override the discovered instance title. */
   name?: string;
   /** Override the auto-resolved cover icon (mdi:*). */
   icon?: string;
-  /** Explicit `cover.*` entity when an entry manages multiple covers
-   *  (default: first key of the integration's `last_moves` attribute). */
+  /** The cover the tile acts on. With `window` or `entry_id` set it only
+   *  picks the cover for the controls (default: the window's covers). On its
+   *  own it also binds the tile to the window that controls this cover. */
   cover?: string;
   /** Render the cover's current position to the right of the title. */
   show_position?: boolean;
@@ -110,7 +126,13 @@ export interface AdaptiveCoverTileCardConfig extends LovelaceCardConfig {
 
 export interface SkyCompassCardConfig extends LovelaceCardConfig {
   type: string;
-  entry_ids: string[];
+  /** Window keys, one overlay each. Preferred for new configs. */
+  windows?: string[];
+  /** Cover entity_ids; each resolves to the window that controls it. */
+  covers?: string[];
+  /** Legacy window keys (config entry ids). Still accepted. Overlays are
+   *  drawn in the order `windows`, `covers`, `entry_ids`. */
+  entry_ids?: string[];
   title?: string;
   compact?: boolean;
   show_legend?: boolean;
@@ -133,9 +155,8 @@ export interface SkyCompassCardConfig extends LovelaceCardConfig {
   tooltips?: TooltipsConfig;
 }
 
-export interface AdaptiveCoverDecisionCardConfig extends LovelaceCardConfig {
+export interface AdaptiveCoverDecisionCardConfig extends LovelaceCardConfig, WindowBindingConfig {
   type: string;
-  entry_id: string;
   /** Optional header rendered above the strip in the card's `ha-card`. */
   title?: string;
   /** Tighter row layout; also forces `hide_inactive_handlers` on. */
@@ -151,18 +172,29 @@ export interface AdaptiveCoverDecisionCardConfig extends LovelaceCardConfig {
 }
 
 export interface DiscoveredEntities {
+  /** The window's stable key: the Position sensor's `window_key` attribute,
+   *  which is also the unique_id prefix of every entity of the window. */
+  window_key: string;
+  /** Same value as `window_key`. Kept for the components that still read it
+   *  (a migrated window's key is its old config entry_id). */
   entry_id: string;
   entry_title: string;
   cover_type: 'cover_blind' | 'cover_awning' | 'cover_tilt' | string;
   entities: Partial<Record<EntityRole, string>>;
-  /** Underlying HA cover entity_ids the integration controls, discovered from
-   *  the Cover Position sensor's `last_moves` / `move_blocked_by` attribute
-   *  keys. Empty until the integration has recorded at least one move or
-   *  blocked gate for a cover. */
+  /** Cover entity_ids the window controls: the Position sensor's
+   *  `cover_entities` / `cover_entity` attributes, or, for an integration that
+   *  does not publish them, the keys of `last_moves` / `move_blocked_by`. */
   managed_covers: string[];
-  /** HA device the integration's entities are attached to. Used to deep-link
+  /** HA device the window's entities are attached to. Used to deep-link
    *  into `/config/devices/device/<id>` from the more-info dialog. */
   device_id?: string;
+  /** Config entry that owns the Position sensor (registry `config_entry_id`).
+   *  Equal to `window_key` today; the house entry once windows are subentries.
+   *  Only used to build the settings link, never to find entities. */
+  config_entry_id?: string | null;
+  /** Config subentry that owns the Position sensor, when the window is a
+   *  subentry of the house entry. Null for a window that is its own entry. */
+  config_subentry_id?: string | null;
 }
 
 /** One rendered decision-strip row, synthesized from the integration's
@@ -239,6 +271,18 @@ export interface SunPositionAttributes {
  * is the target position (0–100 %).
  */
 export interface CoverPositionAttributes {
+  /** The window's stable key (== the unique_id prefix of its entities). */
+  window_key?: string;
+  /** The cover entity the window controls. */
+  cover_entity?: string | null;
+  /** Every cover the window controls, when it controls more than one. */
+  cover_entities?: string[] | null;
+  /** The window's blind type: cover_blind | cover_awning | cover_tilt. */
+  cover_type?: string | null;
+  /** When the active manual override expires (ISO), or null. */
+  override_until?: string | null;
+  /** The next scheduled move, or null. */
+  next_move?: { time: string; position: number } | null;
   /** Engine intent: calculated | default | sunset | privacy | admit_no_glare |
    *  shaded_by_overhang | climate_* */
   intent?: string | null;

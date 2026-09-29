@@ -159,6 +159,7 @@ async def test_regression_179536b_unavailable_transition_no_override(
     assert window.manual_override is False
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_regression_1b2b668_override_visible_same_cycle(
     hass, cover_entry, mock_sun_entity, cover_calls
 ):
@@ -219,6 +220,7 @@ async def test_regression_foreign_landing_during_wait_latches_manual(
 # 2026-03-20 16:00 UTC == 10:00 MDT: after sunrise, hours before the sun
 # swings round to a west-facing window.
 @freeze_time("2026-03-20 16:00:00")
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_regression_bbca2e9_predicted_entry_position(hass, cover_calls):
     """The predicted 'Sun enters window' position comes from the right row.
 

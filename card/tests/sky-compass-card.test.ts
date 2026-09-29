@@ -330,3 +330,53 @@ describe('adaptive-cover-sky-compass-card styles (auto height, issue #146)', () 
     expect(cssBlock('ha-card')).not.toMatch(/overflow/);
   });
 });
+
+describe('adaptive-cover-sky-compass-card — window bindings', () => {
+  it('accepts `windows` and `covers` instead of entry_ids', () => {
+    const el = makeCard();
+    expect(() =>
+      el.setConfig({ type: 'custom:adaptive-cover-sky-compass-card', windows: ['abc'] }),
+    ).not.toThrow();
+    expect(() =>
+      el.setConfig({ type: 'custom:adaptive-cover-sky-compass-card', covers: ['cover.x'] }),
+    ).not.toThrow();
+  });
+
+  it('throws when every window list is empty', () => {
+    const el = makeCard();
+    expect(() =>
+      el.setConfig({ type: 'custom:adaptive-cover-sky-compass-card', windows: [], covers: [] }),
+    ).toThrow(/windows/);
+  });
+
+  it('throws when `windows` holds an empty string', () => {
+    const el = makeCard();
+    expect(() =>
+      el.setConfig({ type: 'custom:adaptive-cover-sky-compass-card', windows: [''] }),
+    ).toThrow(/windows/);
+  });
+
+  it('renders overlays for `windows` and `covers` together', async () => {
+    const el = await mountWithRegistry({
+      type: 'custom:adaptive-cover-sky-compass-card',
+      windows: [ENTRY],
+      // Resolved through last_moves: this integration build has no cover attributes.
+      covers: ['cover.office'],
+    });
+    const compass = el.shadowRoot!.querySelector('acp-sky-compass') as HTMLElement & {
+      discovered_list?: Array<{ window_key: string }>;
+    };
+    expect(compass).toBeTruthy();
+    expect(compass.discovered_list!.map((d) => d.window_key)).toEqual([ENTRY, ENTRY_2]);
+    expect(el.shadowRoot!.querySelector('.warn')).toBeNull();
+  });
+
+  it('names an unresolved cover in the warning row', async () => {
+    const el = await mountWithRegistry({
+      type: 'custom:adaptive-cover-sky-compass-card',
+      windows: [ENTRY],
+      covers: ['cover.ghost'],
+    });
+    expect(el.shadowRoot!.querySelector('.warn')?.textContent).toContain('cover.ghost');
+  });
+});

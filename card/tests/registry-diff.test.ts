@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { registryChanged, filterAcp, isAcpRegistryEvent } from '../src/lib/registry-diff';
+import { registryChanged, isAcpRegistryEvent } from '../src/lib/registry-diff';
 import type { EntityRegistryEntry } from '../src/lib/entity-registry';
 
 function entry(overrides: Partial<EntityRegistryEntry>): EntityRegistryEntry {
@@ -24,12 +24,6 @@ const B = entry({
   unique_id: 'cfg1_b',
   platform: 'switch',
   config_entry_id: 'cfg1',
-});
-const C = entry({
-  entity_id: 'sensor.c',
-  unique_id: 'cfg2_c',
-  platform: 'sensor',
-  config_entry_id: 'cfg2',
 });
 
 describe('registryChanged', () => {
@@ -71,24 +65,6 @@ describe('registryChanged', () => {
 
   it('returns false for two empty arrays', () => {
     expect(registryChanged([], [])).toBe(false);
-  });
-});
-
-describe('filterAcp', () => {
-  it('returns only entries matching entryId and platform', () => {
-    const result = filterAcp([A, B, C], 'cfg1', 'sensor');
-    expect(result).toEqual([A]);
-  });
-
-  it('returns empty array when nothing matches', () => {
-    expect(filterAcp([A, B], 'cfg2', 'sensor')).toEqual([]);
-  });
-
-  it('returns all matching entries across platforms when platform is omitted', () => {
-    const result = filterAcp([A, B, C], 'cfg1');
-    expect(result).toHaveLength(2);
-    expect(result).toContain(A);
-    expect(result).toContain(B);
   });
 });
 

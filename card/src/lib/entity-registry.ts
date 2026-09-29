@@ -5,16 +5,24 @@ import type { RegistryEventPayload } from './registry-diff';
  * Minimum shape we need from the HA entity registry.
  *
  * Available via websocket `config/entity_registry/list`. These full entries
- * include `unique_id`, `platform`, and `config_entry_id`, which the frontend's
- * `hass.entities` *display* registry does not expose. We need unique_id to
- * identify ACP entities deterministically (see `const.ts` → UNIQUE_ID_ROLES).
+ * include `unique_id` and `platform`, which the frontend's `hass.entities`
+ * *display* registry does not expose. We need unique_id to identify ACP
+ * entities deterministically (see `const.ts` → UNIQUE_ID_ROLES).
+ *
+ * `config_entry_id` / `config_subentry_id` are read only to build the settings
+ * link. Discovery never filters on them: once windows are subentries of one
+ * house entry, every window shares the same `config_entry_id`.
  */
 export interface EntityRegistryEntry {
   entity_id: string;
   unique_id: string;
   platform: string;
   config_entry_id: string | null;
+  /** Set when the entity belongs to a config subentry (HA 2025.3+). */
+  config_subentry_id?: string | null;
   device_id: string | null;
+  /** Non-null when the entity is disabled. */
+  disabled_by?: string | null;
   translation_key?: string | null;
 }
 

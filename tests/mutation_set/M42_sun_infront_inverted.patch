@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/binary_sensor.py b/custom_components/adaptive_cover/binary_sensor.py
 --- a/custom_components/adaptive_cover/binary_sensor.py
 +++ b/custom_components/adaptive_cover/binary_sensor.py
-@@ -88,7 +88,10 @@
+@@ -86,7 +86,10 @@
      @property
      def is_on(self) -> bool:
          """Return true if the binary sensor is on."""

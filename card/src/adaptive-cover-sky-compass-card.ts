@@ -3,15 +3,24 @@ import { customElement, property, state } from 'lit/decorators.js';
 import type { HomeAssistant } from 'custom-card-helpers';
 
 import { SKY_COMPASS_CARD_EDITOR_NAME, SKY_COMPASS_CARD_NAME } from './const';
-import { createDiscoveryListMemo, type DiscoveryListResult } from './lib/entity-discovery';
+import {
+  createDiscoveryListMemo,
+  windowRegistrySlice,
+  type DiscoveryListResult,
+} from './lib/entity-discovery';
 import { entityStateChanged } from './lib/hass-change';
-import { fetchAcpConfigEntries } from './lib/config-entries';
+import { fetchWindowOptions } from './lib/window-options';
+import {
+  windowRefId,
+  windowRefLabel,
+  windowRefsFromConfig,
+  type WindowRef,
+} from './lib/window-binding';
 import { normalizeAzimuth } from './lib/geometry';
 import { t } from './lib/i18n';
 import { subscribeEntityRegistry, type EntityRegistryEntry } from './lib/entity-registry';
 import { loadEntityRegistry, getCachedRegistry } from './lib/registry-store';
 import { registryCache } from './lib/registry-cache';
-import { filterAcp } from './lib/registry-diff';
 import type { SkyCompassCardConfig } from './types';
 import { setTooltipDefaults } from './lib/tooltip';
 
@@ -34,23 +43,39 @@ export class AdaptiveCoverSkyCompassCard extends LitElement {
   // compass/chart aren't re-rendered by a churning array prop. See createDiscoveryListMemo.
   private _listMemo = createDiscoveryListMemo();
   private _discoveredResult: DiscoveryListResult = { list: [], missing: [] };
+  private _refs: WindowRef[] = [];
 
   public setConfig(config: SkyCompassCardConfig): void {
-    if (!config || !Array.isArray(config.entry_ids) || config.entry_ids.length === 0) {
-      throw new Error('adaptive-cover-sky-compass-card: `entry_ids` must be a non-empty array');
+    const lists = (['windows', 'covers', 'entry_ids'] as const).filter(
+      (k) => config?.[k] !== undefined,
+    );
+    for (const k of lists) {
+      const list = config[k];
+      if (!Array.isArray(list)) {
+        throw new Error(`adaptive-cover-sky-compass-card: \`${k}\` must be an array`);
+      }
+      if (list.some((id) => typeof id !== 'string' || id.length === 0)) {
+        throw new Error(
+          `adaptive-cover-sky-compass-card: every \`${k}\` item must be a non-empty string`,
+        );
+      }
     }
-    if (config.entry_ids.some((id) => typeof id !== 'string' || id.length === 0)) {
+    const refs = windowRefsFromConfig(config);
+    if (refs.length === 0) {
       throw new Error(
-        'adaptive-cover-sky-compass-card: every `entry_ids` entry must be a non-empty string',
+        'adaptive-cover-sky-compass-card: list at least one window in `windows` ' +
+          '(or `covers`, or the legacy `entry_ids`)',
       );
     }
-    this._config = { ...config, entry_ids: [...config.entry_ids] };
+    this._config = { ...config };
+    for (const k of lists) this._config[k] = [...config[k]!];
+    this._refs = refs;
     if (config.tooltips) setTooltipDefaults(config.tooltips);
     // Warm-start from the persisted ACP slices so a reload skips the Loading state — but
-    // only when every configured entry is cached, otherwise the missing ones would flash a
+    // only when every configured window is cached, otherwise the missing ones would flash a
     // false "not found" until the shared fetch revalidates.
     if (this._registry === null) {
-      const slices = this._config.entry_ids.map((id) => registryCache.get(id)?.entries);
+      const slices = refs.map((ref) => registryCache.get(windowRefId(ref))?.entries);
       if (slices.every((s) => s !== undefined)) {
         this._registry = (slices as EntityRegistryEntry[][]).flat();
       }
@@ -79,16 +104,16 @@ export class AdaptiveCoverSkyCompassCard extends LitElement {
   }
 
   public static async getStubConfig(hass: HomeAssistant): Promise<SkyCompassCardConfig> {
-    let entry_ids: string[] = [];
+    let windows: string[] = [];
     try {
-      const entries = await fetchAcpConfigEntries(hass);
-      if (entries[0]) entry_ids = [entries[0].entry_id];
+      const options = await fetchWindowOptions(hass);
+      if (options[0]) windows = [options[0].window_key];
     } catch {
       /* none discoverable — picker falls back to name + description */
     }
     return {
       type: `custom:${SKY_COMPASS_CARD_NAME}`,
-      entry_ids,
+      windows,
     };
   }
 
@@ -131,12 +156,7 @@ export class AdaptiveCoverSkyCompassCard extends LitElement {
       this._registry !== null &&
       (changed.has('hass') || changed.has('_registry') || changed.has('_config'))
     ) {
-      this._discoveredResult = this._listMemo(
-        this.hass,
-        this._config.entry_ids,
-        this._registry,
-        this._config.type,
-      );
+      this._discoveredResult = this._listMemo(this.hass, this._refs, this._registry);
     }
   }
 
@@ -159,8 +179,10 @@ export class AdaptiveCoverSkyCompassCard extends LitElement {
         if (entries === this._registry) return; // unchanged shared cache → O(1) revalidation
         this._registry = entries;
         this._registryError = null;
-        if (this._config) {
-          for (const id of this._config.entry_ids) registryCache.set(id, filterAcp(entries, id));
+        if (this._config && this.hass) {
+          for (const ref of this._refs) {
+            registryCache.set(windowRefId(ref), windowRegistrySlice(this.hass, ref, entries));
+          }
         }
       })
       .catch((err: Error) => {
@@ -194,7 +216,7 @@ export class AdaptiveCoverSkyCompassCard extends LitElement {
           <p><strong>${t('root.compass_no_match')}</strong></p>
           <p class="dim">
             ${t('root.compass_configured', {
-              entries: this._config.entry_ids.join(', '),
+              entries: this._refs.map(windowRefLabel).join(', '),
             })}
           </p>
         </div>
@@ -231,7 +253,7 @@ export class AdaptiveCoverSkyCompassCard extends LitElement {
           : nothing}
         ${missing.length > 0
           ? html`<div class="warn dim">
-              ${t('root.compass_not_found', { entries: missing.join(', ') })}
+              ${t('root.compass_not_found', { entries: missing.map(windowRefLabel).join(', ') })}
             </div>`
           : nothing}
       </ha-card>

@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/entity_surface.py b/custom_components/adaptive_cover/entity_surface.py
+--- a/custom_components/adaptive_cover/entity_surface.py
++++ b/custom_components/adaptive_cover/entity_surface.py
+@@ -67,7 +67,7 @@
+     # Diagnostic, enabled for now: the dashboard card still reads the sun
+     # and change sensors. They become disabled-by-default once the card reads
+     # the Position attributes instead (P6).
+-    ("sensor", "Start Sun"): SurfaceSpec("start_sun", _DIAG),
++    ("sensor", "Start Sun"): SurfaceSpec("start_sun", _DIAG, enabled_default=False),
+     ("sensor", "End Sun"): SurfaceSpec("end_sun", _DIAG),
+     ("sensor", "Next State Change"): SurfaceSpec("next_change", _DIAG),
+     ("sensor", "Last State Change"): SurfaceSpec("last_change", _DIAG),

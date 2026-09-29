@@ -3,14 +3,14 @@ import { customElement, property, state } from 'lit/decorators.js';
 import type { HomeAssistant } from 'custom-card-helpers';
 
 import { DECISION_CARD_EDITOR_NAME, DECISION_CARD_NAME } from './const';
-import { createDiscoveryMemo } from './lib/entity-discovery';
+import { createDiscoveryMemo, windowRegistrySlice } from './lib/entity-discovery';
 import { entityStateChanged } from './lib/hass-change';
-import { fetchAcpConfigEntries } from './lib/config-entries';
+import { fetchWindowOptions } from './lib/window-options';
+import { windowRefFromConfig, windowRefId, windowRefLabel } from './lib/window-binding';
 import { t } from './lib/i18n';
 import { subscribeEntityRegistry, type EntityRegistryEntry } from './lib/entity-registry';
 import { loadEntityRegistry, getCachedRegistry } from './lib/registry-store';
 import { registryCache } from './lib/registry-cache';
-import { filterAcp } from './lib/registry-diff';
 import type { AdaptiveCoverDecisionCardConfig, DiscoveredEntities } from './types';
 import { setTooltipDefaults } from './lib/tooltip';
 
@@ -37,9 +37,11 @@ export class AdaptiveCoverDecisionCard extends LitElement {
   private _discovered: DiscoveredEntities | null = null;
 
   public setConfig(config: AdaptiveCoverDecisionCardConfig): void {
-    if (!config || typeof config.entry_id !== 'string' || config.entry_id.length === 0) {
+    const ref = windowRefFromConfig(config);
+    if (!ref) {
       throw new Error(
-        `${DECISION_CARD_NAME}: \`entry_id\` is required and must be a non-empty string`,
+        `${DECISION_CARD_NAME}: set \`window\` (window key) or \`cover\` (cover entity); ` +
+          `a legacy \`entry_id\` also works. It must be a non-empty string.`,
       );
     }
     this._config = { ...config };
@@ -47,7 +49,7 @@ export class AdaptiveCoverDecisionCard extends LitElement {
     // Warm-start synchronously from the persisted ACP slice so a reload skips the
     // Loading state; the shared fetch below revalidates.
     if (this._registry === null) {
-      const cached = registryCache.get(config.entry_id);
+      const cached = registryCache.get(windowRefId(ref));
       if (cached) this._registry = cached.entries;
     }
   }
@@ -67,14 +69,14 @@ export class AdaptiveCoverDecisionCard extends LitElement {
   }
 
   public static async getStubConfig(hass: HomeAssistant): Promise<AdaptiveCoverDecisionCardConfig> {
-    let entry_id = '';
+    let window = '';
     try {
-      const entries = await fetchAcpConfigEntries(hass);
-      entry_id = entries[0]?.entry_id ?? '';
+      const windows = await fetchWindowOptions(hass);
+      window = windows[0]?.window_key ?? '';
     } catch {
       /* none discoverable — picker falls back to name + description */
     }
-    return { type: `custom:${DECISION_CARD_NAME}`, entry_id };
+    return { type: `custom:${DECISION_CARD_NAME}`, window };
   }
 
   public static async getConfigElement(): Promise<HTMLElement> {
@@ -117,11 +119,7 @@ export class AdaptiveCoverDecisionCard extends LitElement {
       this._registry !== null &&
       (changed.has('hass') || changed.has('_registry') || changed.has('_config'))
     ) {
-      this._discovered = this._memo(
-        this.hass,
-        { type: this._config.type, entry_id: this._config.entry_id },
-        this._registry,
-      );
+      this._discovered = this._memo(this.hass, this._config, this._registry);
     }
   }
 
@@ -145,8 +143,9 @@ export class AdaptiveCoverDecisionCard extends LitElement {
         if (entries === this._registry) return; // unchanged shared cache → O(1) revalidation
         this._registry = entries;
         this._registryError = null;
-        if (this._config)
-          registryCache.set(this._config.entry_id, filterAcp(entries, this._config.entry_id));
+        const ref = windowRefFromConfig(this._config);
+        if (ref && this.hass)
+          registryCache.set(windowRefId(ref), windowRegistrySlice(this.hass, ref, entries));
       })
       .catch((err: Error) => {
         if (myGen !== this._fetchGen) return;
@@ -176,7 +175,11 @@ export class AdaptiveCoverDecisionCard extends LitElement {
     if (!discovered) {
       return html`<ha-card>
         <div class="empty">
-          <p class="dim">${t('tile.entry_not_found', { entry: this._config.entry_id })}</p>
+          <p class="dim">
+            ${t('tile.entry_not_found', {
+              entry: windowRefLabel(windowRefFromConfig(this._config)!),
+            })}
+          </p>
         </div>
       </ha-card>`;
     }

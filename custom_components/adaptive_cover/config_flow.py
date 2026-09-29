@@ -87,6 +87,8 @@ from .const import (
     CONF_WEATHER_ENTITY,
     CONF_WEATHER_STATE,
     CONF_OUTSIDE_THRESHOLD,
+    CONFIG_ENTRY_MINOR_VERSION,
+    CONFIG_ENTRY_VERSION,
     DOMAIN,
     SensorType,
     CONF_MIN_POSITION,
@@ -480,6 +482,9 @@ def _wizard_option_keys() -> set[str]:
 
 class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     """Handle ConfigFlow."""
+
+    VERSION = CONFIG_ENTRY_VERSION
+    MINOR_VERSION = CONFIG_ENTRY_MINOR_VERSION
 
     def __init__(self) -> None:  # noqa: D107
         super().__init__()

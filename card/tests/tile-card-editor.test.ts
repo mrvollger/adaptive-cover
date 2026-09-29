@@ -12,7 +12,7 @@ interface EditorLike extends HTMLElement {
   updateComplete: Promise<boolean>;
   hass?: HomeAssistant;
   setConfig(config: AdaptiveCoverTileCardConfig): void;
-  _entries: { entry_id: string; title: string }[] | null;
+  _windows: { window_key: string; title: string }[] | null;
   _registry: EntityRegistryEntry[] | null;
 }
 
@@ -84,7 +84,7 @@ describe('adaptive-cover-tile-card editor — setConfig', () => {
 describe('adaptive-cover-tile-card editor — value-changed', () => {
   it('dispatches config-changed when ha-form fires value-changed', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el._registry = REGISTRY;
     el.setConfig({ type: TYPE, entry_id: ENTRY });
     document.body.appendChild(el);
@@ -120,7 +120,7 @@ describe('adaptive-cover-tile-card editor — value-changed', () => {
 
   it('preserves existing config keys not present in the value-changed payload', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el._registry = REGISTRY;
     el.setConfig({
       type: TYPE,
@@ -154,7 +154,7 @@ describe('adaptive-cover-tile-card editor — value-changed', () => {
 describe('adaptive-cover-tile-card editor — badge opt-in', () => {
   it('maps nested config.badges down to flat badge_* fields for the form data', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el._registry = REGISTRY;
     el.setConfig({ type: TYPE, entry_id: ENTRY, badges: { privacy: false } });
     document.body.appendChild(el);
@@ -170,7 +170,7 @@ describe('adaptive-cover-tile-card editor — badge opt-in', () => {
 
   it('reassembles a nested badges object on emit when one badge is toggled off', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el._registry = REGISTRY;
     el.setConfig({ type: TYPE, entry_id: ENTRY });
     document.body.appendChild(el);
@@ -201,7 +201,7 @@ describe('adaptive-cover-tile-card editor — badge opt-in', () => {
 
   it('prunes the badges object entirely when all seven badges are on', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el._registry = REGISTRY;
     el.setConfig({ type: TYPE, entry_id: ENTRY, badges: { privacy: false } });
     document.body.appendChild(el);
@@ -241,7 +241,7 @@ describe('adaptive-cover-tile-card editor — badge opt-in', () => {
 describe('adaptive-cover-tile-card editor — default layout (issue #110)', () => {
   it('defaults the layout form field to detailed', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el._registry = REGISTRY;
     el.setConfig({ type: TYPE, entry_id: ENTRY });
     document.body.appendChild(el);
@@ -255,7 +255,7 @@ describe('adaptive-cover-tile-card editor — default layout (issue #110)', () =
 
   it('retains an explicitly chosen layout:one-line on emit (survives serialization)', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el._registry = REGISTRY;
     // _config does NOT have layout — the user is picking one-line for the first time.
     el.setConfig({ type: TYPE, entry_id: ENTRY });
@@ -282,7 +282,7 @@ describe('adaptive-cover-tile-card editor — default layout (issue #110)', () =
 
   it('prunes layout:detailed from the emitted config (it equals the default)', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el._registry = REGISTRY;
     // _config does NOT have layout — detailed equals the default and must be pruned.
     el.setConfig({ type: TYPE, entry_id: ENTRY });
@@ -311,7 +311,7 @@ describe('adaptive-cover-tile-card editor — default layout (issue #110)', () =
 describe('adaptive-cover-tile-card editor — show_elevation_chart', () => {
   it('includes a show_elevation_chart boolean field in the schema', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el._registry = REGISTRY;
     el.setConfig({ type: TYPE, entry_id: ENTRY });
     document.body.appendChild(el);
@@ -327,7 +327,7 @@ describe('adaptive-cover-tile-card editor — show_elevation_chart', () => {
 
   it('defaults show_elevation_chart to true in the form data', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el._registry = REGISTRY;
     el.setConfig({ type: TYPE, entry_id: ENTRY });
     document.body.appendChild(el);
@@ -341,7 +341,7 @@ describe('adaptive-cover-tile-card editor — show_elevation_chart', () => {
 
   it('prunes show_elevation_chart:true from the emitted config (equals default)', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el._registry = REGISTRY;
     el.setConfig({ type: TYPE, entry_id: ENTRY });
     document.body.appendChild(el);
@@ -367,7 +367,7 @@ describe('adaptive-cover-tile-card editor — show_elevation_chart', () => {
 
   it('keeps show_elevation_chart:false in the emitted config', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el._registry = REGISTRY;
     el.setConfig({ type: TYPE, entry_id: ENTRY });
     document.body.appendChild(el);
@@ -467,7 +467,7 @@ describe('adaptive-cover-tile-card editor — cover pre-fill', () => {
 describe('adaptive-cover-tile-card editor — schema', () => {
   it('builds an ha-form schema that includes all expected fields', async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el._registry = REGISTRY;
     el.setConfig({ type: TYPE, entry_id: ENTRY });
     document.body.appendChild(el);
@@ -487,7 +487,7 @@ describe('adaptive-cover-tile-card editor — schema', () => {
     // Pro-era show_motion_icon / show_solar_calc fields are gone.
     const topNames = (haForm.schema ?? []).map((s) => s.name);
     expect(topNames).toEqual([
-      'entry_id',
+      'window',
       'name',
       'icon',
       'cover',
@@ -537,7 +537,7 @@ describe('adaptive-cover-tile-card editor — schema', () => {
 
   it("restricts the cover picker to the entry's managed_covers when registry is loaded", async () => {
     const el = makeEditor();
-    el._entries = [{ entry_id: ENTRY, title: 'Kitchen' }];
+    el._windows = [{ window_key: ENTRY, title: 'Kitchen' }];
     el._registry = REGISTRY;
     el.setConfig({ type: TYPE, entry_id: ENTRY });
     document.body.appendChild(el);

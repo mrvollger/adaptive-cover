@@ -178,6 +178,47 @@ describe('adaptive-cover-tile-card setConfig', () => {
     const el = makeCard();
     expect(() => el.setConfig({ type: TYPE, entry_id: ENTRY })).not.toThrow();
   });
+
+  it('accepts `window` or `cover` without entry_id', () => {
+    const el = makeCard();
+    expect(() => el.setConfig({ type: TYPE, window: ENTRY })).not.toThrow();
+    expect(() => el.setConfig({ type: TYPE, cover: 'cover.left' })).not.toThrow();
+  });
+
+  it('names the new keys in the missing-binding error', () => {
+    const el = makeCard();
+    expect(() => el.setConfig({ type: TYPE } as AdaptiveCoverTileCardConfig)).toThrow(/window/);
+  });
+});
+
+describe('adaptive-cover-tile-card window bindings', () => {
+  it('renders a `window:` tile like the legacy `entry_id:` tile', async () => {
+    const legacy = await mount({ type: TYPE, entry_id: ENTRY }, makeHass());
+    const modern = await mount({ type: TYPE, window: ENTRY }, makeHass());
+    const text = (el: CardLike) => el.shadowRoot!.querySelector('.tile-body')?.textContent;
+    expect(text(modern)).toBe(text(legacy));
+    expect(modern.shadowRoot!.querySelector('.title')?.textContent?.trim()).toBeTruthy();
+  });
+
+  it('binds a `cover:`-only tile to the window whose Position sensor names the cover', async () => {
+    const callService = vi.fn();
+    const el = await mount(
+      { type: TYPE, cover: 'cover.left' },
+      makeHass({ callService, coverPositionSensorAttrs: { cover_entity: 'cover.left' } }),
+    );
+    expect(el.shadowRoot!.textContent).not.toContain('not found');
+    // The controls act on the bound cover only.
+    (el.shadowRoot!.querySelector('button.down') as HTMLButtonElement).click();
+    expect(callService).toHaveBeenCalledWith('cover', 'set_cover_position', {
+      entity_id: ['cover.left'],
+      position: 0,
+    });
+  });
+
+  it('shows the cover in the not-found message when no window controls it', async () => {
+    const el = await mount({ type: TYPE, cover: 'cover.nowhere' }, makeHass());
+    expect(el.shadowRoot!.textContent).toContain('Adaptive Cover window cover.nowhere not found.');
+  });
 });
 
 describe('adaptive-cover-tile-card render', () => {
@@ -220,7 +261,7 @@ describe('adaptive-cover-tile-card render', () => {
     const hass = makeHass();
     (hass as unknown as { callWS: unknown }).callWS = vi.fn().mockResolvedValue([]);
     const el = await mount({ type: TYPE, entry_id: ENTRY }, hass, []);
-    expect(el.shadowRoot!.textContent).toContain(`Adaptive Cover entry ${ENTRY} not found.`);
+    expect(el.shadowRoot!.textContent).toContain(`Adaptive Cover window ${ENTRY} not found.`);
   });
 });
 

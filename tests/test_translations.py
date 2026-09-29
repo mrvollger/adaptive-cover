@@ -308,9 +308,38 @@ def _init_param_translation_keys(
     return keys
 
 
+def _surface_translation_keys() -> set[tuple[str, str]]:
+    """(platform, translation_key) from the entity-surface table (P1).
+
+    Entity classes get their translation_key from ``entity_surface.py``
+    through ``apply_surface()``, not from a literal the ast scan below can
+    see. Numbers use each tunable's option key.
+    """
+    from custom_components.adaptive_cover.entity_surface import (
+        HUB_SURFACE,
+        WINDOW_SURFACE,
+        window_surface,
+    )
+    from custom_components.adaptive_cover.number import TUNABLES
+
+    specs = [
+        (platform, spec)
+        for (platform, _suffix), spec in (WINDOW_SURFACE | HUB_SURFACE).items()
+    ]
+    specs += [
+        ("number", window_surface("number", f"number_{tunable.key}"))
+        for tunable in TUNABLES
+    ]
+    return {
+        (platform, spec.translation_key)
+        for platform, spec in specs
+        if spec is not None and spec.translation_key is not None
+    }
+
+
 def _entity_translation_keys() -> set[tuple[str, str]]:
     """(platform, translation_key) for every entity class in the package."""
-    found: set[tuple[str, str]] = set()
+    found: set[tuple[str, str]] = _surface_translation_keys()
     for path in sorted(PACKAGE.glob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for cls in (n for n in ast.walk(tree) if isinstance(n, ast.ClassDef)):

@@ -22,6 +22,8 @@ here. `tests/contract/check_behavior_tier.py` fails CI when an id leaves
   re-anchors, re-targets or adds, and where it now lives. Write "none" if
   there are none.
 - "Contract change" is the row in the plan's table (C1 to C8), or "none".
+  An entry that retires no tests is allowed only when it names a contract
+  change (it records a deliberate change that only adds or re-anchors pins).
 - "Reason" is required.
 
 After you add the entry, run
@@ -62,4 +64,24 @@ The example below is inside an HTML comment. The checker ignores it.
   calculated, not default, position) through the Next State Change sensor's
   `expected_position`. It fails on the default-fallback and UTC-as-local
   mutations. The helper's UTC-input branch is unreachable from any public path.
+
+## L0002 · 2026-09-28 · P1 entity surface: categories, names, device areas, Position attributes (C1)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins in `tests/test_entity_surface_v2.py::*`
+- **Mutations re-targeted:** M40–M42 re-anchored (offsets only). Added M52
+  (a card sensor must not be disabled by default), M54 (area copy must not
+  overwrite a user-set area), M55 (override_until requires a duration).
+  M53 (migration must not disable user-touched rows) retired until P6
+  reintroduces a disabled-by-default role.
+- **Contract change:** C1
+- **Reason:** P1 gives entities categories (primary / diagnostic / config),
+  translation-key names ("<Device> <Role>", e.g. "Office door Position"),
+  copies each physical cover's area to its window device, and adds
+  `window_key`, `cover_entity`, `cover_type`, `override_until` and
+  `next_move` to the Position sensor. Entity ids and unique ids are unchanged;
+  goldens, truth table and house replay are unchanged. One assertion changed:
+  `test_regression_resume_button_rename_keeps_unique_id` now expects
+  "Rename Return to auto". The schedule sensors stay enabled because the card
+  still reads them.
 

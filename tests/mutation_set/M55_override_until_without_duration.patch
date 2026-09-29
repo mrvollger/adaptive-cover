@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/entity_shared.py b/custom_components/adaptive_cover/entity_shared.py
+--- a/custom_components/adaptive_cover/entity_shared.py
++++ b/custom_components/adaptive_cover/entity_shared.py
+@@ -44,7 +44,7 @@
+     """
+     manager = coordinator.manager
+     expiries = [
+-        latched_at + manager.reset_duration
++        latched_at
+         for cover in covers
+         if manager.is_cover_manual(cover)
+         and (latched_at := manager.manual_control_time.get(cover)) is not None

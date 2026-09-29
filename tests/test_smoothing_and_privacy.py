@@ -577,7 +577,7 @@ async def test_regression_no_latch_when_movement_is_ours(
 async def test_regression_resume_button_rename_keeps_unique_id(
     hass, mock_sun_data, mock_sun_entity
 ):
-    """The reset button reads "Return to Auto" but its unique_id keeps
+    """The reset button reads "Return to auto" but its unique_id keeps
     the historical "Reset Manual Override" slug (renaming the unique_id
     would orphan every existing registry entry). Regression 2026-07-03."""
     from homeassistant.helpers import entity_registry as er
@@ -603,4 +603,4 @@ async def test_regression_resume_button_rename_keeps_unique_id(
     )
     assert button_entity is not None
     state = hass.states.get(button_entity)
-    assert "Return to Auto" in state.attributes["friendly_name"]
+    assert state.attributes["friendly_name"] == "Rename Return to auto"

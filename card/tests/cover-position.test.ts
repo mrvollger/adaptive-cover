@@ -13,6 +13,7 @@ import {
 
 function discovered(over: Partial<DiscoveredEntities> = {}): DiscoveredEntities {
   return {
+    window_key: 'entry1',
     entry_id: 'entry1',
     entry_title: 'Test',
     cover_type: 'cover_blind',

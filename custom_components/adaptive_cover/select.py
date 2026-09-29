@@ -16,13 +16,13 @@ from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_CLIMATE_MODE, DOMAIN
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info
+from .entity_surface import apply_surface, window_surface
 
 MODE_MANUAL = "Manual"
 MODE_SUN = "Sun tracking"
@@ -53,7 +53,6 @@ class AdaptiveCoverModeSelect(
 
     _attr_has_entity_name = True
     _attr_should_poll = False
-    _attr_entity_category = EntityCategory.CONFIG
     _attr_icon = "mdi:sun-compass"
 
     def __init__(
@@ -72,13 +71,9 @@ class AdaptiveCoverModeSelect(
         )
         self._name = config_entry.data["name"]
         self._attr_unique_id = f"{config_entry.entry_id}_mode_select"
+        apply_surface(self, window_surface("select", "mode_select"))
         self._device_id = config_entry.entry_id
         self._attr_device_info = adaptive_cover_device_info(config_entry)
-
-    @property
-    def name(self):
-        """Name of the entity."""
-        return "Mode"
 
     @property
     def current_option(self) -> str:
