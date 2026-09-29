@@ -295,7 +295,9 @@ class TestTranslations:
 
 
 def _window_device(hass, entry) -> dr.DeviceEntry | None:
-    return dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    return dr.async_get(hass).async_get_device_by_identifier(
+        (DOMAIN, entry.entry_id), config_entry_id=entry.entry_id
+    )
 
 
 def _physical_cover(hass, *, device_area=None, entity_area=None):
@@ -740,7 +742,9 @@ async def test_live_house_upgrade(hass, cover_calls):
         for device in _snapshot_json("device_registry.json")["devices"]
     }
     for entry in windows:
-        device = dev_reg.async_get_device(identifiers={(DOMAIN, entry["entry_id"])})
+        device = dev_reg.async_get_device_by_identifier(
+            (DOMAIN, entry["entry_id"]), config_entry_id=entry["entry_id"]
+        )
         user_area = snapshot_devices[entry["entry_id"]]["area_id"]
         (cover,) = entry["options"][CONF_ENTITIES]
         assert device.area_id == (user_area or cover_areas[cover]), entry["title"]
