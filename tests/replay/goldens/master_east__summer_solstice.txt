@@ -1,0 +1,69 @@
+# house replay: Master east (01KWP1JY50D79YNJ6A6MG5RC15) on 2026-06-21 (summer_solstice)
+# SLC (tests' lat/lon), tz=America/Denver, units=US customary, step=5min, travel=90s, 00:30 -> 00:30 next day
+# cover=cover.master_east_shades sensor_type=cover_blind options_sha256=b4e0c5707095
+# azimuth=100.0 fov=90.0/44.0 elevation=5..50 window_h=2.0 distance=0.1 overhang=None/None glare=1.2/2.0
+# default=99.0 sunset_pos=0.0 sunset_off=20.0 sunrise_off=-20.0 start=00:00:00 end=00:00:00 min=0 (sun-only=False) max=100 (sun-only=False) privacy=None
+# climate=True temp=sensor.upstairs_indoor_temperature (upstairs) low/high=72.0/75.0 sunny=sunny,partlycloudy,clear,windy,windy-variant override={'hours': 2, 'minutes': 0, 'seconds': 0} reset=False
+# restored switches: master_east_climate_mode=on, master_east_manual_override=on, master_east_outside_temperature=off, master_east_toggle_control=on
+# lines: cmd = outbound cover call; sensor = position sensor (intent), shown when it changes; input/human = scripted
+#
+06-21 00:30:00 MDT  sensor 0 (sunset)
+06-21 05:40:00 MDT  cmd    set_cover_position cover.master_east_shades 99
+06-21 05:40:00 MDT  sensor 99 (default)
+06-21 06:35:00 MDT  cmd    set_cover_position cover.master_east_shades 72
+06-21 06:35:00 MDT  sensor 72 (admit_no_glare)
+06-21 06:40:00 MDT  cmd    set_cover_position cover.master_east_shades 74
+06-21 06:40:00 MDT  sensor 74 (admit_no_glare)
+06-21 06:45:00 MDT  cmd    set_cover_position cover.master_east_shades 76
+06-21 06:45:00 MDT  sensor 76 (admit_no_glare)
+06-21 06:50:00 MDT  cmd    set_cover_position cover.master_east_shades 77
+06-21 06:50:00 MDT  sensor 77 (admit_no_glare)
+06-21 06:55:00 MDT  cmd    set_cover_position cover.master_east_shades 79
+06-21 06:55:00 MDT  sensor 79 (admit_no_glare)
+06-21 07:00:00 MDT  cmd    set_cover_position cover.master_east_shades 81
+06-21 07:00:00 MDT  sensor 81 (admit_no_glare)
+06-21 07:05:00 MDT  cmd    set_cover_position cover.master_east_shades 82
+06-21 07:05:00 MDT  sensor 82 (admit_no_glare)
+06-21 07:10:00 MDT  cmd    set_cover_position cover.master_east_shades 84
+06-21 07:10:00 MDT  sensor 84 (admit_no_glare)
+06-21 07:15:00 MDT  cmd    set_cover_position cover.master_east_shades 86
+06-21 07:15:00 MDT  sensor 86 (admit_no_glare)
+06-21 07:20:00 MDT  cmd    set_cover_position cover.master_east_shades 87
+06-21 07:20:00 MDT  sensor 87 (admit_no_glare)
+06-21 07:25:00 MDT  cmd    set_cover_position cover.master_east_shades 89
+06-21 07:25:00 MDT  sensor 89 (admit_no_glare)
+06-21 07:30:00 MDT  cmd    set_cover_position cover.master_east_shades 91
+06-21 07:30:00 MDT  sensor 91 (admit_no_glare)
+06-21 07:35:00 MDT  cmd    set_cover_position cover.master_east_shades 93
+06-21 07:35:00 MDT  sensor 93 (admit_no_glare)
+06-21 07:40:00 MDT  cmd    set_cover_position cover.master_east_shades 94
+06-21 07:40:00 MDT  sensor 94 (admit_no_glare)
+06-21 07:45:00 MDT  cmd    set_cover_position cover.master_east_shades 96
+06-21 07:45:00 MDT  sensor 96 (admit_no_glare)
+06-21 07:50:00 MDT  cmd    set_cover_position cover.master_east_shades 98
+06-21 07:50:00 MDT  sensor 98 (admit_no_glare)
+06-21 07:55:00 MDT  cmd    set_cover_position cover.master_east_shades 99
+06-21 07:55:00 MDT  sensor 99 (admit_no_glare)
+06-21 08:00:00 MDT  cmd    set_cover_position cover.master_east_shades 100
+06-21 08:00:00 MDT  sensor 100 (admit_no_glare)
+06-21 08:00:00 MDT  input  sensor.upstairs_indoor_temperature = 71.0 °F
+06-21 08:01:30 MDT  cmd    set_cover_position cover.master_east_shades 100
+06-21 10:00:00 MDT  input  sensor.upstairs_indoor_temperature = 73.0 °F
+06-21 10:05:00 MDT  cmd    set_cover_position cover.master_east_shades 5
+06-21 10:05:00 MDT  sensor 5 (calculated)
+06-21 10:25:00 MDT  cmd    set_cover_position cover.master_east_shades 6
+06-21 10:25:00 MDT  sensor 6 (calculated)
+06-21 10:40:00 MDT  cmd    set_cover_position cover.master_east_shades 99
+06-21 10:40:00 MDT  sensor 99 (default)
+06-21 11:00:00 MDT  input  weather.forecast_home_2 = cloudy
+06-21 11:05:00 MDT  sensor 99 (climate_default)
+06-21 13:00:00 MDT  input  weather.forecast_home_2 = sunny
+06-21 13:05:00 MDT  sensor 99 (default)
+06-21 13:30:00 MDT  human  cover.master_east_shades -> 37 (via remote)
+06-21 14:00:00 MDT  input  sensor.upstairs_indoor_temperature = 76.0 °F
+06-21 15:35:00 MDT  cmd    set_cover_position cover.master_east_shades 99
+06-21 18:00:00 MDT  input  sensor.upstairs_indoor_temperature = 74.0 °F
+06-21 21:00:00 MDT  input  sensor.upstairs_indoor_temperature = 71.5 °F
+06-21 21:25:00 MDT  cmd    set_cover_position cover.master_east_shades 0
+06-21 21:25:00 MDT  sensor 0 (sunset)
+06-22 00:30:00 MDT  end    shade at 0

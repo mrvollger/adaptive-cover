@@ -17,7 +17,6 @@ from custom_components.adaptive_cover.const import (
     CONF_TILT_DEPTH,
     CONF_TILT_DISTANCE,
     CONF_TILT_MODE,
-    DOMAIN,
     SensorType,
 )
 
@@ -99,16 +98,19 @@ async def test_press_reset_button_resumes_auto(hass, freezer):
 
 
 async def test_set_options_survives_reload(hass, freezer):
-    """set_options() reloads the entry, re-wins services, re-points coordinator."""
+    """set_options() reloads the entry, re-wins services, keeps attribution."""
     house = await SimHouse.create(hass, freezer, date="2026-03-20")
     await house.advance_to("11:00")
-    old_coordinator = house.coordinator
+    teardowns_before = house.window().teardowns
 
     await house.set_options(**{CONF_DELTA_TIME: 5})
 
     assert house.entry.options[CONF_DELTA_TIME] == 5
-    assert house.coordinator is not old_coordinator
-    assert house.coordinator is hass.data[DOMAIN][house.entry.entry_id]
+    # The entry reloaded (entities torn down once, rebuilt, live again);
+    # the closes below are attributed to the integration, so the harness
+    # follows the rebuilt window.
+    assert house.window().teardowns == teardowns_before + 1
+    assert house.window().available
     # the afternoon is a delta-gated plateau; the sunset snap is the next
     # guaranteed command and proves the fake services were re-won
     await house.advance_to("20:00")  # sunset ~19:33
@@ -130,12 +132,10 @@ async def test_restart_preserves_timeline_and_restores_switches(hass, freezer):
     assert house.entity("switch", "toggle_control").state == "off", (
         "restart lost the captured switch state"
     )
-    assert house.coordinator is hass.data[DOMAIN][house.entry.entry_id]
+    assert house.window().available  # the restarted window is live
 
     # seed_states overrides the capture: force the control switch back on.
-    await house.restart(
-        seed_states={house.eid("switch", "toggle_control"): "on"}
-    )
+    await house.restart(seed_states={house.eid("switch", "toggle_control"): "on"})
     assert house.entity("switch", "toggle_control").state == "on"
     await house.teardown()
 
@@ -161,7 +161,10 @@ async def test_day_two_sun_regeneration(hass, freezer):
 async def test_dst_transition_day_advances(hass, freezer):
     """Ticking across the 2026-03-08 spring-forward gap must not crash."""
     house = await SimHouse.create(
-        hass, freezer, date="2026-03-08", start_at="01:00",
+        hass,
+        freezer,
+        date="2026-03-08",
+        start_at="01:00",
         location=dict(lat=40.76, lon=-111.89, tz="America/Denver"),
     )
     await house.advance_to("03:30")  # 02:00-03:00 does not exist locally
@@ -200,9 +203,7 @@ async def test_hold_release_timers_delivers_close_late(hass, freezer):
 
 async def test_jammed_shade_never_lands_poll_reports_stuck(hass, freezer):
     """jam(): stops mid-travel, no landing ever, poll shows the stuck spot."""
-    house = await SimHouse.create(
-        hass, freezer, date="2026-03-20", travel_seconds=600
-    )
+    house = await SimHouse.create(hass, freezer, date="2026-03-20", travel_seconds=600)
     await house.advance_to("11:00")
     start = house.position(SHADE)
     await house.user_moves(SHADE, 0, via="remote")
@@ -215,9 +216,12 @@ async def test_jammed_shade_never_lands_poll_reports_stuck(hass, freezer):
     await house.advance_to("11:40")
     assert house.position(SHADE) == stuck, "jammed shade landed anyway"
     landings = [
-        ev for ev in house.timeline
-        if ev.kind == "state" and ev.position == 0
-        and ev.entity_id == SHADE and ev.time > jam_time
+        ev
+        for ev in house.timeline
+        if ev.kind == "state"
+        and ev.position == 0
+        and ev.entity_id == SHADE
+        and ev.time > jam_time
     ]
     assert landings == [], "jammed shade sent a landing report"
 
@@ -284,7 +288,7 @@ async def test_fail_next_command_raises_once_loop_survives(hass, freezer):
     assert house.auto_moves("cover.left"), (
         "failed cover was never re-commanded after the one-shot failure"
     )
-    assert house.coordinator.last_update_success
+    assert house.window().available  # the update loop survived
     await house.teardown()
 
 
@@ -295,7 +299,7 @@ async def test_fail_next_command_custom_exception(hass, freezer):
     assert isinstance(house.shades[SHADE].fail_next, HomeAssistantError)
     await house.advance_to("09:00")  # morning tracking consumes the failure
     assert house.shades[SHADE].fail_next is None
-    assert house.coordinator.last_update_success
+    assert house.window().available  # the update loop survived
     await house.teardown()
 
 
@@ -358,7 +362,7 @@ async def test_aux_climate_entities_wired(hass, freezer):
     await house.set_outside_temp(30.0)
     await house.set_presence("off")
     await house.advance_to("12:00")
-    assert house.coordinator.last_update_success
+    assert house.window().available  # the update loop survived
     assert hass.states.get(house.LUX_SENSOR).state == "unavailable"
     await house.teardown()
 
@@ -383,9 +387,7 @@ async def test_tilt_house_uses_tilt_field_and_service(hass, freezer):
     all_moves = house.auto_moves(SHADE)
     tilt_moves = house.auto_moves(SHADE, service="set_cover_tilt_position")
     assert all_moves, "tilt entry never commanded the cover"
-    assert tilt_moves == all_moves, (
-        "some tilt-entry commands used set_cover_position"
-    )
+    assert tilt_moves == all_moves, "some tilt-entry commands used set_cover_position"
     assert house.position(SHADE, tilt=True) == tilt_moves[-1].position
     assert house.position(SHADE) == 100, "a tilt command moved the lift field"
     assert (

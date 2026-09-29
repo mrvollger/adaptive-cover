@@ -69,9 +69,9 @@ describe('selectVisibleBadges', () => {
 
   it('keeps auto by default but lets badges.auto hide it; off is never filtered', () => {
     // Unrelated flags off → auto still shows.
-    expect(selectVisibleBadges(['auto', 'off'], { solar: false, privacy: false }, inactive)).toEqual(
-      ['auto', 'off'],
-    );
+    expect(
+      selectVisibleBadges(['auto', 'off'], { solar: false, privacy: false }, inactive),
+    ).toEqual(['auto', 'off']);
     // badges.auto === false hides auto, but off survives.
     expect(selectVisibleBadges(['auto', 'off'], { auto: false }, inactive)).toEqual(['off']);
     expect(selectVisibleBadges(['auto'], { auto: true }, inactive)).toEqual(['auto']);
@@ -215,9 +215,9 @@ describe('isAutoControlActive', () => {
   });
 
   it('is false when the integration is disabled', () => {
-    expect(
-      isAutoControlActive({ ...base, winner: 'calculated', integrationEnabled: false }),
-    ).toBe(false);
+    expect(isAutoControlActive({ ...base, winner: 'calculated', integrationEnabled: false })).toBe(
+      false,
+    );
   });
 
   it('is false when automatic control is off', () => {

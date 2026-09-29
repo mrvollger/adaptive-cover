@@ -15,27 +15,81 @@ A Home Assistant custom integration that automatically positions window blinds, 
 ## Directory Layout
 
 ```
+.
+├── custom_components/adaptive_cover/  # The integration (what HACS installs)
+├── card/                    # Lovelace card source (TypeScript, vitest); bundle → custom_components/adaptive_cover/www/
+├── tests/                   # pytest tiers (see "Development & Testing")
+├── docs/
+│   ├── refactor_plan.md     # Target design and phases P0–P8 (the design reference)
+│   ├── refactor_baseline_review.md  # Measured baseline (2026-09-28) and targets
+│   └── adr/                 # Architecture decision records 0001–0005 + index
+├── images/                  # README images (not shipped)
+├── pixi.toml, pixi.lock     # Dev environment and tasks (test, lint, typecheck, mutations)
+├── hacs.json                # HACS metadata, minimum HA version
+├── CONTRIBUTING.md          # Dev workflow: tiers, scenarios, mutations, ledger, releases
+└── agents.md                # This guide
+```
+
+```
 custom_components/adaptive_cover/
-├── __init__.py              # Entry point: platform setup, event listeners
-├── coordinator.py           # Core: data update loop, cover service calls, manual override tracking
-├── calculation.py           # Solar geometry & position math (the algorithm)
+├── __init__.py              # Entry point: platform setup, services, event listeners
+├── coordinator.py           # Core: update loop, gates, cover service calls, manual override tracking
+├── calculation.py           # HA adapters: build engine inputs, delegate to engine/
+├── engine/                  # Pure math and strategy (no HA imports, no clock reads)
+│   ├── models.py            # Typed inputs/outputs (CoverConfig, SunSnapshot, Decision, ...)
+│   ├── geometry.py          # Gamma/FOV/elevation, per-cover-type %, overhang, glare-safe height
+│   └── evaluate.py          # evaluate(config, sun, ctx, climate=None) -> Decision
+├── sun.py                   # Astral-based solar table (5-minute points)
 ├── config_flow.py           # Multi-step UI configuration (setup + options)
+├── options_spec.py          # Changeable options for the change_settings service
 ├── const.py                 # All config keys, defaults, enums
-├── sensor.py                # Sensor entities (position %, solar times, control mode)
+├── hub.py                   # "Adaptive Cover All" hub device (all-shades cover, house mode select, reset-all button)
+├── cover.py                 # Cover platform: only the hub's aggregate cover
+├── sensor.py                # Position %, solar times, control method, next/last change
+├── binary_sensor.py         # Sun in front, manual override active
 ├── switch.py                # Toggle switches (control, climate mode, lux, etc.)
-├── binary_sensor.py         # Binary sensors (sun in front, manual override active)
+├── select.py                # Mode select: one control instead of several toggles
+├── number.py                # Live tunables that skip the options wizard
 ├── button.py                # Reset manual override button
-├── sun.py                   # Astral-based solar position provider
+├── entity_shared.py         # Shared entity helpers
+├── frontend.py              # Serves and auto-registers the bundled Lovelace card
+├── logbook.py               # Logbook text for adaptive_cover_moved events
 ├── helpers.py               # Utility functions (safe state access, datetime parsing)
 ├── config_context_adapter.py # Logger adapter that tags logs with config name
 ├── diagnostics.py           # HA diagnostics export
-├── manifest.json            # Integration metadata & dependencies
-├── strings.json             # English UI strings
+├── services.yaml            # get_forecast, change_settings, add_entry
+├── manifest.json            # Integration metadata, version & requirements
+├── strings.json             # English UI strings (source for translations/en.json)
 ├── icons.json               # MDI icon mappings
 ├── translations/            # en.json only (English-only by choice)
 ├── blueprints/              # HA automation blueprints
-└── simulation/              # Simulation utilities
+└── www/                     # Built card bundle (adaptive-cover-card.js)
 ```
+
+```
+tests/
+├── engine/                  # Pure engine tests + property sweeps; test_purity.py guard
+├── characterization/        # Climate truth table, golden days, outbound service calls
+├── simulation/              # SimHouse full-day replays (README.md = harness API)
+├── replay/                  # House-replay goldens: real configs x 6 dates (added in P0)
+├── contract/                # behavior_tier_ids.txt, ledger.md, check_behavior_tier.py (added in P0)
+├── mutation_set/            # One patch per mutation (M01–M43), make_patches.py, run_mutations.py
+├── refactor_roadmap.json    # Contract v1: behavior-tier seams, mutation table, acceptance bar
+└── test_*.py                # Entity-surface tier: config flow, services, entities, hub
+```
+
+## Design References
+
+- `docs/refactor_plan.md` — the refactor's target design, phases P0–P8,
+  release gate, refactor contract and the owner's decisions. Read it
+  before changing the config model, the entity surface or the coordinator.
+- `docs/adr/` — short records of the load-bearing decisions: 0001 house
+  entry + window subentries, 0002 one cover per window, 0003 settings
+  precedence (window override → area → floor → house → spec default) and
+  the one-time vs recurring rule, 0004 refactor contract v2 + behavior
+  tier/mutation gate, 0005 drop pandas/numpy/pytz. A new design decision
+  gets a new ADR; an accepted ADR is superseded, not rewritten.
+- `CONTRIBUTING.md` — the how-to for everything in "Development & Testing".
 
 ## Core Architecture
 
@@ -109,10 +163,7 @@ Sun is "in front" when `-fov_right < gamma < fov_left` and elevation > 0.
 
 ### Vertical Blind Position
 ```python
-blind_height = clip(
-    (distance / cos(gamma_rad)) * tan(elevation_rad),
-    0, window_height
-)
+blind_height = clip((distance / cos(gamma_rad)) * tan(elevation_rad), 0, window_height)
 position = blind_height / window_height * 100
 ```
 Lower sun → more penetration → cover moves down.
@@ -184,20 +235,79 @@ Season is determined by comparing current temperature against configurable low/h
    them. Undeliverable end-of-day closes (cover unavailable) retry when the
    cover returns.
 
-## Simulation harness (`tests/simulation/`)
+## Development & Testing
 
-Full-day replay of the REAL integration against fake shades, a real astral
-sun, and a stepped frozen clock — house behavior is reproducible in pytest
-without touching the house. See `tests/simulation/README.md`. New
-coordinator-level bugs get a scenario there (symptom pin) in addition to
-unit regressions.
+Environment and tasks come from `pixi.toml` (see `CONTRIBUTING.md`):
+
+```bash
+pixi install          # environment from pixi.lock
+pixi run test         # full pytest suite, parallel (pytest -n auto)
+pixi run lint         # ruff
+pixi run typecheck    # pyright
+pixi run mutations    # mutation kill matrix (tests/mutation_set/)
+pixi run pytest tests/simulation -q   # one tier or file
+```
+
+Don't `pip install` into the pixi env; use `pixi add`. The card has its
+own npm toolchain in `card/` (`npm test`, `npm run typecheck`,
+`npm run lint`, `npm run build`); commit the rebuilt bundle in
+`custom_components/adaptive_cover/www/` with any card change.
+
+### Test tiers
+
+| Tier | Path | Pins |
+|------|------|------|
+| Engine | `tests/engine/` | pure `evaluate()`/geometry, property sweeps; `test_purity.py` guards engine purity |
+| Characterization | `tests/characterization/` | `climate_truth_table.json` (216 combos), golden day schedules in `goldens/`, outbound service calls |
+| Simulation | `tests/simulation/` | full-day SimHouse replays of the REAL integration (fake shades, real astral sun, stepped frozen clock) |
+| Entity surface | root `tests/test_*.py` | config flow, options, services, entities, hub, restore — through a real config entry |
+| House replay | `tests/replay/` | the real house configs on 6 dates (DST start/end, equinoxes, solstices): outbound command timeline |
+| Contract | `tests/contract/` | `behavior_tier_ids.txt` + `ledger.md`, checked by `check_behavior_tier.py` |
+| Card | `card/tests/` | vitest |
+
+- **Simulation harness**: see `tests/simulation/README.md` for the SimHouse
+  API. New coordinator-level bugs get a scenario there (symptom pin) in
+  addition to unit regressions. Resolve entities with `house.eid(...)`;
+  never hard-code entity_ids.
+- **Pinned outputs** (truth table, goldens, house replay) must stay
+  byte-identical unless behavior is meant to change. Regenerate
+  deliberately — truth table:
+  `PYTHONPATH=. pixi run python tests/characterization/generate_truth_table.py`;
+  goldens: `UPDATE_GOLDENS=1 pixi run pytest tests/characterization/test_golden_days.py`.
+  The diff is the review artifact and needs a ledger entry.
+- **Mutations**: `tests/mutation_set/make_patches.py` defines every
+  mutation as an exact-unique text replacement and writes the patches +
+  `manifest.json`; `--check` fails when a committed patch is stale or no
+  longer applies. `run_mutations.py` applies each patch, runs the tiers,
+  and reverts. Kill bar: 100%. Code moves re-anchor their mutations in
+  the same PR with unchanged descriptions.
+- **Behavior-tier ledger** (`tests/contract/`): removing or renaming a
+  behavior-tier test id, or changing a pinned output, needs a `ledger.md`
+  entry naming retired tests, replacements and re-targeted mutations
+  (ADR 0004).
+- **Release gate** (every release): CI green, behavior tier passes,
+  100% mutation kills, `make_patches.py --check` passes, pinned outputs
+  byte-identical or ledgered, no silent removals from
+  `behavior_tier_ids.txt`.
+
+### Test rules
+
+- Every bug fix gets a `test_regression_<slug>` naming the commit, in
+  its own commit.
+- Time is always an input; never call `datetime.now()` in logic.
+- New tests reach the integration through public surfaces only (entity
+  states, registries, services, SimHouse helpers) — no `hass.data`,
+  coordinator attributes or private attributes.
 
 ## Dependencies
 
 - **astral** — solar position calculations
-- **pandas** — time series (5-min interval generation)
-- **numpy** — trigonometry, interpolation, clipping
-- **voluptuous** — config schema validation
+- **pandas** — time series (5-min interval generation); declared in the manifest
+- **numpy** — trigonometry, interpolation, clipping; imported but not declared
+- **pytz** — time zones in `coordinator.py`; imported but not declared
+- **voluptuous** — config schema validation (ships with HA)
+
+pandas, numpy and pytz are removed in P2 (ADR 0005).
 
 ## Patterns Worth Knowing
 
@@ -210,24 +320,29 @@ unit regressions.
 
 ## Fork & Release Workflow
 
-This is a fork of [mrvollger/adaptive-cover](https://github.com/mrvollger/adaptive-cover) hosted at [mrvollger/adaptive-cover](https://github.com/mrvollger/adaptive-cover).
+This is a fork of [basbruss/adaptive-cover](https://github.com/basbruss/adaptive-cover) hosted at [mrvollger/adaptive-cover](https://github.com/mrvollger/adaptive-cover). License: MIT (`LICENSE`).
 
 ### Development
 
-1. Make changes locally and run tests: `python -m pytest tests/ -vv`
-2. Commit and push to `main`
+1. Branch from `main` for non-trivial changes.
+2. Run `pixi run lint`, `pixi run typecheck` and `pixi run test`
+   (see "Development & Testing").
+3. Open a PR against `main`; CI must be green.
 
 ### Releasing to HACS
 
-HACS requires a GitHub Release to see updates. After pushing:
+HACS requires a GitHub Release to see updates. A release is a tag push:
 
 ```bash
-gh release create v1.x.x --repo mrvollger/adaptive-cover \
-  --title "v1.x.x - Short description" \
-  --notes "Changelog details here."
+# after committing the new "version" in custom_components/adaptive_cover/manifest.json
+git tag v1.x.x
+git push origin v1.x.x
 ```
 
-HACS will then show the update available. The user clicks **Update** in HACS → restarts HA.
+The release workflow checks that the manifest version equals the tag and
+publishes the GitHub release. Don't create releases by hand with
+`gh release create`. HACS then shows the update; the user clicks
+**Update** in HACS → restarts HA. Rollback: downgrade in HACS.
 
 ### HACS Configuration
 
@@ -284,14 +399,5 @@ the band is non-empty. Same sun, cold vs hot day, opposite positions.
 - Position sensor attributes: `intent`, `decision_trace`, `forecast_today`
 - Service: `adaptive_cover.get_forecast` (entry id or title)
 
-### Testing harness
-
-- `tests/characterization/` pins behavior:
-  - `climate_truth_table.json` (216 combos) — regenerate deliberately with
-    `PYTHONPATH=. python tests/characterization/generate_truth_table.py`
-  - golden day schedules in `goldens/` — regenerate with
-    `UPDATE_GOLDENS=1 python -m pytest tests/characterization/test_golden_days.py`
-  - the JSON/golden diff is the review artifact for behavior changes
-- `tests/engine/` — pure engine tests incl. dense property sweeps
-- Regression policy: every bug fix gets a `test_regression_<slug>` naming
-  the commit. Time is always an input; never call `datetime.now()` in logic.
+Testing for the engine and everything else is in "Development & Testing"
+above.

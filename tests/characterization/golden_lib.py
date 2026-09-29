@@ -10,15 +10,18 @@ bit-for-bit.
 
 from __future__ import annotations
 
+import datetime as dt
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from unittest.mock import patch
 
 import pandas as pd
 from astral import LocationInfo
 from astral import sun as astral_sun
 from astral.location import Location
+from homeassistant.util import dt as dt_util
 
+from custom_components.adaptive_cover import calculation
 from custom_components.adaptive_cover.engine import evaluate as engine_evaluate
 from custom_components.adaptive_cover.engine import geometry as engine_geometry
 from custom_components.adaptive_cover.engine.models import (
@@ -42,46 +45,162 @@ TEMP_HIGH = 23.0
 WEATHER_CONDITIONS = ("sunny", "partlycloudy", "clear")
 
 
-def patch_sun_data(sun_data):
-    """THE single test-side place that knows SunData's import path.
+class SunDataOverride:
+    """Swap ``calculation.sun_data_factory`` for the life of a test scope.
 
-    Every test-side replacement of the production sun provider goes through
-    this helper (harness, root conftest, golden renderer, truth-table
-    generator), so a refactor that moves SunData breaks ONE line, not five.
-    The real production seam (a ``sun_data_factory`` hook in calculation.py)
-    is the refactor's own first commit and swaps only this helper's body.
+    Usable as a context manager or via ``start()``/``stop()`` (the
+    simulation harness spans many awaits). Overrides nest: ``stop()``
+    restores whatever factory was active at ``start()``.
     """
-    return patch(
-        "custom_components.adaptive_cover.calculation.SunData",
-        return_value=sun_data,
-    )
+
+    def __init__(self, factory: Callable) -> None:
+        self._factory = factory
+        self._saved: list[Callable] = []
+
+    def start(self) -> SunDataOverride:
+        self._saved.append(calculation.sun_data_factory)
+        calculation.sun_data_factory = self._factory
+        return self
+
+    def stop(self) -> None:
+        calculation.sun_data_factory = self._saved.pop()
+
+    def __enter__(self) -> SunDataOverride:
+        return self.start()
+
+    def __exit__(self, *exc_info) -> None:
+        self.stop()
+
+
+def patch_sun_data(sun_data) -> SunDataOverride:
+    """THE single test-side place that replaces the production sun provider.
+
+    Every test-side replacement goes through this helper (harness, root
+    conftest, entity tests, golden renderer, truth-table generator). It
+    uses the production seam ``calculation.sun_data_factory``: every cover
+    adapter built while the override is active gets ``sun_data``.
+    """
+    return SunDataOverride(lambda _timezone, _hass: sun_data)
+
+
+def use_real_sun_data() -> SunDataOverride:
+    """Undo any fake (e.g. the autouse flat sun): adapters get real SunData."""
+    from custom_components.adaptive_cover.sun import SunData
+
+    return SunDataOverride(SunData)
 
 
 def is_integration_context(coordinator, ctx) -> bool:
     """THE single test-side place that knows how our own commands are marked.
 
-    Integration-issued service calls are tracked via the coordinator's
-    private ``_our_context_ids`` deque — a known, sanctioned coupling until
-    the refactor's first commit lands a public
-    ``coordinator.is_own_context(ctx)`` and swaps only this helper's body.
+    Delegates to the coordinator's public seam ``is_own_context``.
     """
-    return ctx is not None and ctx.id in coordinator._our_context_ids
+    return coordinator.is_own_context(ctx)
+
+
+class _NoAstralLocation:
+    """The flat sun has no astral location to ask about other days.
+
+    The coordinator's next-event code asks ``sun_data.location`` for
+    TOMORROW's sunrise/sunset once today's has passed, inside a try block;
+    raising here makes that lookup yield no event, exactly as the old
+    MagicMock did (its result could not be compared to a datetime).
+    """
+
+    def sunrise(self, *_args, **_kwargs):
+        raise LookupError("flat sun: no astral location")
+
+    def sunset(self, *_args, **_kwargs):
+        raise LookupError("flat sun: no astral location")
+
+
+class FlatSunData:
+    """Deterministic default sun: azimuth 180 / elevation 45 all day long.
+
+    Replaces the old autouse MagicMock. It implements exactly the SunData
+    surface production reads (``times``, ``solar_azimuth``,
+    ``solar_elevation``, ``sunrise()``, ``sunset()``, ``location``), so
+    an API drift fails loudly instead of returning a Mock.
+
+    Nothing is captured from the wall clock when the fixture is built:
+    every value is computed at call time from HA's clock (``dt_util``) in
+    HA's configured time zone, so a frozen test sees a frozen sun and the
+    table always spans the local day the coordinator's day-rollover check
+    compares against. By default the whole day is daylight: sunrise is the
+    start of the previous UTC day and sunset the end of the next one. Tests
+    move either with ``sunrise_at`` / ``sunset_at``.
+    """
+
+    N = 289  # 24h of 5-minute samples, inclusive
+    AZIMUTH = 180.0
+    ELEVATION = 45.0
+    location = _NoAstralLocation()
+
+    def __init__(self) -> None:
+        self.sunrise_at: dt.datetime | None = None
+        self.sunset_at: dt.datetime | None = None
+
+    @property
+    def times(self) -> pd.DatetimeIndex:
+        tz = dt_util.DEFAULT_TIME_ZONE
+        today_local = dt_util.now(tz).date()
+        return pd.date_range(start=today_local, periods=self.N, freq="5min", tz=str(tz))
+
+    @property
+    def solar_azimuth(self) -> list[float]:
+        return [self.AZIMUTH] * self.N
+
+    @property
+    def solar_elevation(self) -> list[float]:
+        return [self.ELEVATION] * self.N
+
+    def sunrise(self) -> dt.datetime:
+        if self.sunrise_at is not None:
+            return self.sunrise_at
+        yesterday = dt_util.utcnow().date() - dt.timedelta(days=1)
+        return dt.datetime(
+            yesterday.year,
+            yesterday.month,
+            yesterday.day,
+            0,
+            0,
+            1,
+            tzinfo=dt.UTC,
+        )
+
+    def sunset(self) -> dt.datetime:
+        if self.sunset_at is not None:
+            return self.sunset_at
+        tomorrow = dt_util.utcnow().date() + dt.timedelta(days=1)
+        return dt.datetime(
+            tomorrow.year,
+            tomorrow.month,
+            tomorrow.day,
+            23,
+            59,
+            59,
+            tzinfo=dt.UTC,
+        )
 
 
 class FakeSunData:
     """Deterministic SunData replacement for a fixed date and location."""
 
     def __init__(self, lat, lon, tz, date):
-        info = LocationInfo(name="test", region="test", timezone=tz,
-                            latitude=lat, longitude=lon)
+        info = LocationInfo(
+            name="test", region="test", timezone=tz, latitude=lat, longitude=lon
+        )
         self.location = Location(info)
         self.observer = info.observer
         self.elevation = 0
         self.timezone = tz
         self.date = date
         self.times = pd.date_range(
-            start=date, end=date + pd.Timedelta(days=1),
-            freq=f"{STEP_MINUTES}min", tz=tz, name="time",
+            start=date,
+            end=date + pd.Timedelta(days=1),
+            freq=f"{STEP_MINUTES}min",
+            tz=tz,
+            name="time",
         )
         self.solar_azimuth = [
             astral_sun.azimuth(self.observer, t.to_pydatetime()) for t in self.times
@@ -302,9 +421,7 @@ def _solar_times(scenario: Scenario, sun_data: FakeSunData):
     )
 
 
-def _basic_reason(
-    config: CoverConfig, sun: SunSnapshot, ctx: TimeContext
-) -> str:
+def _basic_reason(config: CoverConfig, sun: SunSnapshot, ctx: TimeContext) -> str:
     """Human-readable reason, byte-identical to get_state_reason()."""
     if engine_geometry.direct_sun_valid(config, sun, ctx):
         return f"Sun in window (azi {sun.azimuth:.0f}°, elev {sun.elevation:.0f}°)"

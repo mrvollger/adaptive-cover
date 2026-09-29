@@ -40,7 +40,7 @@ async def test_on_time_close_overrides_active_manual(hass, freezer):
     )
     await house.advance_to("17:30")
     await house.user_moves(SHADE, 100, via="remote")
-    assert house.coordinator.manager.is_cover_manual(SHADE)
+    assert house.window(SHADE).is_manual
 
     await house.advance_to("19:00")
     assert house.position(SHADE) == 0, (
@@ -70,8 +70,7 @@ async def test_end_close_applies_inverse_transform(hass, freezer):
     await house.advance_to("19:00")
     closes = list(house.auto_moves(SHADE, since="17:55"))
     assert closes and closes[-1].position == 100, (
-        "inverse cover: end close must command 100 (inverse of sunset 0); "
-        f"got {closes}"
+        f"inverse cover: end close must command 100 (inverse of sunset 0); got {closes}"
     )
     await house.teardown()
 

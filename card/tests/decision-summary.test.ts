@@ -126,9 +126,7 @@ describe('buildDecisionSentence', () => {
   });
 
   it('falls back to the raw winner string for an unknown intent', () => {
-    expect(buildDecisionSentence([], { reason: 'r' }, 'mystery_intent')).toBe(
-      'mystery_intent — r',
-    );
+    expect(buildDecisionSentence([], { reason: 'r' }, 'mystery_intent')).toBe('mystery_intent — r');
   });
 
   it('respects a custom labels override', () => {

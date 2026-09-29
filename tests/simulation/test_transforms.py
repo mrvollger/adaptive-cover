@@ -94,9 +94,7 @@ async def test_interpolation_remaps_all_commands(hass, freezer):
         f"commands escaped the remapped range [20, 80] + snaps: {positions}"
     )
     tracking = [p for p in positions if p not in (0, 100)]
-    assert tracking, (
-        f"expected daytime tracking commands inside (20, 80): {positions}"
-    )
+    assert tracking, f"expected daytime tracking commands inside (20, 80): {positions}"
 
     # The pre-dawn snap: raw sunset position 0 maps onto the range's low
     # endpoint (20) and the endpoint rule snaps it back to a true 0.
@@ -199,14 +197,10 @@ async def test_inverse_state_commands(hass, freezer):
         hass, freezer, options={**END_OF_DAY}, initial_position=50
     )
     await baseline.advance_to("18:30")
-    base_moves = [
-        (m.time, m.position) for m in baseline.auto_moves(SHADE)
-    ]
+    base_moves = [(m.time, m.position) for m in baseline.auto_moves(SHADE)]
+    # teardown() disarms the service re-win guard, so the dead house
+    # cannot steal the cover services back from the inverse house next.
     await baseline.teardown()
-    # The harness's service re-win guard keeps its bus listener after
-    # teardown; disarm it so the dead house cannot steal the cover
-    # services back from the inverse house created next.
-    baseline._registering_services = True
 
     inverse = await make_house(
         hass,
@@ -215,9 +209,7 @@ async def test_inverse_state_commands(hass, freezer):
         initial_position=50,
     )
     await inverse.advance_to("18:30")
-    inv_moves = [
-        (m.time, m.position) for m in inverse.auto_moves(SHADE)
-    ]
+    inv_moves = [(m.time, m.position) for m in inverse.auto_moves(SHADE)]
 
     assert base_moves, "baseline day produced no integration commands"
     assert any(p != 50 for _, p in base_moves), (

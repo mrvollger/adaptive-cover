@@ -1,0 +1,30 @@
+# house replay: Master door (01KWP1KBER8D63ZW8C5326F7AC) on 2026-09-22 (autumn_equinox)
+# SLC (tests' lat/lon), tz=America/Denver, units=US customary, step=5min, travel=90s, 00:30 -> 00:30 next day
+# cover=cover.master_door_shades sensor_type=cover_blind options_sha256=25c93204d396
+# azimuth=145.0 fov=40.0/40.0 elevation=5..40 window_h=2.0 distance=0.1 overhang=1.2/2.3 glare=1.2/2.0
+# default=100.0 sunset_pos=3.0 sunset_off=20.0 sunrise_off=-20.0 start=00:00:00 end=00:00:00 min=9 (sun-only=True) max=99 (sun-only=False) privacy=None
+# climate=True temp=sensor.upstairs_indoor_temperature (upstairs) low/high=72.0/75.0 sunny=sunny,partlycloudy,clear,windy,windy-variant override={'hours': 2, 'minutes': 0, 'seconds': 0} reset=False
+# restored switches: master_door_climate_mode=on, master_door_manual_override=on, master_door_outside_temperature=off, master_door_toggle_control=on
+# lines: cmd = outbound cover call; sensor = position sensor (intent), shown when it changes; input/human = scripted
+#
+09-22 00:30:00 MDT  sensor 3 (sunset)
+09-22 07:00:00 MDT  cmd    set_cover_position cover.master_door_shades 99
+09-22 07:00:00 MDT  sensor 99 (default)
+09-22 08:00:00 MDT  input  sensor.upstairs_indoor_temperature = 71.0 °F
+09-22 09:00:00 MDT  sensor 99 (admit_no_glare)
+09-22 10:00:00 MDT  input  sensor.upstairs_indoor_temperature = 73.0 °F
+09-22 10:05:00 MDT  cmd    set_cover_position cover.master_door_shades 9
+09-22 10:05:00 MDT  sensor 9 (calculated)
+09-22 11:00:00 MDT  input  weather.forecast_home_2 = cloudy
+09-22 11:05:00 MDT  cmd    set_cover_position cover.master_door_shades 99
+09-22 11:05:00 MDT  sensor 99 (climate_default)
+09-22 13:00:00 MDT  input  weather.forecast_home_2 = sunny
+09-22 13:05:00 MDT  sensor 99 (default)
+09-22 13:30:00 MDT  human  cover.master_door_shades -> 37 (via remote)
+09-22 14:00:00 MDT  input  sensor.upstairs_indoor_temperature = 76.0 °F
+09-22 15:35:00 MDT  cmd    set_cover_position cover.master_door_shades 99
+09-22 18:00:00 MDT  input  sensor.upstairs_indoor_temperature = 74.0 °F
+09-22 19:45:00 MDT  cmd    set_cover_position cover.master_door_shades 3
+09-22 19:45:00 MDT  sensor 3 (sunset)
+09-22 21:00:00 MDT  input  sensor.upstairs_indoor_temperature = 71.5 °F
+09-23 00:30:00 MDT  end    shade at 3

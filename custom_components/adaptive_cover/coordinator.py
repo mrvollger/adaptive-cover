@@ -204,9 +204,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.manager = AdaptiveCoverManager(
             self.manual_duration,
             self.logger,
-            persisted_state=_manual_store.setdefault(
-                self.config_entry.entry_id, {}
-            ),
+            persisted_state=_manual_store.setdefault(self.config_entry.entry_id, {}),
         )
         self.wait_for_target = {}
         self.target_call = {}
@@ -286,6 +284,15 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.state_change = True
         await self.async_request_refresh()
 
+    def is_own_context(self, context: Context | None) -> bool:
+        """Return True when ``context`` belongs to a cover command WE issued.
+
+        Every command this coordinator sends carries a fresh Context whose
+        id is remembered; an echo of that command (the cover's intermediate
+        state written inside the service call) carries the same context.
+        """
+        return context is not None and context.id in self._our_context_ids
+
     async def async_check_cover_state_change(
         self, event: Event[EventStateChangedData]
     ) -> None:
@@ -302,7 +309,10 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             data["entity_id"], data["old_state"], data["new_state"]
         )
         if self.state_change_data.old_state.state in ("unknown", "unavailable"):
-            self.logger.debug("Old state is %s, not processing", self.state_change_data.old_state.state)
+            self.logger.debug(
+                "Old state is %s, not processing",
+                self.state_change_data.old_state.state,
+            )
             # Device just came back: deliver any end-of-day close that
             # could not be sent while it was away.
             pending = self._pending_end_snap.pop(data["entity_id"], None)
@@ -318,15 +328,15 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 )
             return
         if self.state_change_data.new_state.state in ("unknown", "unavailable"):
-            self.logger.debug("New state is %s, not processing", self.state_change_data.new_state.state)
+            self.logger.debug(
+                "New state is %s, not processing",
+                self.state_change_data.new_state.state,
+            )
             return
         entity_id = data["entity_id"]
         # Our own command echoing back (service context preserved):
         # bookkeeping only - never manual, never a full refresh.
-        if (
-            event.context is not None
-            and event.context.id in self._our_context_ids
-        ):
+        if self.is_own_context(event.context):
             self.process_entity_state_change(own_context=True)
             return
         # A change carrying a user id is a HUMAN act (dashboard click,
@@ -343,9 +353,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # A cover starting to move AGAINST our in-flight command is a human
         # act even inside the travel window: our motor cannot reverse on its
         # own. Clear the travel latch so the motion-start latch below fires.
-        if (
-            new_state.state in ("opening", "closing")
-            and self.wait_for_target.get(entity_id)
+        if new_state.state in ("opening", "closing") and self.wait_for_target.get(
+            entity_id
         ):
             target = self.target_call.get(entity_id)
             old_pos = self.state_change_data.old_state.attributes.get(
@@ -584,7 +593,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 sunset_utc = self._make_utc(sunset_raw)
                 sunset_time = sunset_utc + dt.timedelta(minutes=cover_data.sunset_off)
             if sunset_time > now:
-                events.append(("Sunset + offset", sunset_time, int(cover_data.sunset_pos)))
+                events.append(
+                    ("Sunset + offset", sunset_time, int(cover_data.sunset_pos))
+                )
         except Exception:  # noqa: BLE001
             self.logger.debug("Could not compute sunset event", exc_info=True)
 
@@ -596,7 +607,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             if sunrise_time <= now:
                 sunrise_raw = location.sunrise(tomorrow, local=False)
                 sunrise_utc = self._make_utc(sunrise_raw)
-                sunrise_time = sunrise_utc + dt.timedelta(minutes=cover_data.sunrise_off)
+                sunrise_time = sunrise_utc + dt.timedelta(
+                    minutes=cover_data.sunrise_off
+                )
             if sunrise_time > now:
                 events.append(("Sunrise + offset", sunrise_time, int(cover_data.h_def)))
         except Exception:  # noqa: BLE001
@@ -609,22 +622,28 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 local_tz = cached_timezone(self.hass.config.time_zone)
                 end_t = local_tz.localize(end_t)
             if end_t > now:
-                events.append((
-                    "Configured end time",
-                    end_t,
-                    self.config_entry.options.get(CONF_SUNSET_POS, cover_data.sunset_pos),
-                ))
+                events.append(
+                    (
+                        "Configured end time",
+                        end_t,
+                        self.config_entry.options.get(
+                            CONF_SUNSET_POS, cover_data.sunset_pos
+                        ),
+                    )
+                )
 
         # Manual override expires
         if self.manager.binary_cover_manual:
             for override_time in self.manager.manual_control_time.values():
                 expire_time = override_time + self.manager.reset_duration
                 if expire_time > now:
-                    events.append((
-                        "Manual override expires",
-                        expire_time,
-                        None,  # position will be the current computed state
-                    ))
+                    events.append(
+                        (
+                            "Manual override expires",
+                            expire_time,
+                            None,  # position will be the current computed state
+                        )
+                    )
 
         if not events:
             return None
@@ -863,9 +882,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 else None,
                 "forecast_today": self.forecast,
                 "move_blocked_by": {
-                    entity: gate
-                    for entity, gate in self._gate_blocks.items()
-                    if gate
+                    entity: gate for entity, gate in self._gate_blocks.items() if gate
                 },
                 "last_moves": {
                     entity: line
@@ -915,22 +932,16 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             else "current_position"
         )
         position = event.new_state.attributes.get(pos_attr)
-        return (
-            position is not None
-            and abs(position - target) <= self.TARGET_TOLERANCE
-        )
+        return position is not None and abs(position - target) <= self.TARGET_TOLERANCE
 
     async def async_handle_cover_state_change(self, state: int):
         """Handle state change from assigned covers."""
         event = self.state_change_data
-        was_manual = (
-            self.manager.is_cover_manual(event.entity_id) if event else False
-        )
+        was_manual = self.manager.is_cover_manual(event.entity_id) if event else False
         if self.manual_toggle and self.control_toggle:
             if self._is_own_landing(event):
                 self.logger.debug(
-                    "State change for %s matches our commanded target; "
-                    "not manual",
+                    "State change for %s matches our commanded target; not manual",
                     event.entity_id,
                 )
             else:
@@ -943,20 +954,14 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     self.manual_threshold,
                 )
         # A human just took over: record it with provenance
-        if (
-            event
-            and not was_manual
-            and self.manager.is_cover_manual(event.entity_id)
-        ):
+        if event and not was_manual and self.manager.is_cover_manual(event.entity_id):
             pos_attr = (
                 "current_tilt_position"
                 if self._cover_type == "cover_tilt"
                 else "current_position"
             )
             new_position = (
-                event.new_state.attributes.get(pos_attr)
-                if event.new_state
-                else None
+                event.new_state.attributes.get(pos_attr) if event.new_state else None
             )
             self.record_move_provenance(
                 event.entity_id,
@@ -975,9 +980,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             # here silently skipped startup positioning; keep it pending —
             # the switch's restore triggers another refresh that lands
             # here with the toggle resolved.
-            self.logger.debug(
-                "First refresh deferred: control switch not restored yet"
-            )
+            self.logger.debug("First refresh deferred: control switch not restored yet")
             return
         if self.control_toggle:
             for cover in self.entities:
@@ -1005,9 +1008,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             # before the switch platform restored the control toggle.
             # Keep timed_refresh and the catch-up flag pending — the
             # switch's restore refresh completes the close.
-            self.logger.debug(
-                "Timed refresh deferred: control switch not restored yet"
-            )
+            self.logger.debug("Timed refresh deferred: control switch not restored yet")
             return
         if self.control_toggle:
             # Same transform pipeline as every other move (interpolation +
@@ -1015,9 +1016,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             # interpolated covers and then primes false manual detection.
             target = int(self._transform_state(options.get(CONF_SUNSET_POS)))
             for cover in self.entities:
-                if self._end_time_is_catchup and self.manager.is_cover_manual(
-                    cover
-                ):
+                if self._end_time_is_catchup and self.manager.is_cover_manual(cover):
                     # A catch-up close (armed after its moment: restart or
                     # reload landed past the end time) must not bulldoze an
                     # override a human set in the meantime. The on-time
@@ -1118,9 +1117,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         else:  # window crosses midnight
             quiet = now >= start or now < end
         if quiet:
-            self.logger.debug(
-                "Quiet hours (%s-%s): skipping tracking move", start, end
-            )
+            self.logger.debug("Quiet hours (%s-%s): skipping tracking move", start, end)
         return not quiet
 
     def check_move_budget(self, entity, state: int, options) -> bool:
@@ -1151,9 +1148,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
     def _record_move(self, entity) -> None:
         if self.max_moves_hour:
-            self._move_history.setdefault(entity, []).append(
-                dt.datetime.now(dt.UTC)
-            )
+            self._move_history.setdefault(entity, []).append(dt.datetime.now(dt.UTC))
 
     async def async_force_apply(
         self, source: str = "user", reason: str | None = None
@@ -1168,10 +1163,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         if not self.control_toggle:
             return
         for entity in self.entities:
-            if (
-                not self.manager.is_cover_manual(entity)
-                and self.check_adaptive_time
-            ):
+            if not self.manager.is_cover_manual(entity) and self.check_adaptive_time:
                 await self.async_set_position(
                     entity, self.state, source=source, reason=reason
                 )
@@ -1253,9 +1245,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self._poll_cancels.pop(entity, None)
             if not self.wait_for_target.get(entity):
                 return  # arrived; nothing to do
-            self.logger.debug(
-                "No landing report from %s; forcing a state poll", entity
-            )
+            self.logger.debug("No landing report from %s; forcing a state poll", entity)
             try:
                 await self.hass.services.async_call(
                     "homeassistant",
@@ -1295,9 +1285,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
     def _active_intent(self) -> str | None:
         """Intent of the currently-active decision, for provenance."""
-        decision = (
-            self._climate_decision if self._switch_mode else self._basic_decision
-        )
+        decision = self._climate_decision if self._switch_mode else self._basic_decision
         return str(decision.intent) if decision else None
 
     def _format_last_move(self, entity) -> str | None:
@@ -1378,9 +1366,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # toggle is still None (switches restore after the first refresh),
         # and treating that as off wiped overrides on every options edit.
         if self._manual_toggle is False:
-            self.logger.debug(
-                "Manual toggle is off, clearing all manual overrides"
-            )
+            self.logger.debug("Manual toggle is off, clearing all manual overrides")
             for entity in self.manager.manual_controlled:
                 self.manager.reset(entity)
 
@@ -1469,9 +1455,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self._start_time = time
             return now >= time
         if self.start_time is not None:
-            time = get_datetime_from_str(
-                self.start_time, default_date=now.date()
-            )
+            time = get_datetime_from_str(self.start_time, default_date=now.date())
 
             self.logger.debug(
                 "Start time: %s, now: %s, now >= time: %s", time, now, now >= time
@@ -1527,9 +1511,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         position = self._get_current_position(entity)
         if position is not None:
             return position != state
-        self.logger.debug(
-            "Position of %s unknown; commanding %s anyway", entity, state
-        )
+        self.logger.debug("Position of %s unknown; commanding %s anyway", entity, state)
         return True
 
     def check_position_delta(self, entity, state: int, options):
@@ -1791,9 +1773,7 @@ class AdaptiveCoverManager:
 
         state = persisted_state if persisted_state is not None else {}
         self.manual_control: dict[str, bool] = state.setdefault("control", {})
-        self.manual_control_time: dict[str, dt.datetime] = state.setdefault(
-            "time", {}
-        )
+        self.manual_control_time: dict[str, dt.datetime] = state.setdefault("time", {})
         # Per-cover record of the allow_reset flag at latch time
         # (bookkeeping only; expiry itself is unconditional).
         self.reset_allowed: dict[str, bool] = state.setdefault("reset_allowed", {})

@@ -212,8 +212,7 @@ describe('header layout — long entry title', () => {
   it('header does not use align-items: center (which clips wrapped titles)', () => {
     // CSS layout overflow is not catchable by happy-dom, but we can assert that
     // the LitElement.styles CSSResult does not contain the clipping combination.
-    const styles = (AdaptiveCoverCard as unknown as { styles: { cssText: string } }).styles
-      .cssText;
+    const styles = (AdaptiveCoverCard as unknown as { styles: { cssText: string } }).styles.cssText;
     expect(styles).toMatch(/\.header\s*\{[^}]*align-items:\s*flex-start/);
   });
 });

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
@@ -27,6 +28,7 @@ from custom_components.adaptive_cover.const import (
 )
 
 from .conftest import COMMON_OPTIONS
+from .window_handle import WindowHandle
 
 COVER = "cover.test_cover"
 
@@ -59,10 +61,12 @@ def _entry(hass, climate=False, **extra):
 
 
 async def _setup(hass, entry):
+    window = WindowHandle(hass, COVER)  # records the startup command
     hass.states.async_set(COVER, "open", {"current_position": 60})
     hass.states.async_set("sensor.indoor", "22.0")
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
+    return window
 
 
 def _entity_id(hass, platform, unique_id):
@@ -75,8 +79,13 @@ class TestNumberEntities:
     ):
         entry = _entry(hass)
         await _setup(hass, entry)
-        for key in ("eye_height", "occupied_distance", "overhang_depth",
-                    "overhang_height", "privacy_offset"):
+        for key in (
+            "eye_height",
+            "occupied_distance",
+            "overhang_depth",
+            "overhang_height",
+            "privacy_offset",
+        ):
             assert _entity_id(hass, "number", f"{entry.entry_id}_number_{key}"), key
 
     async def test_temp_numbers_only_with_climate(
@@ -84,9 +93,7 @@ class TestNumberEntities:
     ):
         entry = _entry(hass)  # climate off
         await _setup(hass, entry)
-        assert (
-            _entity_id(hass, "number", f"{entry.entry_id}_number_temp_low") is None
-        )
+        assert _entity_id(hass, "number", f"{entry.entry_id}_number_temp_low") is None
 
     async def test_temp_numbers_with_climate_show_defaults(
         self, hass, cover_calls_stub, mock_sun_entity
@@ -108,7 +115,7 @@ class TestNumberEntities:
         self, hass, cover_calls_stub, mock_sun_entity
     ):
         entry = _entry(hass)
-        await _setup(hass, entry)
+        window = await _setup(hass, entry)
         eid = _entity_id(hass, "number", f"{entry.entry_id}_number_eye_height")
 
         await hass.services.async_call(
@@ -120,9 +127,10 @@ class TestNumberEntities:
         await hass.async_block_till_done()
 
         assert entry.options[CONF_EYE_HEIGHT] == 1.2
-        # Entry reloaded: the new coordinator sees the option too
-        coordinator = hass.data[DOMAIN][entry.entry_id]
-        assert coordinator.config_entry.options[CONF_EYE_HEIGHT] == 1.2
+        # Entry reloaded and running on those options (the window reads
+        # this entry's options, so they are what it now sees).
+        assert entry.state is ConfigEntryState.LOADED
+        assert window.available
         assert hass.states.get(eid).state == "1.2"
 
 
@@ -137,9 +145,7 @@ class TestModeSelect:
         assert state.attributes["options"] == ["Manual", "Sun tracking"]
         assert state.state == "Sun tracking"  # control restores on
 
-    async def test_options_with_climate(
-        self, hass, cover_calls_stub, mock_sun_entity
-    ):
+    async def test_options_with_climate(self, hass, cover_calls_stub, mock_sun_entity):
         entry = _entry(hass, climate=True)
         await _setup(hass, entry)
         eid = _entity_id(hass, "select", f"{entry.entry_id}_mode_select")
@@ -166,9 +172,7 @@ class TestModeSelect:
         )
         await hass.async_block_till_done()
 
-        control_eid = _entity_id(
-            hass, "switch", f"{entry.entry_id}_Toggle Control"
-        )
+        control_eid = _entity_id(hass, "switch", f"{entry.entry_id}_Toggle Control")
         assert hass.states.get(control_eid).state == "off"
         assert hass.states.get(eid).state == "Manual"
 
@@ -195,12 +199,8 @@ class TestModeSelect:
         )
         await hass.async_block_till_done()
 
-        control_eid = _entity_id(
-            hass, "switch", f"{entry.entry_id}_Toggle Control"
-        )
-        climate_eid = _entity_id(
-            hass, "switch", f"{entry.entry_id}_Climate Mode"
-        )
+        control_eid = _entity_id(hass, "switch", f"{entry.entry_id}_Toggle Control")
+        climate_eid = _entity_id(hass, "switch", f"{entry.entry_id}_Climate Mode")
         assert hass.states.get(control_eid).state == "on"
         assert hass.states.get(climate_eid).state == "off"
         assert hass.states.get(eid).state == "Sun tracking"
@@ -215,15 +215,14 @@ class TestGateVisibility:
             hass,
             **{CONF_QUIET_START: "00:00:00", CONF_QUIET_END: "23:59:00"},
         )
-        await _setup(hass, entry)
-        coordinator = hass.data[DOMAIN][entry.entry_id]
+        window = await _setup(hass, entry)
         # The fixed first refresh commands a startup position (it bypasses
         # the quiet-hours gate by design); land the cover on that target so
         # the in-flight travel window cannot mask the gate under test.
         hass.states.async_set(
             COVER,
             "open",
-            {"current_position": coordinator.target_call[COVER]},
+            {"current_position": window.last_command},
         )
         await hass.async_block_till_done()
         calls = async_mock_service(hass, "cover", "set_cover_position")
@@ -234,23 +233,19 @@ class TestGateVisibility:
         await hass.async_block_till_done()
 
         assert calls == []
-        assert (
-            coordinator.data.attributes["move_blocked_by"].get(COVER)
-            == "quiet_hours"
-        )
+        assert window.move_blocked_by == "quiet_hours"
 
     async def test_allowed_move_clears_the_gate(
         self, hass, cover_calls_stub, mock_sun_entity
     ):
         entry = _entry(hass)
-        await _setup(hass, entry)
-        coordinator = hass.data[DOMAIN][entry.entry_id]
+        window = await _setup(hass, entry)
         # Land the startup move (fixed first refresh) so its travel window
         # clears and the nudge below is judged by the ordinary gates.
         hass.states.async_set(
             COVER,
             "open",
-            {"current_position": coordinator.target_call[COVER]},
+            {"current_position": window.last_command},
         )
         await hass.async_block_till_done()
         cover_calls_stub = async_mock_service(hass, "cover", "set_cover_position")
@@ -260,9 +255,8 @@ class TestGateVisibility:
         )
         await hass.async_block_till_done()
 
-        coordinator = hass.data[DOMAIN][entry.entry_id]
         assert len(cover_calls_stub) == 1
-        assert coordinator.data.attributes["move_blocked_by"] == {}
+        assert window.attributes["move_blocked_by"] == {}
 
 
 @pytest.fixture

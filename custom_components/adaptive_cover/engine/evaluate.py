@@ -182,12 +182,8 @@ def evaluate(
     # Privacy runs before everything: a lit room against a dark sky is
     # visible from outside no matter what solar/climate logic says.
     if geometry.privacy_active(config, ctx):
-        trace.append(
-            f"dark outside: privacy position {config.privacy.position}"
-        )
-        result = _apply_limits(
-            config.privacy.position, False, config, trace
-        )
+        trace.append(f"dark outside: privacy position {config.privacy.position}")
+        result = _apply_limits(config.privacy.position, False, config, trace)
         return Decision(position=result, intent=Intent.PRIVACY, trace=tuple(trace))
 
     if climate is None:

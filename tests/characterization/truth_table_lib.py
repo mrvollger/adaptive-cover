@@ -151,9 +151,7 @@ def evaluate_combo(presence, temp, weather, blind, valid, transparent):
 
 def build_table():
     """Evaluate every combination and return {key: result}."""
-    return {
-        combo_key(*combo): evaluate_combo(*combo) for combo in iter_combos()
-    }
+    return {combo_key(*combo): evaluate_combo(*combo) for combo in iter_combos()}
 
 
 def load_table():

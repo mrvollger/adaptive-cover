@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import datetime as dt
-
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import (
@@ -23,9 +21,10 @@ from custom_components.adaptive_cover.const import (
 from custom_components.adaptive_cover.hub import HUB_UNIQUE_ID, is_hub_entry
 
 from .conftest import COMMON_OPTIONS
+from .window_handle import WindowHandle
 
 
-def _regular_entry(hass, name, cover):
+def _regular_entry(hass, name, cover, delta_time=0):
     entry = MockConfigEntry(
         domain=DOMAIN,
         title=name,
@@ -35,18 +34,18 @@ def _regular_entry(hass, name, cover):
             CONF_HEIGHT_WIN: 2.1,
             CONF_DISTANCE: 0.5,
             CONF_ENTITIES: [cover],
-            CONF_DELTA_TIME: 0,
+            CONF_DELTA_TIME: delta_time,
         },
     )
     entry.add_to_hass(hass)
     return entry
 
 
-async def _setup_two_entries(hass):
+async def _setup_two_entries(hass, delta_time_a=0):
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set("cover.a", "open", {"current_position": 80})
     hass.states.async_set("cover.b", "open", {"current_position": 20})
-    e1 = _regular_entry(hass, "Room A", "cover.a")
+    e1 = _regular_entry(hass, "Room A", "cover.a", delta_time=delta_time_a)
     e2 = _regular_entry(hass, "Room B", "cover.b")
     await hass.config_entries.async_setup(e1.entry_id)
     await hass.async_block_till_done()  # bootstrap may set up the component
@@ -68,7 +67,18 @@ async def test_hub_auto_bootstrapped_once(hass, mock_sun_entity):
 
 
 async def test_aggregate_cover_average_position(hass, mock_sun_entity):
+    from homeassistant.setup import async_setup_component
+
     await _setup_two_entries(hass)
+    # The hub can render before entry B registers (a setup race that HA
+    # 2026.8 hits often); it converges on its next poll, so force one.
+    await async_setup_component(hass, "homeassistant", {})
+    await hass.services.async_call(
+        "homeassistant",
+        "update_entity",
+        {"entity_id": "cover.adaptive_cover_all"},
+        blocking=True,
+    )
     state = hass.states.get("cover.adaptive_cover_all")
     assert state is not None
     assert state.attributes["current_position"] == 50  # avg(80, 20)
@@ -112,9 +122,9 @@ async def test_house_mode_flips_all_entries(hass, mock_sun_entity):
     )
     await hass.async_block_till_done()
 
-    for entry in (e1, e2):
-        coordinator = hass.data[DOMAIN][entry.entry_id]
-        assert coordinator.control_toggle is False
+    # Every window's control is off: its Toggle Control switch reads off.
+    for cover in ("cover.a", "cover.b"):
+        assert WindowHandle(hass, cover).state("control").state == "off"
     assert hass.states.get(select_id).state == "Manual"
 
 
@@ -164,9 +174,7 @@ async def test_hub_unloads_cleanly(hass, mock_sun_entity):
     assert await hass.config_entries.async_unload(hub.entry_id)
 
 
-async def test_aggregate_cover_polls_and_recovers_from_boot_race(
-    hass, mock_sun_entity
-):
+async def test_aggregate_cover_polls_and_recovers_from_boot_race(hass, mock_sun_entity):
     """Regression: frozen 'unknown / 0 covers' state after hub loaded first.
 
     The aggregate must poll so its state converges even when it rendered
@@ -175,7 +183,7 @@ async def test_aggregate_cover_polls_and_recovers_from_boot_race(
     from custom_components.adaptive_cover.hub import AllShadesCover
 
     await _setup_two_entries(hass)
-    assert AllShadesCover(hass)._attr_should_poll is True
+    assert AllShadesCover(hass).should_poll is True
 
     from homeassistant.setup import async_setup_component
 
@@ -196,16 +204,15 @@ async def test_aggregate_cover_polls_and_recovers_from_boot_race(
 
 async def test_reset_all_bypasses_time_throttle(hass, mock_sun_entity):
     """A human reset is a manual command: recovery is never throttled."""
-    e1, _ = await _setup_two_entries(hass)
-    coordinator = hass.data[DOMAIN][e1.entry_id]
+    # Make any ordinary adaptive move impossible for the next hour: a
+    # 60-minute time throttle, armed by the startup command at setup.
+    await _setup_two_entries(hass, delta_time_a=60)
+    window_a = WindowHandle(hass, "cover.a")
 
-    # Make any ordinary adaptive move impossible for the next hour
-    coordinator.time_threshold = 60
     # Cover was just manually moved (throttle window hot, override latched)
-    coordinator.manager.mark_manual_control("cover.a")
-    coordinator.manager.manual_control_time["cover.a"] = dt.datetime.now(dt.UTC)
     hass.states.async_set("cover.a", "open", {"current_position": 40})
     await hass.async_block_till_done()
+    assert window_a.is_manual
 
     calls = async_mock_service(hass, "cover", "set_cover_position")
     registry = er.async_get(hass)
@@ -217,7 +224,7 @@ async def test_reset_all_bypasses_time_throttle(hass, mock_sun_entity):
     )
     await hass.async_block_till_done()
 
-    assert coordinator.manager.is_cover_manual("cover.a") is False
+    assert window_a.is_manual is False
     moved = [c for c in calls if c.data["entity_id"] == "cover.a"]
     assert moved, "reset-all must re-apply immediately despite the throttle"
-    assert moved[-1].data["position"] == coordinator.state
+    assert moved[-1].data["position"] == window_a.target

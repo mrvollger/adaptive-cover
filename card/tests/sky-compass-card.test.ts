@@ -310,8 +310,8 @@ describe('adaptive-cover-sky-compass-card getGridOptions', () => {
 
 describe('adaptive-cover-sky-compass-card styles (auto height, issue #146)', () => {
   // styles is a Lit CSSResult; .cssText is plain text we can grep.
-  const cssText = (AdaptiveCoverSkyCompassCard as unknown as { styles: { cssText: string } })
-    .styles.cssText;
+  const cssText = (AdaptiveCoverSkyCompassCard as unknown as { styles: { cssText: string } }).styles
+    .cssText;
 
   function cssBlock(selector: string): string {
     const idx = cssText.indexOf(selector);

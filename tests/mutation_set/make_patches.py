@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
-"""Regenerate the mutation patch files from the roadmap's mutation table.
+"""Regenerate (or --check) the mutation patch files from the mutation table.
 
 Run from the repo root after production code changes invalidate the diffs:
 
-    python tests/mutation_set/make_patches.py
+    python tests/mutation_set/make_patches.py          # rewrite patches
+    python tests/mutation_set/make_patches.py --check  # CI gate, writes nothing
 
 Each mutation is an exact-unique text replacement against the CURRENT
 working-tree file; the script builds a unified diff (git-apply compatible),
 verifies uniqueness, and writes ``M##_slug.patch`` plus ``manifest.json``.
-The working tree is never modified — diffs are computed in memory.
+Production source is never modified — diffs are computed in memory. A write
+run builds every patch first and writes nothing if any mutation no longer
+applies; it also deletes orphaned ``M##_*.patch`` files.
+
+``--check`` exits 0 only if every mutation still applies (its target text
+occurs exactly once) AND every committed patch file plus ``manifest.json`` is
+byte-identical to what a write run would produce. Otherwise it lists each
+stale / non-applying / missing / orphaned file and exits 1.
 
 The mutation ids and semantics come from tests/refactor_roadmap.json's
 ``mutation_set``; a few mutations name the file the roadmap *conceptually*
@@ -17,8 +25,11 @@ assigned but land where the code actually lives (see ``deviation`` fields).
 
 from __future__ import annotations
 
+import argparse
 import difflib
 import json
+import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -49,13 +60,19 @@ class Mutation:
 MUTATIONS: list[Mutation] = [
     # ---- group A: gates & timing windows -------------------------------
     Mutation(
-        "M01", "delta_gate_ge", COORD, "check_position_delta",
+        "M01",
+        "delta_gate_ge",
+        COORD,
+        "check_position_delta",
         ">= min_change -> > (move exactly at threshold now blocked)",
         "            condition = abs(position - state) >= self.min_change",
         "            condition = abs(position - state) > self.min_change",
     ),
     Mutation(
-        "M02", "quiet_hours_snap_bypass", COORD, "check_quiet_hours",
+        "M02",
+        "quiet_hours_snap_bypass",
+        COORD,
+        "check_quiet_hours",
         "remove the snap-position early return (evening close swallowed in quiet window)",
         "        if not self.quiet_start or not self.quiet_end:\n"
         "            return True\n"
@@ -67,13 +84,19 @@ MUTATIONS: list[Mutation] = [
         "        now = self._now_local().time()",
     ),
     Mutation(
-        "M03", "move_budget_ge", COORD, "check_move_budget",
+        "M03",
+        "move_budget_ge",
+        COORD,
+        "check_move_budget",
         ">= max_moves_hour -> > (one extra move per rolling hour)",
         "        if len(history) >= self.max_moves_hour:",
         "        if len(history) > self.max_moves_hour:",
     ),
     Mutation(
-        "M04", "time_delta_default_false", COORD, "check_time_delta",
+        "M04",
+        "time_delta_default_false",
+        COORD,
+        "check_time_delta",
         "no-previous-command branch return True -> return False",
         "            return condition\n"
         "        return True\n"
@@ -87,7 +110,10 @@ MUTATIONS: list[Mutation] = [
         "    def pos_sun(self):",
     ),
     Mutation(
-        "M05", "start_time_precedence_swap", COORD, "after_start_time",
+        "M05",
+        "start_time_precedence_swap",
+        COORD,
+        "after_start_time",
         "static CONF_START_TIME wins over the start-time entity (precedence swap)",
         "        if self.start_time_entity is not None:\n"
         "            time = get_datetime_from_str(\n"
@@ -100,9 +126,7 @@ MUTATIONS: list[Mutation] = [
         "            self._start_time = time\n"
         "            return now >= time\n"
         "        if self.start_time is not None:\n"
-        "            time = get_datetime_from_str(\n"
-        "                self.start_time, default_date=now.date()\n"
-        "            )\n"
+        "            time = get_datetime_from_str(self.start_time, default_date=now.date())\n"
         "\n"
         "            self.logger.debug(\n"
         '                "Start time: %s, now: %s, now >= time: %s", time, now, now >= time\n'
@@ -111,9 +135,7 @@ MUTATIONS: list[Mutation] = [
         "            return now >= time\n"
         "        return True",
         "        if self.start_time is not None:\n"
-        "            time = get_datetime_from_str(\n"
-        "                self.start_time, default_date=now.date()\n"
-        "            )\n"
+        "            time = get_datetime_from_str(self.start_time, default_date=now.date())\n"
         "\n"
         "            self.logger.debug(\n"
         '                "Start time: %s, now: %s, now >= time: %s", time, now, now >= time\n'
@@ -133,7 +155,10 @@ MUTATIONS: list[Mutation] = [
         "        return True",
     ),
     Mutation(
-        "M06", "midnight_end_time_normalization", COORD, "_end_time",
+        "M06",
+        "midnight_end_time_normalization",
+        COORD,
+        "_end_time",
         "drop the 00:00-means-next-midnight normalization",
         "            time = get_datetime_from_str(self.end_time, default_date=today)\n"
         "            if time.time() == dt.time(0, 0):\n"
@@ -143,7 +168,10 @@ MUTATIONS: list[Mutation] = [
         "        return time",
     ),
     Mutation(
-        "M07", "gate_order_delta_before_manual", COORD, "_first_blocking_gate",
+        "M07",
+        "gate_order_delta_before_manual",
+        COORD,
+        "_first_blocking_gate",
         "evaluate position-delta before the manual-override check "
         "(move_blocked_by names the wrong gate)",
         "        if self.manager.is_cover_manual(entity):\n"
@@ -157,71 +185,92 @@ MUTATIONS: list[Mutation] = [
     ),
     # ---- group B: manual override detection ----------------------------
     Mutation(
-        "M08", "manual_detection_inverted", COORD,
+        "M08",
+        "manual_detection_inverted",
+        COORD,
         "AdaptiveCoverManager.handle_state_change",
         "new_position != our_state -> == (manual detection inverted)",
         "        if new_position != our_state:",
         "        if new_position == our_state:",
     ),
     Mutation(
-        "M09", "own_landing_tolerance_flip", COORD, "_is_own_landing",
+        "M09",
+        "own_landing_tolerance_flip",
+        COORD,
+        "_is_own_landing",
         "<= TARGET_TOLERANCE -> > (own landings latch as manual)",
-        "        return (\n"
-        "            position is not None\n"
-        "            and abs(position - target) <= self.TARGET_TOLERANCE\n"
-        "        )",
-        "        return (\n"
-        "            position is not None\n"
-        "            and abs(position - target) > self.TARGET_TOLERANCE\n"
-        "        )",
+        "        return position is not None and abs(position - target) <= self.TARGET_TOLERANCE",
+        "        return position is not None and abs(position - target) > self.TARGET_TOLERANCE",
     ),
     Mutation(
-        "M10", "travel_direction_swap", COORD, "async_check_cover_state_change",
+        "M10",
+        "travel_direction_swap",
+        COORD,
+        "async_check_cover_state_change",
         "expected opening/closing swapped in the travel-window direction check",
         '                expected = "opening" if target > old_pos else "closing"',
         '                expected = "closing" if target > old_pos else "opening"',
     ),
     Mutation(
-        "M11", "manual_threshold_zero", COORD,
+        "M11",
+        "manual_threshold_zero",
+        COORD,
         "AdaptiveCoverManager.handle_state_change",
         "threshold check neutered: any nonzero diff latches",
         "                and abs(our_state - new_position) < manual_threshold",
         "                and abs(our_state - new_position) < 0",
     ),
     Mutation(
-        "M12", "override_duration_minutes_to_hours", COORD,
+        "M12",
+        "override_duration_minutes_to_hours",
+        COORD,
         "_update_manager_and_covers",
         "override duration unit blown up 60x (minutes behave like hours)",
         "        self.manager.reset_duration = dt.timedelta(**self.manual_duration)",
         "        self.manager.reset_duration = dt.timedelta(**self.manual_duration) * 60",
     ),
     Mutation(
-        "M13", "toggle_none_false_branch_swap", COORD, "_update_manager_and_covers",
+        "M13",
+        "toggle_none_false_branch_swap",
+        COORD,
+        "_update_manager_and_covers",
         "swap the None (restart: preserve) and False (toggle-off: clear) branches",
         "        if self._manual_toggle is False:",
         "        if self._manual_toggle is None:",
     ),
     # ---- group C: end-of-day close lifecycle ---------------------------
     Mutation(
-        "M14", "catchup_flag_inverted", COORD, "async_timed_end_time",
+        "M14",
+        "catchup_flag_inverted",
+        COORD,
+        "async_timed_end_time",
         "catch-up flag inversion <= -> > (on-time closes skip overridden covers)",
         "        self._end_time_is_catchup = self._end_time <= self._now_local()",
         "        self._end_time_is_catchup = self._end_time > self._now_local()",
     ),
     Mutation(
-        "M15", "end_close_skips_transform", COORD, "async_handle_timed_refresh",
+        "M15",
+        "end_close_skips_transform",
+        COORD,
+        "async_handle_timed_refresh",
         "skip the sunset-position transform (raw value sent to interpolated/inverse covers)",
         "            target = int(self._transform_state(options.get(CONF_SUNSET_POS)))",
         "            target = int(options.get(CONF_SUNSET_POS))",
     ),
     Mutation(
-        "M16", "pending_snap_retry_inverted", COORD, "async_check_cover_state_change",
+        "M16",
+        "pending_snap_retry_inverted",
+        COORD,
+        "async_check_cover_state_change",
         "pending-snap retry control_toggle condition inverted",
         "            if pending is not None and self.control_toggle:",
         "            if pending is not None and not self.control_toggle:",
     ),
     Mutation(
-        "M17", "end_time_rearm_skipped", COORD, "_async_update_data",
+        "M17",
+        "end_time_rearm_skipped",
+        COORD,
+        "_async_update_data",
         "keep the stale timer: only arm once, never re-arm on an options change",
         "        if (\n"
         "            self._end_time\n"
@@ -235,10 +284,12 @@ MUTATIONS: list[Mutation] = [
         "        ):",
     ),
     Mutation(
-        "M18", "late_fire_noop", COORD, "async_timed_refresh",
+        "M18",
+        "late_fire_noop",
+        COORD,
+        "async_timed_refresh",
         "late delivery becomes a no-op (the historical 1-second-equality bug)",
-        "        current_end = self._end_time\n"
-        "        self.logger.debug(",
+        "        current_end = self._end_time\n        self.logger.debug(",
         "        current_end = self._end_time\n"
         "        if self._scheduled_time is not None and self._now_local() > (\n"
         "            self._scheduled_time + dt.timedelta(seconds=1)\n"
@@ -251,25 +302,37 @@ MUTATIONS: list[Mutation] = [
     ),
     # ---- group D: engine geometry --------------------------------------
     Mutation(
-        "M19", "gamma_operand_swap", GEOM, "gamma",
+        "M19",
+        "gamma_operand_swap",
+        GEOM,
+        "gamma",
         "operand swap in the relative sun angle",
         "    return (window_azimuth - solar_azimuth + 180) % 360 - 180",
         "    return (solar_azimuth - window_azimuth + 180) % 360 - 180",
     ),
     Mutation(
-        "M20", "horizon_floor_dropped", GEOM, "valid_elevation",
+        "M20",
+        "horizon_floor_dropped",
+        GEOM,
+        "valid_elevation",
         "drop the unconditional horizon floor",
         "    floor = 0 if min_elevation is None else min_elevation",
         "    floor = -90 if min_elevation is None else min_elevation",
     ),
     Mutation(
-        "M21", "sunlit_top_sign_flip", GEOM, "sunlit_top",
+        "M21",
+        "sunlit_top_sign_flip",
+        GEOM,
+        "sunlit_top",
         "overhang shadow-line sign flip",
         "    shadow_line = config.overhang.height_above_sill - config.overhang.depth * tan(",
         "    shadow_line = config.overhang.height_above_sill + config.overhang.depth * tan(",
     ),
     Mutation(
-        "M22", "tilt_mode_divisor_swap", GEOM, "tilt_percentage",
+        "M22",
+        "tilt_mode_divisor_swap",
+        GEOM,
+        "tilt_percentage",
         "mode1/mode2 divisor swap",
         '    if config.tilt_mode == "mode1":\n'
         "        return round(angle / 90 * 100)\n"
@@ -279,23 +342,28 @@ MUTATIONS: list[Mutation] = [
         "    return round(angle / 90 * 100)",
     ),
     Mutation(
-        "M23", "fov_boundary_inclusive", GEOM, "sun_in_fov",
+        "M23",
+        "fov_boundary_inclusive",
+        GEOM,
+        "sun_in_fov",
         "FOV boundary < -> <= (and mirror on -fov_right)",
-        "    return bool(\n"
-        "        (g < azi_min)\n"
-        "        & (g > -azi_max)",
-        "    return bool(\n"
-        "        (g <= azi_min)\n"
-        "        & (g >= -azi_max)",
+        "    return bool(\n        (g < azi_min)\n        & (g > -azi_max)",
+        "    return bool(\n        (g <= azi_min)\n        & (g >= -azi_max)",
     ),
     Mutation(
-        "M24", "vertical_cos_multiply", GEOM, "vertical_blind_height",
+        "M24",
+        "vertical_cos_multiply",
+        GEOM,
+        "vertical_blind_height",
         "distance / cos(gamma) -> distance * cos(gamma)",
         "        (config.distance_shaded_area / cos(rad(g))) * tan(rad(sun.elevation)),",
         "        (config.distance_shaded_area * cos(rad(g))) * tan(rad(sun.elevation)),",
     ),
     Mutation(
-        "M25", "elevation_band_swapped", GEOM, "valid_elevation",
+        "M25",
+        "elevation_band_swapped",
+        GEOM,
+        "valid_elevation",
         "min and max band comparisons swapped",
         "    if elevation < floor:\n"
         "        return False\n"
@@ -307,7 +375,10 @@ MUTATIONS: list[Mutation] = [
         "        return False",
     ),
     Mutation(
-        "M26", "sunset_offset_sign_flip", GEOM, "sunset_valid",
+        "M26",
+        "sunset_offset_sign_flip",
+        GEOM,
+        "sunset_valid",
         "sunset offset sign flip",
         "    after_sunset = ctx.now_utc > (\n"
         "        ctx.sunset_utc + timedelta(minutes=config.sunset_offset_min)\n"
@@ -317,7 +388,10 @@ MUTATIONS: list[Mutation] = [
         "    )",
     ),
     Mutation(
-        "M27", "sunrise_fallback_zero", COORD, "common_data",
+        "M27",
+        "sunrise_fallback_zero",
+        COORD,
+        "common_data",
         "sunrise-offset fallback falls back to 0 instead of sunset_offset",
         "            options.get(CONF_SUNRISE_OFFSET, options.get(CONF_SUNSET_OFFSET)),",
         "            options.get(CONF_SUNRISE_OFFSET, 0),",
@@ -325,7 +399,10 @@ MUTATIONS: list[Mutation] = [
         "actually lives in coordinator.common_data.",
     ),
     Mutation(
-        "M28", "privacy_offset_or_coercion", COORD, "_apply_extended_config",
+        "M28",
+        "privacy_offset_or_coercion",
+        COORD,
+        "_apply_extended_config",
         "'offset or DEFAULT' coercion so privacy_offset=0 becomes 30",
         "                offset_min=30 if _privacy_offset is None else _privacy_offset,",
         "                offset_min=_privacy_offset or 30,",
@@ -334,7 +411,10 @@ MUTATIONS: list[Mutation] = [
     ),
     # ---- group E: engine strategy --------------------------------------
     Mutation(
-        "M29", "away_summer_opens", EVAL, "_evaluate_climate_normal",
+        "M29",
+        "away_summer_opens",
+        EVAL,
+        "_evaluate_climate_normal",
         "away/summer branch return 0 -> return 100",
         "            if climate.is_summer:\n"
         '                trace.append("summer, away: close fully")\n'
@@ -344,19 +424,28 @@ MUTATIONS: list[Mutation] = [
         "                return 100, Intent.CLIMATE_BLOCK_HEAT",
     ),
     Mutation(
-        "M30", "privacy_not_first_in_climate", EVAL, "evaluate",
+        "M30",
+        "privacy_not_first_in_climate",
+        EVAL,
+        "evaluate",
         "privacy-first ordering dropped for climate mode",
         "    if geometry.privacy_active(config, ctx):",
         "    if climate is None and geometry.privacy_active(config, ctx):",
     ),
     Mutation(
-        "M31", "max_clamp_flip", EVAL, "_apply_limits",
+        "M31",
+        "max_clamp_flip",
+        EVAL,
+        "_apply_limits",
         "max-clamp comparison flip",
         "    if apply_max and result > limits.max_position:",
         "    if apply_max and result < limits.max_position:",
     ),
     Mutation(
-        "M32", "tilt_preset_swap", EVAL, "_evaluate_climate_tilt",
+        "M32",
+        "tilt_preset_swap",
+        EVAL,
+        "_evaluate_climate_tilt",
         "dim-summer 45 <-> presence 80 preset swap (trace strings untouched)",
         "            if climate.is_summer:\n"
         '                trace.append("tilt, summer, dim: 45 deg preset")\n'
@@ -374,7 +463,10 @@ MUTATIONS: list[Mutation] = [
         "        return 45 / degrees * 100, Intent.CLIMATE_TILT_PRESET",
     ),
     Mutation(
-        "M33", "glare_band_nonempty_check", GEOM, "admit_no_glare_percentage",
+        "M33",
+        "glare_band_nonempty_check",
+        GEOM,
+        "admit_no_glare_percentage",
         "ADMIT_NO_GLARE compares band non-empty instead of band-top vs eye height",
         "    top = sunlit_top(config, sun)\n"
         "    safe = glare_safe_height(config, sun)\n"
@@ -388,7 +480,10 @@ MUTATIONS: list[Mutation] = [
         "actually lives in geometry.admit_no_glare_percentage.",
     ),
     Mutation(
-        "M34", "season_boundary_low", CALC, "ClimateCoverData.is_summer",
+        "M34",
+        "season_boundary_low",
+        CALC,
+        "ClimateCoverData.is_summer",
         "summer test temp > temp_high -> temp > temp_low",
         "            is_it = self.get_current_temperature > self.temp_high and self.outside_high",
         "            is_it = self.get_current_temperature > self.temp_low and self.outside_high",
@@ -397,7 +492,10 @@ MUTATIONS: list[Mutation] = [
     ),
     # ---- group F: output transforms & config ---------------------------
     Mutation(
-        "M35", "inverse_state_identity", COORD, "inverse_state",
+        "M35",
+        "inverse_state_identity",
+        COORD,
+        "inverse_state",
         "100 - state -> state",
         "def inverse_state(state: int) -> int:\n"
         '    """Inverse state."""\n'
@@ -407,13 +505,19 @@ MUTATIONS: list[Mutation] = [
         "    return state",
     ),
     Mutation(
-        "M36", "interp_xp_fp_swap", COORD, "interpolate_states",
+        "M36",
+        "interp_xp_fp_swap",
+        COORD,
+        "interpolate_states",
         "np.interp xp/fp argument swap",
         "            state = np.interp(state, normal_range, new_range)",
         "            state = np.interp(state, new_range, normal_range)",
     ),
     Mutation(
-        "M37", "interp_endpoint_snap_removed", COORD, "interpolate_states",
+        "M37",
+        "interp_endpoint_snap_removed",
+        COORD,
+        "interpolate_states",
         "interpolation endpoint snap-to-0/100 removed",
         "            state = np.interp(state, normal_range, new_range)\n"
         "            if state == new_range[0]:\n"
@@ -425,13 +529,19 @@ MUTATIONS: list[Mutation] = [
         "        return state",
     ),
     Mutation(
-        "M38", "inverse_applied_with_interp", COORD, "_transform_state",
+        "M38",
+        "inverse_applied_with_interp",
+        COORD,
+        "_transform_state",
         "inverse-skipped-when-interp rule inverted (apply both transforms)",
         "        if self._inverse_state and not self._use_interpolation:",
         "        if self._inverse_state:",
     ),
     Mutation(
-        "M39", "settings_merge_inverted", INIT, "handle_change_settings",
+        "M39",
+        "settings_merge_inverted",
+        INIT,
+        "handle_change_settings",
         "options merge inverted: existing options win over the requested changes",
         '            update_kwargs["options"] = {**entry.options, **changes}',
         '            update_kwargs["options"] = {**changes, **entry.options}',
@@ -441,20 +551,29 @@ MUTATIONS: list[Mutation] = [
     ),
     # ---- group G: entity surfaces & routing ----------------------------
     Mutation(
-        "M40", "position_sensor_raw_value", SENSOR, "AdaptiveCoverSensorEntity",
+        "M40",
+        "position_sensor_raw_value",
+        SENSOR,
+        "AdaptiveCoverSensorEntity",
         "position sensor reports the raw pre-transform value",
         '        return self.data.states["state"]',
         "        return self.coordinator.default_state",
     ),
     Mutation(
-        "M41", "control_method_swap", SENSOR, "AdaptiveCoverControlSensorEntity",
+        "M41",
+        "control_method_swap",
+        SENSOR,
+        "AdaptiveCoverControlSensorEntity",
         "winter/summer branch swap at the sensor surface",
         '        return self.data.states["control"]',
         '        value = self.data.states["control"]\n'
         '        return {"winter": "summer", "summer": "winter"}.get(value, value)',
     ),
     Mutation(
-        "M42", "sun_infront_inverted", BINARY, "AdaptiveCoverBinarySensor",
+        "M42",
+        "sun_infront_inverted",
+        BINARY,
+        "AdaptiveCoverBinarySensor",
         "sun-in-front binary sensor inverted",
         "    @property\n"
         "    def is_on(self) -> bool:\n"
@@ -469,7 +588,10 @@ MUTATIONS: list[Mutation] = [
         "        return value",
     ),
     Mutation(
-        "M43", "tilt_routed_to_position", COORD, "async_set_manual_position",
+        "M43",
+        "tilt_routed_to_position",
+        COORD,
+        "async_set_manual_position",
         "tilt entries routed to set_cover_position instead of set_cover_tilt_position",
         "                service = SERVICE_SET_COVER_TILT_POSITION",
         "                service = SERVICE_SET_COVER_POSITION",
@@ -477,16 +599,42 @@ MUTATIONS: list[Mutation] = [
 ]
 
 
-def build_patch(mutation: Mutation) -> str:
-    """Build a git-apply-compatible unified diff for one mutation."""
-    path = REPO_ROOT / mutation.file
-    content = path.read_text()
+PATCH_NAME_RE = re.compile(r"^M\d+_.+\.patch$")
+MANIFEST_NAME = "manifest.json"
+
+
+class MutationError(Exception):
+    """A mutation definition no longer applies to the current source."""
+
+
+def patch_name(mutation: Mutation) -> str:
+    """Return the patch file name for one mutation (``M##_slug.patch``)."""
+    return f"{mutation.id}_{mutation.slug}.patch"
+
+
+def build_patch(mutation: Mutation, repo_root: Path = REPO_ROOT) -> str:
+    """Build a git-apply-compatible unified diff for one mutation.
+
+    Raises
+    ------
+    MutationError
+        If the target file is missing or the target text does not occur
+        exactly once in it.
+    """
+    path = repo_root / mutation.file
+    try:
+        content = path.read_text(encoding="utf-8")
+    except FileNotFoundError as err:
+        raise MutationError(
+            f"{mutation.id}: target file {mutation.file} does not exist"
+        ) from err
     count = content.count(mutation.old)
     if count != 1:
-        raise SystemExit(
+        raise MutationError(
             f"{mutation.id}: expected exactly 1 occurrence of the target "
-            f"text in {mutation.file}, found {count}. The production code "
-            "changed; update make_patches.py."
+            f"text in {mutation.file} ({mutation.function}), found {count}. "
+            "The production code changed; re-anchor the mutation in "
+            "make_patches.py."
         )
     mutated = content.replace(mutation.old, mutation.new, 1)
     diff = difflib.unified_diff(
@@ -499,26 +647,139 @@ def build_patch(mutation: Mutation) -> str:
     return header + "".join(diff)
 
 
-def main() -> None:
-    manifest = []
-    for mutation in MUTATIONS:
-        patch_name = f"{mutation.id}_{mutation.slug}.patch"
-        (OUT_DIR / patch_name).write_text(build_patch(mutation))
-        entry = {
-            "id": mutation.id,
-            "file": mutation.file,
-            "function": mutation.function,
-            "description": mutation.description,
-            "patch": patch_name,
-        }
-        if mutation.deviation:
-            entry["deviation"] = mutation.deviation
-        manifest.append(entry)
-    (OUT_DIR / "manifest.json").write_text(
-        json.dumps(manifest, indent=1) + "\n"
+def manifest_entry(mutation: Mutation) -> dict[str, str]:
+    """Return the manifest.json record for one mutation."""
+    entry = {
+        "id": mutation.id,
+        "file": mutation.file,
+        "function": mutation.function,
+        "description": mutation.description,
+        "patch": patch_name(mutation),
+    }
+    if mutation.deviation:
+        entry["deviation"] = mutation.deviation
+    return entry
+
+
+def generate(
+    mutations: list[Mutation] = MUTATIONS, repo_root: Path = REPO_ROOT
+) -> tuple[dict[str, str], list[str]]:
+    """Build every output file in memory.
+
+    Returns
+    -------
+    tuple
+        ``(files, errors)``: ``files`` maps output file name -> exact text
+        (patches plus ``manifest.json``); ``errors`` has one message per
+        mutation that no longer applies or duplicates an id / patch name.
+    """
+    files: dict[str, str] = {}
+    errors: list[str] = []
+    seen_ids: set[str] = set()
+    for mutation in mutations:
+        name = patch_name(mutation)
+        if mutation.id in seen_ids or name in files:
+            errors.append(f"{mutation.id}: duplicate mutation id or patch name")
+            continue
+        seen_ids.add(mutation.id)
+        try:
+            files[name] = build_patch(mutation, repo_root)
+        except MutationError as err:
+            errors.append(str(err))
+    manifest = [manifest_entry(m) for m in mutations]
+    files[MANIFEST_NAME] = json.dumps(manifest, indent=1) + "\n"
+    return files, errors
+
+
+def _existing_patches(out_dir: Path) -> set[str]:
+    return {p.name for p in out_dir.glob("*.patch") if PATCH_NAME_RE.match(p.name)}
+
+
+def check(
+    out_dir: Path = OUT_DIR,
+    repo_root: Path = REPO_ROOT,
+    mutations: list[Mutation] = MUTATIONS,
+) -> list[str]:
+    """Return every reason the committed mutation set is stale (empty = OK).
+
+    Nothing is written.
+    """
+    files, problems = generate(mutations, repo_root)
+    for name, text in files.items():
+        path = out_dir / name
+        if not path.exists():
+            problems.append(f"{name}: missing (run make_patches.py)")
+        elif path.read_bytes() != text.encode("utf-8"):
+            problems.append(
+                f"{name}: stale (differs from what make_patches.py generates)"
+            )
+    for orphan in sorted(_existing_patches(out_dir) - set(files)):
+        problems.append(f"{orphan}: orphaned (no mutation definition)")
+    return problems
+
+
+def write(
+    out_dir: Path = OUT_DIR,
+    repo_root: Path = REPO_ROOT,
+    mutations: list[Mutation] = MUTATIONS,
+) -> list[str]:
+    """Regenerate all patch files and manifest.json; return errors.
+
+    All-or-nothing: if any mutation fails to apply, nothing is written and
+    the errors are returned. Orphaned ``M##_*.patch`` files are deleted.
+    """
+    files, errors = generate(mutations, repo_root)
+    if errors:
+        return errors
+    for name, text in files.items():
+        (out_dir / name).write_bytes(text.encode("utf-8"))
+    for orphan in sorted(_existing_patches(out_dir) - set(files)):
+        (out_dir / orphan).unlink()
+        print(f"Removed orphaned {orphan}")
+    return []
+
+
+def main(argv: list[str] | None = None) -> int:
+    """CLI entry point; returns the process exit code."""
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="verify every mutation applies and the committed patches and "
+        "manifest.json are byte-identical to a regeneration; write nothing",
     )
-    print(f"Wrote {len(manifest)} patches + manifest.json to {OUT_DIR}")
+    args = parser.parse_args(argv)
+
+    if args.check:
+        problems = check()
+        if problems:
+            print(
+                f"make_patches --check FAILED ({len(problems)} problem(s)):",
+                file=sys.stderr,
+            )
+            for problem in problems:
+                print(f"  - {problem}", file=sys.stderr)
+            print(
+                "Fix: re-anchor non-applying mutations in make_patches.py, "
+                "then run `python tests/mutation_set/make_patches.py`.",
+                file=sys.stderr,
+            )
+            return 1
+        print(
+            f"make_patches --check OK: {len(MUTATIONS)} mutations apply; all "
+            "patch files and manifest.json are up to date."
+        )
+        return 0
+
+    errors = write()
+    if errors:
+        print("Nothing written; these mutations no longer apply:", file=sys.stderr)
+        for error in errors:
+            print(f"  - {error}", file=sys.stderr)
+        return 1
+    print(f"Wrote {len(MUTATIONS)} patches + manifest.json to {OUT_DIR}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

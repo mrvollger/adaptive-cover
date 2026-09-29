@@ -1,0 +1,474 @@
+{
+  "pyright": "1.1.414",
+  "total": 190,
+  "errors": [
+    {
+      "file": "custom_components/adaptive_cover/__init__.py",
+      "rule": "reportReturnType",
+      "message": "Type \"dict[str, str | list[str | SupportsRichComparisonT@sorted]]\" is not assignable to return type \"ServiceResponse\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/calculation.py",
+      "rule": "reportAttributeAccessIssue",
+      "message": "Cannot access attribute \"to_pydatetime\" for class \"Index*\"",
+      "count": 2
+    },
+    {
+      "file": "custom_components/adaptive_cover/calculation.py",
+      "rule": "reportAttributeAccessIssue",
+      "message": "Cannot access attribute \"to_pydatetime\" for class \"MultiIndex\"",
+      "count": 2
+    },
+    {
+      "file": "custom_components/adaptive_cover/calculation.py",
+      "rule": "reportAttributeAccessIssue",
+      "message": "Cannot access attribute \"to_pydatetime\" for class \"RangeIndex*\"",
+      "count": 2
+    },
+    {
+      "file": "custom_components/adaptive_cover/calculation.py",
+      "rule": "reportAttributeAccessIssue",
+      "message": "Cannot access attribute \"to_pydatetime\" for class \"int\"",
+      "count": 2
+    },
+    {
+      "file": "custom_components/adaptive_cover/calculation.py",
+      "rule": "reportAttributeAccessIssue",
+      "message": "Cannot access attribute \"to_pydatetime\" for class \"tuple[Unknown, ...]\"",
+      "count": 2
+    },
+    {
+      "file": "custom_components/adaptive_cover/calculation.py",
+      "rule": "reportReturnType",
+      "message": "Function with declared return type \"bool\" must return value on all code paths",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/calculation.py",
+      "rule": "reportReturnType",
+      "message": "Type \"float | None\" is not assignable to return type \"float\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/calculation.py",
+      "rule": "reportReturnType",
+      "message": "Type \"float\" is not assignable to return type \"int\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/calculation.py",
+      "rule": "reportReturnType",
+      "message": "Type \"int\" is not assignable to return type \"tuple[int, int]\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/config_flow.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"key\" of type \"str\" in function \"get\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/config_flow.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"EntityFilterSelectorConfig\" cannot be assigned to parameter \"filter\" of type \"EntityWithDeviceFilterSelectorConfig | list[EntityWithDeviceFilterSelectorConfig]\" in function \"__init__\"",
+      "count": 2
+    },
+    {
+      "file": "custom_components/adaptive_cover/config_flow.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Literal['box']\" cannot be assigned to parameter \"mode\" of type \"NumberSelectorMode\" in function \"__init__\"",
+      "count": 13
+    },
+    {
+      "file": "custom_components/adaptive_cover/config_flow.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Literal['slider']\" cannot be assigned to parameter \"mode\" of type \"NumberSelectorMode\" in function \"__init__\"",
+      "count": 18
+    },
+    {
+      "file": "custom_components/adaptive_cover/config_flow.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"SensorType\" cannot be assigned to parameter \"key\" of type \"str\" in function \"__getitem__\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/config_flow.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"tuple[int, int]\" cannot be assigned to parameter \"max\" of type \"float\" in function \"__init__\"",
+      "count": 2
+    },
+    {
+      "file": "custom_components/adaptive_cover/config_flow.py",
+      "rule": "reportAttributeAccessIssue",
+      "message": "Cannot assign to attribute \"sensor_type\" for class \"OptionsFlowHandler*\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/config_flow.py",
+      "rule": "reportCallIssue",
+      "message": "No overloads for \"get\" match the provided arguments",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/config_flow.py",
+      "rule": "reportOperatorIssue",
+      "message": "Operator \"-\" not supported for types \"tuple[int, int]\" and \"Literal[1]\"",
+      "count": 2
+    },
+    {
+      "file": "custom_components/adaptive_cover/config_flow.py",
+      "rule": "reportOptionalSubscript",
+      "message": "Object of type \"None\" is not subscriptable",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/config_flow.py",
+      "rule": "reportReturnType",
+      "message": "Type \"ConfigFlowResult\" is not assignable to return type \"FlowResult[FlowContext, str]\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"awn_angle\" of type \"float\" in function \"__init__\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"awn_length\" of type \"float\" in function \"__init__\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"blind_spot_elevation\" of type \"int\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"blind_spot_left\" of type \"int\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"blind_spot_on\" of type \"bool\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"blind_spot_right\" of type \"int\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"depth\" of type \"float\" in function \"__init__\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"distance\" of type \"float\" in function \"__init__\"",
+      "count": 2
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"fov_left\" of type \"int\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"fov_right\" of type \"int\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"h_def\" of type \"int\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"h_win\" of type \"float\" in function \"__init__\"",
+      "count": 2
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"max_elevation\" of type \"int\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"max_pos\" of type \"int\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"max_pos_bool\" of type \"bool\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"min_elevation\" of type \"int\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"min_pos\" of type \"int\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"min_pos_bool\" of type \"bool\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"mode\" of type \"str\" in function \"__init__\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"slat_distance\" of type \"float\" in function \"__init__\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"sol_azi\" of type \"float\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"sol_elev\" of type \"float\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"sunrise_off\" of type \"int\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"sunset_off\" of type \"int\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"sunset_pos\" of type \"int\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"timezone\" of type \"str\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"win_azi\" of type \"int\" in function \"__init__\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"datetime | None\" cannot be assigned to parameter \"point_in_time\" of type \"datetime\" in function \"async_track_point_in_time\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"str | None\" cannot be assigned to parameter \"string\" of type \"str\" in function \"get_datetime_from_str\"",
+      "count": 2
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportCallIssue",
+      "message": "Object of type \"object\" is not callable",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportGeneralTypeIssues",
+      "message": "Expected class but received \"slice[type[str], type[int], None]\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportInvalidTypeArguments",
+      "message": "Too few type arguments provided for \"dict\"; expected 2 but received 1",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportOptionalMemberAccess",
+      "message": "\"attributes\" is not a known attribute of \"None\"",
+      "count": 4
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportOptionalMemberAccess",
+      "message": "\"entity_id\" is not a known attribute of \"None\"",
+      "count": 2
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportOptionalMemberAccess",
+      "message": "\"new_state\" is not a known attribute of \"None\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportOptionalMemberAccess",
+      "message": "\"state\" is not a known attribute of \"None\"",
+      "count": 11
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportOptionalOperand",
+      "message": "Operator \"+\" not supported for \"None\"",
+      "count": 4
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportOptionalOperand",
+      "message": "Operator \"<=\" not supported for \"None\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportOptionalOperand",
+      "message": "Operator \">\" not supported for \"None\"",
+      "count": 2
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportReturnType",
+      "message": "Type \"int | Unknown | None\" is not assignable to return type \"int\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/engine/evaluate.py",
+      "rule": "reportOperatorIssue",
+      "message": "Operator \"<\" not supported for types \"float\" and \"float | None\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/engine/evaluate.py",
+      "rule": "reportOperatorIssue",
+      "message": "Operator \">\" not supported for types \"float\" and \"float | None\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/engine/evaluate.py",
+      "rule": "reportOptionalMemberAccess",
+      "message": "\"position\" is not a known attribute of \"None\"",
+      "count": 2
+    },
+    {
+      "file": "custom_components/adaptive_cover/engine/evaluate.py",
+      "rule": "reportReturnType",
+      "message": "Type \"float | None\" is not assignable to return type \"float\"",
+      "count": 2
+    },
+    {
+      "file": "custom_components/adaptive_cover/engine/geometry.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"float | None\" cannot be assigned to parameter \"x\" of type \"ConvertibleToFloat\" in function \"__new__\"",
+      "count": 2
+    },
+    {
+      "file": "custom_components/adaptive_cover/engine/geometry.py",
+      "rule": "reportOperatorIssue",
+      "message": "Operator \"-\" not supported for types \"Literal[90]\" and \"float | None\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/engine/geometry.py",
+      "rule": "reportOperatorIssue",
+      "message": "Operator \"/\" not supported for types \"float | None\" and \"float | None\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/engine/geometry.py",
+      "rule": "reportOperatorIssue",
+      "message": "Operator \"/\" not supported for types \"float\" and \"float | None\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/engine/geometry.py",
+      "rule": "reportOptionalOperand",
+      "message": "Operator \"-\" not supported for \"None\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/frontend.py",
+      "rule": "reportPrivateImportUsage",
+      "message": "\"StaticPathConfig\" is not exported from module \"homeassistant.components.http\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/helpers.py",
+      "rule": "reportOptionalMemberAccess",
+      "message": "\"last_updated\" is not a known attribute of \"None\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/number.py",
+      "rule": "reportPrivateImportUsage",
+      "message": "\"EntityCategory\" is not exported from module \"homeassistant.helpers.entity\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/options_spec.py",
+      "rule": "reportCallIssue",
+      "message": "Argument missing for parameter \"v\"",
+      "count": 3
+    },
+    {
+      "file": "custom_components/adaptive_cover/select.py",
+      "rule": "reportPrivateImportUsage",
+      "message": "\"EntityCategory\" is not exported from module \"homeassistant.helpers.entity\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/sensor.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Unknown | None\" cannot be assigned to parameter \"x\" of type \"ConvertibleToInt\" in function \"__new__\"",
+      "count": 2
+    },
+    {
+      "file": "custom_components/adaptive_cover/sun.py",
+      "rule": "reportReturnType",
+      "message": "Type \"tuple[DatetimeIndex | None, list[Unknown] | None, list[Unknown] | None]\" is not assignable to return type \"tuple[DatetimeIndex, list[Unknown], list[Unknown]]\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/switch.py",
+      "rule": "reportArgumentType",
+      "message": "Argument of type \"Any | None\" cannot be assigned to parameter \"obj\" of type \"Sized\" in function \"len\"",
+      "count": 1
+    }
+  ]
+}

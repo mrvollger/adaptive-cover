@@ -113,9 +113,7 @@ class TestPrivacy:
         pinned at privacy position until exact sunrise, opening 20 min after
         their east/door siblings whose night hold released at sunrise - 20.
         """
-        cfg = make_config(
-            privacy=PrivacyConfig(enabled=True), sunrise_offset_min=-20
-        )
+        cfg = make_config(privacy=PrivacyConfig(enabled=True), sunrise_offset_min=-20)
         # sunrise - 15: past the offset dawn, both night holds must be off.
         released = TimeContext(datetime(2026, 12, 21, 14, 35), SUNRISE, SUNSET)
         d = evaluate(cfg, NIGHT_SUN, released)
@@ -124,9 +122,7 @@ class TestPrivacy:
 
     def test_regression_privacy_dawn_still_held_before_offset(self):
         """Before sunrise + (negative) offset the cover stays on night hold."""
-        cfg = make_config(
-            privacy=PrivacyConfig(enabled=True), sunrise_offset_min=-20
-        )
+        cfg = make_config(privacy=PrivacyConfig(enabled=True), sunrise_offset_min=-20)
         held = TimeContext(datetime(2026, 12, 21, 14, 25), SUNRISE, SUNSET)
         d = evaluate(cfg, NIGHT_SUN, held)
         assert d.position == 0

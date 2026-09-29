@@ -1,0 +1,57 @@
+# house replay: Leanne's south (01KSBFGWN5RBTYPB2XNR700ZTD) on 2026-12-21 (winter_solstice)
+# SLC (tests' lat/lon), tz=America/Denver, units=US customary, step=5min, travel=90s, 00:30 -> 00:30 next day
+# cover=cover.sw_south_shade sensor_type=cover_blind options_sha256=fab83c50ef6f
+# azimuth=190.0 fov=60.0/60.0 elevation=None..50 window_h=2.1 distance=0.1 overhang=None/None glare=1.2/2.0
+# default=97.0 sunset_pos=0.0 sunset_off=-30.0 sunrise_off=0.0 start=06:00:00 end=00:00:00 min=None (sun-only=False) max=None (sun-only=False) privacy=None
+# climate=True temp=sensor.upstairs_indoor_temperature (upstairs) low/high=72.0/75.0 sunny=sunny,partlycloudy,clear,windy,windy-variant override={'hours': 2, 'minutes': 0, 'seconds': 0} reset=False
+# restored switches: leanne_s_south_climate_mode=on, leanne_s_south_outside_temperature=off, sw_south_shade_manual_override_sw_south_shade=on, sw_south_shade_toggle_control_sw_south_shade=on
+# lines: cmd = outbound cover call; sensor = position sensor (intent), shown when it changes; input/human = scripted
+#
+12-21 00:30:00 MST  sensor 0 (sunset)
+12-21 07:50:00 MST  cmd    set_cover_position cover.sw_south_shade 97
+12-21 07:50:00 MST  sensor 97 (default)
+12-21 08:00:00 MST  input  sensor.upstairs_indoor_temperature = 71.0 °F
+12-21 08:50:00 MST  cmd    set_cover_position cover.sw_south_shade 83
+12-21 08:50:00 MST  sensor 83 (admit_no_glare)
+12-21 08:55:00 MST  cmd    set_cover_position cover.sw_south_shade 87
+12-21 08:55:00 MST  sensor 87 (admit_no_glare)
+12-21 09:00:00 MST  cmd    set_cover_position cover.sw_south_shade 88
+12-21 09:00:00 MST  sensor 88 (admit_no_glare)
+12-21 09:05:00 MST  cmd    set_cover_position cover.sw_south_shade 89
+12-21 09:05:00 MST  sensor 89 (admit_no_glare)
+12-21 09:10:00 MST  cmd    set_cover_position cover.sw_south_shade 91
+12-21 09:10:00 MST  sensor 91 (admit_no_glare)
+12-21 09:15:00 MST  cmd    set_cover_position cover.sw_south_shade 92
+12-21 09:15:00 MST  sensor 92 (admit_no_glare)
+12-21 09:20:00 MST  cmd    set_cover_position cover.sw_south_shade 93
+12-21 09:20:00 MST  sensor 93 (admit_no_glare)
+12-21 09:25:00 MST  cmd    set_cover_position cover.sw_south_shade 94
+12-21 09:25:00 MST  sensor 94 (admit_no_glare)
+12-21 09:30:00 MST  cmd    set_cover_position cover.sw_south_shade 95
+12-21 09:30:00 MST  sensor 95 (admit_no_glare)
+12-21 09:35:00 MST  cmd    set_cover_position cover.sw_south_shade 96
+12-21 09:35:00 MST  sensor 96 (admit_no_glare)
+12-21 09:40:00 MST  cmd    set_cover_position cover.sw_south_shade 97
+12-21 09:40:00 MST  sensor 97 (admit_no_glare)
+12-21 09:50:00 MST  cmd    set_cover_position cover.sw_south_shade 98
+12-21 09:50:00 MST  sensor 98 (admit_no_glare)
+12-21 09:55:00 MST  cmd    set_cover_position cover.sw_south_shade 99
+12-21 09:55:00 MST  sensor 99 (admit_no_glare)
+12-21 10:00:00 MST  input  sensor.upstairs_indoor_temperature = 73.0 °F
+12-21 10:05:00 MST  cmd    set_cover_position cover.sw_south_shade 2
+12-21 10:05:00 MST  sensor 2 (calculated)
+12-21 11:00:00 MST  input  weather.forecast_home_2 = cloudy
+12-21 11:05:00 MST  cmd    set_cover_position cover.sw_south_shade 97
+12-21 11:05:00 MST  sensor 97 (climate_default)
+12-21 13:00:00 MST  input  weather.forecast_home_2 = sunny
+12-21 13:05:00 MST  cmd    set_cover_position cover.sw_south_shade 2
+12-21 13:05:00 MST  sensor 2 (calculated)
+12-21 13:30:00 MST  human  cover.sw_south_shade -> 37 (via remote)
+12-21 14:00:00 MST  input  sensor.upstairs_indoor_temperature = 76.0 °F
+12-21 15:15:00 MST  sensor 1 (calculated)
+12-21 15:35:00 MST  cmd    set_cover_position cover.sw_south_shade 1
+12-21 16:35:00 MST  cmd    set_cover_position cover.sw_south_shade 0
+12-21 16:35:00 MST  sensor 0 (sunset)
+12-21 18:00:00 MST  input  sensor.upstairs_indoor_temperature = 74.0 °F
+12-21 21:00:00 MST  input  sensor.upstairs_indoor_temperature = 71.5 °F
+12-22 00:30:00 MST  end    shade at 0

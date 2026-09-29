@@ -1,0 +1,690 @@
+{
+  "devices": [
+    {
+      "area_id": null,
+      "config_entries": [
+        "01KSBFGWN5RBTYPB2XNR700ZTD"
+      ],
+      "default_name": "Leanne's south",
+      "device_id": "2596c84f12a2a08ae3afe03735f3401f",
+      "disabled_by": null,
+      "entity_ids": [
+        "binary_sensor.sw_south_shade_manual_override_sw_south_shade",
+        "binary_sensor.sw_south_shade_sun_infront_sw_south_shade",
+        "button.sw_south_shade_reset_manual_override_sw_south_shade",
+        "number.leanne_s_south_cooling_threshold",
+        "number.leanne_s_south_heating_threshold",
+        "number.sw_south_shade_eye_height_sw_south_shade",
+        "number.sw_south_shade_overhang_depth_sw_south_shade",
+        "number.sw_south_shade_overhang_height_above_sill_sw_south_shade",
+        "number.sw_south_shade_privacy_delay_after_sunset_sw_south_shade",
+        "number.sw_south_shade_seat_distance_from_window_sw_south_shade",
+        "select.sw_south_shade_mode_sw_south_shade",
+        "sensor.sw_south_shade_control_method_sw_south_shade",
+        "sensor.sw_south_shade_cover_position_sw_south_shade",
+        "sensor.sw_south_shade_end_sun_sw_south_shade",
+        "sensor.sw_south_shade_last_state_change_sw_south_shade",
+        "sensor.sw_south_shade_next_state_change_sw_south_shade",
+        "sensor.sw_south_shade_start_sun_sw_south_shade",
+        "switch.leanne_s_south_climate_mode",
+        "switch.leanne_s_south_outside_temperature",
+        "switch.sw_south_shade_manual_override_sw_south_shade",
+        "switch.sw_south_shade_toggle_control_sw_south_shade"
+      ],
+      "identifiers": [
+        [
+          "adaptive_cover",
+          "01KSBFGWN5RBTYPB2XNR700ZTD"
+        ]
+      ],
+      "labels": [],
+      "manufacturer": null,
+      "model": null,
+      "name": "Leanne's south",
+      "name_by_user": "Leanne's south",
+      "via_device_id": null
+    },
+    {
+      "area_id": null,
+      "config_entries": [
+        "01KWP1JY50D79YNJ6A6MG5RC15"
+      ],
+      "default_name": "Master east",
+      "device_id": "3b30d1610e630bfbe769a37fb785b91a",
+      "disabled_by": null,
+      "entity_ids": [
+        "binary_sensor.master_east_manual_override",
+        "binary_sensor.master_east_sun_infront",
+        "button.master_east_return_to_auto",
+        "number.master_east_cooling_threshold",
+        "number.master_east_eye_height",
+        "number.master_east_heating_threshold",
+        "number.master_east_overhang_depth",
+        "number.master_east_overhang_height_above_sill",
+        "number.master_east_privacy_delay_after_sunset",
+        "number.master_east_seat_distance_from_window",
+        "select.master_east_mode",
+        "sensor.master_east_control_method",
+        "sensor.master_east_cover_position",
+        "sensor.master_east_end_sun",
+        "sensor.master_east_last_state_change",
+        "sensor.master_east_next_state_change",
+        "sensor.master_east_start_sun",
+        "switch.master_east_climate_mode",
+        "switch.master_east_manual_override",
+        "switch.master_east_outside_temperature",
+        "switch.master_east_toggle_control"
+      ],
+      "identifiers": [
+        [
+          "adaptive_cover",
+          "01KWP1JY50D79YNJ6A6MG5RC15"
+        ]
+      ],
+      "labels": [],
+      "manufacturer": null,
+      "model": null,
+      "name": "Master east",
+      "name_by_user": null,
+      "via_device_id": null
+    },
+    {
+      "area_id": null,
+      "config_entries": [
+        "01KWQEPHPX2QRC9BQ0NNZ9857Z"
+      ],
+      "default_name": "Family south",
+      "device_id": "3c6c7ff24beb4721dcaa08bf90e3f8d8",
+      "disabled_by": null,
+      "entity_ids": [
+        "binary_sensor.family_south_manual_override",
+        "binary_sensor.family_south_sun_infront",
+        "button.family_south_return_to_auto",
+        "number.family_south_cooling_threshold",
+        "number.family_south_eye_height",
+        "number.family_south_heating_threshold",
+        "number.family_south_overhang_depth",
+        "number.family_south_overhang_height_above_sill",
+        "number.family_south_privacy_delay_after_sunset",
+        "number.family_south_seat_distance_from_window",
+        "select.family_south_mode",
+        "sensor.family_south_control_method",
+        "sensor.family_south_cover_position",
+        "sensor.family_south_end_sun",
+        "sensor.family_south_last_state_change",
+        "sensor.family_south_next_state_change",
+        "sensor.family_south_start_sun",
+        "switch.family_south_climate_mode",
+        "switch.family_south_manual_override",
+        "switch.family_south_outside_temperature",
+        "switch.family_south_toggle_control"
+      ],
+      "identifiers": [
+        [
+          "adaptive_cover",
+          "01KWQEPHPX2QRC9BQ0NNZ9857Z"
+        ]
+      ],
+      "labels": [],
+      "manufacturer": null,
+      "model": null,
+      "name": "Family south",
+      "name_by_user": null,
+      "via_device_id": null
+    },
+    {
+      "area_id": null,
+      "config_entries": [
+        "01KWHKT5SWNSNC9QD4QC2SQMTR"
+      ],
+      "default_name": "Den south",
+      "device_id": "576baacc9895933ad2f232b5142aa27f",
+      "disabled_by": null,
+      "entity_ids": [
+        "binary_sensor.den_south_manual_override",
+        "binary_sensor.den_south_sun_infront",
+        "button.den_south_reset_manual_override",
+        "number.den_south_cooling_threshold",
+        "number.den_south_eye_height",
+        "number.den_south_heating_threshold",
+        "number.den_south_overhang_depth",
+        "number.den_south_overhang_height_above_sill",
+        "number.den_south_privacy_delay_after_sunset",
+        "number.den_south_seat_distance_from_window",
+        "select.den_south_mode",
+        "sensor.den_south_control_method",
+        "sensor.den_south_cover_position",
+        "sensor.den_south_end_sun",
+        "sensor.den_south_last_state_change",
+        "sensor.den_south_next_state_change",
+        "sensor.den_south_start_sun",
+        "switch.den_south_climate_mode",
+        "switch.den_south_manual_override",
+        "switch.den_south_outside_temperature",
+        "switch.den_south_toggle_control"
+      ],
+      "identifiers": [
+        [
+          "adaptive_cover",
+          "01KWHKT5SWNSNC9QD4QC2SQMTR"
+        ]
+      ],
+      "labels": [],
+      "manufacturer": null,
+      "model": null,
+      "name": "Den south",
+      "name_by_user": null,
+      "via_device_id": null
+    },
+    {
+      "area_id": "office",
+      "config_entries": [
+        "01KAD4XDDT8YPF97FN3095Y9C3"
+      ],
+      "default_name": "Office north",
+      "device_id": "655f2bab4bc8577f95efd46f47be185e",
+      "disabled_by": null,
+      "entity_ids": [
+        "binary_sensor.office_north_shades_manual_override_office_north_shade",
+        "binary_sensor.office_north_shades_sun_infront_office_north_shade",
+        "button.office_north_shades_reset_manual_override_office_north_shade",
+        "number.office_office_north_shade_cooling_threshold_office_north_shade",
+        "number.office_office_north_shade_eye_height_office_north_shade",
+        "number.office_office_north_shade_heating_threshold_office_north_shade",
+        "number.office_office_north_shade_overhang_depth_office_north_shade",
+        "number.office_office_north_shade_overhang_height_above_sill_office_north_shade",
+        "number.office_office_north_shade_privacy_delay_after_sunset_office_north_shade",
+        "number.office_office_north_shade_seat_distance_from_window_office_north_shade",
+        "select.office_office_north_shade_mode_office_north_shade",
+        "sensor.office_north_shade_last_state_change_office_north_shade",
+        "sensor.office_north_shade_next_state_change_office_north_shade",
+        "sensor.office_north_shades_control_method_office_north_shade",
+        "sensor.office_north_shades_cover_position_office_north_shade",
+        "sensor.office_north_shades_end_sun_office_north_shade",
+        "sensor.office_north_shades_start_sun_office_north_shade",
+        "switch.office_north_shade_climate_mode_office_north_shade",
+        "switch.office_north_shade_outside_temperature_office_north_shade",
+        "switch.office_north_shades_manual_override_office_north_shade",
+        "switch.office_north_shades_toggle_control_office_north_shade"
+      ],
+      "identifiers": [
+        [
+          "adaptive_cover",
+          "01KAD4XDDT8YPF97FN3095Y9C3"
+        ]
+      ],
+      "labels": [],
+      "manufacturer": null,
+      "model": null,
+      "name": "Office north",
+      "name_by_user": "Office north",
+      "via_device_id": null
+    },
+    {
+      "area_id": null,
+      "config_entries": [
+        "01KWP1K4XH1C9J89HP8ME35CNZ"
+      ],
+      "default_name": "Family east",
+      "device_id": "6f7a31ccb6b2316a0f5c7c8511932f88",
+      "disabled_by": null,
+      "entity_ids": [
+        "binary_sensor.family_east_manual_override",
+        "binary_sensor.family_east_sun_infront",
+        "button.family_east_return_to_auto",
+        "number.family_east_cooling_threshold",
+        "number.family_east_eye_height",
+        "number.family_east_heating_threshold",
+        "number.family_east_overhang_depth",
+        "number.family_east_overhang_height_above_sill",
+        "number.family_east_privacy_delay_after_sunset",
+        "number.family_east_seat_distance_from_window",
+        "select.family_east_mode",
+        "sensor.family_east_control_method",
+        "sensor.family_east_cover_position",
+        "sensor.family_east_end_sun",
+        "sensor.family_east_last_state_change",
+        "sensor.family_east_next_state_change",
+        "sensor.family_east_start_sun",
+        "switch.family_east_climate_mode",
+        "switch.family_east_manual_override",
+        "switch.family_east_outside_temperature",
+        "switch.family_east_toggle_control"
+      ],
+      "identifiers": [
+        [
+          "adaptive_cover",
+          "01KWP1K4XH1C9J89HP8ME35CNZ"
+        ]
+      ],
+      "labels": [],
+      "manufacturer": null,
+      "model": null,
+      "name": "Family east",
+      "name_by_user": null,
+      "via_device_id": null
+    },
+    {
+      "area_id": null,
+      "config_entries": [
+        "01KWP2H31Q4F3BYTR9JP9W4K9C"
+      ],
+      "default_name": "Family door",
+      "device_id": "7e52b26eb165c1f12adf5379d2ff0416",
+      "disabled_by": null,
+      "entity_ids": [
+        "binary_sensor.family_door_manual_override",
+        "binary_sensor.family_door_sun_infront",
+        "button.family_door_return_to_auto",
+        "number.family_door_cooling_threshold",
+        "number.family_door_eye_height",
+        "number.family_door_heating_threshold",
+        "number.family_door_overhang_depth",
+        "number.family_door_overhang_height_above_sill",
+        "number.family_door_privacy_delay_after_sunset",
+        "number.family_door_seat_distance_from_window",
+        "select.family_door_mode",
+        "sensor.family_door_control_method",
+        "sensor.family_door_cover_position",
+        "sensor.family_door_end_sun",
+        "sensor.family_door_last_state_change",
+        "sensor.family_door_next_state_change",
+        "sensor.family_door_start_sun",
+        "switch.family_door_climate_mode",
+        "switch.family_door_manual_override",
+        "switch.family_door_outside_temperature",
+        "switch.family_door_toggle_control"
+      ],
+      "identifiers": [
+        [
+          "adaptive_cover",
+          "01KWP2H31Q4F3BYTR9JP9W4K9C"
+        ]
+      ],
+      "labels": [],
+      "manufacturer": null,
+      "model": null,
+      "name": "Family door",
+      "name_by_user": null,
+      "via_device_id": null
+    },
+    {
+      "area_id": null,
+      "config_entries": [
+        "01KWHKV52MF7T5N16XVXRR11C1"
+      ],
+      "default_name": "Den west",
+      "device_id": "83fc7173ca6322233af72c4e40c67224",
+      "disabled_by": null,
+      "entity_ids": [
+        "binary_sensor.den_west_manual_override",
+        "binary_sensor.den_west_sun_infront",
+        "button.den_west_reset_manual_override",
+        "number.den_west_cooling_threshold",
+        "number.den_west_eye_height",
+        "number.den_west_heating_threshold",
+        "number.den_west_overhang_depth",
+        "number.den_west_overhang_height_above_sill",
+        "number.den_west_privacy_delay_after_sunset",
+        "number.den_west_seat_distance_from_window",
+        "select.den_west_mode",
+        "sensor.den_west_control_method",
+        "sensor.den_west_cover_position",
+        "sensor.den_west_end_sun",
+        "sensor.den_west_last_state_change",
+        "sensor.den_west_next_state_change",
+        "sensor.den_west_start_sun",
+        "switch.den_west_climate_mode",
+        "switch.den_west_manual_override",
+        "switch.den_west_outside_temperature",
+        "switch.den_west_toggle_control"
+      ],
+      "identifiers": [
+        [
+          "adaptive_cover",
+          "01KWHKV52MF7T5N16XVXRR11C1"
+        ]
+      ],
+      "labels": [],
+      "manufacturer": null,
+      "model": null,
+      "name": "Den west",
+      "name_by_user": null,
+      "via_device_id": null
+    },
+    {
+      "area_id": "master_bedroom",
+      "config_entries": [
+        "01KAA8FJRH4VKCWPDMFA1JSHBT"
+      ],
+      "default_name": "Master trap",
+      "device_id": "855ff3a89aba671b18fcd5e111fb662a",
+      "disabled_by": null,
+      "entity_ids": [
+        "binary_sensor.master_trap_manual_override_master_trap",
+        "binary_sensor.master_trap_sun_infront_master_trap",
+        "button.master_trap_reset_manual_override_master_trap",
+        "number.master_master_trap_shade_cooling_threshold_master_trap",
+        "number.master_master_trap_shade_eye_height_master_trap",
+        "number.master_master_trap_shade_heating_threshold_master_trap",
+        "number.master_master_trap_shade_overhang_depth_master_trap",
+        "number.master_master_trap_shade_overhang_height_above_sill_master_trap",
+        "number.master_master_trap_shade_privacy_delay_after_sunset_master_trap",
+        "number.master_master_trap_shade_seat_distance_from_window_master_trap",
+        "select.master_master_trap_shade_mode_master_trap",
+        "sensor.master_trap_control_method_master_trap",
+        "sensor.master_trap_cover_position_master_trap",
+        "sensor.master_trap_end_sun_master_trap",
+        "sensor.master_trap_shade_last_state_change_master_trap",
+        "sensor.master_trap_shade_next_state_change_master_trap",
+        "sensor.master_trap_start_sun_master_trap",
+        "switch.master_trap_climate_mode_master_trap",
+        "switch.master_trap_manual_override_master_trap",
+        "switch.master_trap_outside_temperature_master_trap",
+        "switch.master_trap_toggle_control_master_trap"
+      ],
+      "identifiers": [
+        [
+          "adaptive_cover",
+          "01KAA8FJRH4VKCWPDMFA1JSHBT"
+        ]
+      ],
+      "labels": [],
+      "manufacturer": null,
+      "model": null,
+      "name": "Master trap",
+      "name_by_user": "Master trap",
+      "via_device_id": null
+    },
+    {
+      "area_id": null,
+      "config_entries": [
+        "01KWHKTS0C0HTDDQTW75W04HKZ"
+      ],
+      "default_name": "Den southwest",
+      "device_id": "8c6b9af2bf3bbe127ada1e8f4113ebbb",
+      "disabled_by": null,
+      "entity_ids": [
+        "binary_sensor.den_southwest_manual_override",
+        "binary_sensor.den_southwest_sun_infront",
+        "button.den_southwest_reset_manual_override",
+        "number.den_southwest_cooling_threshold",
+        "number.den_southwest_eye_height",
+        "number.den_southwest_heating_threshold",
+        "number.den_southwest_overhang_depth",
+        "number.den_southwest_overhang_height_above_sill",
+        "number.den_southwest_privacy_delay_after_sunset",
+        "number.den_southwest_seat_distance_from_window",
+        "select.den_southwest_mode",
+        "sensor.den_southwest_control_method",
+        "sensor.den_southwest_cover_position",
+        "sensor.den_southwest_end_sun",
+        "sensor.den_southwest_last_state_change",
+        "sensor.den_southwest_next_state_change",
+        "sensor.den_southwest_start_sun",
+        "switch.den_southwest_climate_mode",
+        "switch.den_southwest_manual_override",
+        "switch.den_southwest_outside_temperature",
+        "switch.den_southwest_toggle_control"
+      ],
+      "identifiers": [
+        [
+          "adaptive_cover",
+          "01KWHKTS0C0HTDDQTW75W04HKZ"
+        ]
+      ],
+      "labels": [],
+      "manufacturer": null,
+      "model": null,
+      "name": "Den southwest",
+      "name_by_user": null,
+      "via_device_id": null
+    },
+    {
+      "area_id": "office",
+      "config_entries": [
+        "01KAD50Y5394DV5VKX96T6R9JZ"
+      ],
+      "default_name": "Office east",
+      "device_id": "a616b3afeeb12d72af8ba5f0f1e3210c",
+      "disabled_by": null,
+      "entity_ids": [
+        "binary_sensor.office_east_shade_manual_override_office_east_shade",
+        "binary_sensor.office_east_shade_sun_infront_office_east_shade",
+        "button.office_east_shade_reset_manual_override_office_east_shade",
+        "number.office_office_east_shade_cooling_threshold_office_east_shade",
+        "number.office_office_east_shade_eye_height_office_east_shade",
+        "number.office_office_east_shade_heating_threshold_office_east_shade",
+        "number.office_office_east_shade_overhang_depth_office_east_shade",
+        "number.office_office_east_shade_overhang_height_above_sill_office_east_shade",
+        "number.office_office_east_shade_privacy_delay_after_sunset_office_east_shade",
+        "number.office_office_east_shade_seat_distance_from_window_office_east_shade",
+        "select.office_office_east_shade_mode_office_east_shade",
+        "sensor.office_east_shade_control_method_office_east_shade",
+        "sensor.office_east_shade_cover_position_office_east_shade",
+        "sensor.office_east_shade_end_sun_office_east_shade",
+        "sensor.office_east_shade_last_state_change_office_east_shade",
+        "sensor.office_east_shade_next_state_change_office_east_shade",
+        "sensor.office_east_shade_start_sun_office_east_shade",
+        "switch.office_east_shade_climate_mode_office_east_shade",
+        "switch.office_east_shade_manual_override_office_east_shade",
+        "switch.office_east_shade_outside_temperature_office_east_shade",
+        "switch.office_east_shade_toggle_control_office_east_shade"
+      ],
+      "identifiers": [
+        [
+          "adaptive_cover",
+          "01KAD50Y5394DV5VKX96T6R9JZ"
+        ]
+      ],
+      "labels": [],
+      "manufacturer": null,
+      "model": null,
+      "name": "Office east",
+      "name_by_user": "Office east",
+      "via_device_id": null
+    },
+    {
+      "area_id": null,
+      "config_entries": [
+        "01KGZNRGJ39Q0S8GH12BW15QY3"
+      ],
+      "default_name": "Office door",
+      "device_id": "b6bf36f6915d4ece74011c659bb9085f",
+      "disabled_by": null,
+      "entity_ids": [
+        "binary_sensor.ne_door_shades_manual_override_ne_door_shades",
+        "binary_sensor.ne_door_shades_sun_infront_ne_door_shades",
+        "button.ne_door_shades_reset_manual_override_ne_door_shades",
+        "number.ne_door_shades_cooling_threshold_ne_door_shades",
+        "number.ne_door_shades_eye_height_ne_door_shades",
+        "number.ne_door_shades_heating_threshold_ne_door_shades",
+        "number.ne_door_shades_overhang_depth_ne_door_shades",
+        "number.ne_door_shades_overhang_height_above_sill_ne_door_shades",
+        "number.ne_door_shades_privacy_delay_after_sunset_ne_door_shades",
+        "number.ne_door_shades_seat_distance_from_window_ne_door_shades",
+        "select.ne_door_shades_mode_ne_door_shades",
+        "sensor.ne_door_shades_control_method_ne_door_shades",
+        "sensor.ne_door_shades_cover_position_ne_door_shades",
+        "sensor.ne_door_shades_end_sun_ne_door_shades",
+        "sensor.ne_door_shades_last_state_change_ne_door_shades",
+        "sensor.ne_door_shades_next_state_change_ne_door_shades",
+        "sensor.ne_door_shades_start_sun_ne_door_shades",
+        "switch.ne_door_shades_climate_mode_ne_door_shades",
+        "switch.ne_door_shades_manual_override_ne_door_shades",
+        "switch.ne_door_shades_outside_temperature_ne_door_shades",
+        "switch.ne_door_shades_toggle_control_ne_door_shades"
+      ],
+      "identifiers": [
+        [
+          "adaptive_cover",
+          "01KGZNRGJ39Q0S8GH12BW15QY3"
+        ]
+      ],
+      "labels": [],
+      "manufacturer": null,
+      "model": null,
+      "name": "Office door",
+      "name_by_user": "Office door",
+      "via_device_id": null
+    },
+    {
+      "area_id": null,
+      "config_entries": [
+        "01KWP1KBER8D63ZW8C5326F7AC"
+      ],
+      "default_name": "Master door",
+      "device_id": "ba68a7c8a2ecdcf635202809f0315ad5",
+      "disabled_by": null,
+      "entity_ids": [
+        "binary_sensor.master_door_manual_override",
+        "binary_sensor.master_door_sun_infront",
+        "button.master_door_return_to_auto",
+        "number.master_door_cooling_threshold",
+        "number.master_door_eye_height",
+        "number.master_door_heating_threshold",
+        "number.master_door_overhang_depth",
+        "number.master_door_overhang_height_above_sill",
+        "number.master_door_privacy_delay_after_sunset",
+        "number.master_door_seat_distance_from_window",
+        "select.master_door_mode",
+        "sensor.master_door_control_method",
+        "sensor.master_door_cover_position",
+        "sensor.master_door_end_sun",
+        "sensor.master_door_last_state_change",
+        "sensor.master_door_next_state_change",
+        "sensor.master_door_start_sun",
+        "switch.master_door_climate_mode",
+        "switch.master_door_manual_override",
+        "switch.master_door_outside_temperature",
+        "switch.master_door_toggle_control"
+      ],
+      "identifiers": [
+        [
+          "adaptive_cover",
+          "01KWP1KBER8D63ZW8C5326F7AC"
+        ]
+      ],
+      "labels": [],
+      "manufacturer": null,
+      "model": null,
+      "name": "Master door",
+      "name_by_user": null,
+      "via_device_id": null
+    },
+    {
+      "area_id": null,
+      "config_entries": [
+        "01KWQEPAFBRZQ463CW35SKE8GH"
+      ],
+      "default_name": "Master south",
+      "device_id": "ceffede895a0f83178546250e0ed4dac",
+      "disabled_by": null,
+      "entity_ids": [
+        "binary_sensor.master_south_manual_override",
+        "binary_sensor.master_south_sun_infront",
+        "button.master_south_return_to_auto",
+        "number.master_south_cooling_threshold",
+        "number.master_south_eye_height",
+        "number.master_south_heating_threshold",
+        "number.master_south_overhang_depth",
+        "number.master_south_overhang_height_above_sill",
+        "number.master_south_privacy_delay_after_sunset",
+        "number.master_south_seat_distance_from_window",
+        "select.master_south_mode",
+        "sensor.master_south_control_method",
+        "sensor.master_south_cover_position",
+        "sensor.master_south_end_sun",
+        "sensor.master_south_last_state_change",
+        "sensor.master_south_next_state_change",
+        "sensor.master_south_start_sun",
+        "switch.master_south_climate_mode",
+        "switch.master_south_manual_override",
+        "switch.master_south_outside_temperature",
+        "switch.master_south_toggle_control"
+      ],
+      "identifiers": [
+        [
+          "adaptive_cover",
+          "01KWQEPAFBRZQ463CW35SKE8GH"
+        ]
+      ],
+      "labels": [],
+      "manufacturer": null,
+      "model": null,
+      "name": "Master south",
+      "name_by_user": null,
+      "via_device_id": null
+    },
+    {
+      "area_id": null,
+      "config_entries": [
+        "01KSBFBK88WRN0NYVSHNR37QJX"
+      ],
+      "default_name": "Leanne's west",
+      "device_id": "d1145bec73bda1cbb102473cd5d9bbdb",
+      "disabled_by": null,
+      "entity_ids": [
+        "binary_sensor.sw_door_shade_manual_override_sw_door_shades",
+        "binary_sensor.sw_door_shade_sun_infront_sw_door_shades",
+        "button.sw_door_shade_reset_manual_override_sw_door_shades",
+        "number.leanne_s_door_cooling_threshold",
+        "number.leanne_s_door_heating_threshold",
+        "number.sw_door_shade_eye_height_sw_door_shades",
+        "number.sw_door_shade_overhang_depth_sw_door_shades",
+        "number.sw_door_shade_overhang_height_above_sill_sw_door_shades",
+        "number.sw_door_shade_privacy_delay_after_sunset_sw_door_shades",
+        "number.sw_door_shade_seat_distance_from_window_sw_door_shades",
+        "select.sw_door_shade_mode_sw_door_shades",
+        "sensor.sw_door_shade_control_method_sw_door_shades",
+        "sensor.sw_door_shade_cover_position_sw_door_shades",
+        "sensor.sw_door_shade_end_sun_sw_door_shades",
+        "sensor.sw_door_shade_last_state_change_sw_door_shades",
+        "sensor.sw_door_shade_next_state_change_sw_door_shades",
+        "sensor.sw_door_shade_start_sun_sw_door_shades",
+        "switch.leanne_s_door_climate_mode",
+        "switch.leanne_s_door_outside_temperature",
+        "switch.sw_door_shade_manual_override_sw_door_shades",
+        "switch.sw_door_shade_toggle_control_sw_door_shades"
+      ],
+      "identifiers": [
+        [
+          "adaptive_cover",
+          "01KSBFBK88WRN0NYVSHNR37QJX"
+        ]
+      ],
+      "labels": [],
+      "manufacturer": null,
+      "model": null,
+      "name": "Leanne's door",
+      "name_by_user": "Leanne's door",
+      "via_device_id": null
+    },
+    {
+      "area_id": null,
+      "config_entries": [
+        "01KWGN2C5A971RHY27W3G8ERVX"
+      ],
+      "default_name": "Adaptive Cover All",
+      "device_id": "d256706cec9e1aab19295d3b7c942f4c",
+      "disabled_by": null,
+      "entity_ids": [
+        "button.adaptive_cover_all_reset_all_manual_overrides",
+        "cover.adaptive_cover_all",
+        "select.adaptive_cover_all_cover_control_mode"
+      ],
+      "identifiers": [
+        [
+          "adaptive_cover",
+          "adaptive_cover_hub"
+        ]
+      ],
+      "labels": [],
+      "manufacturer": null,
+      "model": null,
+      "name": "Adaptive Cover All",
+      "name_by_user": null,
+      "via_device_id": null
+    }
+  ]
+}

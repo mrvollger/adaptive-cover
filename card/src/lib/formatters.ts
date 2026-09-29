@@ -84,17 +84,13 @@ export function nextAllowedIso(
   return new Date(base + thresholdMinutes * 60_000).toISOString();
 }
 
-/** Human-readable seconds until a future ISO datetime, or "now" / "past".
- *  Pass `hass` to localize the "expired" sentinel; without it, the EN value
- *  is returned so pure-helper callers remain locale-agnostic. */
-export function countdownTo(
-  iso: string | null | undefined,
-  hass?: Parameters<typeof t>[1],
-): string {
+/** Human-readable seconds until a future ISO datetime, or "expired" once it
+ *  has passed. */
+export function countdownTo(iso: string | null | undefined): string {
   if (!iso) return '—';
   const target = new Date(iso).getTime();
   if (Number.isNaN(target)) return '—';
   const delta = Math.round((target - Date.now()) / 1000);
-  if (delta <= 0) return hass ? t('formatters.expired', hass) : 'expired';
+  if (delta <= 0) return t('formatters.expired');
   return formatDuration(delta);
 }

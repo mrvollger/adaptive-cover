@@ -165,8 +165,8 @@ export class AdaptiveCoverDecisionCard extends LitElement {
         <div class="empty">
           <p class="dim">
             ${this._registryError
-              ? t('tile.registry_failed', this.hass, { error: this._registryError })
-              : t('tile.loading', this.hass)}
+              ? t('tile.registry_failed', { error: this._registryError })
+              : t('tile.loading')}
           </p>
         </div>
       </ha-card>`;
@@ -176,9 +176,7 @@ export class AdaptiveCoverDecisionCard extends LitElement {
     if (!discovered) {
       return html`<ha-card>
         <div class="empty">
-          <p class="dim">
-            ${t('tile.entry_not_found', this.hass, { entry: this._config.entry_id })}
-          </p>
+          <p class="dim">${t('tile.entry_not_found', { entry: this._config.entry_id })}</p>
         </div>
       </ha-card>`;
     }

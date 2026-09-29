@@ -187,9 +187,7 @@ class TestProperties:
     def test_overhang_never_closes_more(self, elev, g):
         """Adding an overhang can only leave the blind as-open or more open."""
         sun = SunSnapshot(azimuth=180 - g, elevation=elev)
-        with_oh = geometry.vertical_percentage(
-            make_config(overhang=OVERHANG), sun
-        )
+        with_oh = geometry.vertical_percentage(make_config(overhang=OVERHANG), sun)
         without = geometry.vertical_percentage(make_config(), sun)
         assert with_oh >= without
 

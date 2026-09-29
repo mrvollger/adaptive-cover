@@ -221,18 +221,18 @@ export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements Lov
     return html`
       <div class="form">
         <div class="section">
-          <label class="field-label">${t('editor.compass.instances', this.hass)}</label>
-          <div class="hint">${t('editor.compass.instances_hint', this.hass)}</div>
+          <label class="field-label">${t('editor.compass.instances')}</label>
+          <div class="hint">${t('editor.compass.instances_hint')}</div>
           ${this._renderEntryPicker(selected)}
         </div>
 
         <div class="section">
-          <label class="field-label">${t('editor.common.title_optional', this.hass)}</label>
+          <label class="field-label">${t('editor.common.title_optional')}</label>
           <input
             type="text"
             class="text-input"
             .value=${this._config.title ?? ''}
-            placeholder=${t('editor.common.title_placeholder', this.hass)}
+            placeholder=${t('editor.common.title_placeholder')}
             @change=${this._onTitleChange}
           />
         </div>
@@ -240,8 +240,8 @@ export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements Lov
         ${this._config.entry_ids.length > 0
           ? html`
               <div class="section">
-                <label class="field-label">${t('editor.compass.cover_colors', this.hass)}</label>
-                <div class="hint">${t('editor.compass.cover_colors_hint', this.hass)}</div>
+                <label class="field-label">${t('editor.compass.cover_colors')}</label>
+                <div class="hint">${t('editor.compass.cover_colors_hint')}</div>
                 ${this._config.entry_ids.map((id, i) => {
                   const override = this._config!.cover_colors?.[i] ?? null;
                   const resolved = override ?? colorForIndex(i);
@@ -257,9 +257,7 @@ export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements Lov
                       <span class="toggle-text">
                         <span class="toggle-label">${entry?.title ?? id}</span>
                         <span class="toggle-desc"
-                          >${override
-                            ? override
-                            : t('editor.compass.default_color', this.hass)}</span
+                          >${override ? override : t('editor.compass.default_color')}</span
                         >
                       </span>
                       <button
@@ -268,7 +266,7 @@ export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements Lov
                         ?disabled=${!override}
                         @click=${() => this._onCoverColorReset(i)}
                       >
-                        ${t('editor.common.reset', this.hass)}
+                        ${t('editor.common.reset')}
                       </button>
                     </div>
                   `;
@@ -278,7 +276,7 @@ export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements Lov
           : nothing}
 
         <div class="section">
-          <label class="field-label">${t('editor.compass.display', this.hass)}</label>
+          <label class="field-label">${t('editor.compass.display')}</label>
           ${TOGGLE_ROWS.map(
             (row) => html`
               <label class="toggle-row">
@@ -290,8 +288,8 @@ export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements Lov
                     this._onToggle(row.key, (e.target as HTMLInputElement).checked)}
                 />
                 <span class="toggle-text">
-                  <span class="toggle-label">${t(row.labelKey, this.hass)}</span>
-                  <span class="toggle-desc">${t(row.descKey, this.hass)}</span>
+                  <span class="toggle-label">${t(row.labelKey)}</span>
+                  <span class="toggle-desc">${t(row.descKey)}</span>
                 </span>
               </label>
             `,
@@ -299,8 +297,8 @@ export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements Lov
         </div>
 
         <div class="section">
-          <label class="field-label">${t('editor.common.north_offset', this.hass)}</label>
-          <div class="hint">${t('editor.common.north_offset_hint', this.hass)}</div>
+          <label class="field-label">${t('editor.common.north_offset')}</label>
+          <div class="hint">${t('editor.common.north_offset_hint')}</div>
           <input
             type="number"
             class="text-input"
@@ -310,7 +308,7 @@ export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements Lov
             @change=${this._onNorthOffsetChange}
           />
         </div>
-        ${renderEditorFooter(this.hass)}
+        ${renderEditorFooter()}
       </div>
     `;
   }
@@ -318,20 +316,17 @@ export class AdaptiveCoverSkyCompassCardEditor extends LitElement implements Lov
   private _renderEntryPicker(selected: Set<string>): TemplateResult {
     if (this._entriesError) {
       return html`<div class="error">
-        ${t('editor.common.load_failed', this.hass, { error: this._entriesError })}
+        ${t('editor.common.load_failed', { error: this._entriesError })}
       </div>`;
     }
     if (!this._entries) {
-      return html`<div class="hint">${t('editor.common.loading_entries', this.hass)}</div>`;
+      return html`<div class="hint">${t('editor.common.loading_entries')}</div>`;
     }
     if (this._entries.length === 0) {
       return html`
         <div class="error">
-          ${t('editor.common.no_entries', this.hass)}
-          <code>${t('editor.common.no_entries_path', this.hass)}</code>${t(
-            'editor.common.no_entries_then',
-            this.hass,
-          )}
+          ${t('editor.common.no_entries')}
+          <code>${t('editor.common.no_entries_path')}</code>${t('editor.common.no_entries_then')}
         </div>
       `;
     }

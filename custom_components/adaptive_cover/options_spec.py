@@ -104,7 +104,9 @@ CHANGEABLE_OPTIONS: dict[str, object] = {
     # smoothing & timing
     CONF_QUIET_START: vol.Any(None, str),
     CONF_QUIET_END: vol.Any(None, str),
-    CONF_MAX_MOVES_HOUR: vol.Any(None, vol.All(vol.Coerce(int), vol.Range(min=1, max=60))),
+    CONF_MAX_MOVES_HOUR: vol.Any(
+        None, vol.All(vol.Coerce(int), vol.Range(min=1, max=60))
+    ),
     CONF_DELTA_POSITION: vol.All(vol.Coerce(int), vol.Range(min=1, max=90)),
     CONF_DELTA_TIME: vol.All(vol.Coerce(int), vol.Range(min=0)),
     CONF_START_TIME: vol.Any(None, str),
@@ -112,7 +114,9 @@ CHANGEABLE_OPTIONS: dict[str, object] = {
     # manual override
     CONF_MANUAL_OVERRIDE_DURATION: vol.Any(None, dict),
     CONF_MANUAL_OVERRIDE_RESET: vol.Boolean(),
-    CONF_MANUAL_THRESHOLD: vol.Any(None, vol.All(vol.Coerce(int), vol.Range(min=0, max=99))),
+    CONF_MANUAL_THRESHOLD: vol.Any(
+        None, vol.All(vol.Coerce(int), vol.Range(min=0, max=99))
+    ),
     # climate mode + its input entities (the entry reload re-wires the
     # state listeners, so these are safe to change at runtime)
     CONF_CLIMATE_MODE: vol.Boolean(),

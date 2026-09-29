@@ -167,8 +167,9 @@ def admit_no_glare_percentage(config: CoverConfig, sun: SunSnapshot) -> float:
     safe = glare_safe_height(config, sun)
     if top <= safe:
         return 100
-    return round(float(np.clip(safe, 0, config.window_height))
-                 / config.window_height * 100)
+    return round(
+        float(np.clip(safe, 0, config.window_height)) / config.window_height * 100
+    )
 
 
 def default_position(config: CoverConfig, ctx: TimeContext) -> float:

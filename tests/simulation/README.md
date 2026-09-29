@@ -25,13 +25,14 @@ listeners, entities) against a fully simulated house:
 ```python
 async def test_my_scenario(hass, freezer):
     house = await SimHouse.create(
-        hass, freezer,
+        hass,
+        freezer,
         date="2026-03-20",
         covers=["cover.shade"],
         options={CONF_END_TIME: "20:00:00", CONF_RETURN_SUNSET: True},
     )
     await house.advance_to("14:00")
-    await house.user_moves("cover.shade", 100, via="remote")   # or "dashboard"
+    await house.user_moves("cover.shade", 100, via="remote")  # or "dashboard"
     await house.advance_to("16:00")
     assert house.auto_moves("cover.shade", since="14:00") == []
     await house.teardown()
@@ -80,8 +81,8 @@ async def test_my_scenario(hass, freezer):
 
 - `await house.set_options(**changes)` — the user edits options in the UI:
   merges into `entry.options`, waits for the reload, re-wins the fake cover
-  services, re-points `house.coordinator`. With no changes it models saving
-  the dialog unchanged (still a reload).
+  services, and keeps attributing commands to the rebuilt window. With no
+  changes it models saving the dialog unchanged (still a reload).
 - `await house.restart(at=None, restore=True, seed_states=None)` — HA
   restart: optionally advance first, capture entity states, unload, seed
   `mock_restore_cache` (or `seed_states={entity_id: "off"}` overrides;
@@ -104,6 +105,14 @@ async def test_my_scenario(hass, freezer):
 
 ## Entities (never hard-code entity_ids)
 
+- `house.window(entity=None)` — the cover's `WindowHandle`
+  (`tests/window_handle.py`; default: the first cover): role-based public
+  reads such as `target` (Position sensor), `is_manual` (this cover is in
+  the Manual override sensor's `manual_controlled`), `manual_override`,
+  `available` (update loop healthy), `move_blocked_by`, `moves`
+  (`adaptive_cover_moved` provenance), `commands`, and `teardowns`
+  (entity unloads, i.e. reloads). Built before setup, so it also sees the
+  startup command.
 - `house.eid(domain, key)` — resolve the entry's entities by unique-id
   suffix via the entity registry (`"cover_position"`, `"toggle_control"`,
   `"manual_override"`, `"climate_mode"`, `"reset_manual_override"`,
@@ -132,22 +141,27 @@ with `user_moves` / direct `hass.states.async_set` at the recorded times.
 
 ## Sanctioned couplings
 
-The harness touches exactly two internals, both centralized in
-`tests/characterization/golden_lib.py` until the refactor's first commit
-makes them public seams:
+Tests observe the house only through `house.window()` / entity states and
+the timeline. The harness itself uses two production seams, each wrapped
+by one helper in `tests/characterization/golden_lib.py`:
 
-- `patch_sun_data(sun_data)` — THE one place that knows SunData's import
-  path (`calculation.SunData`).
-- `is_integration_context(coordinator, ctx)` — THE one place that knows
-  integration commands are marked via `coordinator._our_context_ids`.
+- `patch_sun_data(sun_data)` — sets `calculation.sun_data_factory`, the
+  hook every cover adapter uses to build its solar day.
+- `is_integration_context(coordinator, ctx)` — wraps the coordinator's
+  public `is_own_context(ctx)`, to attribute commands to the integration.
+  Reaching that coordinator is the harness's one internal read
+  (`window_handle.internal_coordinator`, marked `contract: internal`).
 
 ## Mutation kill matrix
 
 `tests/mutation_set/` holds one patch file per roadmap mutation (M01–M43)
-plus `run_mutations.py`, which applies each patch, runs the configured
-pytest tiers, records caught/missed, reverse-applies, and writes a JSON
-report — see that script's docstring. Regenerate stale patches with
-`python tests/mutation_set/make_patches.py`.
+plus `run_mutations.py`, which applies each patch in its own temp copy of
+the repo, runs the configured pytest tiers, records caught/missed, and
+writes a JSON report. Use `--jobs N` to run mutations in parallel (your
+checkout is never modified). Regenerate stale patches with
+`python tests/mutation_set/make_patches.py`; `--check` verifies them
+without writing. Flags, the behavior-tier ledger and its checker are
+documented in `tests/contract/README.md`.
 
 ## File tour
 

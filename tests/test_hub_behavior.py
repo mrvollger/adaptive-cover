@@ -33,6 +33,7 @@ from custom_components.adaptive_cover.const import (
 from custom_components.adaptive_cover.hub import HUB_UNIQUE_ID
 
 from .conftest import COMMON_OPTIONS
+from .window_handle import WindowHandle
 
 AGGREGATE_COVER = "cover.adaptive_cover_all"
 
@@ -123,9 +124,7 @@ async def _poll(hass, entity_id):
 
 def _manual_binary(hass, entry):
     """State of an entry's Manual Override binary sensor."""
-    return hass.states.get(
-        _entry_eid(hass, "binary_sensor", entry, "Manual Override")
-    )
+    return hass.states.get(_entry_eid(hass, "binary_sensor", entry, "Manual Override"))
 
 
 async def _latch_override_by_remote_move(hass, cover, position):
@@ -157,9 +156,7 @@ async def test_aggregate_set_marks_manual(hass, mock_sun_entity):
     await hass.async_block_till_done()
 
     member_calls = [
-        call
-        for call in calls
-        if call.data["entity_id"] in ("cover.a", "cover.b")
+        call for call in calls if call.data["entity_id"] in ("cover.a", "cover.b")
     ]
     assert member_calls == [], (
         "adaptive tick must not walk back a whole-house manual gesture"
@@ -177,16 +174,14 @@ async def test_aggregate_set_marks_manual_control_case(hass, mock_sun_entity):
 
     Proves the empty-calls assert above is not vacuous.
     """
-    e1, e2 = await _setup_two_entries(hass)
+    windows = {cover: WindowHandle(hass, cover) for cover in ("cover.a", "cover.b")}
+    await _setup_two_entries(hass)
 
     # The fixed startup refresh commanded both members at setup; land each
     # cover on its target so the travel windows clear and the elevation-50
     # tick below (~28%, differing from the landed positions) re-commands.
-    for entry, cover in ((e1, "cover.a"), (e2, "cover.b")):
-        coordinator = hass.data[DOMAIN][entry.entry_id]
-        hass.states.async_set(
-            cover, "open", {"current_position": coordinator.target_call[cover]}
-        )
+    for cover, window in windows.items():
+        hass.states.async_set(cover, "open", {"current_position": window.last_command})
     await hass.async_block_till_done()
 
     calls = async_mock_service(hass, "cover", "set_cover_position")

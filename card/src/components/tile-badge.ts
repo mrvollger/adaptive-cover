@@ -43,7 +43,7 @@ export class TileBadge extends LitElement {
   protected render(): TemplateResult {
     const kind = this._kind();
     const tokens = BADGE_TOKENS[kind];
-    const label = this.hass ? t(BADGE_I18N_KEYS[kind], this.hass) : BADGE_TOKENS[kind].label;
+    const label = t(BADGE_I18N_KEYS[kind]);
     const icon = BADGE_ICONS[kind];
     const inner = html`${icon
       ? html`<ha-icon class="badge-icon" icon=${icon}></ha-icon>`
@@ -51,7 +51,7 @@ export class TileBadge extends LitElement {
       ? html`<ha-icon class="resume-icon" icon="mdi:restore"></ha-icon>`
       : nothing}`;
     if (this.resumable) {
-      const hint = this.hass ? t('tile.resume_aria', this.hass) : 'Resume automatic control';
+      const hint = t('tile.resume_aria');
       return html`<button
         class="badge kind-${kind} resumable"
         style="background:${tokens.bg};color:${tokens.fg};"

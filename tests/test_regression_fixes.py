@@ -32,13 +32,12 @@ def _stub_hass():
     )
 
 
-def test_regression_sun_data_snapshot_cached_per_date(monkeypatch):
+def test_regression_sun_data_snapshot_cached_per_date(freezer):
     """times/solar_azimuth/solar_elevation must come from one snapshot; a
     per-access regeneration could pair one day's index with another day's
     data around midnight or a DST shift."""
     sun_data = SunData("America/Denver", _stub_hass())
-    current = {"today": date(2026, 6, 21)}
-    monkeypatch.setattr(sun_data, "_today_local", lambda: current["today"])
+    freezer.move_to("2026-06-21 18:00:00+00:00")  # 12:00 MDT, Jun 21
 
     times_first = sun_data.times
     azi_first = sun_data.solar_azimuth
@@ -51,7 +50,7 @@ def test_regression_sun_data_snapshot_cached_per_date(monkeypatch):
     assert times_first[0].date() == date(2026, 6, 21)
 
     # Date rolls over: the whole snapshot refreshes together.
-    current["today"] = date(2026, 6, 22)
+    freezer.move_to("2026-06-22 18:00:00+00:00")  # 12:00 MDT, Jun 22
     times_next = sun_data.times
     assert times_next is not times_first
     assert times_next[0].date() == date(2026, 6, 22)
@@ -60,11 +59,11 @@ def test_regression_sun_data_snapshot_cached_per_date(monkeypatch):
     assert len(sun_data.solar_elevation) == len(times_next)
 
 
-def test_regression_sun_data_dst_day_lists_match_index(monkeypatch):
+def test_regression_sun_data_dst_day_lists_match_index(freezer):
     """On a 25-hour DST fall-back day the index is longer; azimuth/elevation
     must match it exactly (a mismatched pairing would misalign by hours)."""
     sun_data = SunData("America/Denver", _stub_hass())
-    monkeypatch.setattr(sun_data, "_today_local", lambda: date(2026, 11, 1))
+    freezer.move_to("2026-11-01 18:00:00+00:00")  # 11:00 MST, Nov 1 (DST end)
     times = sun_data.times
     assert len(times) == 301  # 25 h * 12 + 1: DST fall-back day
     assert len(sun_data.solar_azimuth) == len(times)
@@ -103,8 +102,8 @@ def test_regression_deprecated_get_astral_location_removed():
 def test_regression_astral_location_matches_ha_helper():
     """The direct construction must be equivalent to what the deprecated
     helper produced from the same config."""
-    hass = _stub_hass()
-    location, elevation = sun_module._astral_location(hass)
+    sun_data = SunData("America/Denver", _stub_hass())
+    location, elevation = sun_data.location, sun_data.elevation
     assert elevation == 1300
     assert location.latitude == pytest.approx(40.76)
     assert location.longitude == pytest.approx(-111.89)
