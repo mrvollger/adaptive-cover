@@ -1,6 +1,6 @@
 {
   "pyright": "1.1.414",
-  "total": 121,
+  "total": 108,
   "errors": [
     {
       "file": "custom_components/adaptive_cover/__init__.py",
@@ -203,38 +203,20 @@
     {
       "file": "custom_components/adaptive_cover/coordinator.py",
       "rule": "reportArgumentType",
-      "message": "Argument of type \"datetime | None\" cannot be assigned to parameter \"point_in_time\" of type \"datetime\" in function \"async_track_point_in_time\"",
-      "count": 1
-    },
-    {
-      "file": "custom_components/adaptive_cover/coordinator.py",
-      "rule": "reportArgumentType",
       "message": "Argument of type \"float | Unknown | Literal[100, 0]\" cannot be assigned to parameter \"state\" of type \"int\" in function \"inverse_state\"",
-      "count": 1
-    },
-    {
-      "file": "custom_components/adaptive_cover/coordinator.py",
-      "rule": "reportGeneralTypeIssues",
-      "message": "Expected class but received \"slice[type[str], type[int], None]\"",
-      "count": 1
-    },
-    {
-      "file": "custom_components/adaptive_cover/coordinator.py",
-      "rule": "reportInvalidTypeArguments",
-      "message": "Too few type arguments provided for \"dict\"; expected 2 but received 1",
       "count": 1
     },
     {
       "file": "custom_components/adaptive_cover/coordinator.py",
       "rule": "reportOptionalMemberAccess",
       "message": "\"attributes\" is not a known attribute of \"None\"",
-      "count": 5
+      "count": 3
     },
     {
       "file": "custom_components/adaptive_cover/coordinator.py",
       "rule": "reportOptionalMemberAccess",
       "message": "\"entity_id\" is not a known attribute of \"None\"",
-      "count": 2
+      "count": 1
     },
     {
       "file": "custom_components/adaptive_cover/coordinator.py",
@@ -252,19 +234,13 @@
       "file": "custom_components/adaptive_cover/coordinator.py",
       "rule": "reportOptionalMemberAccess",
       "message": "\"state\" is not a known attribute of \"None\"",
-      "count": 13
+      "count": 7
     },
     {
       "file": "custom_components/adaptive_cover/coordinator.py",
       "rule": "reportOptionalOperand",
       "message": "Operator \"+\" not supported for \"None\"",
       "count": 4
-    },
-    {
-      "file": "custom_components/adaptive_cover/coordinator.py",
-      "rule": "reportOptionalOperand",
-      "message": "Operator \"<=\" not supported for \"None\"",
-      "count": 1
     },
     {
       "file": "custom_components/adaptive_cover/coordinator.py",

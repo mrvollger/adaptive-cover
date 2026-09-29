@@ -50,36 +50,36 @@
  },
  {
   "id": "M08",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "AdaptiveCoverManager.handle_state_change",
+  "file": "custom_components/adaptive_cover/runtime/manual_detector.py",
+  "function": "ManualDetector.check_landing",
   "description": "new_position != our_state -> == (manual detection inverted)",
   "patch": "M08_manual_detection_inverted.patch"
  },
  {
   "id": "M09",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "_is_own_landing",
+  "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+  "function": "CommandTracker.is_own_landing",
   "description": "<= TARGET_TOLERANCE -> > (own landings latch as manual)",
   "patch": "M09_own_landing_tolerance_flip.patch"
  },
  {
   "id": "M10",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "async_check_cover_state_change",
+  "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+  "function": "CommandTracker.release_if_against",
   "description": "expected opening/closing swapped in the travel-window direction check",
   "patch": "M10_travel_direction_swap.patch"
  },
  {
   "id": "M11",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "AdaptiveCoverManager.handle_state_change",
+  "file": "custom_components/adaptive_cover/runtime/manual_detector.py",
+  "function": "ManualDetector.check_landing",
   "description": "threshold check neutered: any nonzero diff latches",
   "patch": "M11_manual_threshold_zero.patch"
  },
  {
   "id": "M12",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "_update_manager_and_covers",
+  "file": "custom_components/adaptive_cover/runtime/override_tracker.py",
+  "function": "OverrideTracker.set_duration",
   "description": "override duration unit blown up 60x (minutes behave like hours)",
   "patch": "M12_override_duration_minutes_to_hours.patch"
  },
@@ -92,36 +92,36 @@
  },
  {
   "id": "M14",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "async_timed_end_time",
+  "file": "custom_components/adaptive_cover/runtime/end_of_day.py",
+  "function": "EndOfDay.arm",
   "description": "catch-up flag inversion <= -> > (on-time closes skip overridden covers)",
   "patch": "M14_catchup_flag_inverted.patch"
  },
  {
   "id": "M15",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "async_handle_timed_refresh",
+  "file": "custom_components/adaptive_cover/runtime/end_of_day.py",
+  "function": "EndOfDay.close",
   "description": "skip the sunset-position transform (raw value sent to interpolated/inverse covers)",
   "patch": "M15_end_close_skips_transform.patch"
  },
  {
   "id": "M16",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "async_check_cover_state_change",
+  "file": "custom_components/adaptive_cover/runtime/end_of_day.py",
+  "function": "EndOfDay.take_retry",
   "description": "pending-snap retry control_toggle condition inverted",
   "patch": "M16_pending_snap_retry_inverted.patch"
  },
  {
   "id": "M17",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "_async_update_data",
+  "file": "custom_components/adaptive_cover/runtime/end_of_day.py",
+  "function": "EndOfDay.ensure_armed",
   "description": "keep the stale timer: only arm once, never re-arm on an options change",
   "patch": "M17_end_time_rearm_skipped.patch"
  },
  {
   "id": "M18",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "async_timed_refresh",
+  "file": "custom_components/adaptive_cover/runtime/end_of_day.py",
+  "function": "EndOfDay._on_fire",
   "description": "late delivery becomes a no-op (the historical 1-second-equality bug)",
   "patch": "M18_late_fire_noop.patch",
   "deviation": "roadmap wrote the guard as 'if now < end_time: return'; the kill-relevant behavior (a LATE fire is dropped) needs the inverse comparison, implemented here against the armed time."
@@ -338,8 +338,8 @@
  },
  {
   "id": "M57",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "_adopt_late_delivery",
+  "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+  "function": "CommandTracker.adopt_late_delivery",
   "description": "motion toward a failed-but-delivered command is never adopted as ours",
   "patch": "M57_late_delivery_never_adopted.patch"
  },
