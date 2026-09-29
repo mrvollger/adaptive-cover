@@ -159,7 +159,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # Re-read on every refresh (_update_options).
         self.config = ShadeConfig.from_options(self.config_entry.options)
         self.schedule = Schedule(
-            lambda entity_id: get_safe_state(self.hass, entity_id), self.logger
+            lambda entity_id: get_safe_state(self.hass, entity_id),
+            self.logger,
+            local_zone=lambda: cached_timezone(self.hass.config.time_zone),
         )
         self.gates = GatePolicy(self.logger)
         # Why the next refresh runs (entity change, cover report, startup,
@@ -629,6 +631,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     "min_elevation": cover_data.min_elevation,
                     "max_elevation": cover_data.max_elevation,
                 },
+                cached_timezone(self.hass.config.time_zone),
             ),
         )
 

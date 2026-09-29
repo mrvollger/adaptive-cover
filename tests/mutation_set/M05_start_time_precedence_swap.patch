@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/runtime/schedule.py b/custom_components/adaptive_cover/runtime/schedule.py
 --- a/custom_components/adaptive_cover/runtime/schedule.py
 +++ b/custom_components/adaptive_cover/runtime/schedule.py
-@@ -74,6 +74,14 @@
+@@ -82,6 +82,14 @@
          start entity (unavailable, or not a time) falls back to the fixed
          start time; with no fixed start, control has not started yet.
          """
@@ -16,7 +16,7 @@ diff --git a/custom_components/adaptive_cover/runtime/schedule.py b/custom_compo
          if config.start_time_entity is not None:
              time = self._read_time(config.start_time_entity, now.date())
              if time is not None:
-@@ -88,14 +96,6 @@
+@@ -96,14 +104,6 @@
                      "Start entity %s unreadable: not started", config.start_time_entity
                  )
                  return False
