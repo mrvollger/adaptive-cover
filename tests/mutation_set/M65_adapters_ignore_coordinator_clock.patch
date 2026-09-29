@@ -1,0 +1,10 @@
+diff --git a/custom_components/adaptive_cover/calculation.py b/custom_components/adaptive_cover/calculation.py
+--- a/custom_components/adaptive_cover/calculation.py
++++ b/custom_components/adaptive_cover/calculation.py
+@@ -911,5 +911,5 @@
+     if adapter is None:
+         raise ValueError(f"Unknown cover type {cover_type!r}")
+     return adapter.from_config(
+-        hass, logger, geometry, sun=sun, timezone=timezone, clock=clock
++        hass, logger, geometry, sun=sun, timezone=timezone
+     )

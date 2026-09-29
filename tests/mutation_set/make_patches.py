@@ -207,6 +207,15 @@ MUTATIONS: list[Mutation] = [
         "        else:\n            pass\n",
     ),
     Mutation(
+        "M65",
+        "adapters_ignore_coordinator_clock",
+        CALC,
+        "build_cover",
+        "the cover adapters read the system clock instead of the coordinator's",
+        "        hass, logger, geometry, sun=sun, timezone=timezone, clock=clock\n",
+        "        hass, logger, geometry, sun=sun, timezone=timezone\n",
+    ),
+    Mutation(
         "M60",
         "unreadable_start_entity_counts_as_started",
         SCHEDULE,

@@ -517,3 +517,23 @@ The example below is inside an HTML comment. The checker ignores it.
   `tests/test_entity_surface_v2.py::TestPositionAttributes::test_multi_cover_entry_lists_every_cover`).
   Goldens, truth table and house replay unchanged (the replay drives one
   cover per window).
+
+## L0021 · 2026-09-29 · The cover adapters read the coordinator's clock (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pin
+  `tests/test_clock_seam.py::test_regression_adapters_use_the_coordinator_clock`
+  (implementation tier, like the rest of that file: it injects through
+  `coordinator.default_clock`)
+- **Mutations re-targeted:** none. Added M65 (the cover adapters read the
+  system clock instead of the coordinator's).
+- **Contract change:** C5
+- **Reason:** defect fix (P4 batch 4). `calculation.build_cover` never
+  passed the coordinator's clock, so every cover adapter, and the SunData
+  it builds, used `SYSTEM_CLOCK`, although agents.md says the coordinator
+  hands its clock to them. An injected clock reached the move log but not
+  the solar day, the forecast or the engine's time context: the new test
+  saw a forecast for the system date instead of the injected one.
+  `build_cover` and `from_config` now take `clock=`, and the coordinator
+  passes its own. Production uses `SYSTEM_CLOCK` for both, so nothing
+  changes there; goldens, truth table and house replay unchanged.

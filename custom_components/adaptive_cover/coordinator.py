@@ -982,6 +982,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             geometry,
             sun=self.pos_sun,
             timezone=self.hass.config.time_zone,
+            clock=self.clock,
         )
 
     def _now_local(self) -> dt.datetime:

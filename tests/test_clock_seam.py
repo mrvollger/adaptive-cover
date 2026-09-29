@@ -28,7 +28,9 @@ from custom_components.adaptive_cover.const import (
 )
 from custom_components.adaptive_cover.runtime.clock import SYSTEM_CLOCK
 
+from .characterization.golden_lib import use_real_sun_data
 from .conftest import COMMON_OPTIONS
+from .window_handle import WindowHandle
 
 COVER = "cover.clock_seam"
 
@@ -83,3 +85,41 @@ async def test_real_clock_follows_the_freezer(freezer):
     local = SYSTEM_CLOCK.now(denver)
     assert local.utcoffset() == dt.timedelta(hours=-7)
     assert (local.hour, local.minute) == (1, 30)
+
+
+async def test_regression_adapters_use_the_coordinator_clock(
+    hass, mock_sun_entity, monkeypatch
+):
+    """The cover adapters read the coordinator's clock, not the system one.
+
+    build_cover never passed the coordinator's clock, so every adapter (and
+    the SunData it builds) fell back to SYSTEM_CLOCK: an injected clock
+    reached the move log but not the day the forecast and the engine used.
+    """
+    fake_now = dt.datetime(2031, 6, 21, 19, 0, tzinfo=dt.UTC)
+    monkeypatch.setattr(coordinator_module, "default_clock", FixedClock(fake_now))
+    async_mock_service(hass, "cover", "set_cover_position")
+    hass.states.async_set(COVER, "open", {"current_position": 60})
+    window = WindowHandle(hass, COVER)
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Clock Seam",
+        data={"name": "Clock Seam", CONF_SENSOR_TYPE: SensorType.BLIND},
+        options={
+            **COMMON_OPTIONS,
+            CONF_HEIGHT_WIN: 2.1,
+            CONF_DISTANCE: 0.5,
+            CONF_ENTITIES: [COVER],
+        },
+    )
+    entry.add_to_hass(hass)
+    with use_real_sun_data():
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    forecast = window.attributes["forecast_today"]
+    assert forecast, "no forecast"
+    tz = dt_util.get_time_zone(hass.config.time_zone)
+    days = {dt.datetime.fromisoformat(point["time"]).date() for point in forecast}
+    assert days == {fake_now.astimezone(tz).date()}
+    assert dt_util.utcnow().year != 2031  # HA's own clock was not touched
