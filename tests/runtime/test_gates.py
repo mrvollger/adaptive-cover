@@ -250,3 +250,9 @@ def test_time_throttle_lets_rest_positions_through():
     cfg = gate_config(**{CONF_QUIET_START: None, CONF_MAX_MOVES_HOUR: None})
     gate = GatePolicy().first_blocking_gate(COVER, 100, cfg, cover.facts(), NOW, NOON)
     assert gate is None
+
+
+def test_regression_privacy_position_passes_the_delta_gate():
+    """Both snap lists match: the privacy position skips the delta gate too."""
+    cfg = config(**{CONF_DELTA_POSITION: 50})
+    assert GatePolicy().position_delta_ok(COVER, 36, 35, cfg) is True

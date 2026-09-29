@@ -1,6 +1,6 @@
 {
   "pyright": "1.1.414",
-  "total": 108,
+  "total": 106,
   "errors": [
     {
       "file": "custom_components/adaptive_cover/__init__.py",
@@ -202,12 +202,6 @@
     },
     {
       "file": "custom_components/adaptive_cover/coordinator.py",
-      "rule": "reportArgumentType",
-      "message": "Argument of type \"float | Unknown | Literal[100, 0]\" cannot be assigned to parameter \"state\" of type \"int\" in function \"inverse_state\"",
-      "count": 1
-    },
-    {
-      "file": "custom_components/adaptive_cover/coordinator.py",
       "rule": "reportOptionalMemberAccess",
       "message": "\"attributes\" is not a known attribute of \"None\"",
       "count": 3
@@ -247,12 +241,6 @@
       "rule": "reportOptionalOperand",
       "message": "Operator \">\" not supported for \"None\"",
       "count": 2
-    },
-    {
-      "file": "custom_components/adaptive_cover/coordinator.py",
-      "rule": "reportReturnType",
-      "message": "Type \"int | float | Unknown | None\" is not assignable to return type \"int\"",
-      "count": 1
     },
     {
       "file": "custom_components/adaptive_cover/frontend.py",

@@ -100,9 +100,9 @@ class GatePolicy:
     ) -> bool:
         """Check cover positions to reduce calls.
 
-        A move smaller than ``min_change`` waits, except to the sunset or
-        default position or fully open or closed. An unknown position
-        allows the move.
+        A move smaller than ``min_change`` waits, except to a snap position
+        (the same list the other rate gates use). An unknown position allows
+        the move.
         """
         if position is not None:
             condition = abs(position - state) >= config.min_change
@@ -115,12 +115,7 @@ class GatePolicy:
                 config.min_change,
                 condition,
             )
-            if state in [
-                config.sunset_pos,
-                config.default_height,
-                0,
-                100,
-            ]:
+            if self.is_snap_position(state, config):
                 condition = True
             return condition
         return True

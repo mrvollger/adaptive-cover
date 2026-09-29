@@ -1,6 +1,7 @@
 """Simulation regressions for coordinator fixes (2026-09 bug hunt)."""
 
 import datetime as dt
+import logging
 
 import pytest
 from astral import sun as astral_sun
@@ -10,10 +11,20 @@ from custom_components.adaptive_cover.const import (
     CONF_AZIMUTH,
     CONF_DEFAULT_HEIGHT,
     CONF_DISTANCE,
+    CONF_END_ENTITY,
+    CONF_END_TIME,
     CONF_FOV_LEFT,
     CONF_FOV_RIGHT,
     CONF_HEIGHT_WIN,
+    CONF_MANUAL_OVERRIDE_DURATION,
+    CONF_DELTA_POSITION,
     CONF_MAX_ELEVATION,
+    CONF_PRIVACY_MODE,
+    CONF_PRIVACY_OFFSET,
+    CONF_PRIVACY_POSITION,
+    CONF_RETURN_SUNSET,
+    CONF_START_ENTITY,
+    CONF_START_TIME,
     CONF_SUNSET_OFFSET,
     CONF_SUNSET_POS,
 )
@@ -192,4 +203,211 @@ async def test_regression_unload_cancels_arrival_poll(hass, freezer):
     await house.advance_to("10:10")  # past the 125 s poll
     polls = [ev for ev in house.timeline if ev.kind == "poll"]
     assert polls == []
+    await house.teardown()
+
+
+START_ENTITY = "input_datetime.sim_start_time"
+
+
+@pytest.mark.parametrize("unreadable", ["unavailable", "not a time"])
+async def test_regression_unreadable_start_entity_uses_fixed_start(
+    hass, freezer, unreadable
+):
+    """An unreadable start-time entity falls back to the fixed start time.
+
+    Schedule.after_start compared "now" with None (unavailable entity) or
+    let the parser raise (a state that is not a time): every refresh
+    failed, the window went unavailable and never moved.
+    """
+    hass.states.async_set(START_ENTITY, unreadable)
+    house = await SimHouse.create(
+        hass,
+        freezer,
+        date="2026-03-20",
+        options={CONF_START_TIME: "10:00:00", CONF_START_ENTITY: START_ENTITY},
+    )
+    await house.advance_to("09:55")
+    assert house.window().available, "the update loop failed"
+    assert house.auto_moves("cover.shade") == []
+    await house.advance_to("10:15")
+    assert house.auto_moves("cover.shade"), "no command after the fixed start"
+    assert house.window().available
+    await house.teardown()
+
+
+async def test_regression_unreadable_start_entity_alone_waits(hass, freezer):
+    """With no fixed start, an unreadable start entity means not started yet.
+
+    Control resumes as soon as the entity reads a time again.
+    """
+    hass.states.async_set(START_ENTITY, "unavailable")
+    house = await SimHouse.create(
+        hass, freezer, date="2026-03-20", options={CONF_START_ENTITY: START_ENTITY}
+    )
+    await house.advance_to("10:30")
+    assert house.window().available, "the update loop failed"
+    assert house.auto_moves("cover.shade") == [], "moved before any start time"
+
+    hass.states.async_set(START_ENTITY, "11:00:00")
+    await house.advance_to("10:55")
+    assert house.auto_moves("cover.shade") == []
+    await house.advance_to("11:15")
+    assert house.auto_moves("cover.shade"), "no command after the entity start"
+    await house.teardown()
+
+
+END_ENTITY = "sensor.sim_end_time"
+
+
+async def test_regression_midnight_end_entity_means_coming_midnight(hass, freezer):
+    """An end-time ENTITY at 00:00 means the coming midnight, like the option.
+
+    Only the fixed end_time was normalized. An entity at 00:00 read as the
+    midnight that STARTED today: the window was shut all day, and the end
+    close armed a past time, so it fired as a catch-up close at startup.
+    """
+    hass.states.async_set(END_ENTITY, "00:00:00")
+    house = await SimHouse.create(
+        hass,
+        freezer,
+        date="2026-03-20",
+        options={
+            CONF_END_ENTITY: END_ENTITY,
+            CONF_RETURN_SUNSET: True,
+            CONF_SUNSET_POS: 0,
+            CONF_MANUAL_OVERRIDE_DURATION: {"hours": 8},
+        },
+    )
+    await house.advance_to("12:00")
+    assert house.auto_moves("cover.shade", since="07:00"), (
+        "no daytime tracking: the 00:00 end shut the window all day"
+    )
+    end_closes = [m for m in house.window().moves if m["source"] == "end_time"]
+    assert end_closes == [], f"a catch-up end close fired: {end_closes}"
+
+    await house.advance_to("22:30")
+    await house.user_moves("cover.shade", 100, via="remote")  # held override
+    await house.advance_to("00:30")  # crosses local midnight
+    closes = [
+        m for m in house.auto_moves("cover.shade", since="22:35") if m.position == 0
+    ]
+    assert closes, "no close at the coming midnight"
+    assert closes[0].time.day == 21, f"close fired on the wrong day: {closes}"
+    await house.teardown()
+
+
+async def test_regression_fixed_start_after_end_is_reported(hass, freezer, caplog):
+    """A fixed start time after the end time is reported, like an entity one.
+
+    The fixed-start path never recorded the start it read (its line was a
+    no-op), so the "start after end" check only ever saw entity starts.
+    """
+    caplog.set_level(logging.ERROR, logger="custom_components.adaptive_cover")
+    house = await SimHouse.create(
+        hass,
+        freezer,
+        date="2026-03-20",
+        options={CONF_START_TIME: "21:00:00", CONF_END_TIME: "20:00:00"},
+    )
+    await house.advance_to("12:00")
+    assert "Start time is after end time" in caplog.text
+    assert house.auto_moves("cover.shade", since="07:00") == [], (
+        "the window is never open: start 21:00 is after end 20:00"
+    )
+    await house.teardown()
+
+
+async def test_regression_small_move_to_privacy_passes_delta_gate(hass, freezer):
+    """The privacy position is a snap position for the delta gate too.
+
+    The quiet-hours, budget and throttle gates let the privacy position
+    through, but the position-delta gate's own list left it out: a privacy
+    position within delta_position of the evening position never went out.
+    """
+    house = await SimHouse.create(
+        hass,
+        freezer,
+        date="2026-03-20",
+        initial_position=35,
+        # A north window: the sun never enters, the default rules all day.
+        options={
+            CONF_AZIMUTH: 0,
+            CONF_FOV_LEFT: 10,
+            CONF_FOV_RIGHT: 10,
+            CONF_DEFAULT_HEIGHT: 30,
+            CONF_SUNSET_POS: 30,
+            CONF_DELTA_POSITION: 10,
+            CONF_PRIVACY_MODE: True,
+            CONF_PRIVACY_OFFSET: 0,
+            CONF_PRIVACY_POSITION: 35,
+        },
+    )
+    await house.advance_to("12:00")
+    assert house.position("cover.shade") == 30, "no daytime default position"
+    await house.advance_to("21:00")
+    evening = [m.position for m in house.auto_moves("cover.shade", since="18:00")]
+    assert evening == [35], (
+        f"privacy position 5 away from 30 was held back: {evening}, "
+        f"blocked by {house.window().move_blocked_by}"
+    )
+    await house.teardown()
+
+
+async def test_regression_control_method_returns_to_intermediate(hass, freezer):
+    """The Control method sensor leaves winter/summer when they stop applying.
+
+    The coordinator only ever SET "winter" or "summer": once the
+    temperature went back between the thresholds (or the climate switch
+    went off) the sensor kept the old season all day.
+    """
+    house = await SimHouse.create(
+        hass,
+        freezer,
+        date="2026-03-20",
+        climate={"temp": 18.0, "presence": "not_home", "weather": "sunny"},
+    )
+    await house.advance_to("11:00")
+    assert house.sensor_value("control_method") == "winter"
+
+    await house.set_temperature(22.0)  # between temp_low and temp_high
+    await house.advance_to("11:20")
+    assert house.sensor_value("control_method") == "intermediate"
+
+    await house.set_temperature(26.0)
+    await house.advance_to("11:40")
+    assert house.sensor_value("control_method") == "summer"
+
+    await house.toggle("climate_mode", False)
+    await house.advance_to("12:00")
+    assert house.sensor_value("control_method") == "intermediate"
+    await house.teardown()
+
+
+async def test_regression_reset_button_returns_at_once(hass, freezer):
+    """Return to auto commands the covers and returns; it does not wait.
+
+    The button waited (polling every second, up to the 120 s travel
+    timeout) for each overridden cover to land before resetting the next,
+    so one press held its service call for minutes with several covers.
+    The overrides now clear as soon as the commands are sent; the landing
+    is still our own (never manual).
+    """
+    house = await SimHouse.create(hass, freezer, date="2026-03-20", covers=[A, B])
+    await house.advance_to("11:10")
+    await house.user_moves(A, 100, via="remote")
+    await house.user_moves(B, 100, via="remote")
+    await house.advance_to("11:20")
+    assert house.window(A).is_manual and house.window(B).is_manual
+
+    pressed_at = house.now
+    await house.press()
+    assert house.now == pressed_at, "the press waited for the covers to land"
+    for cover in (A, B):
+        assert house.auto_moves(cover, since="11:20"), f"{cover} not commanded"
+        assert not house.window(cover).is_manual, f"{cover} still overridden"
+
+    await house.advance_to("11:30")  # both land on our targets
+    for cover in (A, B):
+        assert not house.window(cover).is_manual, f"{cover} landing read as manual"
+        assert house.position(cover) == house.auto_moves(cover)[-1].position
     await house.teardown()

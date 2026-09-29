@@ -1,12 +1,12 @@
 diff --git a/custom_components/adaptive_cover/runtime/gates.py b/custom_components/adaptive_cover/runtime/gates.py
 --- a/custom_components/adaptive_cover/runtime/gates.py
 +++ b/custom_components/adaptive_cover/runtime/gates.py
-@@ -144,7 +144,7 @@
+@@ -115,7 +115,7 @@
+                 config.min_change,
                  condition,
              )
+-            if self.is_snap_position(state, config):
++            if state in [config.sunset_pos, config.default_height, 0, 100]:
+                 condition = True
              return condition
--        return True
-+        return False
- 
-     def is_snap_position(self, state: int, config: ShadeConfig) -> bool:
-         """Positions that always deserve a move (endpoints, rest positions)."""
+         return True

@@ -67,6 +67,20 @@ def test_end_entity_wins_over_the_fixed_end():
     assert states.reads == [END_ENTITY]
 
 
+def test_regression_midnight_end_entity_means_the_coming_midnight():
+    """An end ENTITY at 00:00 is normalized like the fixed end time."""
+    cfg = config(**{CONF_END_ENTITY: END_ENTITY})
+    end = Schedule(FakeStates(shade_end="00:00:00")).end_time(cfg, DAY)
+    assert end == dt.datetime.combine(DAY + dt.timedelta(days=1), dt.time())
+
+
+def test_a_dated_end_entity_keeps_its_date():
+    cfg = config(**{CONF_END_ENTITY: END_ENTITY})
+    states = FakeStates(shade_end="2026-03-22 00:00:00")
+    end = Schedule(states).end_time(cfg, DAY)
+    assert end == dt.datetime(2026, 3, 22)
+
+
 def test_unavailable_end_entity_means_no_end():
     cfg = config(**{CONF_END_TIME: "21:30:00", CONF_END_ENTITY: END_ENTITY})
     assert Schedule(FakeStates(shade_end=None)).end_time(cfg, DAY) is None
@@ -131,6 +145,17 @@ def test_no_times_is_always_in_window():
     assert Schedule(FakeStates()).in_window(config(), at("03:00")) is True
 
 
+def test_regression_fixed_start_is_recorded(caplog):
+    """The fixed start feeds the start-after-end check (it never did)."""
+    caplog.set_level(logging.ERROR)
+    cfg = config(**{CONF_START_TIME: "21:00:00", CONF_END_TIME: "20:00:00"})
+    schedule = Schedule(FakeStates())
+    assert schedule.in_window(cfg, at("12:00")) is False
+    assert schedule.last_start == at("21:00")
+    schedule.in_window(cfg, at("12:05"))
+    assert "Start time is after end time" in caplog.text
+
+
 def test_start_after_end_is_logged(caplog):
     caplog.set_level(logging.ERROR)
     states = FakeStates(shade_start="22:00:00")
@@ -140,3 +165,27 @@ def test_start_after_end_is_logged(caplog):
     assert "Start time is after end time" not in caplog.text
     schedule.in_window(cfg, at("12:05"))
     assert "Start time is after end time" in caplog.text
+
+
+# ------------------------------------------------ unreadable time entities
+
+
+@pytest.mark.parametrize("state", [None, "not a time"])
+def test_regression_unreadable_start_entity_falls_back(state):
+    """An unreadable start entity uses the fixed start (it used to raise)."""
+    cfg = config(**{CONF_START_TIME: "07:30:00", CONF_START_ENTITY: START_ENTITY})
+    schedule = Schedule(FakeStates(shade_start=state))
+    assert schedule.after_start(cfg, at("07:29")) is False
+    assert schedule.after_start(cfg, at("07:30")) is True
+
+
+@pytest.mark.parametrize("state", [None, "not a time"])
+def test_regression_unreadable_start_entity_alone_is_not_started(state):
+    cfg = config(**{CONF_START_ENTITY: START_ENTITY})
+    schedule = Schedule(FakeStates(shade_start=state))
+    assert schedule.after_start(cfg, at("23:00")) is False
+
+
+def test_unparseable_end_entity_means_no_end():
+    cfg = config(**{CONF_END_TIME: "21:30:00", CONF_END_ENTITY: END_ENTITY})
+    assert Schedule(FakeStates(shade_end="soon")).end_time(cfg, DAY) is None

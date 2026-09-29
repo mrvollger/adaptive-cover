@@ -123,9 +123,9 @@ async def test_my_scenario(hass, freezer):
   `sensor_attr("cover_position", "move_blocked_by")`).
 - `await house.toggle(key, on)` / `await house.press(key)` /
   `await house.select_option(key, option)` — REAL switch/button/select
-  service calls with a simulated-user context. `press()` drives short
-  sub-steps while the reset button waits for covers to land, so sim time
-  may advance a few minutes.
+  service calls with a simulated-user context. The reset button returns
+  at once (it does not wait for covers to land); should a press ever
+  block, `press()` drives short sub-steps until it completes.
 
 ## Assertions
 

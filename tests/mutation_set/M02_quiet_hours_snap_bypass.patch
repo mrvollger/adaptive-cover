@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/runtime/gates.py b/custom_components/adaptive_cover/runtime/gates.py
 --- a/custom_components/adaptive_cover/runtime/gates.py
 +++ b/custom_components/adaptive_cover/runtime/gates.py
-@@ -172,8 +172,6 @@
+@@ -167,8 +167,6 @@
          """
          if not config.quiet_start or not config.quiet_end:
              return True

@@ -54,6 +54,7 @@ OVERRIDES = "custom_components/adaptive_cover/runtime/override_tracker.py"
 END_OF_DAY = "custom_components/adaptive_cover/runtime/end_of_day.py"
 RESOLVE = "custom_components/adaptive_cover/settings/resolve.py"
 LIFT = "custom_components/adaptive_cover/settings/lift.py"
+DECIDER = "custom_components/adaptive_cover/runtime/decider.py"
 
 
 @dataclass
@@ -125,29 +126,26 @@ MUTATIONS: list[Mutation] = [
         "Schedule.after_start",
         "static CONF_START_TIME wins over the start-time entity (precedence swap)",
         "        if config.start_time_entity is not None:\n"
-        "            # An unavailable start entity reads as None, and comparing with\n"
-        "            # None raises TypeError (known, not fixed in this move); the\n"
-        "            # cast only tells the type checker what the code assumes.\n"
-        "            time = cast(\n"
-        "                dt.datetime,\n"
-        "                get_datetime_from_str(\n"
-        "                    self._read_state(config.start_time_entity),\n"
-        "                    default_date=now.date(),\n"
-        "                ),\n"
-        "            )\n"
-        "            self.logger.debug(\n"
-        '                "Start time: %s, now: %s, now >= time: %s ", time, now, now >= time\n'
-        "            )\n"
-        "            self.last_start = time\n"
-        "            return now >= time\n"
+        "            time = self._read_time(config.start_time_entity, now.date())\n"
+        "            if time is not None:\n"
+        "                self.logger.debug(\n"
+        '                    "Start time: %s, now: %s, now >= time: %s ", time, now, now >= time\n'
+        "                )\n"
+        "                self.last_start = time\n"
+        "                return now >= time\n"
+        "            if config.start_time is None:\n"
+        "                # Nothing to fall back to: wait until the entity reads a time.\n"
+        "                self.logger.debug(\n"
+        '                    "Start entity %s unreadable: not started", config.start_time_entity\n'
+        "                )\n"
+        "                return False\n"
         "        if config.start_time is not None:\n"
         "            time = get_datetime_from_str(config.start_time, default_date=now.date())\n"
         "\n"
         "            self.logger.debug(\n"
         '                "Start time: %s, now: %s, now >= time: %s", time, now, now >= time\n'
         "            )\n"
-        "            # Not recorded in last_start: the coordinator's line here was a\n"
-        "            # no-op expression (a P4 ledgered fix, not this move).\n"
+        "            self.last_start = time\n"
         "            return now >= time\n"
         "        return True",
         "        if config.start_time is not None:\n"
@@ -156,26 +154,73 @@ MUTATIONS: list[Mutation] = [
         "            self.logger.debug(\n"
         '                "Start time: %s, now: %s, now >= time: %s", time, now, now >= time\n'
         "            )\n"
-        "            # Not recorded in last_start: the coordinator's line here was a\n"
-        "            # no-op expression (a P4 ledgered fix, not this move).\n"
+        "            self.last_start = time\n"
         "            return now >= time\n"
         "        if config.start_time_entity is not None:\n"
-        "            # An unavailable start entity reads as None, and comparing with\n"
-        "            # None raises TypeError (known, not fixed in this move); the\n"
-        "            # cast only tells the type checker what the code assumes.\n"
-        "            time = cast(\n"
-        "                dt.datetime,\n"
-        "                get_datetime_from_str(\n"
-        "                    self._read_state(config.start_time_entity),\n"
-        "                    default_date=now.date(),\n"
-        "                ),\n"
-        "            )\n"
-        "            self.logger.debug(\n"
-        '                "Start time: %s, now: %s, now >= time: %s ", time, now, now >= time\n'
-        "            )\n"
+        "            time = self._read_time(config.start_time_entity, now.date())\n"
+        "            if time is not None:\n"
+        "                self.logger.debug(\n"
+        '                    "Start time: %s, now: %s, now >= time: %s ", time, now, now >= time\n'
+        "                )\n"
+        "                self.last_start = time\n"
+        "                return now >= time\n"
+        "            if config.start_time is None:\n"
+        "                # Nothing to fall back to: wait until the entity reads a time.\n"
+        "                self.logger.debug(\n"
+        '                    "Start entity %s unreadable: not started", config.start_time_entity\n'
+        "                )\n"
+        "                return False\n"
+        "        return True",
+    ),
+    Mutation(
+        "M62",
+        "fixed_start_not_recorded",
+        SCHEDULE,
+        "Schedule.after_start",
+        "the fixed start time is not recorded, so start-after-end goes unreported",
         "            self.last_start = time\n"
         "            return now >= time\n"
         "        return True",
+        "            return now >= time\n        return True",
+    ),
+    Mutation(
+        "M63",
+        "delta_gate_snap_list_drops_privacy",
+        GATES,
+        "GatePolicy.position_delta_ok",
+        "the delta gate's snap list leaves out the privacy position",
+        "            if self.is_snap_position(state, config):\n"
+        "                condition = True\n"
+        "            return condition",
+        "            if state in [config.sunset_pos, config.default_height, 0, 100]:\n"
+        "                condition = True\n"
+        "            return condition",
+    ),
+    Mutation(
+        "M64",
+        "control_method_sticks",
+        COORD,
+        "climate_mode_data",
+        "control_method keeps the last season when neither winter nor summer applies",
+        '        else:\n            self.control_method = "intermediate"\n',
+        "        else:\n            pass\n",
+    ),
+    Mutation(
+        "M60",
+        "unreadable_start_entity_counts_as_started",
+        SCHEDULE,
+        "Schedule.after_start",
+        "an unreadable start entity with no fixed start counts as started",
+        "                # Nothing to fall back to: wait until the entity reads a time.\n"
+        "                self.logger.debug(\n"
+        '                    "Start entity %s unreadable: not started", config.start_time_entity\n'
+        "                )\n"
+        "                return False\n",
+        "                # Nothing to fall back to: wait until the entity reads a time.\n"
+        "                self.logger.debug(\n"
+        '                    "Start entity %s unreadable: not started", config.start_time_entity\n'
+        "                )\n"
+        "                return True\n",
     ),
     Mutation(
         "M06",
@@ -183,12 +228,24 @@ MUTATIONS: list[Mutation] = [
         SCHEDULE,
         "Schedule.end_time",
         "drop the 00:00-means-next-midnight normalization",
-        "            time = get_datetime_from_str(config.end_time, default_date=today)\n"
-        "            if time.time() == dt.time(0, 0):\n"
-        "                time = time + dt.timedelta(days=1)\n"
+        "        if time is not None and time.date() == today and time.time() == dt.time(0, 0):\n"
+        "            time = time + dt.timedelta(days=1)\n"
         "        return time",
-        "            time = get_datetime_from_str(config.end_time, default_date=today)\n"
         "        return time",
+    ),
+    Mutation(
+        "M61",
+        "midnight_end_entity_not_normalized",
+        SCHEDULE,
+        "Schedule.end_time",
+        "an end-time entity at 00:00 means the start of today (only the fixed end_time is normalized)",
+        "        if time is not None and time.date() == today and time.time() == dt.time(0, 0):\n",
+        "        if (\n"
+        "            config.end_time_entity is None\n"
+        "            and time is not None\n"
+        "            and time.date() == today\n"
+        "            and time.time() == dt.time(0, 0)\n"
+        "        ):\n",
     ),
     Mutation(
         "M07",
@@ -509,21 +566,21 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M35",
         "inverse_state_identity",
-        COORD,
+        DECIDER,
         "inverse_state",
         "100 - state -> state",
-        "def inverse_state(state: int) -> int:\n"
+        "def inverse_state(state: float) -> float:\n"
         '    """Inverse state."""\n'
         "    return 100 - state",
-        "def inverse_state(state: int) -> int:\n"
+        "def inverse_state(state: float) -> float:\n"
         '    """Inverse state."""\n'
         "    return state",
     ),
     Mutation(
         "M36",
         "interp_xp_fp_swap",
-        COORD,
-        "interpolate_states",
+        DECIDER,
+        "Decider.interpolate",
         "np.interp xp/fp argument swap",
         "            state = interp(state, normal_range, new_range)",
         "            state = interp(state, new_range, normal_range)",
@@ -533,8 +590,8 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M37",
         "interp_endpoint_snap_removed",
-        COORD,
-        "interpolate_states",
+        DECIDER,
+        "Decider.interpolate",
         "interpolation endpoint snap-to-0/100 removed",
         "            state = interp(state, normal_range, new_range)\n"
         "            if state == new_range[0]:\n"
@@ -550,11 +607,11 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M38",
         "inverse_applied_with_interp",
-        COORD,
-        "_transform_state",
+        DECIDER,
+        "Decider.transform",
         "inverse-skipped-when-interp rule inverted (apply both transforms)",
-        "        if self._inverse_state and not self._use_interpolation:",
-        "        if self._inverse_state:",
+        "        if self.inverse and not self.use_interpolation:",
+        "        if self.inverse:",
     ),
     Mutation(
         "M39",

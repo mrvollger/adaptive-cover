@@ -263,3 +263,135 @@ The example below is inside an HTML comment. The checker ignores it.
   house-only thresholds), so the lift keeps those values as explicit
   window `legacy` values with provenance `legacy`, instead of breaking
   the round trip or the spec's `overridable_at`.
+
+## L0011 · 2026-09-29 · An unreadable time entity no longer stops the window (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins
+  `tests/simulation/test_regressions.py::test_regression_unreadable_start_entity_uses_fixed_start[unavailable]`,
+  `[not a time]`,
+  `tests/simulation/test_regressions.py::test_regression_unreadable_start_entity_alone_waits`
+  and the unit pins in `tests/runtime/test_schedule.py`
+  (`test_regression_unreadable_start_entity_falls_back[*]`,
+  `test_regression_unreadable_start_entity_alone_is_not_started[*]`,
+  `test_unparseable_end_entity_means_no_end`)
+- **Mutations re-targeted:** M05 re-anchored onto the restructured
+  `Schedule.after_start` (same swap, description unchanged). Added M60 (an
+  unreadable start entity with no fixed start counts as started).
+- **Contract change:** C5
+- **Reason:** defect fix (P4 batch 3). With a start-time entity configured,
+  `Schedule.after_start` compared "now" with None when the entity was
+  unavailable, and the date parser raised when its state was not a time.
+  Either way every refresh failed and the window went unavailable. An
+  unreadable start entity now falls back to the fixed start time, and with
+  no fixed start the window has not started yet (it starts once the entity
+  reads a time again). The end-time entity uses the same reader, so a state
+  that is not a time now means "no end time", as an unavailable one already
+  did. Goldens, truth table and house replay unchanged: no pinned config
+  uses a start or end entity.
+
+## L0012 · 2026-09-29 · An end-time entity at 00:00 means the coming midnight (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins
+  `tests/simulation/test_regressions.py::test_regression_midnight_end_entity_means_coming_midnight`
+  and the unit pins in `tests/runtime/test_schedule.py`
+  (`test_regression_midnight_end_entity_means_the_coming_midnight`,
+  `test_a_dated_end_entity_keeps_its_date`)
+- **Mutations re-targeted:** M06 re-anchored onto the shared normalization in
+  `Schedule.end_time` (description unchanged; it now drops the
+  normalization for both sources). Added M61 (an end-time entity at 00:00
+  is not normalized).
+- **Contract change:** C5
+- **Reason:** defect fix (P4 batch 3). Only the fixed `end_time` option
+  treated 00:00 as the coming midnight. An end-time entity at 00:00 read as
+  the midnight that started today: the window was shut all day, and
+  EndOfDay armed that past time, so the end close fired as a catch-up close
+  at startup. Both sources now normalize an end of 00:00 today to the
+  coming midnight, so EndOfDay arms the next midnight. An entity whose
+  state names another date keeps it. Goldens, truth table and house replay
+  unchanged: the house uses the fixed `end_time` 00:00, which behaves as
+  before.
+
+## L0013 · 2026-09-29 · The fixed start time feeds the start-after-end check (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins
+  `tests/simulation/test_regressions.py::test_regression_fixed_start_after_end_is_reported`
+  and `tests/runtime/test_schedule.py::test_regression_fixed_start_is_recorded`
+- **Mutations re-targeted:** M05 re-anchored (its fixed-start block now
+  records the start; description unchanged). Added M62 (the fixed start is
+  not recorded).
+- **Contract change:** C5
+- **Reason:** defect fix listed in the plan's P4 ("the `after_start_time`
+  no-op"). The fixed-start path read the start time but its "record it"
+  line was a bare expression, so `Schedule.last_start` only ever held an
+  entity start and the "Start time is after end time" error never fired for
+  a fixed start. The fixed path now records the start like the entity path.
+  This changes only that error log; which moves go out is unchanged, and
+  goldens, truth table and house replay are unchanged (the house's fixed
+  06:00 start is before its end).
+
+## L0014 · 2026-09-29 · The delta gate uses the same snap positions as the other gates (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins
+  `tests/simulation/test_regressions.py::test_regression_small_move_to_privacy_passes_delta_gate`
+  and `tests/runtime/test_gates.py::test_regression_privacy_position_passes_the_delta_gate`
+- **Mutations re-targeted:** none re-anchored (M01's line is unchanged).
+  Added M63 (the delta gate's snap list leaves out the privacy position).
+- **Contract change:** C5
+- **Reason:** defect fix listed in the plan's P4 ("the snap-position list is
+  the same in both checks"). The time throttle, quiet hours and move budget
+  let every snap position through (sunset, default, privacy, 0, 100), but
+  the position-delta gate kept its own list without the privacy position.
+  A privacy position closer than `delta_position` to the evening position
+  was therefore never sent. `GatePolicy.position_delta_ok` now asks
+  `is_snap_position`. Goldens, truth table and house replay unchanged: the
+  privacy golden days and the house use privacy position 0, which was
+  already a snap position.
+
+## L0015 · 2026-09-29 · The Control method sensor returns to intermediate (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pin
+  `tests/simulation/test_regressions.py::test_regression_control_method_returns_to_intermediate`
+- **Mutations re-targeted:** none. Added M64 (control_method keeps the last
+  season when neither winter nor summer applies).
+- **Contract change:** C5
+- **Reason:** defect fix listed in the plan's P4 ("`control_method` returns
+  to intermediate"). Confirmed first: in a climate entry the coordinator
+  only ever set "winter" or "summer", so once the temperature went back
+  between the thresholds, or the climate switch went off, the Control
+  method sensor kept the old season (the new scenario failed with
+  'winter' where 'intermediate' was due). It now reads "intermediate"
+  whenever neither season applies or the climate switch is off; winter
+  still wins if both held. Positions are unchanged (the climate strategy
+  never read this value), so goldens, truth table and house replay are
+  unchanged.
+
+## L0016 · 2026-09-29 · Return to auto no longer waits for the covers to land (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pin
+  `tests/simulation/test_regressions.py::test_regression_reset_button_returns_at_once`.
+  One behavior-tier test body changed without changing its id:
+  `tests/simulation/test_harness_smoke.py::test_press_reset_button_resumes_auto`
+  now lets the shade travel (advances to 11:20) before it checks the landed
+  position, because the press no longer waits for the landing. Its
+  assertions are unchanged.
+- **Mutations re-targeted:** none, and none added: the defect was a wait
+  loop, and a mutation that re-adds it would hang the entity tier until the
+  runner's 30-minute timeout.
+- **Contract change:** C5
+- **Reason:** defect fix listed in the plan's P4 ("the reset button no
+  longer blocks"). Confirmed first: `AdaptiveCoverButton.async_press`
+  commanded each overridden cover, then polled every second until it
+  reported landing or 120 s passed, before resetting the override and
+  moving on to the next cover. One press held its service call for up to
+  two minutes per overridden cover (the new two-cover scenario saw sim time
+  advance during the press). The button now sends each command and clears
+  the override at once. The travel stays ours through the coordinator's
+  travel window, so the landing is never read as a manual move (the new
+  scenario checks both covers after they land). Goldens, truth table and
+  house replay unchanged: none of them presses the button.
