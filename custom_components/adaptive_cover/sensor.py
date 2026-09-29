@@ -19,7 +19,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import AdaptiveDataUpdateCoordinator
-from .entity_shared import adaptive_cover_device_info
+from .entity_shared import adaptive_cover_device_info, window_attributes
 from .entity_surface import apply_surface, window_surface
 
 
@@ -114,8 +114,12 @@ class AdaptiveCoverSensorEntity(
         return self.data.states["state"]
 
     @property
-    def extra_state_attributes(self) -> Mapping[str, Any] | None:  # noqa: D102
-        return self.data.attributes
+    def extra_state_attributes(self) -> Mapping[str, Any] | None:
+        """Coordinator attributes plus the window identity (additive)."""
+        return {
+            **self.data.attributes,
+            **window_attributes(self.config_entry, self.coordinator),
+        }
 
 
 class AdaptiveCoverTimeSensorEntity(

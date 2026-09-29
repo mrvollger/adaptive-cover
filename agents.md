@@ -51,7 +51,8 @@ custom_components/adaptive_cover/
 ├── select.py                # Mode select: one control instead of several toggles
 ├── number.py                # Live tunables that skip the options wizard
 ├── button.py                # Reset manual override button
-├── entity_shared.py         # Shared entity helpers
+├── entity_shared.py         # Shared entity helpers (device info, Position window attributes)
+├── entity_surface.py        # Entity surface table (category, visibility, name key) + 1.2 migration + area copy
 ├── frontend.py              # Serves and auto-registers the bundled Lovelace card
 ├── logbook.py               # Logbook text for adaptive_cover_moved events
 ├── helpers.py               # Utility functions (safe state access, datetime parsing)
@@ -199,21 +200,25 @@ Season is determined by comparing current temperature against configurable low/h
 
 ## Entity Inventory (per config entry)
 
-| Platform | Entity | Purpose |
-|----------|--------|---------|
-| sensor | Cover position | Calculated position (0-100%) |
-| sensor | Start sun time | When sun enters FOV |
-| sensor | End sun time | When sun leaves FOV |
-| sensor | Control method | "winter" / "summer" / "intermediate" |
-| binary_sensor | Sun in front | Is sun within window FOV? |
-| binary_sensor | Manual override | Any cover under manual control? |
-| switch | Toggle control | Enable/disable auto positioning |
-| switch | Toggle manual override | Enable/disable override detection |
-| switch | Toggle climate mode | Basic vs climate mode |
-| switch | Toggle outside temp | Use outside temp sensor (climate only) |
-| switch | Toggle lux | Use lux sensor (climate only) |
-| switch | Toggle irradiance | Use irradiance sensor (climate only) |
-| button | Reset manual override | Clear all manual override states |
+Names come from `translation_key` + `strings.json` (`has_entity_name`), so
+friendly names read "<Device> <Role>". Unique_id suffixes (in parentheses)
+are frozen; categories and default visibility come from one table in
+`entity_surface.py` (refactor plan, "Entity surface"; P1). Config entry
+1.1 -> 1.2 (`async_migrate_entry`) applies the table to existing registry
+rows without overriding user choices. At setup the window device copies
+the physical cover's area if it has none.
+
+| Platform | Name (unique_id suffix) | Visibility | Purpose |
+|----------|-------------------------|------------|---------|
+| sensor | Target position (`Cover Position`) | primary | Calculated position (0-100%); attributes include `window_key`, `cover_entity`, `cover_type`, `override_until`, `next_move` |
+| select | Mode (`mode_select`) | primary | Manual / Sun tracking / Sun + climate |
+| button | Return to auto (`Reset Manual Override`) | primary | Clear manual overrides and move back |
+| binary_sensor | Manual override (`Manual Override`) | diagnostic | Any cover under manual control? (attribute `until`) |
+| binary_sensor | Sun in front (`Sun Infront`) | diagnostic | Is sun within window FOV? |
+| sensor | Control method (`Control Method`) | diagnostic | "winter" / "summer" / "intermediate" |
+| sensor | Start sun, End sun, Next change, Last change | diagnostic, disabled by default | Solar times and the next/last change |
+| switch | Automatic control, Manual override detection, Climate mode, Outside temperature, Lux, Irradiance | config | Toggles (replaced by Mode and house settings in P5) |
+| number | Eye height, seat distance, overhang, thresholds, privacy delay | config | Live tunables (removed in P5) |
 
 ## Manual Override Detection
 

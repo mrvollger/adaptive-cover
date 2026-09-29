@@ -2,8 +2,9 @@
 
 Pins the per-window and hub entity surface: category, default visibility
 and "<Device> <Role>" names; the device area copied from the physical
-cover; and the 1.1 -> 1.2 config-entry migration that applies the
-surface to EXISTING registry rows without overriding user choices.
+cover; the 1.1 -> 1.2 config-entry migration that applies the surface to
+EXISTING registry rows without overriding user choices; and the new
+Position sensor attributes.
 
 Public seams only: config entries, the entity/device/area registries,
 hass.states and the translation files. The expected surface below is
@@ -13,9 +14,13 @@ integration, so it is an independent pin.
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 from pathlib import Path
+import re
+from unittest.mock import patch
 
+from freezegun import freeze_time
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import EntityCategory
 from homeassistant.helpers import (
@@ -23,6 +28,8 @@ from homeassistant.helpers import (
     device_registry as dr,
     entity_registry as er,
 )
+from homeassistant.util import dt as dt_util
+import pandas as pd
 import pytest
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
@@ -51,6 +58,7 @@ from custom_components.adaptive_cover.const import (
 )
 from custom_components.adaptive_cover.number import TUNABLES
 
+from .characterization.golden_lib import GOLDENS_DIR, SLC, FakeSunData
 from .conftest import COMMON_OPTIONS
 
 COVER = "cover.test_cover"
@@ -560,3 +568,125 @@ class TestMigration:
         entry.add_to_hass(hass)
         assert not await hass.config_entries.async_setup(entry.entry_id)
         assert entry.state is ConfigEntryState.MIGRATION_ERROR
+
+
+# ---------------------------------------------------- position attributes
+
+
+def _position_state(hass, entry):
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id(
+        "sensor", DOMAIN, f"{entry.entry_id}_Cover Position"
+    )
+    return hass.states.get(entity_id)
+
+
+def _override_sensor_state(hass, entry):
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id(
+        "binary_sensor", DOMAIN, f"{entry.entry_id}_Manual Override"
+    )
+    return hass.states.get(entity_id)
+
+
+_NEXT_EVENT_RE = re.compile(
+    r"^now=(?P<now>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) -> "
+    r"name='(?P<name>[^']+)' time=(?P<time>\S+) pos=(?P<pos>\d+)$"
+)
+
+
+def _next_event_cases():
+    lines = (GOLDENS_DIR / "next_events.txt").read_text().splitlines()
+    cases = [
+        (m["now"], m["time"], int(m["pos"]))
+        for line in lines
+        if (m := _NEXT_EVENT_RE.match(line))
+    ]
+    assert len(cases) == 3, "goldens/next_events.txt changed shape"
+    return cases
+
+
+class TestPositionAttributes:
+    """New Position attributes; the existing ones are pinned elsewhere."""
+
+    async def test_window_identity(self, hass, cover_calls):
+        _set_world(hass)
+        entry = _entry(hass)
+        await _setup(hass, entry)
+        attrs = _position_state(hass, entry).attributes
+        assert attrs["window_key"] == entry.entry_id
+        assert attrs["cover_entity"] == COVER
+        assert attrs["cover_type"] == "cover_blind"
+        assert attrs["override_until"] is None
+        assert "cover_entities" not in attrs
+        # Additive: the historical attributes are still there.
+        for key in ("intent", "decision_trace", "forecast_today", "sun"):
+            assert key in attrs
+
+    async def test_multi_cover_entry_lists_every_cover(self, hass, cover_calls):
+        _set_world(hass)
+        hass.states.async_set("cover.second", "open", {"current_position": 60})
+        entry = _entry(hass, covers=(COVER, "cover.second"))
+        await _setup(hass, entry)
+        attrs = _position_state(hass, entry).attributes
+        assert attrs["cover_entity"] == COVER
+        assert attrs["cover_entities"] == [COVER, "cover.second"]
+
+    @pytest.mark.parametrize(
+        ("now_str", "time_str", "pos"),
+        _next_event_cases(),
+        ids=[case[0] for case in _next_event_cases()],
+    )
+    async def test_next_move_matches_next_change_golden(
+        self, hass, cover_calls, now_str, time_str, pos
+    ):
+        await hass.config.async_set_time_zone(SLC["tz"])
+        local_now = pd.Timestamp(now_str, tz=SLC["tz"]).to_pydatetime()
+        sun = FakeSunData(SLC["lat"], SLC["lon"], SLC["tz"], pd.Timestamp("2026-03-20"))
+        with (
+            freeze_time(local_now),
+            patch(
+                "custom_components.adaptive_cover.calculation.SunData",
+                return_value=sun,
+            ),
+        ):
+            _set_world(hass)
+            entry = _entry(hass, name=f"Next {now_str[-8:]}")
+            await _setup(hass, entry)
+            next_move = _position_state(hass, entry).attributes["next_move"]
+
+        assert set(next_move) == {"time", "position"}
+        assert dt_util.parse_datetime(next_move["time"]) == dt_util.parse_datetime(
+            time_str
+        )
+        assert next_move["position"] == pos
+
+    async def test_override_until_follows_manual_override(
+        self, hass, cover_calls, freezer
+    ):
+        _set_world(hass)
+        entry = _entry(hass)  # override duration: 15 minutes
+        await _setup(hass, entry)
+        # Our startup command lands, then a person moves the shade.
+        target = int(_position_state(hass, entry).state)
+        hass.states.async_set(COVER, "open", {"current_position": target})
+        await hass.async_block_till_done()
+        hass.states.async_set(COVER, "open", {"current_position": 90})
+        await hass.async_block_till_done()
+
+        latched_at = hass.states.get(COVER).last_updated
+        expected = dt_util.as_local(latched_at + dt.timedelta(minutes=15))
+        until = _position_state(hass, entry).attributes["override_until"]
+        assert dt_util.parse_datetime(until) == expected
+        assert _override_sensor_state(hass, entry).state == "on"
+        assert _override_sensor_state(hass, entry).attributes["until"] == until
+
+        # Past the expiry the next refresh clears it.
+        freezer.tick(dt.timedelta(minutes=16))
+        hass.states.async_set(
+            "sun.sun", "above_horizon", {"azimuth": 181.0, "elevation": 45.0}
+        )
+        await hass.async_block_till_done()
+        assert _override_sensor_state(hass, entry).state == "off"
+        assert _position_state(hass, entry).attributes["override_until"] is None
+        assert _override_sensor_state(hass, entry).attributes["until"] is None
