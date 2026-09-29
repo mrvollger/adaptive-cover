@@ -12,6 +12,9 @@ Lovelace cards for the [Adaptive Cover](https://github.com/mrvollger/adaptive-co
 | Tile | `custom:adaptive-cover-tile-card` | Compact per-shade row: icon, name, position, `↑ ■ ▼`, and a live intent badge. Tap opens a detail dialog. |
 | Sky Compass | `custom:adaptive-cover-sky-compass-card` | The compass on its own. Accepts multiple windows and overlays each window's FOV and cover wedge on a shared sun dot. |
 | Decision strip | `custom:adaptive-cover-decision-card` | Standalone decision trace: every engine step for one window with the winning step highlighted. |
+| House | `custom:adaptive-cover-house-card` | Every window by floor and room. Auto / Hold / Off for the house, each room and each window; Return all to auto, Open all, Close all, Climate. A row opens a detail sheet. Phone layout below 600 px. |
+
+There is also a **dashboard strategy**, `custom:adaptive-cover`: a whole dashboard with one view that holds the house card (see [House card and dashboard](#house-card-and-dashboard)).
 
 ## What the cards read
 
@@ -105,6 +108,38 @@ window: YOUR_WINDOW_KEY            # or: cover: cover.your_shade
 type: custom:adaptive-cover-decision-card
 window: YOUR_WINDOW_KEY            # or: cover: cover.your_shade
 ```
+
+### House card and dashboard
+
+```yaml
+type: custom:adaptive-cover-house-card
+# optional:
+# title: Shades
+# floors: [upstairs]      # show only these floors (floor ids)
+# areas: [office]         # and/or these rooms (area ids)
+# layout: auto            # 'auto' (phone layout below 600 px) | 'wide' | 'narrow'
+# show_upcoming: true     # the "Coming up" list
+```
+
+A whole dashboard: Settings → Dashboards → Add dashboard (Home Assistant 2026.5+ lists "Adaptive Cover shades"), or in a dashboard's raw configuration:
+
+```yaml
+strategy:
+  type: custom:adaptive-cover
+  # title, floors and areas are passed to the house card
+```
+
+The card needs no window keys. It lists every `adaptive_cover` entity in `hass.entities` (hidden and disabled entities are left out) and finds each role by its translation key; a window is one Position sensor, keyed by its `window_key` attribute. For an older integration without translation keys it falls back to the unique_id prefix (it then fetches the full entity registry). A window's room is its Position sensor's area, else the window device's area, else the physical cover's area (entity, then device); the floor is that room's floor. Floors run top-down by level; a window without a room goes in "Unassigned".
+
+The integration has no Auto / Hold / Off select yet, so the card maps today's entities:
+
+| Mode | Shown when | What picking it does |
+|------|-----------|----------------------|
+| Off | the window's Mode select is "Manual", or its Automatic control switch is off | `select.select_option` → "Manual" (else `switch.turn_off` on Automatic control) |
+| Hold | the Manual override binary sensor is on; the chip counts down to its `until` attribute | not selectable: a hold starts when a shade is moved by hand or with Open / Close, and the segment says so in its tooltip |
+| Auto | otherwise | for Off windows `select.select_option` → "Sun + climate" when the window's Climate mode switch is on, else "Sun tracking"; then `button.press` on Return to auto for every window that was not on Auto |
+
+House controls use the "Adaptive Cover All" device: Off → its select to "Manual"; Auto and Return all to auto → its select to "Adaptive" (when a window is off), then its "Return all shades to auto" button; Open all / Close all → `cover.open_cover` / `cover.close_cover` on `cover.adaptive_cover_all`. Climate turns every window's Climate mode switch on or off. A card with `floors:` / `areas:` does not use the house device; its house controls act on its own windows. Every group action is one service call per service with all targets in one `entity_id` list. The window sheet's Open / Stop / Close call the cover services on that window's covers, and "Window setup" opens the window's entry on the integration page.
 
 ## For developers
 
