@@ -16,7 +16,6 @@ from homeassistant.const import (
     STATE_UNAVAILABLE,
 )
 from homeassistant.core import (
-    CALLBACK_TYPE,
     Context,
     Event,
     EventStateChangedData,
@@ -30,6 +29,7 @@ from homeassistant.util import dt as dt_util
 
 from .config_context_adapter import ConfigContextAdapter
 from .runtime.clock import SYSTEM_CLOCK, Clock
+from .runtime.command_tracker import CommandTracker
 from .runtime.gates import CoverFacts, GatePolicy
 from .runtime.schedule import Schedule
 from .runtime.shade_config import ControlState, ControlToggle, ShadeConfig
@@ -173,11 +173,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
     config_entry: ConfigEntry
     MOVE_LOG_LIMIT = 10
-    # Wait-for-target: covers rarely land exactly on the commanded value
-    # (99 when told 100), and a latch that never clears swallows every
-    # subsequent HUMAN move - adaptive then reverts people within minutes.
-    TARGET_TOLERANCE = 3  # percent: close enough counts as arrived
-    TARGET_TIMEOUT = dt.timedelta(seconds=120)  # travel-time upper bound
+    # The travel-time upper bound (the reset button waits at most this long).
+    TARGET_TIMEOUT = CommandTracker.TARGET_TIMEOUT
 
     def __init__(self, hass: HomeAssistant, clock: Clock | None = None) -> None:
         """Initialize the coordinator.
@@ -223,18 +220,14 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             persisted_state=_manual_store.setdefault(self.config_entry.entry_id, {}),
             clock=self.clock,
         )
-        self.wait_for_target = {}
-        self.target_call = {}
-        self.target_call_time: dict[str, dt.datetime] = {}
-        self._our_context_ids: deque[str] = deque(maxlen=64)
+        self.commands = CommandTracker(
+            self.clock,
+            lambda delay, action: async_call_later(self.hass, delay, action),
+            self._force_poll,
+            self.logger,
+        )
         self._sun_table = None
-        self._poll_cancels: dict[str, CALLBACK_TYPE] = {}
         self._missing_warned: set[str] = set()
-        # Sends that raised but may still have reached the motor:
-        # entity -> (target, sent_at, source, reason). See _adopt_late_delivery.
-        self._unconfirmed_sends: dict[
-            str, tuple[int, dt.datetime, str, str | None]
-        ] = {}
         self.ignore_intermediate_states = self.config_entry.options.get(
             CONF_MANUAL_IGNORE_INTERMEDIATE, False
         )
@@ -313,7 +306,17 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         id is remembered; an echo of that command (the cover's intermediate
         state written inside the service call) carries the same context.
         """
-        return context is not None and context.id in self._our_context_ids
+        return context is not None and self.commands.is_own_context_id(context.id)
+
+    @property
+    def wait_for_target(self) -> dict[str, bool]:
+        """The per-cover travel latch (the reset button reads and clears it)."""
+        return self.commands.wait_for_target
+
+    @property
+    def target_call_time(self) -> dict[str, dt.datetime]:
+        """When each cover was last commanded (the reset button reads it)."""
+        return self.commands.target_call_time
 
     async def async_check_cover_state_change(
         self, event: Event[EventStateChangedData]
@@ -365,7 +368,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # user-run service): it always counts as manual - clear any travel
         # window so it can never be swallowed as a motor echo.
         if event.context is not None and event.context.user_id is not None:
-            self.wait_for_target[entity_id] = False
+            self.commands.release(entity_id)
         # Foreign movement STARTING (opening/closing we didn't command) is a
         # human act the moment the motor spins. These shades report position
         # only at journey end, so waiting for the landing report leaves a
@@ -379,26 +382,15 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # A cover starting to move AGAINST our in-flight command is a human
         # act even inside the travel window: our motor cannot reverse on its
         # own. Clear the travel latch so the motion-start latch below fires.
-        if new_state.state in ("opening", "closing") and self.wait_for_target.get(
-            entity_id
-        ):
-            target = self.target_call.get(entity_id)
-            old_pos = self.state_change_data.old_state.attributes.get(
+        self.commands.release_if_against(
+            entity_id,
+            new_state.state,
+            self.state_change_data.old_state.attributes.get(
                 "current_tilt_position"
                 if self._cover_type == "cover_tilt"
                 else "current_position"
-            )
-            if target is not None and old_pos is not None and target != old_pos:
-                expected = "opening" if target > old_pos else "closing"
-                if new_state.state != expected:
-                    self.logger.debug(
-                        "%s is %s but our command was %s: human takeover "
-                        "during travel window",
-                        entity_id,
-                        new_state.state,
-                        expected,
-                    )
-                    self.wait_for_target[entity_id] = False
+            ),
+        )
         if (
             new_state.state in ("opening", "closing")
             and not self.ignore_intermediate_states
@@ -479,75 +471,16 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         ]:
             self.logger.debug("Ignoring intermediate state change for %s", entity_id)
             return None
-        if self.wait_for_target.get(entity_id):
-            position = event.new_state.attributes.get(
+        return self.commands.classify_report(
+            entity_id,
+            event.new_state.state,
+            event.new_state.attributes.get(
                 "current_position"
                 if self._cover_type != "cover_tilt"
                 else "current_tilt_position"
-            )
-            target = self.target_call.get(entity_id)
-            # Only a settled report is an arrival. An opening/closing report
-            # still carries the position the shade LEFT, which for a small
-            # move (99 -> 100) is within tolerance of the target: counting
-            # it cleared the latch, and the next refresh re-sent the same
-            # snap position (snaps bypass the delta and time gates).
-            settled = (
-                event is not None
-                and event.new_state is not None
-                and event.new_state.state not in ("opening", "closing")
-            )
-            arrived = (
-                settled
-                and position is not None
-                and target is not None
-                and abs(position - target) <= self.TARGET_TOLERANCE
-            )
-            sent_at = self.target_call_time.get(entity_id)
-            expired = (
-                sent_at is None or self.clock.utcnow() - sent_at > self.TARGET_TIMEOUT
-            )
-            if arrived:
-                self.wait_for_target[entity_id] = False
-                self.logger.debug(
-                    "Position %s within tolerance of target %s for %s",
-                    position,
-                    target,
-                    entity_id,
-                )
-                return "arrived"
-            if expired:
-                # Motor had ample time; whatever moves now is a human.
-                self.wait_for_target[entity_id] = False
-                self.logger.debug(
-                    "Target wait expired for %s (at %s, wanted %s); "
-                    "treating changes as manual",
-                    entity_id,
-                    position,
-                    target,
-                )
-                return "expired"
-            if (
-                not own_context
-                and event.new_state.state not in ("opening", "closing")
-                and position is not None
-            ):
-                # Definitive landing inside the travel window that is not
-                # our target: a human stopped or redirected the cover.
-                # Leaving the wait latched here swallowed the manual move
-                # and the next sun tick reverted it.
-                self.wait_for_target[entity_id] = False
-                self.logger.debug(
-                    "Landing at %s inside travel window differs from our "
-                    "target %s for %s: foreign move",
-                    position,
-                    target,
-                    entity_id,
-                )
-                return "foreign_landing"
-            self.logger.debug("Wait for target: %s", self.wait_for_target)
-            return "in_travel"
-        self.logger.debug("No wait for target call for %s", entity_id)
-        return None
+            ),
+            own_context,
+        )
 
     async def async_shutdown(self) -> None:
         """Cancel every timer this coordinator armed (entry unload).
@@ -555,9 +488,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         HA calls this on unload. Arrival polls and the end-of-day tracker
         used to outlive the entry and fire against a dead coordinator.
         """
-        for cancel in self._poll_cancels.values():
-            cancel()
-        self._poll_cancels.clear()
+        self.commands.cancel_polls()
         self._async_cancel_update_listener()
         self._scheduled_time = None
         await super().async_shutdown()
@@ -970,25 +901,17 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.logger.debug("State change handled")
 
     def _is_own_landing(self, event) -> bool:
-        """Return True when this state change is the cover arriving at OUR command.
-
-        The computed state can drift a few percent while the shade travels
-        (sun keeps moving); comparing the landing against the recomputed
-        state falsely latched a manual override on our own move. The landing
-        must be compared against what we actually commanded.
-        """
+        """Return True when this state change is the cover arriving at OUR command."""
         if event is None or event.new_state is None:
-            return False
-        target = self.target_call.get(event.entity_id)
-        if target is None:
             return False
         pos_attr = (
             "current_tilt_position"
             if self._cover_type == "cover_tilt"
             else "current_position"
         )
-        position = event.new_state.attributes.get(pos_attr)
-        return position is not None and abs(position - target) <= self.TARGET_TOLERANCE
+        return self.commands.is_own_landing(
+            event.entity_id, event.new_state.attributes.get(pos_attr)
+        )
 
     async def async_handle_cover_state_change(self, state: int):
         """Handle state change from assigned covers."""
@@ -1006,7 +929,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     state,
                     self._cover_type,
                     self.config.manual_reset,
-                    self.wait_for_target,
+                    self.commands.wait_for_target,
                     self.config.manual_threshold,
                 )
         # A human just took over: record it with provenance
@@ -1105,10 +1028,10 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self.config,
             CoverFacts(
                 is_manual=lambda: self.manager.is_cover_manual(entity),
-                awaiting_target=lambda: self._awaiting_target(entity),
+                awaiting_target=lambda: self.commands.awaiting_target(entity),
                 in_time_window=lambda: self.check_adaptive_time,
                 position=lambda: self._get_current_position(entity),
-                last_command=lambda: self.target_call_time.get(entity),
+                last_command=lambda: self.commands.target_call_time.get(entity),
             ),
             now=self.clock.utcnow(),
             now_local=self._now_local(),
@@ -1122,21 +1045,6 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self.logger.debug(
                 "Move of %s to %s blocked by gate: %s", entity, state, gate
             )
-
-    def _awaiting_target(self, entity) -> bool:
-        """Return True while our last command to ``entity`` is travelling.
-
-        A latch older than TARGET_TIMEOUT is stale: it is cleared here.
-        """
-        if self.wait_for_target.get(entity):
-            sent_at = self.target_call_time.get(entity)
-            if (
-                sent_at is not None
-                and self.clock.utcnow() - sent_at <= self.TARGET_TIMEOUT
-            ):
-                return True
-            self.wait_for_target[entity] = False
-        return False
 
     async def async_force_apply(
         self, source: str = "user", reason: str | None = None
@@ -1203,17 +1111,10 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             else:
                 service_data[ATTR_POSITION] = state
 
-            self.wait_for_target[entity] = True
-            self.target_call[entity] = state
-            self.target_call_time[entity] = self.clock.utcnow()
-            self.logger.debug(
-                "Set wait for target %s and target call %s",
-                self.wait_for_target,
-                self.target_call,
-            )
+            self.commands.start(entity, state)
             self.logger.debug("Run %s with data %s", service, service_data)
             ctx = Context()
-            self._our_context_ids.append(ctx.id)
+            self.commands.remember_context(ctx.id)
             try:
                 # blocking=True so a failing device raises HERE, not in a
                 # fire-and-forget background task we can never observe.
@@ -1227,104 +1128,51 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     state,
                     entity,
                 )
-                self.wait_for_target[entity] = False
-                # Zigbee often delivers a command whose acknowledgement is
-                # lost, so the call raises while the motor still moves -
-                # sometimes 30 s later. Remember the target so that late
-                # start is not read as a human (house, 2026-09-29).
-                self._unconfirmed_sends[entity] = (
-                    state,
-                    self.clock.utcnow(),
-                    source,
-                    reason,
-                )
+                self.commands.failed(entity, state, source, reason)
                 return False
-            self._unconfirmed_sends.pop(entity, None)
+            self.commands.delivered(entity)
             self.gates.record_move(entity, self.clock.utcnow(), self.config)
             self.record_move_provenance(entity, state, source, reason)
-            self._schedule_arrival_poll(entity)
+            self.commands.schedule_arrival_poll(entity)
         return True
 
     def _adopt_late_delivery(self, entity_id: str) -> bool:
         """Adopt motion toward a send that raised as our own travel.
 
-        A failed send leaves no command in flight, so the motor starting
-        toward that target looked like a foreign move and latched a manual
-        override. Within TARGET_TIMEOUT of the failed send, motion in the
-        direction of its target restores the in-flight state instead.
-        Returns True when the motion was adopted.
+        See CommandTracker.adopt_late_delivery; an adopted send is logged
+        and polled like a delivered command. Returns True when adopted.
         """
-        sent = self._unconfirmed_sends.get(entity_id)
+        sent = self.commands.adopt_late_delivery(
+            entity_id,
+            self.state_change_data.new_state.state,
+            self.state_change_data.old_state.attributes.get(
+                "current_tilt_position"
+                if self._cover_type == "cover_tilt"
+                else "current_position"
+            ),
+        )
         if sent is None:
             return False
-        target, sent_at, source, reason = sent
-        if self.clock.utcnow() - sent_at > self.TARGET_TIMEOUT:
-            self._unconfirmed_sends.pop(entity_id, None)
-            return False
-        old_pos = self.state_change_data.old_state.attributes.get(
-            "current_tilt_position"
-            if self._cover_type == "cover_tilt"
-            else "current_position"
-        )
-        if old_pos is None or old_pos == target:
-            return False
-        expected = "opening" if target > old_pos else "closing"
-        # Belt and braces: motion AGAINST our target is also caught right
-        # after this by the against-direction check (so no test can tell
-        # this guard apart; no mutation pins it). Skipping here keeps a
-        # human move from being logged as a late delivery.
-        if self.state_change_data.new_state.state != expected:
-            return False
-        self._unconfirmed_sends.pop(entity_id, None)
-        self.wait_for_target[entity_id] = True
-        self.target_call[entity_id] = target
-        self.target_call_time[entity_id] = sent_at
-        self.logger.debug(
-            "%s started %s toward %s after a failed send: late delivery, "
-            "not a manual move",
-            entity_id,
-            expected,
-            target,
-        )
         self.gates.record_move(entity_id, self.clock.utcnow(), self.config)
         self.record_move_provenance(
             entity_id,
-            target,
-            source,
-            f"{reason} (delivered late)" if reason else "delivered late",
+            sent.target,
+            sent.source,
+            f"{sent.reason} (delivered late)" if sent.reason else "delivered late",
         )
-        self._schedule_arrival_poll(entity_id)
+        self.commands.schedule_arrival_poll(entity_id)
         return True
 
-    def _schedule_arrival_poll(self, entity) -> None:
-        """Force a device poll if no landing report arrives in time.
-
-        Zigbee shades drop attribute reports; without this the entity can
-        sit 'closing' at a stale position for minutes, freezing manual
-        detection and the dashboard alike.
-        """
-        if (cancel := self._poll_cancels.pop(entity, None)) is not None:
-            cancel()
-
-        async def _poll_if_silent(_now) -> None:
-            self._poll_cancels.pop(entity, None)
-            if not self.wait_for_target.get(entity):
-                return  # arrived; nothing to do
-            self.logger.debug("No landing report from %s; forcing a state poll", entity)
-            try:
-                await self.hass.services.async_call(
-                    "homeassistant",
-                    "update_entity",
-                    {ATTR_ENTITY_ID: entity},
-                )
-            except Exception:  # noqa: BLE001 - poll is best-effort
-                self.logger.debug("Forced poll failed for %s", entity)
-
-        self._poll_cancels[entity] = async_call_later(
-            self.hass,
-            self.TARGET_TIMEOUT.total_seconds() + 5,
-            _poll_if_silent,
-        )
+    async def _force_poll(self, entity: str) -> None:
+        """Ask Home Assistant for a fresh state of ``entity`` (best effort)."""
+        try:
+            await self.hass.services.async_call(
+                "homeassistant",
+                "update_entity",
+                {ATTR_ENTITY_ID: entity},
+            )
+        except Exception:  # noqa: BLE001 - poll is best-effort
+            self.logger.debug("Forced poll failed for %s", entity)
 
     def record_move_provenance(
         self, entity, position, source: str, reason: str | None = None

@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1741,7 +1741,7 @@
+@@ -1589,7 +1589,7 @@
                  entity_id,
              )
              return

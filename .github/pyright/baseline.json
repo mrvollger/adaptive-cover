@@ -1,6 +1,6 @@
 {
   "pyright": "1.1.414",
-  "total": 121,
+  "total": 119,
   "errors": [
     {
       "file": "custom_components/adaptive_cover/__init__.py",
@@ -252,7 +252,7 @@
       "file": "custom_components/adaptive_cover/coordinator.py",
       "rule": "reportOptionalMemberAccess",
       "message": "\"state\" is not a known attribute of \"None\"",
-      "count": 13
+      "count": 11
     },
     {
       "file": "custom_components/adaptive_cover/coordinator.py",

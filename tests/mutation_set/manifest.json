@@ -57,15 +57,15 @@
  },
  {
   "id": "M09",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "_is_own_landing",
+  "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+  "function": "CommandTracker.is_own_landing",
   "description": "<= TARGET_TOLERANCE -> > (own landings latch as manual)",
   "patch": "M09_own_landing_tolerance_flip.patch"
  },
  {
   "id": "M10",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "async_check_cover_state_change",
+  "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+  "function": "CommandTracker.release_if_against",
   "description": "expected opening/closing swapped in the travel-window direction check",
   "patch": "M10_travel_direction_swap.patch"
  },
@@ -338,8 +338,8 @@
  },
  {
   "id": "M57",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "_adopt_late_delivery",
+  "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+  "function": "CommandTracker.adopt_late_delivery",
   "description": "motion toward a failed-but-delivered command is never adopted as ours",
   "patch": "M57_late_delivery_never_adopted.patch"
  },

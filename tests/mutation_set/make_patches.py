@@ -48,6 +48,7 @@ SHARED = "custom_components/adaptive_cover/entity_shared.py"
 SHADE_CONFIG = "custom_components/adaptive_cover/runtime/shade_config.py"
 SCHEDULE = "custom_components/adaptive_cover/runtime/schedule.py"
 GATES = "custom_components/adaptive_cover/runtime/gates.py"
+COMMANDS = "custom_components/adaptive_cover/runtime/command_tracker.py"
 
 
 @dataclass
@@ -213,8 +214,8 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M09",
         "own_landing_tolerance_flip",
-        COORD,
-        "_is_own_landing",
+        COMMANDS,
+        "CommandTracker.is_own_landing",
         "<= TARGET_TOLERANCE -> > (own landings latch as manual)",
         "        return position is not None and abs(position - target) <= self.TARGET_TOLERANCE",
         "        return position is not None and abs(position - target) > self.TARGET_TOLERANCE",
@@ -222,8 +223,8 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M10",
         "travel_direction_swap",
-        COORD,
-        "async_check_cover_state_change",
+        COMMANDS,
+        "CommandTracker.release_if_against",
         "expected opening/closing swapped in the travel-window direction check",
         '                expected = "opening" if target > old_pos else "closing"',
         '                expected = "closing" if target > old_pos else "opening"',
@@ -658,10 +659,10 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M57",
         "late_delivery_never_adopted",
-        COORD,
-        "_adopt_late_delivery",
+        COMMANDS,
+        "CommandTracker.adopt_late_delivery",
         "motion toward a failed-but-delivered command is never adopted as ours",
-        "        sent = self._unconfirmed_sends.get(entity_id)\n",
+        "        sent = self._unconfirmed_sends.get(entity)\n",
         "        sent = None\n",
     ),
     Mutation(
