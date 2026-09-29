@@ -80,7 +80,7 @@ def patch_sun_data(sun_data) -> SunDataOverride:
     uses the production seam ``calculation.sun_data_factory``: every cover
     adapter built while the override is active gets ``sun_data``.
     """
-    return SunDataOverride(lambda _timezone, _hass: sun_data)
+    return SunDataOverride(lambda _timezone, _hass, **_seams: sun_data)
 
 
 def use_real_sun_data() -> SunDataOverride:

@@ -8,6 +8,8 @@ from astral import LocationInfo
 from astral.location import Location
 from homeassistant.core import HomeAssistant
 
+from .runtime.clock import SYSTEM_CLOCK, Clock
+
 
 def _astral_location(hass: HomeAssistant) -> tuple[Location, float]:
     """Build an astral Location from the HA core configuration.
@@ -29,8 +31,12 @@ def _astral_location(hass: HomeAssistant) -> tuple[Location, float]:
 class SunData:
     """Access local sun data."""
 
-    def __init__(self, timezone, hass: HomeAssistant) -> None:  # noqa: D107
+    def __init__(
+        self, timezone, hass: HomeAssistant, clock: Clock = SYSTEM_CLOCK
+    ) -> None:
+        """Build the provider; ``clock`` decides which local day is today."""
         self.hass = hass
+        self._clock = clock
         location, elevation = _astral_location(hass)
         self.location = location  # astral.location.Location
         self.elevation = elevation
@@ -50,7 +56,7 @@ class SunData:
         silently returns tomorrow's sunset and the engine's night branch
         never engages (regression 2026-07-03).
         """
-        return datetime.now(ZoneInfo(str(self.timezone))).date()
+        return self._clock.now(ZoneInfo(str(self.timezone))).date()
 
     def _snapshot(self) -> tuple[pd.DatetimeIndex, list, list]:
         """Return (times, azimuth, elevation) computed from one date read.

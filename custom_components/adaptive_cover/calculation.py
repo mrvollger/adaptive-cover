@@ -31,12 +31,13 @@ from .engine.models import (
     TimeContext,
 )
 from .helpers import get_domain, get_safe_attr, get_safe_state
+from .runtime.clock import SYSTEM_CLOCK, Clock
 from .sun import SunData
 
 # Seam: how every cover adapter builds its solar day, called as
-# ``sun_data_factory(timezone, hass)``. Production always uses the real
-# SunData; tests assign a fake factory here instead of patching the import
-# (see tests/characterization/golden_lib.patch_sun_data).
+# ``sun_data_factory(timezone, hass, clock=clock)``. Production always uses
+# the real SunData; tests assign a fake factory here instead of patching the
+# import (see tests/characterization/golden_lib.patch_sun_data).
 sun_data_factory = SunData
 
 
@@ -167,10 +168,13 @@ class AdaptiveGeneralCover(ABC):
     overhang: "Overhang | None" = field(init=False, default=None)
     glare: "GlareModel | None" = field(init=False, default=None)
     privacy: "PrivacyConfig | None" = field(init=False, default=None)
+    # Where "now" comes from (runtime/clock.py): the coordinator passes its
+    # own. Keyword-only so the positional constructors stay unchanged.
+    clock: Clock = field(default=SYSTEM_CLOCK, kw_only=True)
 
     def __post_init__(self):
         """Add solar data to dataset."""
-        self.sun_data = sun_data_factory(self.timezone, self.hass)
+        self.sun_data = sun_data_factory(self.timezone, self.hass, clock=self.clock)
 
     # --- engine input builders ---
 
@@ -219,7 +223,7 @@ class AdaptiveGeneralCover(ABC):
         """Time inputs (naive UTC, matching historical arithmetic)."""
         sunset_utc = self.sun_data.sunset().replace(tzinfo=None)
         return TimeContext(
-            now_utc=datetime.now(UTC).replace(tzinfo=None),
+            now_utc=self.clock.utcnow().replace(tzinfo=None),
             sunrise_utc=self.sun_data.sunrise().replace(tzinfo=None),
             sunset_utc=sunset_utc,
             sun_at_dusk_lead=self.sun_at_dusk_lead(sunset_utc),

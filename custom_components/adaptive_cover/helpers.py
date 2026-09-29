@@ -57,17 +57,3 @@ def get_last_updated(entity_id: str, hass: HomeAssistant):
     if entity_id is not None:
         if hass.states.get(entity_id):
             return hass.states.get(entity_id).last_updated
-
-
-def check_time_passed(time: dt.datetime):
-    """Check if time is passed for datetime.time()."""
-    now = dt.datetime.now().time()
-    return now >= time.time()
-
-
-def dt_check_time_passed(time: dt.datetime):
-    """Check if time is passed today for UTC datetime."""
-    now = dt.datetime.now(dt.UTC)
-    if now.date() == time.date():
-        return now.time() > time.time()
-    return True

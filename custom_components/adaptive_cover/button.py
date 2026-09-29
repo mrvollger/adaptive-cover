@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import datetime as dt
 
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
@@ -95,7 +94,7 @@ class AdaptiveCoverButton(
                     sent_at = coordinator.target_call_time.get(entity)
                     if (
                         sent_at is None
-                        or dt.datetime.now(dt.UTC) - sent_at
+                        or coordinator.clock.utcnow() - sent_at
                         > coordinator.TARGET_TIMEOUT
                     ):
                         _LOGGER.warning(

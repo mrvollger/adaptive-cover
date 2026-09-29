@@ -29,6 +29,7 @@ from homeassistant.helpers.event import async_call_later, async_track_point_in_t
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .config_context_adapter import ConfigContextAdapter
+from .runtime.clock import SYSTEM_CLOCK, Clock
 
 from .calculation import (
     AdaptiveHorizontalCover,
@@ -122,6 +123,12 @@ from .helpers import (
 )
 
 
+# Seam: the clock a coordinator reads when none is passed in. Production
+# keeps Home Assistant's clock (dt_util, which the tests' freezer fixture
+# freezes); a test may assign a fake here, like calculation.sun_data_factory.
+default_clock: Clock = SYSTEM_CLOCK
+
+
 @lru_cache(maxsize=8)
 def cached_timezone(name: str):
     """Return the pytz timezone by name, cached.
@@ -162,8 +169,14 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     TARGET_TOLERANCE = 3  # percent: close enough counts as arrived
     TARGET_TIMEOUT = dt.timedelta(seconds=120)  # travel-time upper bound
 
-    def __init__(self, hass: HomeAssistant) -> None:  # noqa: D107
+    def __init__(self, hass: HomeAssistant, clock: Clock | None = None) -> None:
+        """Initialize the coordinator.
+
+        ``clock`` is where every "now" comes from (see runtime/clock.py);
+        None means the module's ``default_clock``.
+        """
         super().__init__(hass, LOGGER, name=DOMAIN)
+        self.clock: Clock = clock if clock is not None else default_clock
 
         self.logger = ConfigContextAdapter(_LOGGER)
         self.logger.set_config_name(self.config_entry.data.get("name"))
@@ -205,6 +218,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self.manual_duration,
             self.logger,
             persisted_state=_manual_store.setdefault(self.config_entry.entry_id, {}),
+            clock=self.clock,
         )
         self.wait_for_target = {}
         self.target_call = {}
@@ -474,8 +488,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             )
             sent_at = self.target_call_time.get(entity_id)
             expired = (
-                sent_at is None
-                or dt.datetime.now(dt.UTC) - sent_at > self.TARGET_TIMEOUT
+                sent_at is None or self.clock.utcnow() - sent_at > self.TARGET_TIMEOUT
             )
             if arrived:
                 self.wait_for_target[entity_id] = False
@@ -582,7 +595,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         The UTC date rolls over mid-evening in western timezones (18:00 in
         Denver), which named the sunrise two local days out.
         """
-        now = dt.datetime.now(pytz.UTC)
+        now = self.clock.utcnow()
         tomorrow = self._now_local().date() + dt.timedelta(days=1)
         location = cover_data.sun_data.location
         events = []
@@ -831,7 +844,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self._last_change_data = {
                 "old_position": self._previous_state,
                 "new_position": state,
-                "time": dt.datetime.now(pytz.UTC),
+                "time": self.clock.utcnow(),
                 "reason": reason,
             }
         self._previous_state = state
@@ -860,7 +873,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     self._last_change_data = {
                         "old_position": old_pos if old_pos is not None else state,
                         "new_position": new_pos,
-                        "time": dt.datetime.now(pytz.UTC),
+                        "time": self.clock.utcnow(),
                         "reason": change_reason,
                     }
 
@@ -1083,7 +1096,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             sent_at = self.target_call_time.get(entity)
             if (
                 sent_at is not None
-                and dt.datetime.now(dt.UTC) - sent_at <= self.TARGET_TIMEOUT
+                and self.clock.utcnow() - sent_at <= self.TARGET_TIMEOUT
             ):
                 # One command in flight is enough; never stack re-sends.
                 return "awaiting_target"
@@ -1147,7 +1160,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             return True
         if self._is_snap_position(state, options):
             return True
-        now = dt.datetime.now(dt.UTC)
+        now = self.clock.utcnow()
         history = [
             t
             for t in self._move_history.get(entity, [])
@@ -1165,7 +1178,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
     def _record_move(self, entity) -> None:
         if self.max_moves_hour:
-            self._move_history.setdefault(entity, []).append(dt.datetime.now(dt.UTC))
+            self._move_history.setdefault(entity, []).append(self.clock.utcnow())
 
     async def async_force_apply(
         self, source: str = "user", reason: str | None = None
@@ -1219,7 +1232,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
             self.wait_for_target[entity] = True
             self.target_call[entity] = state
-            self.target_call_time[entity] = dt.datetime.now(dt.UTC)
+            self.target_call_time[entity] = self.clock.utcnow()
             self.logger.debug(
                 "Set wait for target %s and target call %s",
                 self.wait_for_target,
@@ -1288,7 +1301,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         the driving intent as reason where known.
         """
         entry = {
-            "time": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
+            "time": self.clock.utcnow().isoformat(timespec="seconds"),
             "position": position,
             "source": source,
             "reason": reason,
@@ -1448,7 +1461,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         every start/end/quiet window by the offset.
         """
         tz = cached_timezone(self.hass.config.time_zone)
-        return dt.datetime.now(tz).replace(tzinfo=None)
+        return self.clock.now(tz).replace(tzinfo=None)
 
     @property
     def check_adaptive_time(self):
@@ -1562,7 +1575,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         devices chatter (link-quality updates, forced polls bump
         last_updated without any movement). Only our own commands count.
         """
-        now = dt.datetime.now(dt.UTC)
+        now = self.clock.utcnow()
         last_sent = self.target_call_time.get(entity)
         if last_sent is not None:
             condition = now - last_sent >= dt.timedelta(minutes=self.time_threshold)
@@ -1778,14 +1791,20 @@ class AdaptiveCoverManager:
     """Track position changes."""
 
     def __init__(
-        self, reset_duration: dict[str:int], logger, persisted_state: dict | None = None
+        self,
+        reset_duration: dict[str:int],
+        logger,
+        persisted_state: dict | None = None,
+        clock: Clock = SYSTEM_CLOCK,
     ) -> None:
         """Initialize the AdaptiveCoverManager.
 
         persisted_state lets override bookkeeping survive an entry reload
         (options edits reload the entry and rebuild the coordinator): pass a
-        dict owned by hass.data and the manager mutates it in place.
+        dict owned by hass.data and the manager mutates it in place. clock
+        is the coordinator's (runtime/clock.py).
         """
+        self.clock = clock
         self.covers: set[str] = set()
 
         state = persisted_state if persisted_state is not None else {}
@@ -1892,7 +1911,7 @@ class AdaptiveCoverManager:
         controls whether later manual moves RESTART the clock (see
         set_last_updated), never whether expiry happens at all.
         """
-        current_time = dt.datetime.now(dt.UTC)
+        current_time = self.clock.utcnow()
         manual_control_time_copy = dict(self.manual_control_time)
         for entity_id, last_updated in manual_control_time_copy.items():
             if current_time - last_updated > self.reset_duration:

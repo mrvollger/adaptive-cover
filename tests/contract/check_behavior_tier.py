@@ -65,6 +65,9 @@ RULES: list[tuple[str, str]] = [
     ("tests/characterization/test_climate_truth_table.py::*", BEHAVIOR),
     ("tests/characterization/test_service_calls.py::*", BEHAVIOR),
     ("tests/characterization/test_coordinator_gating.py::*", IMPLEMENTATION),
+    # P2: numpy-equivalence of engine.numeric's private helpers (clip,
+    # interp), not a contract seam; a later phase may move or rename them.
+    ("tests/engine/test_numeric.py::*", IMPLEMENTATION),
     # evaluate() / documented geometry functions with models.py dataclasses.
     ("tests/engine/*", BEHAVIOR),
     # Root entity-surface tests: only the named classes / halves.
@@ -103,6 +106,9 @@ RULES: list[tuple[str, str]] = [
     ("tests/test_calculation.py::*", IMPLEMENTATION),
     ("tests/test_button.py::*", IMPLEMENTATION),
     ("tests/test_helpers.py::*", IMPLEMENTATION),
+    # P2 clock seam: injects through coordinator.default_clock, which P4
+    # moves with the coordinator split.
+    ("tests/test_clock_seam.py::*", IMPLEMENTATION),
 ]
 
 
