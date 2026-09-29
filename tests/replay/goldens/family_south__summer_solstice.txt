@@ -16,11 +16,9 @@
 06-21 11:05:00 MDT  sensor 99 (climate_default)
 06-21 12:40:00 MDT  cmd    set_cover_position cover.family_south_shades 100
 06-21 12:40:00 MDT  sensor 100 (climate_open_heat)
-06-21 12:41:30 MDT  cmd    set_cover_position cover.family_south_shades 100
 06-21 13:00:00 MDT  input  weather.forecast_home_2 = sunny
 06-21 13:05:00 MDT  cmd    set_cover_position cover.family_south_shades 99
 06-21 13:05:00 MDT  sensor 99 (shaded_by_overhang)
-06-21 13:06:30 MDT  cmd    set_cover_position cover.family_south_shades 99
 06-21 13:30:00 MDT  human  cover.family_south_shades -> 37 (via remote)
 06-21 14:00:00 MDT  input  sensor.downstairs_indoor_temperature = 73.5 °F
 06-21 15:20:00 MDT  sensor 99 (default)

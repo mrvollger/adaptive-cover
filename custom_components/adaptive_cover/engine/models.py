@@ -36,11 +36,16 @@ class TimeContext:
 
     All naive-UTC to reproduce the current implementation's arithmetic
     (a naive UTC wall-clock read vs astral times with tzinfo stripped).
+
+    ``sun_at_dusk_lead`` is the solar position DUSK_LEAD before the sunset
+    position starts (sunset + sunset offset). None (unknown) never engages
+    the dusk lead (see geometry.dusk_lead_active).
     """
 
     now_utc: datetime
     sunrise_utc: datetime
     sunset_utc: datetime
+    sun_at_dusk_lead: SunSnapshot | None = None
 
 
 @dataclass(frozen=True)

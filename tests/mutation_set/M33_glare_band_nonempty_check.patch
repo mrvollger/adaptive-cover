@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_components/adaptive_cover/engine/geometry.py
 --- a/custom_components/adaptive_cover/engine/geometry.py
 +++ b/custom_components/adaptive_cover/engine/geometry.py
-@@ -165,7 +165,7 @@
+@@ -170,7 +170,7 @@
      """
      top = sunlit_top(config, sun)
      safe = glare_safe_height(config, sun)

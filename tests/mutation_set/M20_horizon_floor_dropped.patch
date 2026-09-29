@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_components/adaptive_cover/engine/geometry.py
 --- a/custom_components/adaptive_cover/engine/geometry.py
 +++ b/custom_components/adaptive_cover/engine/geometry.py
-@@ -30,7 +30,7 @@
+@@ -35,7 +35,7 @@
      floor entirely, so "sun in FOV" stayed true all night and winter climate
      branches held covers open in the dark.)
      """

@@ -40,9 +40,7 @@
 06-21 19:25:00 MDT  sensor 4 (calculated)
 06-21 19:50:00 MDT  cmd    set_cover_position cover.sw_sw_shade 3
 06-21 19:50:00 MDT  sensor 3 (calculated)
-06-21 20:15:00 MDT  cmd    set_cover_position cover.sw_sw_shade 97
-06-21 20:15:00 MDT  sensor 97 (default)
-06-21 20:35:00 MDT  cmd    set_cover_position cover.sw_sw_shade 5
-06-21 20:35:00 MDT  sensor 5 (sunset)
+06-21 20:15:00 MDT  cmd    set_cover_position cover.sw_sw_shade 5
+06-21 20:15:00 MDT  sensor 5 (sunset)
 06-21 21:00:00 MDT  input  sensor.upstairs_indoor_temperature = 71.5 °F
 06-22 00:30:00 MDT  end    shade at 5

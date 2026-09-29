@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/engine/evaluate.py b/custom_components/adaptive_cover/engine/evaluate.py
 --- a/custom_components/adaptive_cover/engine/evaluate.py
 +++ b/custom_components/adaptive_cover/engine/evaluate.py
-@@ -181,7 +181,7 @@
+@@ -184,7 +184,7 @@
  
      # Privacy runs before everything: a lit room against a dark sky is
      # visible from outside no matter what solar/climate logic says.

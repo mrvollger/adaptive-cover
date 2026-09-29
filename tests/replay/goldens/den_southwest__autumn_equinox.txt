@@ -18,7 +18,6 @@
 09-22 13:05:00 MDT  sensor 97 (default)
 09-22 13:15:00 MDT  cmd    set_cover_position cover.sw_sw_1st_floor_bed 100
 09-22 13:15:00 MDT  sensor 100 (admit_no_glare)
-09-22 13:16:30 MDT  cmd    set_cover_position cover.sw_sw_1st_floor_bed 100
 09-22 13:30:00 MDT  human  cover.sw_sw_1st_floor_bed -> 37 (via remote)
 09-22 14:00:00 MDT  input  sensor.downstairs_indoor_temperature = 73.5 °F
 09-22 14:05:00 MDT  sensor 14 (calculated)

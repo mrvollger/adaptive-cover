@@ -8,7 +8,7 @@ delegate every calculation to engine functions. All math lives in
 
 from abc import ABC
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 import pandas as pd
@@ -47,7 +47,7 @@ def get_state_reason(cover, climate_data=None):
 
     if cover.direct_sun_valid:
         return f"Sun in window (azi {cover.sol_azi:.0f}°, elev {cover.sol_elev:.0f}°)"
-    if cover.sunset_valid:
+    if cover.sunset_valid or cover.dusk_lead_active:
         return "Sunset position"
     if cover.sol_elev < 0:
         return "Sun below horizon"
@@ -102,13 +102,19 @@ def build_day_forecast(cover, climate_data=None) -> list[dict]:
     elevations = sun_data.solar_elevation
     sunrise = sun_data.sunrise().replace(tzinfo=None)
     sunset = sun_data.sunset().replace(tzinfo=None)
+    sun_at_dusk_lead = cover.sun_at_dusk_lead(sunset)
     inputs = climate_data.to_inputs() if climate_data is not None else None
 
     entries: list[dict] = []
     last_key = None
     for i, ts in enumerate(times):
         now_utc = ts.tz_convert("UTC").tz_localize(None).to_pydatetime()
-        ctx = TimeContext(now_utc=now_utc, sunrise_utc=sunrise, sunset_utc=sunset)
+        ctx = TimeContext(
+            now_utc=now_utc,
+            sunrise_utc=sunrise,
+            sunset_utc=sunset,
+            sun_at_dusk_lead=sun_at_dusk_lead,
+        )
         decision = engine_evaluate(
             config,
             SunSnapshot(azimuth=azimuths[i], elevation=elevations[i]),
@@ -211,11 +217,34 @@ class AdaptiveGeneralCover(ABC):
 
     def time_context(self) -> TimeContext:
         """Time inputs (naive UTC, matching historical arithmetic)."""
+        sunset_utc = self.sun_data.sunset().replace(tzinfo=None)
         return TimeContext(
             now_utc=datetime.now(UTC).replace(tzinfo=None),
             sunrise_utc=self.sun_data.sunrise().replace(tzinfo=None),
-            sunset_utc=self.sun_data.sunset().replace(tzinfo=None),
+            sunset_utc=sunset_utc,
+            sun_at_dusk_lead=self.sun_at_dusk_lead(sunset_utc),
         )
+
+    def sun_at_dusk_lead(self, sunset_utc: datetime) -> SunSnapshot | None:
+        """Solar position DUSK_LEAD before the sunset position starts.
+
+        The engine's dusk lead needs to know whether the sun was still in
+        the window then. None when the sun provider cannot tell.
+        """
+        when = (
+            sunset_utc
+            + timedelta(minutes=self.sunset_off or 0)
+            - engine_geometry.DUSK_LEAD
+        ).replace(tzinfo=UTC)
+        try:
+            location = self.sun_data.location
+            elevation = getattr(self.sun_data, "elevation", 0) or 0
+            return SunSnapshot(
+                azimuth=location.solar_azimuth(when, elevation),
+                elevation=location.solar_elevation(when, elevation),
+            )
+        except (AttributeError, LookupError, ValueError):
+            return None
 
     # --- solar day table ---
 
@@ -305,10 +334,17 @@ class AdaptiveGeneralCover(ABC):
         return result
 
     @property
+    def dusk_lead_active(self) -> bool:
+        """Check whether the sun left the window just before dusk (engine rule)."""
+        return engine_geometry.dusk_lead_active(
+            self.engine_config(), self.sun_snapshot(), self.time_context()
+        )
+
+    @property
     def default(self) -> float:
         """Change default position at sunset."""
         return engine_geometry.default_position(
-            self.engine_config(), self.time_context()
+            self.engine_config(), self.sun_snapshot(), self.time_context()
         )
 
     def fov(self) -> list:

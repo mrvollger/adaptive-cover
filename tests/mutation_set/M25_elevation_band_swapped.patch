@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_components/adaptive_cover/engine/geometry.py
 --- a/custom_components/adaptive_cover/engine/geometry.py
 +++ b/custom_components/adaptive_cover/engine/geometry.py
-@@ -31,9 +31,9 @@
+@@ -36,9 +36,9 @@
      branches held covers open in the dark.)
      """
      floor = 0 if min_elevation is None else min_elevation

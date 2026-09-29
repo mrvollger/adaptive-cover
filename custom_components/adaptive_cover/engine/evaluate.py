@@ -54,10 +54,13 @@ def _evaluate_basic(
         intent = Intent.CALCULATED
         trace.append(f"sun in window: calculated {raw}")
     else:
-        raw = geometry.default_position(config, ctx)
+        raw = geometry.default_position(config, sun, ctx)
         if geometry.sunset_valid(config, ctx):
             intent = Intent.SUNSET
             trace.append(f"after sunset/before sunrise: sunset position {raw}")
+        elif geometry.dusk_lead_active(config, sun, ctx):
+            intent = Intent.SUNSET
+            trace.append(f"sun left the window near dusk: sunset position {raw} now")
         elif geometry.window_fully_shaded(config, sun) and geometry.sun_in_fov(
             config, sun
         ):
@@ -103,7 +106,7 @@ def _evaluate_climate_normal(
             if climate.is_winter:
                 trace.append("winter, away: open fully (nobody to glare)")
                 return 100, Intent.CLIMATE_OPEN_HEAT
-        raw = geometry.default_position(config, ctx)
+        raw = geometry.default_position(config, sun, ctx)
         trace.append(f"away, sun not relevant: default {raw}")
         return raw, Intent.CLIMATE_DEFAULT
 
@@ -111,7 +114,7 @@ def _evaluate_climate_normal(
         if climate.is_winter and valid:
             trace.append("winter, dim/cloudy: open fully (no beam, no glare)")
             return 100, Intent.CLIMATE_OPEN_HEAT
-        raw = geometry.default_position(config, ctx)
+        raw = geometry.default_position(config, sun, ctx)
         trace.append(f"not summer, dim/cloudy: default {raw}")
         return raw, Intent.CLIMATE_DEFAULT
 
