@@ -321,7 +321,11 @@ def _run_one(
                     env=env,
                     stdin=patch_text,
                 )
-                detail = check.stderr.strip() if check.returncode else ""
+                detail = (
+                    check.stderr.strip() or f"git apply exited {check.returncode}"
+                    if check.returncode
+                    else ""
+                )
             if detail:
                 result["error"] = "patch-does-not-apply"
                 result["detail"] = detail
@@ -377,6 +381,8 @@ def previous_durations(path: str | Path | None) -> dict[str, float]:
     try:
         results = json.loads(Path(path).read_text()).get("results") or {}
     except (OSError, ValueError, AttributeError):
+        return {}
+    if not isinstance(results, dict):
         return {}
     durations: dict[str, float] = {}
     for mutation_id, result in results.items():
