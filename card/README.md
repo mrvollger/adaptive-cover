@@ -14,7 +14,7 @@ Lovelace cards for the [Adaptive Cover](https://github.com/mrvollger/adaptive-co
 | Decision strip | `custom:adaptive-cover-decision-card` | Standalone decision trace: every engine step for one window with the winning step highlighted. |
 | House | `custom:adaptive-cover-house-card` | Every window by floor and room. Auto / Hold / Off for the house, each room and each window; Return all to auto, Open all, Close all, Climate. A row opens a detail sheet; house, floor and room settings sheets. Phone layout below 600 px. |
 
-There is also a **dashboard strategy**, `custom:adaptive-cover`: a whole dashboard with one view that holds the house card (see [House card and dashboard](#house-card-and-dashboard)).
+There is also a **dashboard strategy**, `custom:adaptive-cover`: a whole dashboard with one view that holds the house card (see [House card and dashboard](#house-card-and-dashboard)), and a **tile card feature**, `custom:adaptive-cover-mode`: Auto / Hold / Off chips on a stock tile card (see [Mode chips on a tile card](#mode-chips-on-a-tile-card)).
 
 ## What the cards read
 
@@ -44,7 +44,7 @@ Discovery never uses the registry's `config_entry_id` to find a window, because 
 
 The dialog's settings button (the tune icon, "Window settings") opens the integration page with that window's config entry highlighted; its **Configure** button opens the window's options.
 
-All cover actions use standard Home Assistant services (`cover.set_cover_position`, `cover.stop_cover`, `cover.set_cover_tilt_position`, `switch.turn_on/off`, `button.press`, `select.select_option`, `number.set_value`). The house card also calls the integration's `adaptive_cover.hold` and `adaptive_cover.set_profile`. The cards make zero third-party network calls.
+All cover actions use standard Home Assistant services (`cover.set_cover_position`, `cover.stop_cover`, `cover.set_cover_tilt_position`, `switch.turn_on/off`, `button.press`, `select.select_option`, `number.set_value`). The house card and the Mode chips also call the integration's `adaptive_cover.hold` and `adaptive_cover.set_profile`. The cards make zero third-party network calls.
 
 ### Known limitations
 
@@ -150,6 +150,17 @@ House controls use the "Adaptive Cover All" device: Auto / Hold / Off → its se
 - A room or floor sheet also lists the windows with their own values (from the Position sensor's `provenance` attribute); picking one opens its window sheet.
 
 What a room or floor stores comes from the windows' `provenance` (a window whose value comes from `area` means the room sets it) and, for the default position, evening position and sunset offset, from the Position sensor's attributes. For an admin the card also reads the exact stored values from the house entry's diagnostics; without them a row can say "Set for this room" without the value.
+
+### Mode chips on a tile card
+
+```yaml
+type: tile
+entity: select.office_north_mode   # the window's Mode select, its cover, or the house select
+features:
+  - type: custom:adaptive-cover-mode
+```
+
+The tile's entity picks what the chips drive: a window (its Mode select, its physical cover, or any entity on the window device) or the whole house (the house select or `cover.adaptive_cover_all`). The calls are the house card's (see the table above). The feature has no options; its editor says so.
 
 ## For developers
 

@@ -602,4 +602,12 @@ export const en = {
       privacy_position: '% open, for street-facing windows',
     },
   },
+  mode_feature: {
+    name: 'Adaptive Cover mode',
+    description: 'Auto / Hold / Off chips for an Adaptive Cover window or the whole house.',
+    label: 'Adaptive Cover mode',
+    editor_note:
+      'Shows Auto, Hold and Off for the window of this tile (its Mode select, cover or another of its entities) or, on the house select or cover, for the whole house. It has no options.',
+    not_found: 'Not an Adaptive Cover window',
+  },
 } as const;
