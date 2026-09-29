@@ -44,7 +44,11 @@ custom_components/adaptive_cover/
 │   ├── clock.py             # Clock protocol + HassClock: the only module that reads "now"
 │   ├── shade_config.py      # ShadeConfig (typed per-refresh options), ControlState (switch toggles)
 │   ├── schedule.py          # Schedule: start/end time window (no hass; state reader + "now" passed in)
-│   └── gates.py             # GatePolicy: delta/time/quiet/budget gates and their order (no hass)
+│   ├── gates.py             # GatePolicy: delta/time/quiet/budget gates and their order (no hass)
+│   ├── command_tracker.py   # CommandTracker: commands in flight, travel latch, late delivery, arrival polls
+│   ├── manual_detector.py   # ManualDetector: motion-start, redirect-in-travel and landing rules
+│   ├── override_tracker.py  # OverrideTracker: per-cover manual latch + override clock (hass.data store)
+│   └── end_of_day.py        # EndOfDay: end-time timer, catch-up close, retry of missed closes
 ├── sun.py                   # Astral-based solar table (SolarDay, 5-minute points, stdlib only)
 ├── config_flow.py           # Setup wizard + one-page options form (routing only)
 ├── settings/                # One option spec; every settings surface is built from it (P3)
@@ -141,7 +145,7 @@ cover state change ────┘         ▼
 
 ### Key Classes
 
-**`AdaptiveDataUpdateCoordinator`** (coordinator.py) — The hub. Inherits HA's `DataUpdateCoordinator`. Listens to state changes, runs the calculation pipeline, calls cover services, tracks manual overrides. Contains `AdaptiveCoverManager` for per-cover override state.
+**`AdaptiveDataUpdateCoordinator`** (coordinator.py) — The hub. Inherits HA's `DataUpdateCoordinator`. Listens to state changes, runs the calculation pipeline, calls cover services, tracks manual overrides. Delegates to the runtime/ components below; `coordinator.manager` is the `OverrideTracker`.
 
 **`AdaptiveGeneralCover`** (calculation.py) — Abstract base for all cover types. Holds window geometry (azimuth, FOV, height) and sun state. Subclasses:
 - `AdaptiveVerticalCover` — triangle geometry: `height = (distance / cos(gamma)) * tan(elevation)`
@@ -155,6 +159,8 @@ cover state change ────┘         ▼
 **`Clock`** (runtime/clock.py) — Where "now" comes from. The coordinator owns one (`coordinator.clock`; `coordinator.default_clock` is the test seam) and hands it to its override manager, cover adapters and `SunData`. Production uses `HassClock` (`dt_util`, which `freezer` freezes).
 
 **`ShadeConfig`** / **`ControlState`** / **`Schedule`** / **`GatePolicy`** (runtime/, P4 batch 1) — Split out of the coordinator, no `hass`. The coordinator rebuilds `self.config = ShadeConfig.from_options(options)` each refresh, keeps the switch toggles in `self.controls` (the switch platform still sets `control_toggle`, `manual_toggle`, ... by name through `ControlToggle` forwards), asks `self.schedule` for the start/end window and `self.gates.first_blocking_gate(...)` for each automatic move.
+
+**`CommandTracker`** / **`ManualDetector`** / **`OverrideTracker`** / **`EndOfDay`** (runtime/, P4 batch 2) — Also no `hass`. `self.commands` holds the commands in flight (`wait_for_target`, `target_call`, `target_call_time`, our context ids, failed sends that may still arrive) and classifies cover reports against them; the coordinator exposes `wait_for_target`, `target_call_time` and `TARGET_TIMEOUT` for the reset button. `self.detector` holds the manual-move rules and latches into `self.manager` (the `OverrideTracker`: latch, override clock, the `hass.data` store). `self.end_of_day` arms the end-time timer, runs the close and keeps undelivered closes for a retry. HA calls (services, timers) reach them as callables the coordinator passes in.
 
 ### Config Flow (config_flow.py)
 
@@ -259,6 +265,11 @@ the physical cover's area if it has none.
    on time; a catch-up close (armed late after restart/reload) respects
    them. Undeliverable end-of-day closes (cover unavailable) retry when the
    cover returns.
+
+Code: the rules in 2 are `ManualDetector` (runtime/manual_detector.py)
+over `CommandTracker` (runtime/command_tracker.py); 3 and 4 are
+`OverrideTracker` (runtime/override_tracker.py); 5 is `EndOfDay`
+(runtime/end_of_day.py).
 
 ## Development & Testing
 
