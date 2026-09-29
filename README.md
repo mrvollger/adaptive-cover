@@ -1,11 +1,12 @@
 ![Version](https://img.shields.io/github/v/release/mrvollger/adaptive-cover?style=for-the-badge)
+[![License: MIT](https://img.shields.io/github/license/mrvollger/adaptive-cover?style=for-the-badge)](LICENSE)
 
 ![logo](https://github.com/mrvollger/adaptive-cover/blob/main/images/logo.png#gh-light-mode-only)
 ![logo](https://github.com/mrvollger/adaptive-cover/blob/main/images/dark_logo.png#gh-dark-mode-only)
 
 # Adaptive Cover (MRV Fork)
 
-> **Fork notice:** This is a fork of [mrvollger/adaptive-cover](https://github.com/mrvollger/adaptive-cover) with additional features. Changes include "Next State Change" and "Last State Change Reason" sensors. To install via HACS, add `https://github.com/mrvollger/adaptive-cover` as a custom repository.
+> **Fork notice:** This is a fork of [basbruss/adaptive-cover](https://github.com/basbruss/adaptive-cover) with additional features. Changes include "Next State Change" and "Last State Change Reason" sensors. To install via HACS, add `https://github.com/mrvollger/adaptive-cover` as a custom repository.
 
 This Custom-Integration provides sensors for vertical and horizontal blinds based on the sun's position by calculating the position to filter out direct sunlight.
 
@@ -34,6 +35,7 @@ This integration builds upon the template sensor from this forum post [Automatic
   - [Features Planned](#features-planned)
     - [Simulation](#simulation)
     - [Blueprint (deprecated since v1.0.0)](#blueprint-deprecated-since-v100)
+  - [License](#license)
 
 ## New in v1.1.0 (this fork)
 
@@ -332,3 +334,7 @@ One simulated day: the sun angles (left axis) and the computed cover positions (
 
 This integration provides the option to download a blueprint to control the covers automatically by the provide sensor.
 By selecting the option the blueprints will be added to your local blueprints folder.
+
+## License
+
+Adaptive Cover is released under the [MIT License](LICENSE). The Lovelace card bundle (source in [`card/`](card/), shipped as `custom_components/adaptive_cover/www/adaptive-cover-card.js`) is also MIT-licensed; its [own license file](card/LICENSE) keeps the upstream card's copyright notice. Contributions are accepted under the same license (see [CONTRIBUTING.md](CONTRIBUTING.md)).
