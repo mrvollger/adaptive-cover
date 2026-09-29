@@ -351,3 +351,33 @@ async def test_regression_small_move_to_privacy_passes_delta_gate(hass, freezer)
         f"blocked by {house.window().move_blocked_by}"
     )
     await house.teardown()
+
+
+async def test_regression_control_method_returns_to_intermediate(hass, freezer):
+    """The Control method sensor leaves winter/summer when they stop applying.
+
+    The coordinator only ever SET "winter" or "summer": once the
+    temperature went back between the thresholds (or the climate switch
+    went off) the sensor kept the old season all day.
+    """
+    house = await SimHouse.create(
+        hass,
+        freezer,
+        date="2026-03-20",
+        climate={"temp": 18.0, "presence": "not_home", "weather": "sunny"},
+    )
+    await house.advance_to("11:00")
+    assert house.sensor_value("control_method") == "winter"
+
+    await house.set_temperature(22.0)  # between temp_low and temp_high
+    await house.advance_to("11:20")
+    assert house.sensor_value("control_method") == "intermediate"
+
+    await house.set_temperature(26.0)
+    await house.advance_to("11:40")
+    assert house.sensor_value("control_method") == "summer"
+
+    await house.toggle("climate_mode", False)
+    await house.advance_to("12:00")
+    assert house.sensor_value("control_method") == "intermediate"
+    await house.teardown()

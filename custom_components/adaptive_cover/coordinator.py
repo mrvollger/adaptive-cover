@@ -1316,10 +1316,14 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self._climate_decision = ClimateCoverState(cover_data, climate).get_decision()
         self.climate_state = round(self._climate_decision.position)
         climate_data = ClimateCoverState(cover_data, climate).climate_data
-        if climate_data.is_summer and self.switch_mode:
-            self.control_method = "summer"
+        # Winter wins if both held (it was the later assignment); neither,
+        # or the climate switch off, is intermediate again.
         if climate_data.is_winter and self.switch_mode:
             self.control_method = "winter"
+        elif climate_data.is_summer and self.switch_mode:
+            self.control_method = "summer"
+        else:
+            self.control_method = "intermediate"
         self.logger.debug(
             "Climate mode control method was set to %s", self.control_method
         )

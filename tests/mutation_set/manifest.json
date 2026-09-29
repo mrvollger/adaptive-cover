@@ -49,6 +49,13 @@
   "patch": "M63_delta_gate_snap_list_drops_privacy.patch"
  },
  {
+  "id": "M64",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "climate_mode_data",
+  "description": "control_method keeps the last season when neither winter nor summer applies",
+  "patch": "M64_control_method_sticks.patch"
+ },
+ {
   "id": "M60",
   "file": "custom_components/adaptive_cover/runtime/schedule.py",
   "function": "Schedule.after_start",

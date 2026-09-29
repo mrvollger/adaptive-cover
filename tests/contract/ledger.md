@@ -323,3 +323,22 @@ The example below is inside an HTML comment. The checker ignores it.
   `is_snap_position`. Goldens, truth table and house replay unchanged: the
   privacy golden days and the house use privacy position 0, which was
   already a snap position.
+
+## L0014 · 2026-09-29 · The Control method sensor returns to intermediate (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pin
+  `tests/simulation/test_regressions.py::test_regression_control_method_returns_to_intermediate`
+- **Mutations re-targeted:** none. Added M64 (control_method keeps the last
+  season when neither winter nor summer applies).
+- **Contract change:** C5
+- **Reason:** defect fix listed in the plan's P4 ("`control_method` returns
+  to intermediate"). Confirmed first: in a climate entry the coordinator
+  only ever set "winter" or "summer", so once the temperature went back
+  between the thresholds, or the climate switch went off, the Control
+  method sensor kept the old season (the new scenario failed with
+  'winter' where 'intermediate' was due). It now reads "intermediate"
+  whenever neither season applies or the climate switch is off; winter
+  still wins if both held. Positions are unchanged (the climate strategy
+  never read this value), so goldens, truth table and house replay are
+  unchanged.

@@ -195,6 +195,15 @@ MUTATIONS: list[Mutation] = [
         "            return condition",
     ),
     Mutation(
+        "M64",
+        "control_method_sticks",
+        COORD,
+        "climate_mode_data",
+        "control_method keeps the last season when neither winter nor summer applies",
+        '        else:\n            self.control_method = "intermediate"\n',
+        "        else:\n            pass\n",
+    ),
+    Mutation(
         "M60",
         "unreadable_start_entity_counts_as_started",
         SCHEDULE,
