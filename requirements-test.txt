@@ -1,5 +1,4 @@
-pytest-homeassistant-custom-component
-pytest-asyncio
-numpy
-pandas
-astral
+-r requirements.txt
+# 0.13.354 pins homeassistant==2026.8.0, the minimum supported version
+# (hacs.json). It also pins pytest, pytest-asyncio, pytest-xdist and numpy.
+pytest-homeassistant-custom-component==0.13.354

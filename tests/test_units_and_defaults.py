@@ -124,9 +124,7 @@ async def test_unitless_sensor_passes_through(hass, mock_sun_entity):
     """No unit attribute: the number is used as-is (historical behavior)."""
     hass.config.units = US_CUSTOMARY_SYSTEM
     hass.states.async_set(COVER, "open", {"current_position": 60})
-    entry = await _setup_climate_entry(
-        hass, low=72, high=75, reading=70, unit=None
-    )
+    entry = await _setup_climate_entry(hass, low=72, high=75, reading=70, unit=None)
     assert _control_method(hass, entry) == "winter"
 
 
@@ -136,9 +134,7 @@ async def test_regression_wrong_unit_thresholds_warn_once(
     """Celsius-looking thresholds in a °F house log a warning."""
     hass.config.units = US_CUSTOMARY_SYSTEM
     caplog.set_level(logging.WARNING)
-    entry = await _setup_climate_entry(
-        hass, low=21, high=23, reading=74, unit="°F"
-    )
+    entry = await _setup_climate_entry(hass, low=21, high=23, reading=74, unit="°F")
     hass.states.async_set(TEMP, "74.5", {"unit_of_measurement": "°F"})
     await hass.async_block_till_done()
     warnings = [r for r in caplog.records if "look like the wrong unit" in r.message]

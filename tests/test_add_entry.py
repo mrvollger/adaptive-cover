@@ -96,9 +96,7 @@ async def test_add_entry_defaults_without_template(
     assert entry.options[CONF_HEIGHT_WIN] == 2.1  # default
 
 
-async def test_add_entry_bad_template_raises(
-    hass, template_entry, mock_sun_entity
-):
+async def test_add_entry_bad_template_raises(hass, template_entry, mock_sun_entity):
     await _setup(hass, template_entry)
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(

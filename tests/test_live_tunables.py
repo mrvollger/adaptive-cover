@@ -79,8 +79,13 @@ class TestNumberEntities:
     ):
         entry = _entry(hass)
         await _setup(hass, entry)
-        for key in ("eye_height", "occupied_distance", "overhang_depth",
-                    "overhang_height", "privacy_offset"):
+        for key in (
+            "eye_height",
+            "occupied_distance",
+            "overhang_depth",
+            "overhang_height",
+            "privacy_offset",
+        ):
             assert _entity_id(hass, "number", f"{entry.entry_id}_number_{key}"), key
 
     async def test_temp_numbers_only_with_climate(
@@ -88,9 +93,7 @@ class TestNumberEntities:
     ):
         entry = _entry(hass)  # climate off
         await _setup(hass, entry)
-        assert (
-            _entity_id(hass, "number", f"{entry.entry_id}_number_temp_low") is None
-        )
+        assert _entity_id(hass, "number", f"{entry.entry_id}_number_temp_low") is None
 
     async def test_temp_numbers_with_climate_show_defaults(
         self, hass, cover_calls_stub, mock_sun_entity
@@ -142,9 +145,7 @@ class TestModeSelect:
         assert state.attributes["options"] == ["Manual", "Sun tracking"]
         assert state.state == "Sun tracking"  # control restores on
 
-    async def test_options_with_climate(
-        self, hass, cover_calls_stub, mock_sun_entity
-    ):
+    async def test_options_with_climate(self, hass, cover_calls_stub, mock_sun_entity):
         entry = _entry(hass, climate=True)
         await _setup(hass, entry)
         eid = _entity_id(hass, "select", f"{entry.entry_id}_mode_select")
@@ -171,9 +172,7 @@ class TestModeSelect:
         )
         await hass.async_block_till_done()
 
-        control_eid = _entity_id(
-            hass, "switch", f"{entry.entry_id}_Toggle Control"
-        )
+        control_eid = _entity_id(hass, "switch", f"{entry.entry_id}_Toggle Control")
         assert hass.states.get(control_eid).state == "off"
         assert hass.states.get(eid).state == "Manual"
 
@@ -200,12 +199,8 @@ class TestModeSelect:
         )
         await hass.async_block_till_done()
 
-        control_eid = _entity_id(
-            hass, "switch", f"{entry.entry_id}_Toggle Control"
-        )
-        climate_eid = _entity_id(
-            hass, "switch", f"{entry.entry_id}_Climate Mode"
-        )
+        control_eid = _entity_id(hass, "switch", f"{entry.entry_id}_Toggle Control")
+        climate_eid = _entity_id(hass, "switch", f"{entry.entry_id}_Climate Mode")
         assert hass.states.get(control_eid).state == "on"
         assert hass.states.get(climate_eid).state == "off"
         assert hass.states.get(eid).state == "Sun tracking"

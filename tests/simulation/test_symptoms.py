@@ -142,9 +142,7 @@ async def test_end_time_close_fires(hass, freezer):
         },
     )
     await house.advance_to("19:00")
-    closes = [
-        m for m in house.auto_moves(SHADE, since="17:55") if m.position == 0
-    ]
+    closes = [m for m in house.auto_moves(SHADE, since="17:55") if m.position == 0]
     assert closes, (
         "no close command at the configured end time; evening timeline: "
         f"{[e for e in house.timeline if e.time.hour >= 17]}"

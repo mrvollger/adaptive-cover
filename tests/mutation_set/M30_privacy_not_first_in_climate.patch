@@ -7,6 +7,6 @@ diff --git a/custom_components/adaptive_cover/engine/evaluate.py b/custom_compon
      # visible from outside no matter what solar/climate logic says.
 -    if geometry.privacy_active(config, ctx):
 +    if climate is None and geometry.privacy_active(config, ctx):
-         trace.append(
-             f"dark outside: privacy position {config.privacy.position}"
-         )
+         trace.append(f"dark outside: privacy position {config.privacy.position}")
+         result = _apply_limits(config.privacy.position, False, config, trace)
+         return Decision(position=result, intent=Intent.PRIVACY, trace=tuple(trace))

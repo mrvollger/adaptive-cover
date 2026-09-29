@@ -175,9 +175,7 @@ async def test_no_position_event_no_latch(hass, freezer):
 # ------------------------------------------------- pending end-snap retry
 
 
-@pytest.mark.parametrize(
-    "control_on", [True, False], ids=["control-on", "control-off"]
-)
+@pytest.mark.parametrize("control_on", [True, False], ids=["control-on", "control-off"])
 async def test_pending_end_snap_real_retry(hass, freezer, caplog, control_on):
     """An end-time close whose service call RAISES is retried on return.
 
@@ -231,9 +229,7 @@ async def test_pending_end_snap_real_retry(hass, freezer, caplog, control_on):
 
     if control_on:
         retries = [
-            ev
-            for ev in house.auto_moves(SHADE, since="18:05")
-            if ev.position == 0
+            ev for ev in house.auto_moves(SHADE, since="18:05") if ev.position == 0
         ]
         assert retries, (
             "missed end-of-day close was not re-delivered after the shade "
@@ -245,7 +241,5 @@ async def test_pending_end_snap_real_retry(hass, freezer, caplog, control_on):
         assert house.auto_moves(SHADE, since="18:05") == [], (
             "the missed close was re-delivered although control is off"
         )
-        assert house.position(SHADE) != 0, (
-            "shade closed although control is off"
-        )
+        assert house.position(SHADE) != 0, "shade closed although control is off"
     await house.teardown()

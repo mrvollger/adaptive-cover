@@ -305,9 +305,7 @@ async def test_ignore_intermediate_option(hass, freezer):
     await settle(house)
     start = house.position(SHADE)
     await house.user_moves(SHADE, 100 if start < 70 else 0, via="remote")
-    assert manual_binary(house) == "on", (
-        "default config did not latch at motion start"
-    )
+    assert manual_binary(house) == "on", "default config did not latch at motion start"
     # teardown() disarms the service re-win guard, so the dead house
     # cannot steal the cover services back from the second house next.
     await house.teardown()
@@ -458,7 +456,9 @@ async def test_day_two_solar_schedule(hass, freezer):
     # March the sunset drifts about a minute later per day.
     sunset_day2 = house.sun_data.sunset()
     drift = sunset_day2 - sunset_day1
-    assert dt.timedelta(hours=23, minutes=50) < drift < dt.timedelta(hours=24, minutes=10)
+    assert (
+        dt.timedelta(hours=23, minutes=50) < drift < dt.timedelta(hours=24, minutes=10)
+    )
 
     # Day two runs a full schedule: the shade reopens during the day and
     # closes again after the DAY-TWO sunset.
@@ -472,9 +472,7 @@ async def test_day_two_solar_schedule(hass, freezer):
     ]
     assert reopened, "no day-two daytime tracking commands"
     closes = [
-        ev
-        for ev in moves_on_or_after(house, SHADE, sunset_local)
-        if ev.position == 0
+        ev for ev in moves_on_or_after(house, SHADE, sunset_local) if ev.position == 0
     ]
     assert closes, (
         "no close after the day-two sunset; day-two evening timeline: "

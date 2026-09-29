@@ -25,13 +25,14 @@ listeners, entities) against a fully simulated house:
 ```python
 async def test_my_scenario(hass, freezer):
     house = await SimHouse.create(
-        hass, freezer,
+        hass,
+        freezer,
         date="2026-03-20",
         covers=["cover.shade"],
         options={CONF_END_TIME: "20:00:00", CONF_RETURN_SUNSET: True},
     )
     await house.advance_to("14:00")
-    await house.user_moves("cover.shade", 100, via="remote")   # or "dashboard"
+    await house.user_moves("cover.shade", 100, via="remote")  # or "dashboard"
     await house.advance_to("16:00")
     assert house.auto_moves("cover.shade", since="14:00") == []
     await house.teardown()
@@ -154,10 +155,13 @@ by one helper in `tests/characterization/golden_lib.py`:
 ## Mutation kill matrix
 
 `tests/mutation_set/` holds one patch file per roadmap mutation (M01–M43)
-plus `run_mutations.py`, which applies each patch, runs the configured
-pytest tiers, records caught/missed, reverse-applies, and writes a JSON
-report — see that script's docstring. Regenerate stale patches with
-`python tests/mutation_set/make_patches.py`.
+plus `run_mutations.py`, which applies each patch in its own temp copy of
+the repo, runs the configured pytest tiers, records caught/missed, and
+writes a JSON report. Use `--jobs N` to run mutations in parallel (your
+checkout is never modified). Regenerate stale patches with
+`python tests/mutation_set/make_patches.py`; `--check` verifies them
+without writing. Flags, the behavior-tier ledger and its checker are
+documented in `tests/contract/README.md`.
 
 ## File tour
 

@@ -8,7 +8,7 @@ delegate every calculation to engine functions. All math lives in
 
 from abc import ABC
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 
 import numpy as np
 import pandas as pd
@@ -71,11 +71,7 @@ def _get_climate_reason(cover, climate_data):
         return "No presence: default position"
 
     is_summer = climate_data.is_summer
-    not_sunny = (
-        climate_data.lux
-        or climate_data.irradiance
-        or not climate_data.is_sunny
-    )
+    not_sunny = climate_data.lux or climate_data.irradiance or not climate_data.is_sunny
 
     if not is_summer and not_sunny:
         if climate_data.is_winter and cover.valid:
@@ -216,7 +212,7 @@ class AdaptiveGeneralCover(ABC):
     def time_context(self) -> TimeContext:
         """Time inputs (naive UTC, matching historical arithmetic)."""
         return TimeContext(
-            now_utc=datetime.utcnow(),  # noqa: DTZ003
+            now_utc=datetime.now(UTC).replace(tzinfo=None),
             sunrise_utc=self.sun_data.sunrise().replace(tzinfo=None),
             sunset_utc=self.sun_data.sunset().replace(tzinfo=None),
         )
@@ -304,9 +300,7 @@ class AdaptiveGeneralCover(ABC):
     @property
     def sunset_valid(self) -> bool:
         """Determine if it is after sunset plus offset."""
-        result = engine_geometry.sunset_valid(
-            self.engine_config(), self.time_context()
-        )
+        result = engine_geometry.sunset_valid(self.engine_config(), self.time_context())
         self.logger.debug("After sunset plus offset? %s", result)
         return result
 
@@ -473,9 +467,7 @@ class ClimateCoverData:
         if self.outside_entity:
             return self._to_system_unit(
                 get_safe_state(self.hass, self.outside_entity),
-                get_safe_attr(
-                    self.hass, self.outside_entity, ATTR_UNIT_OF_MEASUREMENT
-                ),
+                get_safe_attr(self.hass, self.outside_entity, ATTR_UNIT_OF_MEASUREMENT),
             )
         if self.weather_entity:
             return self._to_system_unit(
@@ -492,9 +484,7 @@ class ClimateCoverData:
         if get_domain(self.temp_entity) != "climate":
             return self._to_system_unit(
                 get_safe_state(self.hass, self.temp_entity),
-                get_safe_attr(
-                    self.hass, self.temp_entity, ATTR_UNIT_OF_MEASUREMENT
-                ),
+                get_safe_attr(self.hass, self.temp_entity, ATTR_UNIT_OF_MEASUREMENT),
             )
         # Climate entities already report in the system unit.
         return self._as_float(
@@ -600,9 +590,7 @@ class ClimateCoverData:
         if not self._use_irradiance:
             return False
         if self.irradiance_entity is not None and self.irradiance_threshold is not None:
-            value = self._as_float(
-                get_safe_state(self.hass, self.irradiance_entity)
-            )
+            value = self._as_float(get_safe_state(self.hass, self.irradiance_entity))
             if value is None:
                 return False
             return value <= self.irradiance_threshold

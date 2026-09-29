@@ -89,8 +89,13 @@ def _as_list(value: Any) -> list[str]:
 class WindowHandle:
     """Role-based, public-surface-only access to one window."""
 
-    def __init__(self, hass: HomeAssistant, cover: str | None = None, *,
-                 window_key: str | None = None) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        cover: str | None = None,
+        *,
+        window_key: str | None = None,
+    ) -> None:
         if cover is None and window_key is None:
             raise ValueError("WindowHandle needs a cover or a window_key")
         self.hass = hass
@@ -140,8 +145,7 @@ class WindowHandle:
         # with restored=True (or removes them): one teardown per unload.
         new_state = event.data.get("new_state")
         if new_state is not None and not (
-            new_state.state == "unavailable"
-            and new_state.attributes.get("restored")
+            new_state.state == "unavailable" and new_state.attributes.get("restored")
         ):
             return
         try:
@@ -273,32 +277,40 @@ class WindowHandle:
 
     # ------------------------------------------------------------ actions
 
-    async def press(self, role: str = "return_to_auto", *,
-                    context: Context | None = None) -> None:
+    async def press(
+        self, role: str = "return_to_auto", *, context: Context | None = None
+    ) -> None:
         """Press one of the window's buttons via a real service call."""
         await self.hass.services.async_call(
-            "button", "press", {"entity_id": self.entity_id(role)},
-            blocking=True, context=context,
+            "button",
+            "press",
+            {"entity_id": self.entity_id(role)},
+            blocking=True,
+            context=context,
         )
         await self.hass.async_block_till_done()
 
-    async def select_mode(self, option: str, *,
-                          context: Context | None = None) -> None:
+    async def select_mode(self, option: str, *, context: Context | None = None) -> None:
         """Set the window's Mode select via a real service call."""
         await self.hass.services.async_call(
-            "select", "select_option",
+            "select",
+            "select_option",
             {"entity_id": self.entity_id("mode"), "option": option},
-            blocking=True, context=context,
+            blocking=True,
+            context=context,
         )
         await self.hass.async_block_till_done()
 
-    async def turn(self, role: str, on: bool, *,
-                   context: Context | None = None) -> None:
+    async def turn(
+        self, role: str, on: bool, *, context: Context | None = None
+    ) -> None:
         """Flip one of the window's switches via a real service call."""
         await self.hass.services.async_call(
-            "switch", "turn_on" if on else "turn_off",
+            "switch",
+            "turn_on" if on else "turn_off",
             {"entity_id": self.entity_id(role)},
-            blocking=True, context=context,
+            blocking=True,
+            context=context,
         )
         await self.hass.async_block_till_done()
 

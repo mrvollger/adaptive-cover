@@ -403,9 +403,7 @@ class TestMinMaxLimits:
 
     def test_min_clamps_tracking_ported(self):
         """Ported: low sun raises tiny calculated positions to min_pos."""
-        cfg = make_vertical(
-            default_position=20, limits=PositionLimits(min_position=30)
-        )
+        cfg = make_vertical(default_position=20, limits=PositionLimits(min_position=30))
         d = evaluate(cfg, self.LOW_SUN, DAY)
         assert d.position == 30
 
@@ -418,9 +416,7 @@ class TestMinMaxLimits:
         assert evaluate(cfg, SUN_BEHIND, DAY).position == 20
 
     def test_min_unconditional_raises_default_too(self):
-        cfg = make_vertical(
-            default_position=20, limits=PositionLimits(min_position=30)
-        )
+        cfg = make_vertical(default_position=20, limits=PositionLimits(min_position=30))
         assert evaluate(cfg, SUN_BEHIND, DAY).position == 30
 
     def test_min_does_not_lower_high_positions(self):
@@ -473,9 +469,7 @@ class TestClimateTiltPresets:
 
     def test_away_winter_mode1_gets_80_preset(self):
         """The beams-parallel branch is mode2-only; mode1 keeps the preset."""
-        d = evaluate(
-            make_tilt(tilt_mode="mode1"), SUN_FRONT_45, DAY, AWAY_SUNNY_WINTER
-        )
+        d = evaluate(make_tilt(tilt_mode="mode1"), SUN_FRONT_45, DAY, AWAY_SUNNY_WINTER)
         assert d.intent == Intent.CLIMATE_TILT_PRESET
         assert d.position == pytest.approx(80 / 90 * 100)
 

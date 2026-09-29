@@ -8,5 +8,5 @@ diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_compon
 -    if top <= safe:
 +    if top <= 0:
          return 100
-     return round(float(np.clip(safe, 0, config.window_height))
-                  / config.window_height * 100)
+     return round(
+         float(np.clip(safe, 0, config.window_height)) / config.window_height * 100

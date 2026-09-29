@@ -19,7 +19,6 @@ Every restart goes through ``house.restart()`` and every options change
 through ``house.set_options()`` or the production settings service.
 """
 
-
 from custom_components.adaptive_cover.const import (
     CONF_DISTANCE,
     CONF_END_ENTITY,
@@ -53,9 +52,7 @@ def end_time_options(end="20:00:00", **extra):
 def closes(house, *, since, until=None):
     """Integration close commands (position 0) for the shade."""
     return [
-        m
-        for m in house.auto_moves(SHADE, since=since, until=until)
-        if m.position == 0
+        m for m in house.auto_moves(SHADE, since=since, until=until) if m.position == 0
     ]
 
 
@@ -399,9 +396,7 @@ async def test_daytime_start_positions_within_first_tick(hass, freezer):
     await house.set_options(**{CONF_DISTANCE: 0.9})
     await house.advance_to("14:10")
     reload_moves = house.auto_moves(SHADE, since="13:58")
-    assert reload_moves, (
-        "no command within 10 minutes of a geometry-changing reload"
-    )
+    assert reload_moves, "no command within 10 minutes of a geometry-changing reload"
     assert reload_moves[-1].position != before_reload, (
         "post-reload command ignored the changed geometry"
     )

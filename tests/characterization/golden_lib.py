@@ -144,9 +144,7 @@ class FlatSunData:
     def times(self) -> pd.DatetimeIndex:
         tz = dt_util.DEFAULT_TIME_ZONE
         today_local = dt_util.now(tz).date()
-        return pd.date_range(
-            start=today_local, periods=self.N, freq="5min", tz=str(tz)
-        )
+        return pd.date_range(start=today_local, periods=self.N, freq="5min", tz=str(tz))
 
     @property
     def solar_azimuth(self) -> list[float]:
@@ -161,7 +159,12 @@ class FlatSunData:
             return self.sunrise_at
         yesterday = dt_util.utcnow().date() - dt.timedelta(days=1)
         return dt.datetime(
-            yesterday.year, yesterday.month, yesterday.day, 0, 0, 1,
+            yesterday.year,
+            yesterday.month,
+            yesterday.day,
+            0,
+            0,
+            1,
             tzinfo=dt.UTC,
         )
 
@@ -170,7 +173,12 @@ class FlatSunData:
             return self.sunset_at
         tomorrow = dt_util.utcnow().date() + dt.timedelta(days=1)
         return dt.datetime(
-            tomorrow.year, tomorrow.month, tomorrow.day, 23, 59, 59,
+            tomorrow.year,
+            tomorrow.month,
+            tomorrow.day,
+            23,
+            59,
+            59,
             tzinfo=dt.UTC,
         )
 
@@ -179,16 +187,20 @@ class FakeSunData:
     """Deterministic SunData replacement for a fixed date and location."""
 
     def __init__(self, lat, lon, tz, date):
-        info = LocationInfo(name="test", region="test", timezone=tz,
-                            latitude=lat, longitude=lon)
+        info = LocationInfo(
+            name="test", region="test", timezone=tz, latitude=lat, longitude=lon
+        )
         self.location = Location(info)
         self.observer = info.observer
         self.elevation = 0
         self.timezone = tz
         self.date = date
         self.times = pd.date_range(
-            start=date, end=date + pd.Timedelta(days=1),
-            freq=f"{STEP_MINUTES}min", tz=tz, name="time",
+            start=date,
+            end=date + pd.Timedelta(days=1),
+            freq=f"{STEP_MINUTES}min",
+            tz=tz,
+            name="time",
         )
         self.solar_azimuth = [
             astral_sun.azimuth(self.observer, t.to_pydatetime()) for t in self.times
@@ -409,9 +421,7 @@ def _solar_times(scenario: Scenario, sun_data: FakeSunData):
     )
 
 
-def _basic_reason(
-    config: CoverConfig, sun: SunSnapshot, ctx: TimeContext
-) -> str:
+def _basic_reason(config: CoverConfig, sun: SunSnapshot, ctx: TimeContext) -> str:
     """Human-readable reason, byte-identical to get_state_reason()."""
     if engine_geometry.direct_sun_valid(config, sun, ctx):
         return f"Sun in window (azi {sun.azimuth:.0f}°, elev {sun.elevation:.0f}°)"

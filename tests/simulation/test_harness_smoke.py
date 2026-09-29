@@ -135,9 +135,7 @@ async def test_restart_preserves_timeline_and_restores_switches(hass, freezer):
     assert house.window().available  # the restarted window is live
 
     # seed_states overrides the capture: force the control switch back on.
-    await house.restart(
-        seed_states={house.eid("switch", "toggle_control"): "on"}
-    )
+    await house.restart(seed_states={house.eid("switch", "toggle_control"): "on"})
     assert house.entity("switch", "toggle_control").state == "on"
     await house.teardown()
 
@@ -163,7 +161,10 @@ async def test_day_two_sun_regeneration(hass, freezer):
 async def test_dst_transition_day_advances(hass, freezer):
     """Ticking across the 2026-03-08 spring-forward gap must not crash."""
     house = await SimHouse.create(
-        hass, freezer, date="2026-03-08", start_at="01:00",
+        hass,
+        freezer,
+        date="2026-03-08",
+        start_at="01:00",
         location=dict(lat=40.76, lon=-111.89, tz="America/Denver"),
     )
     await house.advance_to("03:30")  # 02:00-03:00 does not exist locally
@@ -202,9 +203,7 @@ async def test_hold_release_timers_delivers_close_late(hass, freezer):
 
 async def test_jammed_shade_never_lands_poll_reports_stuck(hass, freezer):
     """jam(): stops mid-travel, no landing ever, poll shows the stuck spot."""
-    house = await SimHouse.create(
-        hass, freezer, date="2026-03-20", travel_seconds=600
-    )
+    house = await SimHouse.create(hass, freezer, date="2026-03-20", travel_seconds=600)
     await house.advance_to("11:00")
     start = house.position(SHADE)
     await house.user_moves(SHADE, 0, via="remote")
@@ -217,9 +216,12 @@ async def test_jammed_shade_never_lands_poll_reports_stuck(hass, freezer):
     await house.advance_to("11:40")
     assert house.position(SHADE) == stuck, "jammed shade landed anyway"
     landings = [
-        ev for ev in house.timeline
-        if ev.kind == "state" and ev.position == 0
-        and ev.entity_id == SHADE and ev.time > jam_time
+        ev
+        for ev in house.timeline
+        if ev.kind == "state"
+        and ev.position == 0
+        and ev.entity_id == SHADE
+        and ev.time > jam_time
     ]
     assert landings == [], "jammed shade sent a landing report"
 
@@ -385,9 +387,7 @@ async def test_tilt_house_uses_tilt_field_and_service(hass, freezer):
     all_moves = house.auto_moves(SHADE)
     tilt_moves = house.auto_moves(SHADE, service="set_cover_tilt_position")
     assert all_moves, "tilt entry never commanded the cover"
-    assert tilt_moves == all_moves, (
-        "some tilt-entry commands used set_cover_position"
-    )
+    assert tilt_moves == all_moves, "some tilt-entry commands used set_cover_position"
     assert house.position(SHADE, tilt=True) == tilt_moves[-1].position
     assert house.position(SHADE) == 100, "a tilt command moved the lift field"
     assert (

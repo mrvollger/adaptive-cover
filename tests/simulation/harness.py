@@ -86,8 +86,11 @@ class SimSunData(FakeSunData):
         """Recompute times/azimuth/elevation/date in place for ``date``."""
         self.date = date
         self.times = pd.date_range(
-            start=date, end=date + pd.Timedelta(days=1),
-            freq=f"{STEP_MINUTES}min", tz=self.timezone, name="time",
+            start=date,
+            end=date + pd.Timedelta(days=1),
+            freq=f"{STEP_MINUTES}min",
+            tz=self.timezone,
+            name="time",
         )
         self.solar_azimuth = [
             astral_sun.azimuth(self.observer, t.to_pydatetime()) for t in self.times
@@ -146,7 +149,11 @@ class FakeShade:
     fail_next: Exception | None = None
 
     def start_travel(
-        self, target: int, ctx: Context, now: dt.datetime, *,
+        self,
+        target: int,
+        ctx: Context,
+        now: dt.datetime,
+        *,
         travel_field: str = "position",
     ) -> str | None:
         """Begin moving; return the intermediate state, or None if a no-op."""
@@ -262,7 +269,9 @@ class SimHouse:
           domain (zone expects a count like "2"; binary_sensor "on"/"off").
         """
         location = location or dict(SLC)
-        self = cls(hass, freezer, date=date, location=location, step_minutes=step_minutes)
+        self = cls(
+            hass, freezer, date=date, location=location, step_minutes=step_minutes
+        )
 
         # Entity service calls validate context.user_id against hass.auth,
         # so the simulated human must exist as a real (owner) user.
@@ -291,8 +300,13 @@ class SimHouse:
                 travel_seconds=travel_seconds,
             )
             self.shades[entity_id] = shade
-            self._write_shade_state(shade, "open" if shade.position else "closed",
-                                    Context(), actor="device", record=False)
+            self._write_shade_state(
+                shade,
+                "open" if shade.position else "closed",
+                Context(),
+                actor="device",
+                record=False,
+            )
             # Built before setup so it records the startup command too.
             self.windows[entity_id] = WindowHandle(hass, entity_id)
 
@@ -337,9 +351,7 @@ class SimHouse:
                 )
                 climate_opts[CONF_OUTSIDETEMP_ENTITY] = self.OUTSIDE_TEMP_SENSOR
                 if "outside_threshold" in climate:
-                    climate_opts[CONF_OUTSIDE_THRESHOLD] = climate[
-                        "outside_threshold"
-                    ]
+                    climate_opts[CONF_OUTSIDE_THRESHOLD] = climate["outside_threshold"]
 
         opts = {
             **COMMON_OPTIONS,
@@ -410,9 +422,7 @@ class SimHouse:
         if at is not None:
             await self.advance_to(at)
         registry = er.async_get(self.hass)
-        reg_entries = er.async_entries_for_config_entry(
-            registry, self.entry.entry_id
-        )
+        reg_entries = er.async_entries_for_config_entry(registry, self.entry.entry_id)
         seeded: dict[str, State] = {}
         if restore:
             for reg_entry in reg_entries:
@@ -499,9 +509,7 @@ class SimHouse:
         # — and after a reload it briefly points at the STALE object. Check
         # the live coordinator as well.
         for coordinator in (self._live_coordinator(), self._coordinator):
-            if coordinator is not None and is_integration_context(
-                coordinator, ctx
-            ):
+            if coordinator is not None and is_integration_context(coordinator, ctx):
                 return "integration"
         return "device"
 
@@ -509,34 +517,45 @@ class SimHouse:
         return "open" if shade.position > 0 else "closed"
 
     def _write_shade_state(
-        self, shade: FakeShade, state: str, ctx: Context, *, actor: str,
+        self,
+        shade: FakeShade,
+        state: str,
+        ctx: Context,
+        *,
+        actor: str,
         record: bool = True,
     ) -> None:
         attributes = {"supported_features": 255}
         if shade.report_position:
             attributes["current_position"] = shade.position
             attributes["current_tilt_position"] = shade.tilt
-        self.hass.states.async_set(
-            shade.entity_id, state, attributes, context=ctx
-        )
+        self.hass.states.async_set(shade.entity_id, state, attributes, context=ctx)
         if record:
             self.timeline.append(
                 TimelineEvent(
-                    time=self.now, kind="state", entity_id=shade.entity_id,
-                    position=shade.position, actor=actor, state=state,
+                    time=self.now,
+                    kind="state",
+                    entity_id=shade.entity_id,
+                    position=shade.position,
+                    actor=actor,
+                    state=state,
                 )
             )
 
     def _register_services(self) -> None:
         async def handle_set_position(call: ServiceCall) -> None:
             await self._handle_cover_command(
-                call, travel_field="position", attr="position",
+                call,
+                travel_field="position",
+                attr="position",
                 service="set_cover_position",
             )
 
         async def handle_set_tilt(call: ServiceCall) -> None:
             await self._handle_cover_command(
-                call, travel_field="tilt", attr="tilt_position",
+                call,
+                travel_field="tilt",
+                attr="tilt_position",
                 service="set_cover_tilt_position",
             )
 
@@ -550,7 +569,9 @@ class SimHouse:
                     continue
                 self.timeline.append(
                     TimelineEvent(
-                        time=self.now, kind="poll", entity_id=entity_id,
+                        time=self.now,
+                        kind="poll",
+                        entity_id=entity_id,
                         actor="integration",
                     )
                 )
@@ -560,10 +581,16 @@ class SimHouse:
                     # Idle, jammed, or a landing report was dropped: the
                     # poll re-reports the device's true current state.
                     self._write_shade_state(
-                        shade, self._shade_state_str(shade), Context(),
+                        shade,
+                        self._shade_state_str(shade),
+                        Context(),
                         actor="device",
                     )
 
+        self._fake_cover_handlers = {
+            "set_cover_position": handle_set_position,
+            "set_cover_tilt_position": handle_set_tilt,
+        }
         self._registering_services = True
         try:
             self.hass.services.async_register(
@@ -592,6 +619,18 @@ class SimHouse:
                     return
                 if self._registering_services:
                     return  # our own registration event
+                # HA >= 2026.8 queues events fired during a dispatch, so our
+                # own registration events can arrive after the flag above is
+                # reset. Re-win only when a foreign handler holds the service;
+                # otherwise the guard re-registers itself in an endless loop.
+                service = self.hass.services.async_services_for_domain("cover").get(
+                    event.data.get("service")
+                )
+                if (
+                    service is not None
+                    and service.job.target in self._fake_cover_handlers.values()
+                ):
+                    return
                 self._register_services()
 
             self._service_guard_unsub = self.hass.bus.async_listen(
@@ -617,8 +656,12 @@ class SimHouse:
         actor = self._actor_for(call.context)
         self.timeline.append(
             TimelineEvent(
-                time=self.now, kind="service_call", entity_id=entity_id,
-                position=target, actor=actor, service=service,
+                time=self.now,
+                kind="service_call",
+                entity_id=entity_id,
+                position=target,
+                actor=actor,
+                service=service,
             )
         )
         direction = shade.start_travel(
@@ -663,9 +706,7 @@ class SimHouse:
         """While on, state writes omit current_position/current_tilt_position."""
         self.shades[entity_id].report_position = not on
 
-    def fail_next_command(
-        self, entity_id: str, exc: Exception | None = None
-    ) -> None:
+    def fail_next_command(self, entity_id: str, exc: Exception | None = None) -> None:
         """The next cover command for this shade raises once (no travel)."""
         self.shades[entity_id].fail_next = exc or HomeAssistantError(
             f"Simulated delivery failure for {entity_id}"
@@ -774,7 +815,11 @@ class SimHouse:
         await self.hass.async_block_till_done()
 
     async def user_moves(
-        self, entity_id: str, position: int, *, via: str = "remote",
+        self,
+        entity_id: str,
+        position: int,
+        *,
+        via: str = "remote",
         tilt: bool = False,
     ) -> None:
         """A human moves a shade (tilt=True moves the tilt field instead).
@@ -785,19 +830,15 @@ class SimHouse:
         foreign state changes (fresh contexts, no user_id).
         """
         shade = self.shades[entity_id]
-        ctx = (
-            Context(user_id=SIM_USER_ID)
-            if via == "dashboard"
-            else Context()
-        )
+        ctx = Context(user_id=SIM_USER_ID) if via == "dashboard" else Context()
         direction = shade.start_travel(
-            position, ctx, self.now,
+            position,
+            ctx,
+            self.now,
             travel_field="tilt" if tilt else "position",
         )
         if direction is not None:
-            self._write_shade_state(
-                shade, direction, ctx, actor="human"
-            )
+            self._write_shade_state(shade, direction, ctx, actor="human")
         await self.hass.async_block_till_done()
 
     # ------------------------------------------------------ entity accessors

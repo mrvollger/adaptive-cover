@@ -75,9 +75,7 @@ async def test_intent_and_trace_exposed(hass, mock_sun_entity):
     assert any("calculated" in line for line in attrs["decision_trace"])
 
 
-async def test_forecast_includes_privacy_window(
-    hass, mock_sun_data, mock_sun_entity
-):
+async def test_forecast_includes_privacy_window(hass, mock_sun_data, mock_sun_entity):
     """With privacy on, the schedule contains privacy entries."""
     now = dt.datetime.now(dt.UTC)
     # Sunset in the recent past so part of the table falls in the window
