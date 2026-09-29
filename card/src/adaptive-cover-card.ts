@@ -39,6 +39,7 @@ import './components/climate-panel';
 import './adaptive-cover-card-editor';
 import './adaptive-cover-sky-compass-card';
 import './adaptive-cover-decision-card';
+import './adaptive-cover-house-card';
 
 const DEFAULT_SECTIONS: CardSection[] = [
   'sky',

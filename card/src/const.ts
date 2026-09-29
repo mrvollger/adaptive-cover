@@ -7,6 +7,11 @@ export const TILE_CARD_NAME = 'adaptive-cover-tile-card';
 export const TILE_CARD_EDITOR_NAME = 'adaptive-cover-tile-card-editor';
 export const DECISION_CARD_NAME = 'adaptive-cover-decision-card';
 export const DECISION_CARD_EDITOR_NAME = 'adaptive-cover-decision-card-editor';
+export const HOUSE_CARD_NAME = 'adaptive-cover-house-card';
+/** Dashboard strategy type: `strategy: { type: custom:adaptive-cover }`. HA
+ *  looks up the element `ll-strategy-dashboard-<type>`. */
+export const STRATEGY_TYPE = 'adaptive-cover';
+export const STRATEGY_ELEMENT_NAME = `ll-strategy-dashboard-${STRATEGY_TYPE}`;
 
 export const INTEGRATION_DOMAIN = 'adaptive_cover';
 

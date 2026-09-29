@@ -171,6 +171,26 @@ export interface AdaptiveCoverDecisionCardConfig extends LovelaceCardConfig, Win
   tooltips?: TooltipsConfig;
 }
 
+/**
+ * The whole-house card. With no `floors` / `areas` it shows every window and
+ * its house controls use the house device ("Adaptive Cover All"). With a
+ * filter it shows the windows on those floors plus those rooms, and its house
+ * controls act on just those windows.
+ */
+export interface AdaptiveCoverHouseCardConfig extends LovelaceCardConfig {
+  type: string;
+  /** Heading. Default "Shades". */
+  title?: string;
+  /** Floor ids to show. */
+  floors?: string[];
+  /** Area ids to show (added to `floors`). */
+  areas?: string[];
+  /** `auto` (default) switches to the phone layout below 600 px wide. */
+  layout?: 'auto' | 'wide' | 'narrow';
+  /** Show the "Coming up" list (default true). */
+  show_upcoming?: boolean;
+}
+
 export interface DiscoveredEntities {
   /** The window's stable key: the Position sensor's `window_key` attribute,
    *  which is also the unique_id prefix of every entity of the window. */
