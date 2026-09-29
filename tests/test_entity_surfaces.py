@@ -63,6 +63,7 @@ from .characterization.golden_lib import (
     patch_sun_data,
 )
 from .conftest import COMMON_OPTIONS
+from .window_handle import WindowHandle
 
 COVER = "cover.test_cover"
 
@@ -150,6 +151,7 @@ class TestPositionSensor:
         matches what is actually commanded (kills M40: raw pre-transform)."""
         _set_cover(hass, 60)
         entry = _entry(hass, **{CONF_INVERSE_STATE: True})
+        window = WindowHandle(hass, COVER)  # records the startup command
         await _setup(hass, entry)
         eid = _eid(hass, "sensor", entry, "Cover Position")
         assert hass.states.get(eid).state == str(100 - POS_AT_45)
@@ -157,8 +159,7 @@ class TestPositionSensor:
         # The fixed startup refresh already commanded the (inverse) startup
         # position; land the cover on it so the travel window clears and
         # the sun change below produces the command under test.
-        coordinator = hass.data[DOMAIN][entry.entry_id]
-        assert coordinator.target_call[COVER] == 100 - POS_AT_45
+        assert window.last_command == 100 - POS_AT_45
         _set_cover(hass, 100 - POS_AT_45)
         await hass.async_block_till_done()
 

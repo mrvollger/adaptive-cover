@@ -33,6 +33,7 @@ from custom_components.adaptive_cover.sun import SunData
 
 from .characterization.golden_lib import use_real_sun_data
 from .conftest import COMMON_OPTIONS
+from .window_handle import WindowHandle
 
 COVER = "cover.night_cover"
 
@@ -78,10 +79,11 @@ async def test_regression_entry_born_at_night_parks_at_sunset_position(
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
-    coordinator = hass.data[DOMAIN][entry.entry_id]
-    # The tick state itself must be the sunset position after dark.
-    assert coordinator.state == 3, (
-        f"night-born entry computed daytime state {coordinator.state}"
+    window = WindowHandle(hass, COVER)
+    # The tick state itself (the Position sensor) must be the sunset
+    # position after dark.
+    assert window.target == 3, (
+        f"night-born entry computed daytime state {window.target}"
     )
     # And any startup command must have parked it at 3, never opened it.
     positions = [c.data["position"] for c in calls]
