@@ -236,3 +236,29 @@ The example below is inside an HTML comment. The checker ignores it.
   both. The options form now runs every rule in `settings/validate.py` on
   the options as they would be saved, and shows the error at form level.
   `spec_parity.json`, goldens, truth table and house replay unchanged.
+
+## L0010 · 2026-09-29 · An unreadable time entity no longer stops the window (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins
+  `tests/simulation/test_regressions.py::test_regression_unreadable_start_entity_uses_fixed_start[unavailable]`,
+  `[not a time]`,
+  `tests/simulation/test_regressions.py::test_regression_unreadable_start_entity_alone_waits`
+  and the unit pins in `tests/runtime/test_schedule.py`
+  (`test_regression_unreadable_start_entity_falls_back[*]`,
+  `test_regression_unreadable_start_entity_alone_is_not_started[*]`,
+  `test_unparseable_end_entity_means_no_end`)
+- **Mutations re-targeted:** M05 re-anchored onto the restructured
+  `Schedule.after_start` (same swap, description unchanged). Added M60 (an
+  unreadable start entity with no fixed start counts as started).
+- **Contract change:** C5
+- **Reason:** defect fix (P4 batch 3). With a start-time entity configured,
+  `Schedule.after_start` compared "now" with None when the entity was
+  unavailable, and the date parser raised when its state was not a time.
+  Either way every refresh failed and the window went unavailable. An
+  unreadable start entity now falls back to the fixed start time, and with
+  no fixed start the window has not started yet (it starts once the entity
+  reads a time again). The end-time entity uses the same reader, so a state
+  that is not a time now means "no end time", as an unavailable one already
+  did. Goldens, truth table and house replay unchanged: no pinned config
+  uses a start or end entity.

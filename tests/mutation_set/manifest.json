@@ -35,6 +35,13 @@
   "patch": "M05_start_time_precedence_swap.patch"
  },
  {
+  "id": "M60",
+  "file": "custom_components/adaptive_cover/runtime/schedule.py",
+  "function": "Schedule.after_start",
+  "description": "an unreadable start entity with no fixed start counts as started",
+  "patch": "M60_unreadable_start_entity_counts_as_started.patch"
+ },
+ {
   "id": "M06",
   "file": "custom_components/adaptive_cover/runtime/schedule.py",
   "function": "Schedule.end_time",

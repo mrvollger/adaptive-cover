@@ -11,7 +11,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 from collections.abc import Callable
-from typing import Any, cast
+from typing import Any
 
 from ..helpers import get_datetime_from_str
 from .shade_config import ShadeConfig
@@ -36,6 +36,21 @@ class Schedule:
         self.last_start: dt.datetime | None = None
         """The start time last read from the start entity (for the error log)."""
 
+    def _read_time(self, entity: str, today: dt.date) -> dt.datetime | None:
+        """Return the time ``entity`` holds (dated today unless it says).
+
+        None when the entity is missing, unknown or unavailable, or when its
+        state is not a time.
+        """
+        state = self._read_state(entity)
+        if state is None:
+            return None
+        try:
+            return get_datetime_from_str(state, default_date=today)
+        except (ValueError, OverflowError):
+            self.logger.debug("%s does not hold a time: %r", entity, state)
+            return None
+
     def end_time(self, config: ShadeConfig, today: dt.date) -> dt.datetime | None:
         """Return today's end time, or None when there is none.
 
@@ -44,10 +59,7 @@ class Schedule:
         """
         time = None
         if config.end_time_entity is not None:
-            time = get_datetime_from_str(
-                self._read_state(config.end_time_entity),
-                default_date=today,
-            )
+            time = self._read_time(config.end_time_entity, today)
         elif config.end_time is not None:
             time = get_datetime_from_str(config.end_time, default_date=today)
             if time.time() == dt.time(0, 0):
@@ -55,23 +67,26 @@ class Schedule:
         return time
 
     def after_start(self, config: ShadeConfig, now: dt.datetime) -> bool:
-        """Return True once today's start time has passed (no start: True)."""
+        """Return True once today's start time has passed (no start: True).
+
+        The start entity wins over the fixed start time. An unreadable
+        start entity (unavailable, or not a time) falls back to the fixed
+        start time; with no fixed start, control has not started yet.
+        """
         if config.start_time_entity is not None:
-            # An unavailable start entity reads as None, and comparing with
-            # None raises TypeError (known, not fixed in this move); the
-            # cast only tells the type checker what the code assumes.
-            time = cast(
-                dt.datetime,
-                get_datetime_from_str(
-                    self._read_state(config.start_time_entity),
-                    default_date=now.date(),
-                ),
-            )
-            self.logger.debug(
-                "Start time: %s, now: %s, now >= time: %s ", time, now, now >= time
-            )
-            self.last_start = time
-            return now >= time
+            time = self._read_time(config.start_time_entity, now.date())
+            if time is not None:
+                self.logger.debug(
+                    "Start time: %s, now: %s, now >= time: %s ", time, now, now >= time
+                )
+                self.last_start = time
+                return now >= time
+            if config.start_time is None:
+                # Nothing to fall back to: wait until the entity reads a time.
+                self.logger.debug(
+                    "Start entity %s unreadable: not started", config.start_time_entity
+                )
+                return False
         if config.start_time is not None:
             time = get_datetime_from_str(config.start_time, default_date=now.date())
 

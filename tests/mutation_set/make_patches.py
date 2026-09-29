@@ -124,21 +124,19 @@ MUTATIONS: list[Mutation] = [
         "Schedule.after_start",
         "static CONF_START_TIME wins over the start-time entity (precedence swap)",
         "        if config.start_time_entity is not None:\n"
-        "            # An unavailable start entity reads as None, and comparing with\n"
-        "            # None raises TypeError (known, not fixed in this move); the\n"
-        "            # cast only tells the type checker what the code assumes.\n"
-        "            time = cast(\n"
-        "                dt.datetime,\n"
-        "                get_datetime_from_str(\n"
-        "                    self._read_state(config.start_time_entity),\n"
-        "                    default_date=now.date(),\n"
-        "                ),\n"
-        "            )\n"
-        "            self.logger.debug(\n"
-        '                "Start time: %s, now: %s, now >= time: %s ", time, now, now >= time\n'
-        "            )\n"
-        "            self.last_start = time\n"
-        "            return now >= time\n"
+        "            time = self._read_time(config.start_time_entity, now.date())\n"
+        "            if time is not None:\n"
+        "                self.logger.debug(\n"
+        '                    "Start time: %s, now: %s, now >= time: %s ", time, now, now >= time\n'
+        "                )\n"
+        "                self.last_start = time\n"
+        "                return now >= time\n"
+        "            if config.start_time is None:\n"
+        "                # Nothing to fall back to: wait until the entity reads a time.\n"
+        "                self.logger.debug(\n"
+        '                    "Start entity %s unreadable: not started", config.start_time_entity\n'
+        "                )\n"
+        "                return False\n"
         "        if config.start_time is not None:\n"
         "            time = get_datetime_from_str(config.start_time, default_date=now.date())\n"
         "\n"
@@ -159,22 +157,37 @@ MUTATIONS: list[Mutation] = [
         "            # no-op expression (a P4 ledgered fix, not this move).\n"
         "            return now >= time\n"
         "        if config.start_time_entity is not None:\n"
-        "            # An unavailable start entity reads as None, and comparing with\n"
-        "            # None raises TypeError (known, not fixed in this move); the\n"
-        "            # cast only tells the type checker what the code assumes.\n"
-        "            time = cast(\n"
-        "                dt.datetime,\n"
-        "                get_datetime_from_str(\n"
-        "                    self._read_state(config.start_time_entity),\n"
-        "                    default_date=now.date(),\n"
-        "                ),\n"
-        "            )\n"
-        "            self.logger.debug(\n"
-        '                "Start time: %s, now: %s, now >= time: %s ", time, now, now >= time\n'
-        "            )\n"
-        "            self.last_start = time\n"
-        "            return now >= time\n"
+        "            time = self._read_time(config.start_time_entity, now.date())\n"
+        "            if time is not None:\n"
+        "                self.logger.debug(\n"
+        '                    "Start time: %s, now: %s, now >= time: %s ", time, now, now >= time\n'
+        "                )\n"
+        "                self.last_start = time\n"
+        "                return now >= time\n"
+        "            if config.start_time is None:\n"
+        "                # Nothing to fall back to: wait until the entity reads a time.\n"
+        "                self.logger.debug(\n"
+        '                    "Start entity %s unreadable: not started", config.start_time_entity\n'
+        "                )\n"
+        "                return False\n"
         "        return True",
+    ),
+    Mutation(
+        "M60",
+        "unreadable_start_entity_counts_as_started",
+        SCHEDULE,
+        "Schedule.after_start",
+        "an unreadable start entity with no fixed start counts as started",
+        "                # Nothing to fall back to: wait until the entity reads a time.\n"
+        "                self.logger.debug(\n"
+        '                    "Start entity %s unreadable: not started", config.start_time_entity\n'
+        "                )\n"
+        "                return False\n",
+        "                # Nothing to fall back to: wait until the entity reads a time.\n"
+        "                self.logger.debug(\n"
+        '                    "Start entity %s unreadable: not started", config.start_time_entity\n'
+        "                )\n"
+        "                return True\n",
     ),
     Mutation(
         "M06",

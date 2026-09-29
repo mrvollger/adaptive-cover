@@ -140,3 +140,27 @@ def test_start_after_end_is_logged(caplog):
     assert "Start time is after end time" not in caplog.text
     schedule.in_window(cfg, at("12:05"))
     assert "Start time is after end time" in caplog.text
+
+
+# ------------------------------------------------ unreadable time entities
+
+
+@pytest.mark.parametrize("state", [None, "not a time"])
+def test_regression_unreadable_start_entity_falls_back(state):
+    """An unreadable start entity uses the fixed start (it used to raise)."""
+    cfg = config(**{CONF_START_TIME: "07:30:00", CONF_START_ENTITY: START_ENTITY})
+    schedule = Schedule(FakeStates(shade_start=state))
+    assert schedule.after_start(cfg, at("07:29")) is False
+    assert schedule.after_start(cfg, at("07:30")) is True
+
+
+@pytest.mark.parametrize("state", [None, "not a time"])
+def test_regression_unreadable_start_entity_alone_is_not_started(state):
+    cfg = config(**{CONF_START_ENTITY: START_ENTITY})
+    schedule = Schedule(FakeStates(shade_start=state))
+    assert schedule.after_start(cfg, at("23:00")) is False
+
+
+def test_unparseable_end_entity_means_no_end():
+    cfg = config(**{CONF_END_TIME: "21:30:00", CONF_END_ENTITY: END_ENTITY})
+    assert Schedule(FakeStates(shade_end="soon")).end_time(cfg, DAY) is None

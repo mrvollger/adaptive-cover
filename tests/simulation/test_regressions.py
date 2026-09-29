@@ -14,6 +14,8 @@ from custom_components.adaptive_cover.const import (
     CONF_FOV_RIGHT,
     CONF_HEIGHT_WIN,
     CONF_MAX_ELEVATION,
+    CONF_START_ENTITY,
+    CONF_START_TIME,
     CONF_SUNSET_OFFSET,
     CONF_SUNSET_POS,
 )
@@ -192,4 +194,54 @@ async def test_regression_unload_cancels_arrival_poll(hass, freezer):
     await house.advance_to("10:10")  # past the 125 s poll
     polls = [ev for ev in house.timeline if ev.kind == "poll"]
     assert polls == []
+    await house.teardown()
+
+
+START_ENTITY = "input_datetime.sim_start_time"
+
+
+@pytest.mark.parametrize("unreadable", ["unavailable", "not a time"])
+async def test_regression_unreadable_start_entity_uses_fixed_start(
+    hass, freezer, unreadable
+):
+    """An unreadable start-time entity falls back to the fixed start time.
+
+    Schedule.after_start compared "now" with None (unavailable entity) or
+    let the parser raise (a state that is not a time): every refresh
+    failed, the window went unavailable and never moved.
+    """
+    hass.states.async_set(START_ENTITY, unreadable)
+    house = await SimHouse.create(
+        hass,
+        freezer,
+        date="2026-03-20",
+        options={CONF_START_TIME: "10:00:00", CONF_START_ENTITY: START_ENTITY},
+    )
+    await house.advance_to("09:55")
+    assert house.window().available, "the update loop failed"
+    assert house.auto_moves("cover.shade") == []
+    await house.advance_to("10:15")
+    assert house.auto_moves("cover.shade"), "no command after the fixed start"
+    assert house.window().available
+    await house.teardown()
+
+
+async def test_regression_unreadable_start_entity_alone_waits(hass, freezer):
+    """With no fixed start, an unreadable start entity means not started yet.
+
+    Control resumes as soon as the entity reads a time again.
+    """
+    hass.states.async_set(START_ENTITY, "unavailable")
+    house = await SimHouse.create(
+        hass, freezer, date="2026-03-20", options={CONF_START_ENTITY: START_ENTITY}
+    )
+    await house.advance_to("10:30")
+    assert house.window().available, "the update loop failed"
+    assert house.auto_moves("cover.shade") == [], "moved before any start time"
+
+    hass.states.async_set(START_ENTITY, "11:00:00")
+    await house.advance_to("10:55")
+    assert house.auto_moves("cover.shade") == []
+    await house.advance_to("11:15")
+    assert house.auto_moves("cover.shade"), "no command after the entity start"
     await house.teardown()
