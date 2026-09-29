@@ -324,7 +324,9 @@ When climate mode is setup you will also get these entities:
 
 ### Simulation
 
-![combined_simulation](custom_components/adaptive_cover/simulation/sim_plot.png)
+![combined_simulation](images/sim_plot.png)
+
+One simulated day: the sun angles (left axis) and the computed cover positions (right axis). An early version of the algorithm made this plot, so it shows the idea, not the exact output of the current release.
 
 ### Blueprint (deprecated since v1.0.0)
 
