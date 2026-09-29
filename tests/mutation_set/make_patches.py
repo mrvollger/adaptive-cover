@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
-"""Regenerate the mutation patch files from the roadmap's mutation table.
+"""Regenerate (or --check) the mutation patch files from the mutation table.
 
 Run from the repo root after production code changes invalidate the diffs:
 
-    python tests/mutation_set/make_patches.py
+    python tests/mutation_set/make_patches.py          # rewrite patches
+    python tests/mutation_set/make_patches.py --check  # CI gate, writes nothing
 
 Each mutation is an exact-unique text replacement against the CURRENT
 working-tree file; the script builds a unified diff (git-apply compatible),
 verifies uniqueness, and writes ``M##_slug.patch`` plus ``manifest.json``.
-The working tree is never modified — diffs are computed in memory.
+Production source is never modified — diffs are computed in memory. A write
+run builds every patch first and writes nothing if any mutation no longer
+applies; it also deletes orphaned ``M##_*.patch`` files.
+
+``--check`` exits 0 only if every mutation still applies (its target text
+occurs exactly once) AND every committed patch file plus ``manifest.json`` is
+byte-identical to what a write run would produce. Otherwise it lists each
+stale / non-applying / missing / orphaned file and exits 1.
 
 The mutation ids and semantics come from tests/refactor_roadmap.json's
 ``mutation_set``; a few mutations name the file the roadmap *conceptually*
@@ -17,8 +25,11 @@ assigned but land where the code actually lives (see ``deviation`` fields).
 
 from __future__ import annotations
 
+import argparse
 import difflib
 import json
+import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -477,16 +488,42 @@ MUTATIONS: list[Mutation] = [
 ]
 
 
-def build_patch(mutation: Mutation) -> str:
-    """Build a git-apply-compatible unified diff for one mutation."""
-    path = REPO_ROOT / mutation.file
-    content = path.read_text()
+PATCH_NAME_RE = re.compile(r"^M\d+_.+\.patch$")
+MANIFEST_NAME = "manifest.json"
+
+
+class MutationError(Exception):
+    """A mutation definition no longer applies to the current source."""
+
+
+def patch_name(mutation: Mutation) -> str:
+    """Return the patch file name for one mutation (``M##_slug.patch``)."""
+    return f"{mutation.id}_{mutation.slug}.patch"
+
+
+def build_patch(mutation: Mutation, repo_root: Path = REPO_ROOT) -> str:
+    """Build a git-apply-compatible unified diff for one mutation.
+
+    Raises
+    ------
+    MutationError
+        If the target file is missing or the target text does not occur
+        exactly once in it.
+    """
+    path = repo_root / mutation.file
+    try:
+        content = path.read_text(encoding="utf-8")
+    except FileNotFoundError as err:
+        raise MutationError(
+            f"{mutation.id}: target file {mutation.file} does not exist"
+        ) from err
     count = content.count(mutation.old)
     if count != 1:
-        raise SystemExit(
+        raise MutationError(
             f"{mutation.id}: expected exactly 1 occurrence of the target "
-            f"text in {mutation.file}, found {count}. The production code "
-            "changed; update make_patches.py."
+            f"text in {mutation.file} ({mutation.function}), found {count}. "
+            "The production code changed; re-anchor the mutation in "
+            "make_patches.py."
         )
     mutated = content.replace(mutation.old, mutation.new, 1)
     diff = difflib.unified_diff(
@@ -499,26 +536,139 @@ def build_patch(mutation: Mutation) -> str:
     return header + "".join(diff)
 
 
-def main() -> None:
-    manifest = []
-    for mutation in MUTATIONS:
-        patch_name = f"{mutation.id}_{mutation.slug}.patch"
-        (OUT_DIR / patch_name).write_text(build_patch(mutation))
-        entry = {
-            "id": mutation.id,
-            "file": mutation.file,
-            "function": mutation.function,
-            "description": mutation.description,
-            "patch": patch_name,
-        }
-        if mutation.deviation:
-            entry["deviation"] = mutation.deviation
-        manifest.append(entry)
-    (OUT_DIR / "manifest.json").write_text(
-        json.dumps(manifest, indent=1) + "\n"
+def manifest_entry(mutation: Mutation) -> dict[str, str]:
+    """Return the manifest.json record for one mutation."""
+    entry = {
+        "id": mutation.id,
+        "file": mutation.file,
+        "function": mutation.function,
+        "description": mutation.description,
+        "patch": patch_name(mutation),
+    }
+    if mutation.deviation:
+        entry["deviation"] = mutation.deviation
+    return entry
+
+
+def generate(
+    mutations: list[Mutation] = MUTATIONS, repo_root: Path = REPO_ROOT
+) -> tuple[dict[str, str], list[str]]:
+    """Build every output file in memory.
+
+    Returns
+    -------
+    tuple
+        ``(files, errors)``: ``files`` maps output file name -> exact text
+        (patches plus ``manifest.json``); ``errors`` has one message per
+        mutation that no longer applies or duplicates an id / patch name.
+    """
+    files: dict[str, str] = {}
+    errors: list[str] = []
+    seen_ids: set[str] = set()
+    for mutation in mutations:
+        name = patch_name(mutation)
+        if mutation.id in seen_ids or name in files:
+            errors.append(f"{mutation.id}: duplicate mutation id or patch name")
+            continue
+        seen_ids.add(mutation.id)
+        try:
+            files[name] = build_patch(mutation, repo_root)
+        except MutationError as err:
+            errors.append(str(err))
+    manifest = [manifest_entry(m) for m in mutations]
+    files[MANIFEST_NAME] = json.dumps(manifest, indent=1) + "\n"
+    return files, errors
+
+
+def _existing_patches(out_dir: Path) -> set[str]:
+    return {p.name for p in out_dir.glob("*.patch") if PATCH_NAME_RE.match(p.name)}
+
+
+def check(
+    out_dir: Path = OUT_DIR,
+    repo_root: Path = REPO_ROOT,
+    mutations: list[Mutation] = MUTATIONS,
+) -> list[str]:
+    """Return every reason the committed mutation set is stale (empty = OK).
+
+    Nothing is written.
+    """
+    files, problems = generate(mutations, repo_root)
+    for name, text in files.items():
+        path = out_dir / name
+        if not path.exists():
+            problems.append(f"{name}: missing (run make_patches.py)")
+        elif path.read_bytes() != text.encode("utf-8"):
+            problems.append(
+                f"{name}: stale (differs from what make_patches.py generates)"
+            )
+    for orphan in sorted(_existing_patches(out_dir) - set(files)):
+        problems.append(f"{orphan}: orphaned (no mutation definition)")
+    return problems
+
+
+def write(
+    out_dir: Path = OUT_DIR,
+    repo_root: Path = REPO_ROOT,
+    mutations: list[Mutation] = MUTATIONS,
+) -> list[str]:
+    """Regenerate all patch files and manifest.json; return errors.
+
+    All-or-nothing: if any mutation fails to apply, nothing is written and
+    the errors are returned. Orphaned ``M##_*.patch`` files are deleted.
+    """
+    files, errors = generate(mutations, repo_root)
+    if errors:
+        return errors
+    for name, text in files.items():
+        (out_dir / name).write_bytes(text.encode("utf-8"))
+    for orphan in sorted(_existing_patches(out_dir) - set(files)):
+        (out_dir / orphan).unlink()
+        print(f"Removed orphaned {orphan}")
+    return []
+
+
+def main(argv: list[str] | None = None) -> int:
+    """CLI entry point; returns the process exit code."""
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="verify every mutation applies and the committed patches and "
+        "manifest.json are byte-identical to a regeneration; write nothing",
     )
-    print(f"Wrote {len(manifest)} patches + manifest.json to {OUT_DIR}")
+    args = parser.parse_args(argv)
+
+    if args.check:
+        problems = check()
+        if problems:
+            print(
+                f"make_patches --check FAILED ({len(problems)} problem(s)):",
+                file=sys.stderr,
+            )
+            for problem in problems:
+                print(f"  - {problem}", file=sys.stderr)
+            print(
+                "Fix: re-anchor non-applying mutations in make_patches.py, "
+                "then run `python tests/mutation_set/make_patches.py`.",
+                file=sys.stderr,
+            )
+            return 1
+        print(
+            f"make_patches --check OK: {len(MUTATIONS)} mutations apply; all "
+            "patch files and manifest.json are up to date."
+        )
+        return 0
+
+    errors = write()
+    if errors:
+        print("Nothing written; these mutations no longer apply:", file=sys.stderr)
+        for error in errors:
+            print(f"  - {error}", file=sys.stderr)
+        return 1
+    print(f"Wrote {len(MUTATIONS)} patches + manifest.json to {OUT_DIR}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

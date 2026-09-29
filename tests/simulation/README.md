@@ -154,10 +154,13 @@ by one helper in `tests/characterization/golden_lib.py`:
 ## Mutation kill matrix
 
 `tests/mutation_set/` holds one patch file per roadmap mutation (M01–M43)
-plus `run_mutations.py`, which applies each patch, runs the configured
-pytest tiers, records caught/missed, reverse-applies, and writes a JSON
-report — see that script's docstring. Regenerate stale patches with
-`python tests/mutation_set/make_patches.py`.
+plus `run_mutations.py`, which applies each patch in its own temp copy of
+the repo, runs the configured pytest tiers, records caught/missed, and
+writes a JSON report. Use `--jobs N` to run mutations in parallel (your
+checkout is never modified). Regenerate stale patches with
+`python tests/mutation_set/make_patches.py`; `--check` verifies them
+without writing. Flags, the behavior-tier ledger and its checker are
+documented in `tests/contract/README.md`.
 
 ## File tour
 
