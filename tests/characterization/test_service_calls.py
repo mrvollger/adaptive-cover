@@ -96,7 +96,7 @@ def _nudge_sun(hass, elevation=44.0):
 
 
 async def test_fresh_setup_positions_covers(
-    hass, cover_entry, mock_sun_entity
+    hass, cover_entry, mock_sun_entity, cover_calls
 ):
     """A fresh setup positions the covers immediately (source='startup').
 
@@ -105,7 +105,9 @@ async def test_fresh_setup_positions_covers(
     sat at their stale position until the next sun change. The fix defers
     the flag, so the switch's restore-refresh performs the startup move.
     (The command itself is measured via target_call because the hub
-    bootstrap replaces any pre-setup service mock during setup.)
+    bootstrap replaces any pre-setup service mock during setup. The mock
+    is still registered so a startup command sent before the cover
+    component loads is delivered instead of raising ServiceNotFound.)
     """
     _set_cover(hass, 60)
     await _setup(hass, cover_entry)

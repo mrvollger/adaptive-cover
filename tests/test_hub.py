@@ -68,7 +68,18 @@ async def test_hub_auto_bootstrapped_once(hass, mock_sun_entity):
 
 
 async def test_aggregate_cover_average_position(hass, mock_sun_entity):
+    from homeassistant.setup import async_setup_component
+
     await _setup_two_entries(hass)
+    # The hub can render before entry B registers (a setup race that HA
+    # 2026.8 hits often); it converges on its next poll, so force one.
+    await async_setup_component(hass, "homeassistant", {})
+    await hass.services.async_call(
+        "homeassistant",
+        "update_entity",
+        {"entity_id": "cover.adaptive_cover_all"},
+        blocking=True,
+    )
     state = hass.states.get("cover.adaptive_cover_all")
     assert state is not None
     assert state.attributes["current_position"] == 50  # avg(80, 20)
