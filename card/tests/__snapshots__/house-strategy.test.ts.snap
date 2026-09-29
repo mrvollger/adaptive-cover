@@ -1,0 +1,20 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`dashboard strategy > generate(): the real house (3 floors, 15 windows) → one view with the house card 1`] = `
+{
+  "title": "Shades",
+  "views": [
+    {
+      "cards": [
+        {
+          "type": "custom:adaptive-cover-house-card",
+        },
+      ],
+      "icon": "mdi:blinds-horizontal",
+      "path": "shades",
+      "title": "Shades",
+      "type": "panel",
+    },
+  ],
+}
+`;

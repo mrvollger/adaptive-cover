@@ -1,7 +1,7 @@
 /*! adaptive-cover-card v1.0.0 | MIT License | https://github.com/mrvollger/adaptive-cover-card */
-function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPropertyDescriptor(t,i):o;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)r=Reflect.decorate(e,t,i,o);else for(var a=e.length-1;a>=0;a--)(s=e[a])&&(r=(n<3?s(r):n>3?s(t,i,r):s(t,i))||r);return n>3&&r&&Object.defineProperty(t,i,r),r}"function"==typeof SuppressedError&&SuppressedError;const t=globalThis,i=t.ShadowRoot&&(void 0===t.ShadyCSS||t.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,o=Symbol(),s=new WeakMap;let n=class{constructor(e,t,i){if(this._$cssResult$=!0,i!==o)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=e,this.t=t}get styleSheet(){let e=this.o;const t=this.t;if(i&&void 0===e){const i=void 0!==t&&1===t.length;i&&(e=s.get(t)),void 0===e&&((this.o=e=new CSSStyleSheet).replaceSync(this.cssText),i&&s.set(t,e))}return e}toString(){return this.cssText}};const r=(e,...t)=>{const i=1===e.length?e[0]:t.reduce((t,i,o)=>t+(e=>{if(!0===e._$cssResult$)return e.cssText;if("number"==typeof e)return e;throw Error("Value passed to 'css' function must be a 'css' function result: "+e+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(i)+e[o+1],e[0]);return new n(i,e,o)},a=i?e=>e:e=>e instanceof CSSStyleSheet?(e=>{let t="";for(const i of e.cssRules)t+=i.cssText;return(e=>new n("string"==typeof e?e:e+"",void 0,o))(t)})(e):e,{is:l,defineProperty:c,getOwnPropertyDescriptor:d,getOwnPropertyNames:h,getOwnPropertySymbols:p,getPrototypeOf:u}=Object,g=globalThis,_=g.trustedTypes,m=_?_.emptyScript:"",v=g.reactiveElementPolyfillSupport,f=(e,t)=>e,y={toAttribute(e,t){switch(t){case Boolean:e=e?m:null;break;case Object:case Array:e=null==e?e:JSON.stringify(e)}return e},fromAttribute(e,t){let i=e;switch(t){case Boolean:i=null!==e;break;case Number:i=null===e?null:Number(e);break;case Object:case Array:try{i=JSON.parse(e)}catch(e){i=null}}return i}},w=(e,t)=>!l(e,t),b={attribute:!0,type:String,converter:y,reflect:!1,useDefault:!1,hasChanged:w};Symbol.metadata??=Symbol("metadata"),g.litPropertyMetadata??=new WeakMap;let x=class extends HTMLElement{static addInitializer(e){this._$Ei(),(this.l??=[]).push(e)}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(e,t=b){if(t.state&&(t.attribute=!1),this._$Ei(),this.prototype.hasOwnProperty(e)&&((t=Object.create(t)).wrapped=!0),this.elementProperties.set(e,t),!t.noAccessor){const i=Symbol(),o=this.getPropertyDescriptor(e,i,t);void 0!==o&&c(this.prototype,e,o)}}static getPropertyDescriptor(e,t,i){const{get:o,set:s}=d(this.prototype,e)??{get(){return this[t]},set(e){this[t]=e}};return{get:o,set(t){const n=o?.call(this);s?.call(this,t),this.requestUpdate(e,n,i)},configurable:!0,enumerable:!0}}static getPropertyOptions(e){return this.elementProperties.get(e)??b}static _$Ei(){if(this.hasOwnProperty(f("elementProperties")))return;const e=u(this);e.finalize(),void 0!==e.l&&(this.l=[...e.l]),this.elementProperties=new Map(e.elementProperties)}static finalize(){if(this.hasOwnProperty(f("finalized")))return;if(this.finalized=!0,this._$Ei(),this.hasOwnProperty(f("properties"))){const e=this.properties,t=[...h(e),...p(e)];for(const i of t)this.createProperty(i,e[i])}const e=this[Symbol.metadata];if(null!==e){const t=litPropertyMetadata.get(e);if(void 0!==t)for(const[e,i]of t)this.elementProperties.set(e,i)}this._$Eh=new Map;for(const[e,t]of this.elementProperties){const i=this._$Eu(e,t);void 0!==i&&this._$Eh.set(i,e)}this.elementStyles=this.finalizeStyles(this.styles)}static finalizeStyles(e){const t=[];if(Array.isArray(e)){const i=new Set(e.flat(1/0).reverse());for(const e of i)t.unshift(a(e))}else void 0!==e&&t.push(a(e));return t}static _$Eu(e,t){const i=t.attribute;return!1===i?void 0:"string"==typeof i?i:"string"==typeof e?e.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=!1,this.hasUpdated=!1,this._$Em=null,this._$Ev()}_$Ev(){this._$ES=new Promise(e=>this.enableUpdating=e),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach(e=>e(this))}addController(e){(this._$EO??=new Set).add(e),void 0!==this.renderRoot&&this.isConnected&&e.hostConnected?.()}removeController(e){this._$EO?.delete(e)}_$E_(){const e=new Map,t=this.constructor.elementProperties;for(const i of t.keys())this.hasOwnProperty(i)&&(e.set(i,this[i]),delete this[i]);e.size>0&&(this._$Ep=e)}createRenderRoot(){const e=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return((e,o)=>{if(i)e.adoptedStyleSheets=o.map(e=>e instanceof CSSStyleSheet?e:e.styleSheet);else for(const i of o){const o=document.createElement("style"),s=t.litNonce;void 0!==s&&o.setAttribute("nonce",s),o.textContent=i.cssText,e.appendChild(o)}})(e,this.constructor.elementStyles),e}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(!0),this._$EO?.forEach(e=>e.hostConnected?.())}enableUpdating(e){}disconnectedCallback(){this._$EO?.forEach(e=>e.hostDisconnected?.())}attributeChangedCallback(e,t,i){this._$AK(e,i)}_$ET(e,t){const i=this.constructor.elementProperties.get(e),o=this.constructor._$Eu(e,i);if(void 0!==o&&!0===i.reflect){const s=(void 0!==i.converter?.toAttribute?i.converter:y).toAttribute(t,i.type);this._$Em=e,null==s?this.removeAttribute(o):this.setAttribute(o,s),this._$Em=null}}_$AK(e,t){const i=this.constructor,o=i._$Eh.get(e);if(void 0!==o&&this._$Em!==o){const e=i.getPropertyOptions(o),s="function"==typeof e.converter?{fromAttribute:e.converter}:void 0!==e.converter?.fromAttribute?e.converter:y;this._$Em=o;const n=s.fromAttribute(t,e.type);this[o]=n??this._$Ej?.get(o)??n,this._$Em=null}}requestUpdate(e,t,i,o=!1,s){if(void 0!==e){const n=this.constructor;if(!1===o&&(s=this[e]),i??=n.getPropertyOptions(e),!((i.hasChanged??w)(s,t)||i.useDefault&&i.reflect&&s===this._$Ej?.get(e)&&!this.hasAttribute(n._$Eu(e,i))))return;this.C(e,t,i)}!1===this.isUpdatePending&&(this._$ES=this._$EP())}C(e,t,{useDefault:i,reflect:o,wrapped:s},n){i&&!(this._$Ej??=new Map).has(e)&&(this._$Ej.set(e,n??t??this[e]),!0!==s||void 0!==n)||(this._$AL.has(e)||(this.hasUpdated||i||(t=void 0),this._$AL.set(e,t)),!0===o&&this._$Em!==e&&(this._$Eq??=new Set).add(e))}async _$EP(){this.isUpdatePending=!0;try{await this._$ES}catch(e){Promise.reject(e)}const e=this.scheduleUpdate();return null!=e&&await e,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(const[e,t]of this._$Ep)this[e]=t;this._$Ep=void 0}const e=this.constructor.elementProperties;if(e.size>0)for(const[t,i]of e){const{wrapped:e}=i,o=this[t];!0!==e||this._$AL.has(t)||void 0===o||this.C(t,void 0,i,o)}}let e=!1;const t=this._$AL;try{e=this.shouldUpdate(t),e?(this.willUpdate(t),this._$EO?.forEach(e=>e.hostUpdate?.()),this.update(t)):this._$EM()}catch(t){throw e=!1,this._$EM(),t}e&&this._$AE(t)}willUpdate(e){}_$AE(e){this._$EO?.forEach(e=>e.hostUpdated?.()),this.hasUpdated||(this.hasUpdated=!0,this.firstUpdated(e)),this.updated(e)}_$EM(){this._$AL=new Map,this.isUpdatePending=!1}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(e){return!0}update(e){this._$Eq&&=this._$Eq.forEach(e=>this._$ET(e,this[e])),this._$EM()}updated(e){}firstUpdated(e){}};x.elementStyles=[],x.shadowRootOptions={mode:"open"},x[f("elementProperties")]=new Map,x[f("finalized")]=new Map,v?.({ReactiveElement:x}),(g.reactiveElementVersions??=[]).push("2.1.2");const $=globalThis,k=e=>e,A=$.trustedTypes,C=A?A.createPolicy("lit-html",{createHTML:e=>e}):void 0,E="$lit$",S=`lit$${Math.random().toFixed(9).slice(2)}$`,O="?"+S,z=`<${O}>`,M=document,I=()=>M.createComment(""),T=e=>null===e||"object"!=typeof e&&"function"!=typeof e,F=Array.isArray,R="[ \t\n\f\r]",j=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,N=/-->/g,P=/>/g,K=RegExp(`>|${R}(?:([^\\s"'>=/]+)(${R}*=${R}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),D=/'/g,B=/"/g,V=/^(?:script|style|textarea|title)$/i,G=e=>(t,...i)=>({_$litType$:e,strings:t,values:i}),W=G(1),U=G(2),Y=Symbol.for("lit-noChange"),L=Symbol.for("lit-nothing"),Q=new WeakMap,H=M.createTreeWalker(M,129);function q(e,t){if(!F(e)||!e.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==C?C.createHTML(t):t}const X=(e,t)=>{const i=e.length-1,o=[];let s,n=2===t?"<svg>":3===t?"<math>":"",r=j;for(let t=0;t<i;t++){const i=e[t];let a,l,c=-1,d=0;for(;d<i.length&&(r.lastIndex=d,l=r.exec(i),null!==l);)d=r.lastIndex,r===j?"!--"===l[1]?r=N:void 0!==l[1]?r=P:void 0!==l[2]?(V.test(l[2])&&(s=RegExp("</"+l[2],"g")),r=K):void 0!==l[3]&&(r=K):r===K?">"===l[0]?(r=s??j,c=-1):void 0===l[1]?c=-2:(c=r.lastIndex-l[2].length,a=l[1],r=void 0===l[3]?K:'"'===l[3]?B:D):r===B||r===D?r=K:r===N||r===P?r=j:(r=K,s=void 0);const h=r===K&&e[t+1].startsWith("/>")?" ":"";n+=r===j?i+z:c>=0?(o.push(a),i.slice(0,c)+E+i.slice(c)+S+h):i+S+(-2===c?t:h)}return[q(e,n+(e[i]||"<?>")+(2===t?"</svg>":3===t?"</math>":"")),o]};class J{constructor({strings:e,_$litType$:t},i){let o;this.parts=[];let s=0,n=0;const r=e.length-1,a=this.parts,[l,c]=X(e,t);if(this.el=J.createElement(l,i),H.currentNode=this.el.content,2===t||3===t){const e=this.el.content.firstChild;e.replaceWith(...e.childNodes)}for(;null!==(o=H.nextNode())&&a.length<r;){if(1===o.nodeType){if(o.hasAttributes())for(const e of o.getAttributeNames())if(e.endsWith(E)){const t=c[n++],i=o.getAttribute(e).split(S),r=/([.?@])?(.*)/.exec(t);a.push({type:1,index:s,name:r[2],strings:i,ctor:"."===r[1]?oe:"?"===r[1]?se:"@"===r[1]?ne:ie}),o.removeAttribute(e)}else e.startsWith(S)&&(a.push({type:6,index:s}),o.removeAttribute(e));if(V.test(o.tagName)){const e=o.textContent.split(S),t=e.length-1;if(t>0){o.textContent=A?A.emptyScript:"";for(let i=0;i<t;i++)o.append(e[i],I()),H.nextNode(),a.push({type:2,index:++s});o.append(e[t],I())}}}else if(8===o.nodeType)if(o.data===O)a.push({type:2,index:s});else{let e=-1;for(;-1!==(e=o.data.indexOf(S,e+1));)a.push({type:7,index:s}),e+=S.length-1}s++}}static createElement(e,t){const i=M.createElement("template");return i.innerHTML=e,i}}function Z(e,t,i=e,o){if(t===Y)return t;let s=void 0!==o?i._$Co?.[o]:i._$Cl;const n=T(t)?void 0:t._$litDirective$;return s?.constructor!==n&&(s?._$AO?.(!1),void 0===n?s=void 0:(s=new n(e),s._$AT(e,i,o)),void 0!==o?(i._$Co??=[])[o]=s:i._$Cl=s),void 0!==s&&(t=Z(e,s._$AS(e,t.values),s,o)),t}class ee{constructor(e,t){this._$AV=[],this._$AN=void 0,this._$AD=e,this._$AM=t}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(e){const{el:{content:t},parts:i}=this._$AD,o=(e?.creationScope??M).importNode(t,!0);H.currentNode=o;let s=H.nextNode(),n=0,r=0,a=i[0];for(;void 0!==a;){if(n===a.index){let t;2===a.type?t=new te(s,s.nextSibling,this,e):1===a.type?t=new a.ctor(s,a.name,a.strings,this,e):6===a.type&&(t=new re(s,this,e)),this._$AV.push(t),a=i[++r]}n!==a?.index&&(s=H.nextNode(),n++)}return H.currentNode=M,o}p(e){let t=0;for(const i of this._$AV)void 0!==i&&(void 0!==i.strings?(i._$AI(e,i,t),t+=i.strings.length-2):i._$AI(e[t])),t++}}class te{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(e,t,i,o){this.type=2,this._$AH=L,this._$AN=void 0,this._$AA=e,this._$AB=t,this._$AM=i,this.options=o,this._$Cv=o?.isConnected??!0}get parentNode(){let e=this._$AA.parentNode;const t=this._$AM;return void 0!==t&&11===e?.nodeType&&(e=t.parentNode),e}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(e,t=this){e=Z(this,e,t),T(e)?e===L||null==e||""===e?(this._$AH!==L&&this._$AR(),this._$AH=L):e!==this._$AH&&e!==Y&&this._(e):void 0!==e._$litType$?this.$(e):void 0!==e.nodeType?this.T(e):(e=>F(e)||"function"==typeof e?.[Symbol.iterator])(e)?this.k(e):this._(e)}O(e){return this._$AA.parentNode.insertBefore(e,this._$AB)}T(e){this._$AH!==e&&(this._$AR(),this._$AH=this.O(e))}_(e){this._$AH!==L&&T(this._$AH)?this._$AA.nextSibling.data=e:this.T(M.createTextNode(e)),this._$AH=e}$(e){const{values:t,_$litType$:i}=e,o="number"==typeof i?this._$AC(e):(void 0===i.el&&(i.el=J.createElement(q(i.h,i.h[0]),this.options)),i);if(this._$AH?._$AD===o)this._$AH.p(t);else{const e=new ee(o,this),i=e.u(this.options);e.p(t),this.T(i),this._$AH=e}}_$AC(e){let t=Q.get(e.strings);return void 0===t&&Q.set(e.strings,t=new J(e)),t}k(e){F(this._$AH)||(this._$AH=[],this._$AR());const t=this._$AH;let i,o=0;for(const s of e)o===t.length?t.push(i=new te(this.O(I()),this.O(I()),this,this.options)):i=t[o],i._$AI(s),o++;o<t.length&&(this._$AR(i&&i._$AB.nextSibling,o),t.length=o)}_$AR(e=this._$AA.nextSibling,t){for(this._$AP?.(!1,!0,t);e!==this._$AB;){const t=k(e).nextSibling;k(e).remove(),e=t}}setConnected(e){void 0===this._$AM&&(this._$Cv=e,this._$AP?.(e))}}class ie{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(e,t,i,o,s){this.type=1,this._$AH=L,this._$AN=void 0,this.element=e,this.name=t,this._$AM=o,this.options=s,i.length>2||""!==i[0]||""!==i[1]?(this._$AH=Array(i.length-1).fill(new String),this.strings=i):this._$AH=L}_$AI(e,t=this,i,o){const s=this.strings;let n=!1;if(void 0===s)e=Z(this,e,t,0),n=!T(e)||e!==this._$AH&&e!==Y,n&&(this._$AH=e);else{const o=e;let r,a;for(e=s[0],r=0;r<s.length-1;r++)a=Z(this,o[i+r],t,r),a===Y&&(a=this._$AH[r]),n||=!T(a)||a!==this._$AH[r],a===L?e=L:e!==L&&(e+=(a??"")+s[r+1]),this._$AH[r]=a}n&&!o&&this.j(e)}j(e){e===L?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,e??"")}}class oe extends ie{constructor(){super(...arguments),this.type=3}j(e){this.element[this.name]=e===L?void 0:e}}class se extends ie{constructor(){super(...arguments),this.type=4}j(e){this.element.toggleAttribute(this.name,!!e&&e!==L)}}class ne extends ie{constructor(e,t,i,o,s){super(e,t,i,o,s),this.type=5}_$AI(e,t=this){if((e=Z(this,e,t,0)??L)===Y)return;const i=this._$AH,o=e===L&&i!==L||e.capture!==i.capture||e.once!==i.once||e.passive!==i.passive,s=e!==L&&(i===L||o);o&&this.element.removeEventListener(this.name,this,i),s&&this.element.addEventListener(this.name,this,e),this._$AH=e}handleEvent(e){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,e):this._$AH.handleEvent(e)}}class re{constructor(e,t,i){this.element=e,this.type=6,this._$AN=void 0,this._$AM=t,this.options=i}get _$AU(){return this._$AM._$AU}_$AI(e){Z(this,e)}}const ae=$.litHtmlPolyfillSupport;ae?.(J,te),($.litHtmlVersions??=[]).push("3.3.2");const le=globalThis;let ce=class extends x{constructor(){super(...arguments),this.renderOptions={host:this},this._$Do=void 0}createRenderRoot(){const e=super.createRenderRoot();return this.renderOptions.renderBefore??=e.firstChild,e}update(e){const t=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(e),this._$Do=((e,t,i)=>{const o=i?.renderBefore??t;let s=o._$litPart$;if(void 0===s){const e=i?.renderBefore??null;o._$litPart$=s=new te(t.insertBefore(I(),e),e,void 0,i??{})}return s._$AI(e),s})(t,this.renderRoot,this.renderOptions)}connectedCallback(){super.connectedCallback(),this._$Do?.setConnected(!0)}disconnectedCallback(){super.disconnectedCallback(),this._$Do?.setConnected(!1)}render(){return Y}};ce._$litElement$=!0,ce.finalized=!0,le.litElementHydrateSupport?.({LitElement:ce});const de=le.litElementPolyfillSupport;de?.({LitElement:ce}),(le.litElementVersions??=[]).push("4.2.2");const he=e=>(t,i)=>{void 0!==i?i.addInitializer(()=>{customElements.define(e,t)}):customElements.define(e,t)},pe={attribute:!0,type:String,converter:y,reflect:!1,hasChanged:w},ue=(e=pe,t,i)=>{const{kind:o,metadata:s}=i;let n=globalThis.litPropertyMetadata.get(s);if(void 0===n&&globalThis.litPropertyMetadata.set(s,n=new Map),"setter"===o&&((e=Object.create(e)).wrapped=!0),n.set(i.name,e),"accessor"===o){const{name:o}=i;return{set(i){const s=t.get.call(this);t.set.call(this,i),this.requestUpdate(o,s,e,!0,i)},init(t){return void 0!==t&&this.C(o,void 0,e,t),t}}}if("setter"===o){const{name:o}=i;return function(i){const s=this[o];t.call(this,i),this.requestUpdate(o,s,e,!0,i)}}throw Error("Unsupported decorator location: "+o)};function ge(e){return(t,i)=>"object"==typeof i?ue(e,t,i):((e,t,i)=>{const o=t.hasOwnProperty(i);return t.constructor.createProperty(i,e),o?Object.getOwnPropertyDescriptor(t,i):void 0})(e,t,i)}function _e(e){return ge({...e,state:!0,attribute:!1})}function me(e,t,i){if(!e)return!0;for(const o of i)if(o&&e.states[o]!==t.states[o])return!0;return!1}const ve="1.0.0",fe="adaptive-cover-card",ye="adaptive-cover-card-editor",we="adaptive-cover-sky-compass-card",be="adaptive-cover-sky-compass-card-editor",xe="adaptive-cover-tile-card",$e="adaptive-cover-tile-card-editor",ke="adaptive-cover-decision-card",Ae="adaptive-cover-decision-card-editor",Ce="adaptive_cover",Ee=["privacy","climate_open_heat","climate_block_heat","climate_tilt_preset","climate_default","admit_no_glare","shaded_by_overhang","sunset","calculated","default"],Se={privacy:"Privacy",climate_open_heat:"Climate · warm up",climate_block_heat:"Climate · block heat",climate_tilt_preset:"Climate · tilt preset",climate_default:"Climate · default",admit_no_glare:"Warmth, no glare",shaded_by_overhang:"Shaded by overhang",sunset:"Sunset",calculated:"Sun tracking",default:"Default"},Oe={privacy:"handler.privacy",climate_open_heat:"handler.climate_open_heat",climate_block_heat:"handler.climate_block_heat",climate_tilt_preset:"handler.climate_tilt_preset",climate_default:"handler.climate_default",admit_no_glare:"handler.admit_no_glare",shaded_by_overhang:"handler.shaded_by_overhang",sunset:"handler.sunset",calculated:"handler.calculated",default:"handler.default"},ze={cover_blind:"mdi:blinds-horizontal",cover_awning:"mdi:awning-outline",cover_tilt:"mdi:blinds"},Me={cover_blind:"mdi:blinds-open",cover_awning:"mdi:awning-outline",cover_tilt:"mdi:blinds-open"},Ie={cover_blind:"mdi:blinds-horizontal-closed",cover_awning:"mdi:window-closed-variant",cover_tilt:"mdi:blinds"},Te={calculated:"solar",admit_no_glare:"glare_zone",privacy:"privacy",sunset:"sunset",climate_open_heat:"climate",climate_block_heat:"climate",climate_tilt_preset:"climate",climate_default:"climate"},Fe={auto:{bg:"rgba(76, 175, 80, 0.18)",fg:"#2e7d32"},manual:{bg:"rgba(255, 152, 0, 0.22)",fg:"#e65100"},climate:{bg:"rgba(0, 150, 136, 0.22)",fg:"#00695c"},glare_zone:{bg:"rgba(244, 67, 54, 0.22)",fg:"#b71c1c"},privacy:{bg:"rgba(103, 58, 183, 0.22)",fg:"#4527a0"},sunset:{bg:"rgba(255, 112, 67, 0.22)",fg:"#bf360c"},solar:{bg:"rgba(76, 175, 80, 0.22)",fg:"#1b5e20"},off:{bg:"rgba(97, 97, 97, 0.28)",fg:"#212121"},off_schedule:{bg:"rgba(96, 125, 139, 0.22)",fg:"#37474f"}},Re={auto:"badge.auto",manual:"badge.manual",climate:"badge.climate",glare_zone:"badge.glare_zone",privacy:"badge.privacy",sunset:"badge.sunset",solar:"badge.solar",off:"badge.off",off_schedule:"badge.off_schedule"},je={auto:"mdi:autorenew",manual:"mdi:hand-back-right",climate:"mdi:thermostat",glare_zone:"mdi:weather-sunny-alert",privacy:"mdi:shield-home",sunset:"mdi:weather-sunset-down",solar:"mdi:white-balance-sunny",off:"mdi:power",off_schedule:"mdi:clock-alert-outline"},Ne={integration_enabled:!0,automatic_control:!0,reset_manual_override:!0},Pe={"sensor:Cover Position":"target_position_sensor","sensor:Start Sun":"start_sensor","sensor:End Sun":"end_sensor","sensor:Control Method":"control_status_sensor","binary_sensor:Sun Infront":"sun_infront_binary","binary_sensor:Manual Override":"manual_override_binary","switch:Toggle Control":"automatic_control_switch","switch:Manual Override":"manual_toggle_switch","switch:Climate Mode":"climate_mode_switch","button:Reset Manual Override":"reset_override_button"},Ke={handler:{privacy:"Privacy",climate_open_heat:"Climate · warm up",climate_block_heat:"Climate · block heat",climate_tilt_preset:"Climate · tilt preset",climate_default:"Climate · default",admit_no_glare:"Warmth, no glare",shaded_by_overhang:"Shaded by overhang",sunset:"Sunset",calculated:"Sun tracking",default:"Default"},badge:{auto:"Auto",manual:"Manual",climate:"Climate",glare_zone:"No glare",privacy:"Privacy",sunset:"Sunset",solar:"Solar tracking",off:"Off",off_schedule:"Off-schedule"},forecast:{event:{calculated:"Sun tracking begins",default:"Default position",sunset:"Sunset position",privacy:"Privacy position"},hover_hint:"Hover the curve for time + forecast position; hover a colored line for the intent change it marks.",solar_only_note:"Forecast assumes current temperature/presence/weather persist — manual overrides are not reflected."},dialog:{window_settings:"Window settings",open_device_page:"Open device page",close:"Close",target:"Target",resume_auto:"Resume Auto",hide_advanced:"▼ Hide advanced",show_advanced:"▶ Advanced",on:"On",off:"Off",controls:"Controls",automatic:"Automatic",climate:"Climate",manual_detection:"Manual detection",toggle_hint:"{label} {state} — tap to toggle",state_on:"on",state_off:"off",todays_forecast:"Today's forecast",last_moves:"Recent moves",move_blocked:"move blocked by {gate}"},overrides:{title:"Overrides",manual:"Manual",active:"Active",off:"Off",ends_in:"ends in {time}",active_count:"{count} active",timeout:"expires in {time}",reset_manual:"Return to Auto",resume_confirm:"Resume automatic control? This shade will move back to its automatic position.",resume_confirm_pos:"Resume automatic control? This shade will move to {position}% now."},climate:{title:"Climate",active:"Active: {strategy}",indoor:"Indoor",outdoor:"Outdoor",presence:"Presence",sunny:"Sunny",lux:"Lux",irradiance:"Irradiance",mode_off:"Climate mode off",standby:"Standby",threshold_low:"low",threshold_high:"high",threshold_summer_outside:"summer",reason:{outside_time_window:"Outside the operating time window",thresholds_not_met:"Temperatures within the comfort band — no action needed",other_mode_active:"Another control mode is currently active",readings_unavailable:"Temperature readings unavailable",mode_off:"Climate mode is turned off"}},compass:{placeholder_no_entries:"No Adaptive Cover entries selected.",placeholder_no_sun:"Sun sensor not yet populated.",sun_tooltip:"Sun: {az} az / {el} el",sunrise_tooltip:"Sunrise: {time}",sunset_tooltip:"Sunset: {time}",moon_tooltip:"Moon: {phase} ({pct}%)",sun_path_tooltip:"Sun path (today)",in_fov_check:"✓ in FOV",in_fov:"in FOV",in_fov_tooltip:"Sun is currently within this window’s field of view",none:"—",sun:"Sun",moon:"Moon",sun_up_not_hitting:"Sun (up, not hitting)",sun_below_horizon:"Sun (below horizon)",window_fov:"Window FOV",sun_path:"Sun path",sunrise:"Sunrise",sunset:"Sunset",cover_target:"Cover target",cover_held:"Cover position (held)",window_normal:"Window azimuth",stat_sun:"Sun: ",stat_azi:"Azi: ",stat_elev:"Elev: ",stat_window:"Window: ",active_sun_arc:"Active sun arc {from} – {to}{elev}",fov_arc:"FOV {left} left / {right} right{elev}",window_normal_tooltip:"Window azimuth: {bearing}",cover_position_target:"Target: {pct}%",cover_position_target_awning:"Target (extended): {pct}%",cover_position_actual:"Actual: {pct}%",blind_spot:"Blind spot: {from} – {to}",elev_suffix:" · elev {min}–{max}"},covers:{placeholder:"No covers reported by the integration.",title:"Covers",target:"Target: {pct}",target_solar:"Solar target: {pct}",click_to_set:"Click to set position",target_tooltip:"Target {pct}%",target_tooltip_override:"Would-be solar target {pct}% — cover is held by manual override",tilt_title:"Tilt",tilt_target:"Tilt: {pct}",tilt_click_to_set:"Click to set tilt",tilt_target_tooltip:"Tilt target {pct}%"},decision:{placeholder:"Decision trace not yet populated.",pipeline:"Pipeline",winner:"Winner: {name}",summary_tooltip:"Why this position?",not_evaluated:"not evaluated",floor_suffix:" floor",outside_schedule:"Outside schedule — automatic control paused",outside_schedule_tooltip:"The configured schedule window is not active, so automatic positioning is paused.",solar_would_be:"solar {pct}",next_change_in:"Next adjustment allowed in {time}"},solar:{title:"Solar Calculation",axis_position:"Position axis",axis_tilt:"Tilt axis",group_inputs:"Inputs",group_intermediates:"Intermediates",group_output:"Output",show_all:"Show all {count} values",show_less:"Show less",no_target:"No solar target — {status}",status:{direct_sun:"Direct sun",fov_exit:"Default · FOV exit",elevation_limit:"Default · elevation limit",sunset_offset:"Default · sunset offset",blind_spot:"Default · blind spot",default:"Default"},field:{sol_elev_deg:"Sun elevation",gamma_deg:"Relative azimuth (γ)",position_pct:"Position",effective_distance_m:"Effective distance",adjusted_height_m:"Adjusted height",safety_margin:"Safety margin",awn_angle_deg:"Awning angle",vertical_position_m:"Vertical position",length_m:"Extension length",slat_angle_raw_deg:"Slat angle",tilt_mode:"Tilt mode",max_degrees:"Max angle"}},header:{on:"ON",off:"OFF",integration_enabled:"Integration Enabled",auto:"Auto",automatic_control:"Automatic Control"},tile:{battery:"Shade battery",motion_pending:"Motion timeout pending",motion_detected:"Motion detected",open:"Open",stop:"Stop",close:"Close",resume_aria:"Resume automatic control",registry_failed:"Registry fetch failed: {error}",loading:"Loading…",entry_not_found:"Adaptive Cover window {entry} not found."},formatters:{expired:"expired"},elevation:{title:"Sun today",fov_window:"FOV: {from} → {to}",fov_windows:"FOV: {windows}",fov_window_named:"{name}: {windows}",no_fov_today:"Sun does not enter FOV today",placeholder:"Sun elevation chart unavailable.",schedule:"Schedule {from} – {to}",schedule_from:"Schedule from {from}",schedule_until:"Schedule until {to}",schedule_start_tooltip:"Schedule start",schedule_end_tooltip:"Schedule end"},root:{loading_registry:"Loading Adaptive Cover registry…",no_entities_title:"No Adaptive Cover entities found",footer_version:"adaptive-cover-card v{version}",compass_no_match:"No matching Adaptive Cover entities",compass_configured:"Configured windows: {entries}",compass_not_found:"Windows not found: {entries}"},editor:{common:{window:"Window",title_optional:"Title (optional)",title_placeholder:"e.g. West-facing windows",north_offset:"Compass north offset (°)",north_offset_hint:'Rotate the compass clockwise so "up" matches your map. Default: 0.',loading_entries:"Loading Adaptive Cover windows…",load_failed:"Failed to load the windows: {error}",no_entries:"No Adaptive Cover windows found. Add a window under",no_entries_path:"Settings → Devices & Services",no_entries_then:", then come back.",window_manual_placeholder:"Enter the window key (window_key attribute)",window_fallback_label:"Window key",unknown_entry:"(unknown: {entry})",reset:"Reset"},main:{sections:"Sections",sections_hint:"Toggle which parts of the card are shown.",section_sky_label:"Sky compass",section_sky_desc:"Sun vs. window FOV, polar plot",section_elevation_label:"Sun today",section_elevation_desc:"Elevation-vs-time chart with FOV band and current-time cursor",section_decision_label:"Decision strip",section_decision_desc:"The engine decision trace with the winning step highlighted",section_covers_label:"Cover positions",section_covers_desc:"Per-cover live vs. target bars; click to set position",section_overrides_label:"Overrides panel",section_overrides_desc:"Manual override tile + reset button",section_climate_label:"Climate panel",section_climate_desc:"Summer/winter/intermediate strategy; shows standby when climate mode is off or inactive",controls:"Controls",controls_hint:"Render as read-only (visible but not clickable).",automatic_pill_label:"Automatic Control pill",automatic_pill_desc:"Allow toggling automatic control from the card header.",reset_button_label:"Reset Manual Override button",reset_button_desc:"Allow pressing the reset tile in the overrides panel.",display:"Display",compact_label:"Compact mode",compact_desc:"Tighter spacing between sections.",show_compass_stats_label:"Show compass stats",show_compass_stats_desc:"Azi, Elev, ∠, and Window angle below the sky compass.",show_compass_legend_label:"Show compass legend",show_compass_legend_desc:"Color key below the sky compass.",show_moon_label:"Show moon on compass",show_moon_desc:"Moon position and phase overlay on the sky compass.",hide_inactive_label:"Hide inactive handlers",hide_inactive_desc:"Show only the winner and actively matched pipeline handlers."},tile:{name:"Title override",icon:"Icon override",cover:"Cover entity",layout:"Layout",show_position:"Show position %",show_state:"Show state (Open/Closed)",show_decision_summary:"Show decision summary",show_controls:"Show ↑■▼ controls",show_badge:"Show contextual badge",badge_section:"Badges",badge_auto:"Auto",badge_solar:"Solar tracking",badge_manual:"Manual override",badge_climate:"Climate",badge_glare_zone:"No glare",badge_privacy:"Privacy",badge_sunset:"Sunset",show_compass:"Show sun compass in dialog",show_elevation_chart:"Show sun-today chart in dialog",tap_action:"Tap action",hold_action:"Hold action",double_tap_action:"Double-tap action",cover_blank_hint:"Leave blank to use the first managed cover automatically.",layout_option_one_line:"One line (compact)",layout_option_detailed:"Detailed (title, state, indicators)"},compass:{instances:"Windows",instances_hint:"Pick one or more. Each selected window adds an overlay to the compass.",cover_colors:"Cover colors",cover_colors_hint:"Override the default palette color for each overlay.",default_color:"default",display:"Display",toggle_compact_label:"Compact mode",toggle_compact_desc:"Smaller SVG, legend hidden.",toggle_legend_label:"Legend",toggle_legend_desc:"Color swatches + entry labels below compass.",toggle_stats_label:"Stats",toggle_stats_desc:"Sun + per-window numeric rows.",toggle_moon_label:"Moon",toggle_moon_desc:"Render moon position and phase.",toggle_cardinals_label:"Cardinal labels",toggle_cardinals_desc:"N/E/S/W letters around the compass.",toggle_blind_spot_label:"Blind spots",toggle_blind_spot_desc:"Hatched wedges for each window’s blind range.",toggle_sun_path_label:"Sun path",toggle_sun_path_desc:"Today’s sun arc across the sky.",toggle_sunrise_sunset_label:"Sunrise / sunset markers",toggle_sunrise_sunset_desc:"Small dots at rise and set azimuths.",toggle_cover_fill_label:"Cover closure fill",toggle_cover_fill_desc:"Inner wedge showing how closed each cover is.",toggle_window_arrow_label:"Window-normal arrow",toggle_window_arrow_desc:"Line from center toward each window’s azimuth.",toggle_elevation_chart_label:"Sun-today chart",toggle_elevation_chart_desc:"Elevation-vs-time chart below the compass, with FOV band and elevation limits."},decision:{title:"Title (optional)",compact_label:"Compact mode",compact_desc:"Tighter rows; also hides inactive handlers.",hide_inactive_handlers_label:"Hide inactive handlers",hide_inactive_handlers_desc:"Show only the winner and actively matched pipeline handlers.",show_decision_summary_label:"Show decision summary",show_decision_summary_desc:'Render a plain-English "Why this position?" sentence above the strip.'}}};function De(e,t){const i=function(e){let t=Ke;for(const i of e.split(".")){if("object"!=typeof t||null===t)return;t=t[i]}return"string"==typeof t?t:void 0}(e);return void 0===i?e:function(e,t){return t?e.replace(/\{(\w+)\}/g,(e,i)=>Object.prototype.hasOwnProperty.call(t,i)?String(t[i]):e):e}(i,t)}const Be=e=>(...t)=>({_$litDirective$:e,values:t});class Ve{constructor(e){}get _$AU(){return this._$AM._$AU}_$AT(e,t,i){this._$Ct=e,this._$AM=t,this._$Ci=i}_$AS(e,t){return this.update(e,t)}update(e,t){return this.render(...t)}}const Ge=(e,t)=>{const i=e._$AN;if(void 0===i)return!1;for(const e of i)e._$AO?.(t,!1),Ge(e,t);return!0},We=e=>{let t,i;do{if(void 0===(t=e._$AM))break;i=t._$AN,i.delete(e),e=t}while(0===i?.size)},Ue=e=>{for(let t;t=e._$AM;e=t){let i=t._$AN;if(void 0===i)t._$AN=i=new Set;else if(i.has(e))break;i.add(e),Qe(t)}};function Ye(e){void 0!==this._$AN?(We(this),this._$AM=e,Ue(this)):this._$AM=e}function Le(e,t=!1,i=0){const o=this._$AH,s=this._$AN;if(void 0!==s&&0!==s.size)if(t)if(Array.isArray(o))for(let e=i;e<o.length;e++)Ge(o[e],!1),We(o[e]);else null!=o&&(Ge(o,!1),We(o));else Ge(this,e)}const Qe=e=>{2==e.type&&(e._$AP??=Le,e._$AQ??=Ye)};class He extends Ve{constructor(){super(...arguments),this._$AN=void 0}_$AT(e,t,i){super._$AT(e,t,i),Ue(this),this.isConnected=e._$AU}_$AO(e,t=!0){e!==this.isConnected&&(this.isConnected=e,e?this.reconnected?.():this.disconnected?.()),t&&(Ge(this,e),We(this))}setValue(e){if((()=>void 0===this._$Ct.strings)())this._$Ct._$AI(e,this);else{const t=[...this._$Ct._$AH];t[this._$Ci]=e,this._$Ct._$AI(t,this,0)}}disconnected(){}reconnected(){}}const qe=[12,16];function Xe(e,t,i=0){const o=(e-90+i)*Math.PI/180;return{x:t*Math.cos(o),y:t*Math.sin(o)}}function Je(e){return 1-Math.max(0,Math.min(90,e))/90}function Ze(e,t,i,o=0,s=0){const n=e=>(e%360+360)%360,r=n(e),a=n(t);let l=a-r;l<0&&(l+=360);const c=l>180?1:0,d=Xe(r,i,s),h=Xe(a,i,s);if(o<=0)return`M 0 0 L ${d.x} ${d.y} A ${i} ${i} 0 ${c} 1 ${h.x} ${h.y} Z`;const p=Xe(a,o,s),u=Xe(r,o,s);return[`M ${d.x} ${d.y}`,`A ${i} ${i} 0 ${c} 1 ${h.x} ${h.y}`,`L ${p.x} ${p.y}`,`A ${o} ${o} 0 ${c} 0 ${u.x} ${u.y}`,"Z"].join(" ")}function et(e,t,i=0){return Xe(e,Je(t),i)}function tt(e){return(e%360+360)%360}function it(e,t,i,o){const s=o??0;let n=-1,r=-1;for(let o=t;o<=i&&o<e.length;o++)e[o].elevation>s&&(-1===n&&(n=o),r=o);return-1===n?null:{wedgeStart:e[n].azimuth,wedgeEnd:e[r].azimuth}}function ot(e,t,i){const o=(e-t)/864e5;return Math.max(0,Math.min(i,o*i))}function st(e,t,i){return((e-t)%360+360)%360<=((i-t)%360+360)%360}function nt(e,t,i,o){return st(i,e,t)||st(o,e,t)||st(e,i,o)||st(t,i,o)}function rt(e,t,i,o){const s="cover_awning"===t?e/100:1-e/100;return Math.min(i*s,o)}function at(e,t){return e<.5?-4*t*e:4*t*(1-e)}function lt(e,t,i,o,s){const n=Xe(i,1),r=-n.y,a=n.x,l=e-n.x*o,c=t-n.y*o;return`M ${e} ${t} L ${l+r*s} ${c+a*s} L ${l-r*s} ${c-a*s} Z`}let ct=class extends ce{constructor(){super(...arguments),this.text="",this.cursorX=0,this.cursorY=0,this.offset=qe,this.visible=!1,this._x=0,this._y=0}connectedCallback(){super.connectedCallback(),this.hasAttribute("role")||this.setAttribute("role","tooltip")}updated(){if(!this.visible)return;this.setAttribute("aria-hidden","false");const e=this.shadowRoot?.querySelector(".bubble"),t=e?.offsetWidth??0,i=e?.offsetHeight??0,o="undefined"!=typeof window?window.innerWidth:0,s="undefined"!=typeof window?window.innerHeight:0,{x:n,y:r}=function(e){const{cursorX:t,cursorY:i,ttW:o,ttH:s,vpW:n,vpH:r}=e,[a,l]=e.offset??qe;let c=t+a,d=!1;c+o>n&&(c=t-a-o,d=!0),c<0&&(c=0);let h=i+l;return h+s>r&&(h=i-l-s),h<0&&(h=0),{x:c,y:h,flipped:d}}({cursorX:this.cursorX,cursorY:this.cursorY,ttW:t,ttH:i,vpW:o,vpH:s,offset:this.offset});n!==this._x&&(this._x=n),r!==this._y&&(this._y=r)}render(){return this.visible?W`<div class="bubble" style="transform: translate3d(${this._x}px, ${this._y}px, 0)">
+function e(e,t,o,i){var s,n=arguments.length,r=n<3?t:null===i?i=Object.getOwnPropertyDescriptor(t,o):i;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)r=Reflect.decorate(e,t,o,i);else for(var a=e.length-1;a>=0;a--)(s=e[a])&&(r=(n<3?s(r):n>3?s(t,o,r):s(t,o))||r);return n>3&&r&&Object.defineProperty(t,o,r),r}"function"==typeof SuppressedError&&SuppressedError;const t=globalThis,o=t.ShadowRoot&&(void 0===t.ShadyCSS||t.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,i=Symbol(),s=new WeakMap;let n=class{constructor(e,t,o){if(this._$cssResult$=!0,o!==i)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=e,this.t=t}get styleSheet(){let e=this.o;const t=this.t;if(o&&void 0===e){const o=void 0!==t&&1===t.length;o&&(e=s.get(t)),void 0===e&&((this.o=e=new CSSStyleSheet).replaceSync(this.cssText),o&&s.set(t,e))}return e}toString(){return this.cssText}};const r=(e,...t)=>{const o=1===e.length?e[0]:t.reduce((t,o,i)=>t+(e=>{if(!0===e._$cssResult$)return e.cssText;if("number"==typeof e)return e;throw Error("Value passed to 'css' function must be a 'css' function result: "+e+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(o)+e[i+1],e[0]);return new n(o,e,i)},a=o?e=>e:e=>e instanceof CSSStyleSheet?(e=>{let t="";for(const o of e.cssRules)t+=o.cssText;return(e=>new n("string"==typeof e?e:e+"",void 0,i))(t)})(e):e,{is:l,defineProperty:c,getOwnPropertyDescriptor:d,getOwnPropertyNames:h,getOwnPropertySymbols:u,getPrototypeOf:p}=Object,g=globalThis,m=g.trustedTypes,f=m?m.emptyScript:"",_=g.reactiveElementPolyfillSupport,v=(e,t)=>e,y={toAttribute(e,t){switch(t){case Boolean:e=e?f:null;break;case Object:case Array:e=null==e?e:JSON.stringify(e)}return e},fromAttribute(e,t){let o=e;switch(t){case Boolean:o=null!==e;break;case Number:o=null===e?null:Number(e);break;case Object:case Array:try{o=JSON.parse(e)}catch(e){o=null}}return o}},w=(e,t)=>!l(e,t),b={attribute:!0,type:String,converter:y,reflect:!1,useDefault:!1,hasChanged:w};Symbol.metadata??=Symbol("metadata"),g.litPropertyMetadata??=new WeakMap;let x=class extends HTMLElement{static addInitializer(e){this._$Ei(),(this.l??=[]).push(e)}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(e,t=b){if(t.state&&(t.attribute=!1),this._$Ei(),this.prototype.hasOwnProperty(e)&&((t=Object.create(t)).wrapped=!0),this.elementProperties.set(e,t),!t.noAccessor){const o=Symbol(),i=this.getPropertyDescriptor(e,o,t);void 0!==i&&c(this.prototype,e,i)}}static getPropertyDescriptor(e,t,o){const{get:i,set:s}=d(this.prototype,e)??{get(){return this[t]},set(e){this[t]=e}};return{get:i,set(t){const n=i?.call(this);s?.call(this,t),this.requestUpdate(e,n,o)},configurable:!0,enumerable:!0}}static getPropertyOptions(e){return this.elementProperties.get(e)??b}static _$Ei(){if(this.hasOwnProperty(v("elementProperties")))return;const e=p(this);e.finalize(),void 0!==e.l&&(this.l=[...e.l]),this.elementProperties=new Map(e.elementProperties)}static finalize(){if(this.hasOwnProperty(v("finalized")))return;if(this.finalized=!0,this._$Ei(),this.hasOwnProperty(v("properties"))){const e=this.properties,t=[...h(e),...u(e)];for(const o of t)this.createProperty(o,e[o])}const e=this[Symbol.metadata];if(null!==e){const t=litPropertyMetadata.get(e);if(void 0!==t)for(const[e,o]of t)this.elementProperties.set(e,o)}this._$Eh=new Map;for(const[e,t]of this.elementProperties){const o=this._$Eu(e,t);void 0!==o&&this._$Eh.set(o,e)}this.elementStyles=this.finalizeStyles(this.styles)}static finalizeStyles(e){const t=[];if(Array.isArray(e)){const o=new Set(e.flat(1/0).reverse());for(const e of o)t.unshift(a(e))}else void 0!==e&&t.push(a(e));return t}static _$Eu(e,t){const o=t.attribute;return!1===o?void 0:"string"==typeof o?o:"string"==typeof e?e.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=!1,this.hasUpdated=!1,this._$Em=null,this._$Ev()}_$Ev(){this._$ES=new Promise(e=>this.enableUpdating=e),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach(e=>e(this))}addController(e){(this._$EO??=new Set).add(e),void 0!==this.renderRoot&&this.isConnected&&e.hostConnected?.()}removeController(e){this._$EO?.delete(e)}_$E_(){const e=new Map,t=this.constructor.elementProperties;for(const o of t.keys())this.hasOwnProperty(o)&&(e.set(o,this[o]),delete this[o]);e.size>0&&(this._$Ep=e)}createRenderRoot(){const e=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return((e,i)=>{if(o)e.adoptedStyleSheets=i.map(e=>e instanceof CSSStyleSheet?e:e.styleSheet);else for(const o of i){const i=document.createElement("style"),s=t.litNonce;void 0!==s&&i.setAttribute("nonce",s),i.textContent=o.cssText,e.appendChild(i)}})(e,this.constructor.elementStyles),e}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(!0),this._$EO?.forEach(e=>e.hostConnected?.())}enableUpdating(e){}disconnectedCallback(){this._$EO?.forEach(e=>e.hostDisconnected?.())}attributeChangedCallback(e,t,o){this._$AK(e,o)}_$ET(e,t){const o=this.constructor.elementProperties.get(e),i=this.constructor._$Eu(e,o);if(void 0!==i&&!0===o.reflect){const s=(void 0!==o.converter?.toAttribute?o.converter:y).toAttribute(t,o.type);this._$Em=e,null==s?this.removeAttribute(i):this.setAttribute(i,s),this._$Em=null}}_$AK(e,t){const o=this.constructor,i=o._$Eh.get(e);if(void 0!==i&&this._$Em!==i){const e=o.getPropertyOptions(i),s="function"==typeof e.converter?{fromAttribute:e.converter}:void 0!==e.converter?.fromAttribute?e.converter:y;this._$Em=i;const n=s.fromAttribute(t,e.type);this[i]=n??this._$Ej?.get(i)??n,this._$Em=null}}requestUpdate(e,t,o,i=!1,s){if(void 0!==e){const n=this.constructor;if(!1===i&&(s=this[e]),o??=n.getPropertyOptions(e),!((o.hasChanged??w)(s,t)||o.useDefault&&o.reflect&&s===this._$Ej?.get(e)&&!this.hasAttribute(n._$Eu(e,o))))return;this.C(e,t,o)}!1===this.isUpdatePending&&(this._$ES=this._$EP())}C(e,t,{useDefault:o,reflect:i,wrapped:s},n){o&&!(this._$Ej??=new Map).has(e)&&(this._$Ej.set(e,n??t??this[e]),!0!==s||void 0!==n)||(this._$AL.has(e)||(this.hasUpdated||o||(t=void 0),this._$AL.set(e,t)),!0===i&&this._$Em!==e&&(this._$Eq??=new Set).add(e))}async _$EP(){this.isUpdatePending=!0;try{await this._$ES}catch(e){Promise.reject(e)}const e=this.scheduleUpdate();return null!=e&&await e,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(const[e,t]of this._$Ep)this[e]=t;this._$Ep=void 0}const e=this.constructor.elementProperties;if(e.size>0)for(const[t,o]of e){const{wrapped:e}=o,i=this[t];!0!==e||this._$AL.has(t)||void 0===i||this.C(t,void 0,o,i)}}let e=!1;const t=this._$AL;try{e=this.shouldUpdate(t),e?(this.willUpdate(t),this._$EO?.forEach(e=>e.hostUpdate?.()),this.update(t)):this._$EM()}catch(t){throw e=!1,this._$EM(),t}e&&this._$AE(t)}willUpdate(e){}_$AE(e){this._$EO?.forEach(e=>e.hostUpdated?.()),this.hasUpdated||(this.hasUpdated=!0,this.firstUpdated(e)),this.updated(e)}_$EM(){this._$AL=new Map,this.isUpdatePending=!1}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(e){return!0}update(e){this._$Eq&&=this._$Eq.forEach(e=>this._$ET(e,this[e])),this._$EM()}updated(e){}firstUpdated(e){}};x.elementStyles=[],x.shadowRootOptions={mode:"open"},x[v("elementProperties")]=new Map,x[v("finalized")]=new Map,_?.({ReactiveElement:x}),(g.reactiveElementVersions??=[]).push("2.1.2");const $=globalThis,k=e=>e,A=$.trustedTypes,C=A?A.createPolicy("lit-html",{createHTML:e=>e}):void 0,S="$lit$",E=`lit$${Math.random().toFixed(9).slice(2)}$`,z="?"+E,O=`<${z}>`,M=document,I=()=>M.createComment(""),T=e=>null===e||"object"!=typeof e&&"function"!=typeof e,R=Array.isArray,F="[ \t\n\f\r]",j=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,N=/-->/g,P=/>/g,K=RegExp(`>|${F}(?:([^\\s"'>=/]+)(${F}*=${F}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),D=/'/g,B=/"/g,W=/^(?:script|style|textarea|title)$/i,V=e=>(t,...o)=>({_$litType$:e,strings:t,values:o}),G=V(1),U=V(2),L=Symbol.for("lit-noChange"),Y=Symbol.for("lit-nothing"),H=new WeakMap,Q=M.createTreeWalker(M,129);function q(e,t){if(!R(e)||!e.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==C?C.createHTML(t):t}const X=(e,t)=>{const o=e.length-1,i=[];let s,n=2===t?"<svg>":3===t?"<math>":"",r=j;for(let t=0;t<o;t++){const o=e[t];let a,l,c=-1,d=0;for(;d<o.length&&(r.lastIndex=d,l=r.exec(o),null!==l);)d=r.lastIndex,r===j?"!--"===l[1]?r=N:void 0!==l[1]?r=P:void 0!==l[2]?(W.test(l[2])&&(s=RegExp("</"+l[2],"g")),r=K):void 0!==l[3]&&(r=K):r===K?">"===l[0]?(r=s??j,c=-1):void 0===l[1]?c=-2:(c=r.lastIndex-l[2].length,a=l[1],r=void 0===l[3]?K:'"'===l[3]?B:D):r===B||r===D?r=K:r===N||r===P?r=j:(r=K,s=void 0);const h=r===K&&e[t+1].startsWith("/>")?" ":"";n+=r===j?o+O:c>=0?(i.push(a),o.slice(0,c)+S+o.slice(c)+E+h):o+E+(-2===c?t:h)}return[q(e,n+(e[o]||"<?>")+(2===t?"</svg>":3===t?"</math>":"")),i]};class J{constructor({strings:e,_$litType$:t},o){let i;this.parts=[];let s=0,n=0;const r=e.length-1,a=this.parts,[l,c]=X(e,t);if(this.el=J.createElement(l,o),Q.currentNode=this.el.content,2===t||3===t){const e=this.el.content.firstChild;e.replaceWith(...e.childNodes)}for(;null!==(i=Q.nextNode())&&a.length<r;){if(1===i.nodeType){if(i.hasAttributes())for(const e of i.getAttributeNames())if(e.endsWith(S)){const t=c[n++],o=i.getAttribute(e).split(E),r=/([.?@])?(.*)/.exec(t);a.push({type:1,index:s,name:r[2],strings:o,ctor:"."===r[1]?ie:"?"===r[1]?se:"@"===r[1]?ne:oe}),i.removeAttribute(e)}else e.startsWith(E)&&(a.push({type:6,index:s}),i.removeAttribute(e));if(W.test(i.tagName)){const e=i.textContent.split(E),t=e.length-1;if(t>0){i.textContent=A?A.emptyScript:"";for(let o=0;o<t;o++)i.append(e[o],I()),Q.nextNode(),a.push({type:2,index:++s});i.append(e[t],I())}}}else if(8===i.nodeType)if(i.data===z)a.push({type:2,index:s});else{let e=-1;for(;-1!==(e=i.data.indexOf(E,e+1));)a.push({type:7,index:s}),e+=E.length-1}s++}}static createElement(e,t){const o=M.createElement("template");return o.innerHTML=e,o}}function Z(e,t,o=e,i){if(t===L)return t;let s=void 0!==i?o._$Co?.[i]:o._$Cl;const n=T(t)?void 0:t._$litDirective$;return s?.constructor!==n&&(s?._$AO?.(!1),void 0===n?s=void 0:(s=new n(e),s._$AT(e,o,i)),void 0!==i?(o._$Co??=[])[i]=s:o._$Cl=s),void 0!==s&&(t=Z(e,s._$AS(e,t.values),s,i)),t}class ee{constructor(e,t){this._$AV=[],this._$AN=void 0,this._$AD=e,this._$AM=t}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(e){const{el:{content:t},parts:o}=this._$AD,i=(e?.creationScope??M).importNode(t,!0);Q.currentNode=i;let s=Q.nextNode(),n=0,r=0,a=o[0];for(;void 0!==a;){if(n===a.index){let t;2===a.type?t=new te(s,s.nextSibling,this,e):1===a.type?t=new a.ctor(s,a.name,a.strings,this,e):6===a.type&&(t=new re(s,this,e)),this._$AV.push(t),a=o[++r]}n!==a?.index&&(s=Q.nextNode(),n++)}return Q.currentNode=M,i}p(e){let t=0;for(const o of this._$AV)void 0!==o&&(void 0!==o.strings?(o._$AI(e,o,t),t+=o.strings.length-2):o._$AI(e[t])),t++}}class te{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(e,t,o,i){this.type=2,this._$AH=Y,this._$AN=void 0,this._$AA=e,this._$AB=t,this._$AM=o,this.options=i,this._$Cv=i?.isConnected??!0}get parentNode(){let e=this._$AA.parentNode;const t=this._$AM;return void 0!==t&&11===e?.nodeType&&(e=t.parentNode),e}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(e,t=this){e=Z(this,e,t),T(e)?e===Y||null==e||""===e?(this._$AH!==Y&&this._$AR(),this._$AH=Y):e!==this._$AH&&e!==L&&this._(e):void 0!==e._$litType$?this.$(e):void 0!==e.nodeType?this.T(e):(e=>R(e)||"function"==typeof e?.[Symbol.iterator])(e)?this.k(e):this._(e)}O(e){return this._$AA.parentNode.insertBefore(e,this._$AB)}T(e){this._$AH!==e&&(this._$AR(),this._$AH=this.O(e))}_(e){this._$AH!==Y&&T(this._$AH)?this._$AA.nextSibling.data=e:this.T(M.createTextNode(e)),this._$AH=e}$(e){const{values:t,_$litType$:o}=e,i="number"==typeof o?this._$AC(e):(void 0===o.el&&(o.el=J.createElement(q(o.h,o.h[0]),this.options)),o);if(this._$AH?._$AD===i)this._$AH.p(t);else{const e=new ee(i,this),o=e.u(this.options);e.p(t),this.T(o),this._$AH=e}}_$AC(e){let t=H.get(e.strings);return void 0===t&&H.set(e.strings,t=new J(e)),t}k(e){R(this._$AH)||(this._$AH=[],this._$AR());const t=this._$AH;let o,i=0;for(const s of e)i===t.length?t.push(o=new te(this.O(I()),this.O(I()),this,this.options)):o=t[i],o._$AI(s),i++;i<t.length&&(this._$AR(o&&o._$AB.nextSibling,i),t.length=i)}_$AR(e=this._$AA.nextSibling,t){for(this._$AP?.(!1,!0,t);e!==this._$AB;){const t=k(e).nextSibling;k(e).remove(),e=t}}setConnected(e){void 0===this._$AM&&(this._$Cv=e,this._$AP?.(e))}}class oe{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(e,t,o,i,s){this.type=1,this._$AH=Y,this._$AN=void 0,this.element=e,this.name=t,this._$AM=i,this.options=s,o.length>2||""!==o[0]||""!==o[1]?(this._$AH=Array(o.length-1).fill(new String),this.strings=o):this._$AH=Y}_$AI(e,t=this,o,i){const s=this.strings;let n=!1;if(void 0===s)e=Z(this,e,t,0),n=!T(e)||e!==this._$AH&&e!==L,n&&(this._$AH=e);else{const i=e;let r,a;for(e=s[0],r=0;r<s.length-1;r++)a=Z(this,i[o+r],t,r),a===L&&(a=this._$AH[r]),n||=!T(a)||a!==this._$AH[r],a===Y?e=Y:e!==Y&&(e+=(a??"")+s[r+1]),this._$AH[r]=a}n&&!i&&this.j(e)}j(e){e===Y?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,e??"")}}class ie extends oe{constructor(){super(...arguments),this.type=3}j(e){this.element[this.name]=e===Y?void 0:e}}class se extends oe{constructor(){super(...arguments),this.type=4}j(e){this.element.toggleAttribute(this.name,!!e&&e!==Y)}}class ne extends oe{constructor(e,t,o,i,s){super(e,t,o,i,s),this.type=5}_$AI(e,t=this){if((e=Z(this,e,t,0)??Y)===L)return;const o=this._$AH,i=e===Y&&o!==Y||e.capture!==o.capture||e.once!==o.once||e.passive!==o.passive,s=e!==Y&&(o===Y||i);i&&this.element.removeEventListener(this.name,this,o),s&&this.element.addEventListener(this.name,this,e),this._$AH=e}handleEvent(e){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,e):this._$AH.handleEvent(e)}}class re{constructor(e,t,o){this.element=e,this.type=6,this._$AN=void 0,this._$AM=t,this.options=o}get _$AU(){return this._$AM._$AU}_$AI(e){Z(this,e)}}const ae=$.litHtmlPolyfillSupport;ae?.(J,te),($.litHtmlVersions??=[]).push("3.3.2");const le=globalThis;let ce=class extends x{constructor(){super(...arguments),this.renderOptions={host:this},this._$Do=void 0}createRenderRoot(){const e=super.createRenderRoot();return this.renderOptions.renderBefore??=e.firstChild,e}update(e){const t=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(e),this._$Do=((e,t,o)=>{const i=o?.renderBefore??t;let s=i._$litPart$;if(void 0===s){const e=o?.renderBefore??null;i._$litPart$=s=new te(t.insertBefore(I(),e),e,void 0,o??{})}return s._$AI(e),s})(t,this.renderRoot,this.renderOptions)}connectedCallback(){super.connectedCallback(),this._$Do?.setConnected(!0)}disconnectedCallback(){super.disconnectedCallback(),this._$Do?.setConnected(!1)}render(){return L}};ce._$litElement$=!0,ce.finalized=!0,le.litElementHydrateSupport?.({LitElement:ce});const de=le.litElementPolyfillSupport;de?.({LitElement:ce}),(le.litElementVersions??=[]).push("4.2.2");const he=e=>(t,o)=>{void 0!==o?o.addInitializer(()=>{customElements.define(e,t)}):customElements.define(e,t)},ue={attribute:!0,type:String,converter:y,reflect:!1,hasChanged:w},pe=(e=ue,t,o)=>{const{kind:i,metadata:s}=o;let n=globalThis.litPropertyMetadata.get(s);if(void 0===n&&globalThis.litPropertyMetadata.set(s,n=new Map),"setter"===i&&((e=Object.create(e)).wrapped=!0),n.set(o.name,e),"accessor"===i){const{name:i}=o;return{set(o){const s=t.get.call(this);t.set.call(this,o),this.requestUpdate(i,s,e,!0,o)},init(t){return void 0!==t&&this.C(i,void 0,e,t),t}}}if("setter"===i){const{name:i}=o;return function(o){const s=this[i];t.call(this,o),this.requestUpdate(i,s,e,!0,o)}}throw Error("Unsupported decorator location: "+i)};function ge(e){return(t,o)=>"object"==typeof o?pe(e,t,o):((e,t,o)=>{const i=t.hasOwnProperty(o);return t.constructor.createProperty(o,e),i?Object.getOwnPropertyDescriptor(t,o):void 0})(e,t,o)}function me(e){return ge({...e,state:!0,attribute:!1})}function fe(e,t,o){if(!e)return!0;for(const i of o)if(i&&e.states[i]!==t.states[i])return!0;return!1}const _e="1.0.0",ve="adaptive-cover-card",ye="adaptive-cover-card-editor",we="adaptive-cover-sky-compass-card",be="adaptive-cover-sky-compass-card-editor",xe="adaptive-cover-tile-card",$e="adaptive-cover-tile-card-editor",ke="adaptive-cover-decision-card",Ae="adaptive-cover-decision-card-editor",Ce="adaptive-cover-house-card",Se="adaptive-cover",Ee=`ll-strategy-dashboard-${Se}`,ze="adaptive_cover",Oe=["privacy","climate_open_heat","climate_block_heat","climate_tilt_preset","climate_default","admit_no_glare","shaded_by_overhang","sunset","calculated","default"],Me={privacy:"Privacy",climate_open_heat:"Climate · warm up",climate_block_heat:"Climate · block heat",climate_tilt_preset:"Climate · tilt preset",climate_default:"Climate · default",admit_no_glare:"Warmth, no glare",shaded_by_overhang:"Shaded by overhang",sunset:"Sunset",calculated:"Sun tracking",default:"Default"},Ie={privacy:"handler.privacy",climate_open_heat:"handler.climate_open_heat",climate_block_heat:"handler.climate_block_heat",climate_tilt_preset:"handler.climate_tilt_preset",climate_default:"handler.climate_default",admit_no_glare:"handler.admit_no_glare",shaded_by_overhang:"handler.shaded_by_overhang",sunset:"handler.sunset",calculated:"handler.calculated",default:"handler.default"},Te={cover_blind:"mdi:blinds-horizontal",cover_awning:"mdi:awning-outline",cover_tilt:"mdi:blinds"},Re={cover_blind:"mdi:blinds-open",cover_awning:"mdi:awning-outline",cover_tilt:"mdi:blinds-open"},Fe={cover_blind:"mdi:blinds-horizontal-closed",cover_awning:"mdi:window-closed-variant",cover_tilt:"mdi:blinds"},je={calculated:"solar",admit_no_glare:"glare_zone",privacy:"privacy",sunset:"sunset",climate_open_heat:"climate",climate_block_heat:"climate",climate_tilt_preset:"climate",climate_default:"climate"},Ne={auto:{bg:"rgba(76, 175, 80, 0.18)",fg:"#2e7d32"},manual:{bg:"rgba(255, 152, 0, 0.22)",fg:"#e65100"},climate:{bg:"rgba(0, 150, 136, 0.22)",fg:"#00695c"},glare_zone:{bg:"rgba(244, 67, 54, 0.22)",fg:"#b71c1c"},privacy:{bg:"rgba(103, 58, 183, 0.22)",fg:"#4527a0"},sunset:{bg:"rgba(255, 112, 67, 0.22)",fg:"#bf360c"},solar:{bg:"rgba(76, 175, 80, 0.22)",fg:"#1b5e20"},off:{bg:"rgba(97, 97, 97, 0.28)",fg:"#212121"},off_schedule:{bg:"rgba(96, 125, 139, 0.22)",fg:"#37474f"}},Pe={auto:"badge.auto",manual:"badge.manual",climate:"badge.climate",glare_zone:"badge.glare_zone",privacy:"badge.privacy",sunset:"badge.sunset",solar:"badge.solar",off:"badge.off",off_schedule:"badge.off_schedule"},Ke={auto:"mdi:autorenew",manual:"mdi:hand-back-right",climate:"mdi:thermostat",glare_zone:"mdi:weather-sunny-alert",privacy:"mdi:shield-home",sunset:"mdi:weather-sunset-down",solar:"mdi:white-balance-sunny",off:"mdi:power",off_schedule:"mdi:clock-alert-outline"},De={integration_enabled:!0,automatic_control:!0,reset_manual_override:!0},Be={"sensor:Cover Position":"target_position_sensor","sensor:Start Sun":"start_sensor","sensor:End Sun":"end_sensor","sensor:Control Method":"control_status_sensor","binary_sensor:Sun Infront":"sun_infront_binary","binary_sensor:Manual Override":"manual_override_binary","switch:Toggle Control":"automatic_control_switch","switch:Manual Override":"manual_toggle_switch","switch:Climate Mode":"climate_mode_switch","button:Reset Manual Override":"reset_override_button"},We={handler:{privacy:"Privacy",climate_open_heat:"Climate · warm up",climate_block_heat:"Climate · block heat",climate_tilt_preset:"Climate · tilt preset",climate_default:"Climate · default",admit_no_glare:"Warmth, no glare",shaded_by_overhang:"Shaded by overhang",sunset:"Sunset",calculated:"Sun tracking",default:"Default"},badge:{auto:"Auto",manual:"Manual",climate:"Climate",glare_zone:"No glare",privacy:"Privacy",sunset:"Sunset",solar:"Solar tracking",off:"Off",off_schedule:"Off-schedule"},forecast:{event:{calculated:"Sun tracking begins",default:"Default position",sunset:"Sunset position",privacy:"Privacy position"},hover_hint:"Hover the curve for time + forecast position; hover a colored line for the intent change it marks.",solar_only_note:"Forecast assumes current temperature/presence/weather persist — manual overrides are not reflected."},dialog:{window_settings:"Window settings",open_device_page:"Open device page",close:"Close",target:"Target",resume_auto:"Resume Auto",hide_advanced:"▼ Hide advanced",show_advanced:"▶ Advanced",on:"On",off:"Off",controls:"Controls",automatic:"Automatic",climate:"Climate",manual_detection:"Manual detection",toggle_hint:"{label} {state} — tap to toggle",state_on:"on",state_off:"off",todays_forecast:"Today's forecast",last_moves:"Recent moves",move_blocked:"move blocked by {gate}"},overrides:{title:"Overrides",manual:"Manual",active:"Active",off:"Off",ends_in:"ends in {time}",active_count:"{count} active",timeout:"expires in {time}",reset_manual:"Return to Auto",resume_confirm:"Resume automatic control? This shade will move back to its automatic position.",resume_confirm_pos:"Resume automatic control? This shade will move to {position}% now."},climate:{title:"Climate",active:"Active: {strategy}",indoor:"Indoor",outdoor:"Outdoor",presence:"Presence",sunny:"Sunny",lux:"Lux",irradiance:"Irradiance",mode_off:"Climate mode off",standby:"Standby",threshold_low:"low",threshold_high:"high",threshold_summer_outside:"summer",reason:{outside_time_window:"Outside the operating time window",thresholds_not_met:"Temperatures within the comfort band — no action needed",other_mode_active:"Another control mode is currently active",readings_unavailable:"Temperature readings unavailable",mode_off:"Climate mode is turned off"}},compass:{placeholder_no_entries:"No Adaptive Cover entries selected.",placeholder_no_sun:"Sun sensor not yet populated.",sun_tooltip:"Sun: {az} az / {el} el",sunrise_tooltip:"Sunrise: {time}",sunset_tooltip:"Sunset: {time}",moon_tooltip:"Moon: {phase} ({pct}%)",sun_path_tooltip:"Sun path (today)",in_fov_check:"✓ in FOV",in_fov:"in FOV",in_fov_tooltip:"Sun is currently within this window’s field of view",none:"—",sun:"Sun",moon:"Moon",sun_up_not_hitting:"Sun (up, not hitting)",sun_below_horizon:"Sun (below horizon)",window_fov:"Window FOV",sun_path:"Sun path",sunrise:"Sunrise",sunset:"Sunset",cover_target:"Cover target",cover_held:"Cover position (held)",window_normal:"Window azimuth",stat_sun:"Sun: ",stat_azi:"Azi: ",stat_elev:"Elev: ",stat_window:"Window: ",active_sun_arc:"Active sun arc {from} – {to}{elev}",fov_arc:"FOV {left} left / {right} right{elev}",window_normal_tooltip:"Window azimuth: {bearing}",cover_position_target:"Target: {pct}%",cover_position_target_awning:"Target (extended): {pct}%",cover_position_actual:"Actual: {pct}%",blind_spot:"Blind spot: {from} – {to}",elev_suffix:" · elev {min}–{max}"},covers:{placeholder:"No covers reported by the integration.",title:"Covers",target:"Target: {pct}",target_solar:"Solar target: {pct}",click_to_set:"Click to set position",target_tooltip:"Target {pct}%",target_tooltip_override:"Would-be solar target {pct}% — cover is held by manual override",tilt_title:"Tilt",tilt_target:"Tilt: {pct}",tilt_click_to_set:"Click to set tilt",tilt_target_tooltip:"Tilt target {pct}%"},decision:{placeholder:"Decision trace not yet populated.",pipeline:"Pipeline",winner:"Winner: {name}",summary_tooltip:"Why this position?",not_evaluated:"not evaluated",floor_suffix:" floor",outside_schedule:"Outside schedule — automatic control paused",outside_schedule_tooltip:"The configured schedule window is not active, so automatic positioning is paused.",solar_would_be:"solar {pct}",next_change_in:"Next adjustment allowed in {time}"},solar:{title:"Solar Calculation",axis_position:"Position axis",axis_tilt:"Tilt axis",group_inputs:"Inputs",group_intermediates:"Intermediates",group_output:"Output",show_all:"Show all {count} values",show_less:"Show less",no_target:"No solar target — {status}",status:{direct_sun:"Direct sun",fov_exit:"Default · FOV exit",elevation_limit:"Default · elevation limit",sunset_offset:"Default · sunset offset",blind_spot:"Default · blind spot",default:"Default"},field:{sol_elev_deg:"Sun elevation",gamma_deg:"Relative azimuth (γ)",position_pct:"Position",effective_distance_m:"Effective distance",adjusted_height_m:"Adjusted height",safety_margin:"Safety margin",awn_angle_deg:"Awning angle",vertical_position_m:"Vertical position",length_m:"Extension length",slat_angle_raw_deg:"Slat angle",tilt_mode:"Tilt mode",max_degrees:"Max angle"}},header:{on:"ON",off:"OFF",integration_enabled:"Integration Enabled",auto:"Auto",automatic_control:"Automatic Control"},tile:{battery:"Shade battery",motion_pending:"Motion timeout pending",motion_detected:"Motion detected",open:"Open",stop:"Stop",close:"Close",resume_aria:"Resume automatic control",registry_failed:"Registry fetch failed: {error}",loading:"Loading…",entry_not_found:"Adaptive Cover window {entry} not found."},formatters:{expired:"expired"},elevation:{title:"Sun today",fov_window:"FOV: {from} → {to}",fov_windows:"FOV: {windows}",fov_window_named:"{name}: {windows}",no_fov_today:"Sun does not enter FOV today",placeholder:"Sun elevation chart unavailable.",schedule:"Schedule {from} – {to}",schedule_from:"Schedule from {from}",schedule_until:"Schedule until {to}",schedule_start_tooltip:"Schedule start",schedule_end_tooltip:"Schedule end"},root:{loading_registry:"Loading Adaptive Cover registry…",no_entities_title:"No Adaptive Cover entities found",footer_version:"adaptive-cover-card v{version}",compass_no_match:"No matching Adaptive Cover entities",compass_configured:"Configured windows: {entries}",compass_not_found:"Windows not found: {entries}"},editor:{common:{window:"Window",title_optional:"Title (optional)",title_placeholder:"e.g. West-facing windows",north_offset:"Compass north offset (°)",north_offset_hint:'Rotate the compass clockwise so "up" matches your map. Default: 0.',loading_entries:"Loading Adaptive Cover windows…",load_failed:"Failed to load the windows: {error}",no_entries:"No Adaptive Cover windows found. Add a window under",no_entries_path:"Settings → Devices & Services",no_entries_then:", then come back.",window_manual_placeholder:"Enter the window key (window_key attribute)",window_fallback_label:"Window key",unknown_entry:"(unknown: {entry})",reset:"Reset"},main:{sections:"Sections",sections_hint:"Toggle which parts of the card are shown.",section_sky_label:"Sky compass",section_sky_desc:"Sun vs. window FOV, polar plot",section_elevation_label:"Sun today",section_elevation_desc:"Elevation-vs-time chart with FOV band and current-time cursor",section_decision_label:"Decision strip",section_decision_desc:"The engine decision trace with the winning step highlighted",section_covers_label:"Cover positions",section_covers_desc:"Per-cover live vs. target bars; click to set position",section_overrides_label:"Overrides panel",section_overrides_desc:"Manual override tile + reset button",section_climate_label:"Climate panel",section_climate_desc:"Summer/winter/intermediate strategy; shows standby when climate mode is off or inactive",controls:"Controls",controls_hint:"Render as read-only (visible but not clickable).",automatic_pill_label:"Automatic Control pill",automatic_pill_desc:"Allow toggling automatic control from the card header.",reset_button_label:"Reset Manual Override button",reset_button_desc:"Allow pressing the reset tile in the overrides panel.",display:"Display",compact_label:"Compact mode",compact_desc:"Tighter spacing between sections.",show_compass_stats_label:"Show compass stats",show_compass_stats_desc:"Azi, Elev, ∠, and Window angle below the sky compass.",show_compass_legend_label:"Show compass legend",show_compass_legend_desc:"Color key below the sky compass.",show_moon_label:"Show moon on compass",show_moon_desc:"Moon position and phase overlay on the sky compass.",hide_inactive_label:"Hide inactive handlers",hide_inactive_desc:"Show only the winner and actively matched pipeline handlers."},tile:{name:"Title override",icon:"Icon override",cover:"Cover entity",layout:"Layout",show_position:"Show position %",show_state:"Show state (Open/Closed)",show_decision_summary:"Show decision summary",show_controls:"Show ↑■▼ controls",show_badge:"Show contextual badge",badge_section:"Badges",badge_auto:"Auto",badge_solar:"Solar tracking",badge_manual:"Manual override",badge_climate:"Climate",badge_glare_zone:"No glare",badge_privacy:"Privacy",badge_sunset:"Sunset",show_compass:"Show sun compass in dialog",show_elevation_chart:"Show sun-today chart in dialog",tap_action:"Tap action",hold_action:"Hold action",double_tap_action:"Double-tap action",cover_blank_hint:"Leave blank to use the first managed cover automatically.",layout_option_one_line:"One line (compact)",layout_option_detailed:"Detailed (title, state, indicators)"},compass:{instances:"Windows",instances_hint:"Pick one or more. Each selected window adds an overlay to the compass.",cover_colors:"Cover colors",cover_colors_hint:"Override the default palette color for each overlay.",default_color:"default",display:"Display",toggle_compact_label:"Compact mode",toggle_compact_desc:"Smaller SVG, legend hidden.",toggle_legend_label:"Legend",toggle_legend_desc:"Color swatches + entry labels below compass.",toggle_stats_label:"Stats",toggle_stats_desc:"Sun + per-window numeric rows.",toggle_moon_label:"Moon",toggle_moon_desc:"Render moon position and phase.",toggle_cardinals_label:"Cardinal labels",toggle_cardinals_desc:"N/E/S/W letters around the compass.",toggle_blind_spot_label:"Blind spots",toggle_blind_spot_desc:"Hatched wedges for each window’s blind range.",toggle_sun_path_label:"Sun path",toggle_sun_path_desc:"Today’s sun arc across the sky.",toggle_sunrise_sunset_label:"Sunrise / sunset markers",toggle_sunrise_sunset_desc:"Small dots at rise and set azimuths.",toggle_cover_fill_label:"Cover closure fill",toggle_cover_fill_desc:"Inner wedge showing how closed each cover is.",toggle_window_arrow_label:"Window-normal arrow",toggle_window_arrow_desc:"Line from center toward each window’s azimuth.",toggle_elevation_chart_label:"Sun-today chart",toggle_elevation_chart_desc:"Elevation-vs-time chart below the compass, with FOV band and elevation limits."},decision:{title:"Title (optional)",compact_label:"Compact mode",compact_desc:"Tighter rows; also hides inactive handlers.",hide_inactive_handlers_label:"Hide inactive handlers",hide_inactive_handlers_desc:"Show only the winner and actively matched pipeline handlers.",show_decision_summary_label:"Show decision summary",show_decision_summary_desc:'Render a plain-English "Why this position?" sentence above the strip.'},house:{title:"Title",title_help:"Default: Shades.",floors:"Floors",floors_help:"Show only these floors. Leave empty for the whole house.",areas:"Rooms",areas_help:"Show only these rooms (added to the floors above).",layout:"Layout",layout_help:"Automatic uses the phone layout when the card is narrow.",layout_auto:"Automatic",layout_wide:"Wide",layout_narrow:"Phone",show_upcoming:'Show "Coming up"'}},house:{card_name:"Adaptive Cover house",card_description:"Every window by floor and room, with Auto / Hold / Off for the house, each room and each window.",title:"Shades",count:{window_one:"{n} window",window_other:"{n} windows",room_one:"{n} room",room_other:"{n} rooms",floor_one:"{n} floor",floor_other:"{n} floors"},sun_up:"Sun {azimuth}° · {elevation}° up · sets {time}",sun_up_short:"{elevation}° up · sets {time}",sun_down:"Sun down · rises {time}",sun_down_plain:"Sun down",whole_house:"Whole house",these_windows:"These windows",all_auto:"All on auto",all_hold:"All on hold",all_off:"All off",mixed_long:"Mixed: {auto} auto, {hold} hold, {off} off",mixed_short:"{auto} auto · {hold} hold · {off} off",return_all:"Return all to auto",open_all:"Open all",close_all:"Close all",climate:"Climate",climate_state:{summer:"Cooling",winter:"Heating",intermediate:"Mild",on:"On",off:"Off",mixed:"On for {on} of {total}"},settings:"House settings",settings_short:"Settings",mode:{auto:"Auto",hold:"Hold",off:"Off",mixed:"Mixed"},house_mode_label:"House mode",room_mode_label:"{room} mode",window_mode_label:"Window mode",hold_disabled:"Hold starts when a shade is moved by hand or with Open or Close. It ends after the manual-override time, or when you pick Auto.",filter:{label:"Filter windows",all:"All {n}",sun:"Sun on glass · {n}",hold:"On hold · {n}",off:"Off · {n}"},room_sun:"sun on {n}",room_mixed:"mixed",sun_on_glass:"Sun on the glass",chip_hold_left:"Hold · {left}",left_under_minute:"under 1m",next:{move:"Next: {position} at {time}",change:"Next change at {time}",none:"No change planned",hold:"Back to auto in {left}",hold_unknown:"On hold",off:"Automatic control is off",unavailable:"Unavailable"},why:{title:"Why this position",hold:"Someone moved this shade, so it is on hold until {time}. Auto takes over again after that.",hold_unknown:"Someone moved this shade, so it is on hold. Pick Auto to return it now.",off:"Automatic control is off for this window. It moves only when someone moves it.",none:"No decision recorded yet.",steps:"Show the steps"},sheet:{label:"Window details",close:"Close window details",open:"Open",stop:"Stop",close_cover:"Close",mode:"Mode",open_word:"open",target:"Target {position}",hold_hint:"To hold this shade, move it with Open or Close. Auto takes over again after the manual-override time.",setup:"Window setup",setup_hint:"Cover, direction, size. Set once.",faces:"Faces {deg}° {dir}"},upcoming:{title:"Coming up",today:"next 24 h",follows:"Moves to {position}",changes:"Changes position",sunset:"Sunset",sunset_detail:"Windows on auto go to their evening position"},empty:"No Adaptive Cover windows found. Add a window under Settings → Devices & services.",empty_filter:"No windows match this filter.",action_failed:"Adaptive Cover: {message}",strategy_name:"Adaptive Cover shades",strategy_description:"A dashboard with every Adaptive Cover window, by floor and room."}};function Ve(e,t){const o=function(e){let t=We;for(const o of e.split(".")){if("object"!=typeof t||null===t)return;t=t[o]}return"string"==typeof t?t:void 0}(e);return void 0===o?e:function(e,t){return t?e.replace(/\{(\w+)\}/g,(e,o)=>Object.prototype.hasOwnProperty.call(t,o)?String(t[o]):e):e}(o,t)}const Ge=e=>(...t)=>({_$litDirective$:e,values:t});class Ue{constructor(e){}get _$AU(){return this._$AM._$AU}_$AT(e,t,o){this._$Ct=e,this._$AM=t,this._$Ci=o}_$AS(e,t){return this.update(e,t)}update(e,t){return this.render(...t)}}const Le=(e,t)=>{const o=e._$AN;if(void 0===o)return!1;for(const e of o)e._$AO?.(t,!1),Le(e,t);return!0},Ye=e=>{let t,o;do{if(void 0===(t=e._$AM))break;o=t._$AN,o.delete(e),e=t}while(0===o?.size)},He=e=>{for(let t;t=e._$AM;e=t){let o=t._$AN;if(void 0===o)t._$AN=o=new Set;else if(o.has(e))break;o.add(e),Xe(t)}};function Qe(e){void 0!==this._$AN?(Ye(this),this._$AM=e,He(this)):this._$AM=e}function qe(e,t=!1,o=0){const i=this._$AH,s=this._$AN;if(void 0!==s&&0!==s.size)if(t)if(Array.isArray(i))for(let e=o;e<i.length;e++)Le(i[e],!1),Ye(i[e]);else null!=i&&(Le(i,!1),Ye(i));else Le(this,e)}const Xe=e=>{2==e.type&&(e._$AP??=qe,e._$AQ??=Qe)};class Je extends Ue{constructor(){super(...arguments),this._$AN=void 0}_$AT(e,t,o){super._$AT(e,t,o),He(this),this.isConnected=e._$AU}_$AO(e,t=!0){e!==this.isConnected&&(this.isConnected=e,e?this.reconnected?.():this.disconnected?.()),t&&(Le(this,e),Ye(this))}setValue(e){if((()=>void 0===this._$Ct.strings)())this._$Ct._$AI(e,this);else{const t=[...this._$Ct._$AH];t[this._$Ci]=e,this._$Ct._$AI(t,this,0)}}disconnected(){}reconnected(){}}const Ze=[12,16];function et(e,t,o=0){const i=(e-90+o)*Math.PI/180;return{x:t*Math.cos(i),y:t*Math.sin(i)}}function tt(e){return 1-Math.max(0,Math.min(90,e))/90}function ot(e,t,o,i=0,s=0){const n=e=>(e%360+360)%360,r=n(e),a=n(t);let l=a-r;l<0&&(l+=360);const c=l>180?1:0,d=et(r,o,s),h=et(a,o,s);if(i<=0)return`M 0 0 L ${d.x} ${d.y} A ${o} ${o} 0 ${c} 1 ${h.x} ${h.y} Z`;const u=et(a,i,s),p=et(r,i,s);return[`M ${d.x} ${d.y}`,`A ${o} ${o} 0 ${c} 1 ${h.x} ${h.y}`,`L ${u.x} ${u.y}`,`A ${i} ${i} 0 ${c} 0 ${p.x} ${p.y}`,"Z"].join(" ")}function it(e,t,o=0){return et(e,tt(t),o)}function st(e){return(e%360+360)%360}function nt(e,t,o,i){const s=i??0;let n=-1,r=-1;for(let i=t;i<=o&&i<e.length;i++)e[i].elevation>s&&(-1===n&&(n=i),r=i);return-1===n?null:{wedgeStart:e[n].azimuth,wedgeEnd:e[r].azimuth}}function rt(e,t,o){const i=(e-t)/864e5;return Math.max(0,Math.min(o,i*o))}function at(e,t,o){return((e-t)%360+360)%360<=((o-t)%360+360)%360}function lt(e,t,o,i){return at(o,e,t)||at(i,e,t)||at(e,o,i)||at(t,o,i)}function ct(e,t,o,i){const s="cover_awning"===t?e/100:1-e/100;return Math.min(o*s,i)}function dt(e,t){return e<.5?-4*t*e:4*t*(1-e)}function ht(e,t,o,i,s){const n=et(o,1),r=-n.y,a=n.x,l=e-n.x*i,c=t-n.y*i;return`M ${e} ${t} L ${l+r*s} ${c+a*s} L ${l-r*s} ${c-a*s} Z`}let ut=class extends ce{constructor(){super(...arguments),this.text="",this.cursorX=0,this.cursorY=0,this.offset=Ze,this.visible=!1,this._x=0,this._y=0}connectedCallback(){super.connectedCallback(),this.hasAttribute("role")||this.setAttribute("role","tooltip")}updated(){if(!this.visible)return;this.setAttribute("aria-hidden","false");const e=this.shadowRoot?.querySelector(".bubble"),t=e?.offsetWidth??0,o=e?.offsetHeight??0,i="undefined"!=typeof window?window.innerWidth:0,s="undefined"!=typeof window?window.innerHeight:0,{x:n,y:r}=function(e){const{cursorX:t,cursorY:o,ttW:i,ttH:s,vpW:n,vpH:r}=e,[a,l]=e.offset??Ze;let c=t+a,d=!1;c+i>n&&(c=t-a-i,d=!0),c<0&&(c=0);let h=o+l;return h+s>r&&(h=o-l-s),h<0&&(h=0),{x:c,y:h,flipped:d}}({cursorX:this.cursorX,cursorY:this.cursorY,ttW:t,ttH:o,vpW:i,vpH:s,offset:this.offset});n!==this._x&&(this._x=n),r!==this._y&&(this._y=r)}render(){return this.visible?G`<div class="bubble" style="transform: translate3d(${this._x}px, ${this._y}px, 0)">
       ${this.text}
-    </div>`:(this.setAttribute("aria-hidden","true"),L)}};ct.styles=r`
+    </div>`:(this.setAttribute("aria-hidden","true"),Y)}};ut.styles=r`
     :host {
       position: fixed;
       top: 0;
@@ -28,17 +28,17 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
       white-space: normal;
       word-break: break-word;
     }
-  `,e([ge({type:String})],ct.prototype,"text",void 0),e([ge({type:Number})],ct.prototype,"cursorX",void 0),e([ge({type:Number})],ct.prototype,"cursorY",void 0),e([ge({attribute:!1})],ct.prototype,"offset",void 0),e([ge({type:Boolean,reflect:!0})],ct.prototype,"visible",void 0),e([_e()],ct.prototype,"_x",void 0),e([_e()],ct.prototype,"_y",void 0),ct=e([he("acp-floating-tooltip")],ct);const dt={enabled:!0,offset:qe,delay:400};function ht(e){void 0!==e.enabled&&(dt.enabled=e.enabled),void 0!==e.offset&&(dt.offset=e.offset),void 0!==e.delay&&(dt.delay=e.delay)}const pt="acp-floating-tooltip-bubble",ut=new class{constructor(){this._el=null,this._refs=0}get id(){return pt}retain(){this._refs+=1,this._ensure()}release(){this._refs=Math.max(0,this._refs-1)}_ensure(){if("undefined"==typeof document)return null;if(this._el&&this._el.isConnected)return this._el;const e=document.createElement("acp-floating-tooltip");return e.id=pt,document.body.appendChild(e),this._el=e,e}show(e,t,i,o){const s=this._ensure();s&&(s.text=e,s.cursorX=t,s.cursorY=i,s.offset=o,s.visible=!0)}move(e,t){this._el&&this._el.visible&&(this._el.cursorX=e,this._el.cursorY=t)}hide(){this._el&&(this._el.visible=!1)}_reset(){this._el&&this._el.parentNode&&this._el.parentNode.removeChild(this._el),this._el=null,this._refs=0}},gt=Be(class extends He{constructor(e){if(super(e),this._el=null,this._text="",this._offset=qe,this._delay=400,this._enabled=!0,this._openTimer=null,this._shown=!1,this._retained=!1,this._lastX=0,this._lastY=0,this._onEnter=e=>this._handleEnter(e),this._onMove=e=>this._handleMove(e),this._onLeave=()=>this._dismiss(),this._onFocus=()=>this._handleFocus(),this._onBlur=()=>this._dismiss(),this._onKey=e=>{"Escape"===e.key&&this._dismiss()},this._onScroll=()=>this._dismiss(),6!==e.type)throw new Error("tooltip() can only be used as an element-part directive")}render(e,t){return L}update(e,[t,i]){const o=e.element;return this._text=t??"",this._offset=i?.offset??dt.offset,this._delay=i?.delay??dt.delay,this._enabled=i?.enabled??dt.enabled,this._el!==o?(this._teardown(),this._el=o,this._wire()):this._applyAttributes(),this.render(t,i)}_wire(){const e=this._el;e&&(this._applyAttributes(),this._enabled&&(ut.retain(),this._retained=!0,e.addEventListener("pointerenter",this._onEnter),e.addEventListener("pointermove",this._onMove),e.addEventListener("pointerleave",this._onLeave),e.addEventListener("focusin",this._onFocus),e.addEventListener("focusout",this._onBlur),e.addEventListener("keydown",this._onKey),window.addEventListener("scroll",this._onScroll,!0)))}_applyAttributes(){const e=this._el;e&&(this._enabled?(e.removeAttribute("title"),e.setAttribute("data-tooltip",this._text),e.setAttribute("aria-describedby",ut.id)):(e.removeAttribute("data-tooltip"),e.removeAttribute("aria-describedby"),e.removeAttribute("acp-tt-shown"),e.setAttribute("title",this._text)))}_handleEnter(e){this._lastX=e.clientX,this._lastY=e.clientY,this._armOpen()}_handleFocus(){const e=this._el;if(e&&"function"==typeof e.getBoundingClientRect){const t=e.getBoundingClientRect();this._lastX=t.left+t.width/2,this._lastY=t.bottom}this._armOpen()}_armOpen(){null===this._openTimer&&(this._openTimer=setTimeout(()=>{this._openTimer=null,this._open()},this._delay))}_open(){this._el&&(ut.show(this._text,this._lastX,this._lastY,this._offset),this._shown=!0,this._el.setAttribute("acp-tt-shown",""))}_handleMove(e){this._lastX=e.clientX,this._lastY=e.clientY,this._shown&&ut.move(this._lastX,this._lastY)}_dismiss(){null!==this._openTimer&&(clearTimeout(this._openTimer),this._openTimer=null),this._shown&&(ut.hide(),this._shown=!1),this._el?.removeAttribute("acp-tt-shown")}_teardown(){const e=this._el;e&&(this._dismiss(),e.removeEventListener("pointerenter",this._onEnter),e.removeEventListener("pointermove",this._onMove),e.removeEventListener("pointerleave",this._onLeave),e.removeEventListener("focusin",this._onFocus),e.removeEventListener("focusout",this._onBlur),e.removeEventListener("keydown",this._onKey),"undefined"!=typeof window&&window.removeEventListener("scroll",this._onScroll,!0),this._retained&&(ut.release(),this._retained=!1),this._el=null)}disconnected(){this._teardown()}reconnected(){this._wire()}});function _t(e){return"string"==typeof e&&e.length>0}function mt(e){return e?_t(e.window)?{kind:"window",key:e.window}:_t(e.entry_id)?{kind:"entry",key:e.entry_id}:_t(e.cover)?{kind:"cover",entity_id:e.cover}:null:null}function vt(e){if(!e)return[];const t=[];for(const i of e.windows??[])_t(i)&&t.push({kind:"window",key:i});for(const i of e.covers??[])_t(i)&&t.push({kind:"cover",entity_id:i});for(const i of e.entry_ids??[])_t(i)&&t.push({kind:"entry",key:i});return t}function ft(e){return"cover"===e.kind?`cover:${e.entity_id}`:e.key}function yt(e){return"cover"===e.kind?e.entity_id:e.key}function wt(e,t){const i={...e,window:t};return delete i.entry_id,i}function bt(e){return e?_t(e.window)?e.window:_t(e.entry_id)?e.entry_id:"":""}const xt=(()=>{const e={};for(const[t,i]of Object.entries(Pe)){const o=t.indexOf(":"),s=t.slice(0,o);(e[s]??(e[s]=[])).push({suffix:t.slice(o+1),role:i})}for(const t of Object.values(e))t.sort((e,t)=>t.suffix.length-e.suffix.length);return e})(),$t=new Set(["cover_blind","cover_awning","cover_tilt"]),kt=new WeakMap;function At(e){if(e.platform!==Ce||"string"!=typeof e.unique_id)return null;const t=e.entity_id.split(".")[0];for(const{suffix:i,role:o}of xt[t]??[]){const t=`_${i}`;if(e.unique_id.length>t.length&&e.unique_id.endsWith(t))return{key:e.unique_id.slice(0,-t.length),role:o}}return null}function Ct(e){const t=kt.get(e);if(t)return t;const i=new Map;for(const t of e){const e=At(t);if(!e)continue;let o=i.get(e.key);o||(o={key:e.key,entities:{}},i.set(e.key,o)),o.entities[e.role]||(o.entities[e.role]=t.entity_id),"target_position_sensor"!==e.role||o.position||(o.position=t,t.device_id&&(o.deviceId=t.device_id)),!o.deviceId&&t.device_id&&(o.deviceId=t.device_id)}const o={byKey:i,withPosition:[...i.values()].filter(e=>e.position)};return kt.set(e,o),o}function Et(e,t){const i=t.position?.entity_id;return i?e.states[i]?.attributes:void 0}function St(e){return"string"==typeof e&&e.length>0}function Ot(e){const t=St(e?.cover_entity)?e.cover_entity:null,i=Array.isArray(e?.cover_entities)?e.cover_entities.filter(St):[],o=t?[t,...i]:i;return[...new Set(o)]}function zt(e){return[...new Set([...Object.keys(e?.last_moves??{}),...Object.keys(e?.move_blocked_by??{})])].sort()}function Mt(e,t){const i=Et(e,t)?.window_key;return{rows:t,windowKey:St(i)?i:t.key}}function It(e,t,i){if("cover"===t.kind){const o=t.entity_id;for(const t of i.withPosition)if(Et(e,t)?.cover_entity===o)return Mt(e,t);for(const t of i.withPosition)if(Ot(Et(e,t)).includes(o))return Mt(e,t);for(const t of i.withPosition){const i=Et(e,t);if(!(Ot(i).length>0)&&zt(i).includes(o))return Mt(e,t)}return null}for(const o of i.withPosition)if(Et(e,o)?.window_key===t.key)return{rows:o,windowKey:t.key};const o=i.byKey.get(t.key);return o?{rows:o,windowKey:t.key}:null}function Tt(e,t){const i=e.devices;if(i){const e=t.rows.deviceId?i[t.rows.deviceId]:void 0;if(e)return e.name_by_user||e.name||t.windowKey;if(!t.rows.deviceId)for(const e of Object.values(i))if(e.config_entries?.includes(t.windowKey))return e.name_by_user||e.name||t.windowKey}return t.windowKey}function Ft(e,t){const i=Et(e,t.rows),o=Ot(i),s=o.length>0?o:zt(i);let n="cover_blind";if(St(i?.cover_type)&&$t.has(i.cover_type))n=i.cover_type;else if(s.length>0){const t=s.every(t=>{const i=e.states[t]?.attributes;return void 0!==i?.current_tilt_position&&void 0===i?.current_position});t&&(n="cover_tilt")}return{window_key:t.windowKey,entry_id:t.windowKey,entry_title:Tt(e,t),cover_type:n,entities:{...t.rows.entities},managed_covers:s,device_id:t.rows.deviceId,config_entry_id:t.rows.position?.config_entry_id??null,config_subentry_id:t.rows.position?.config_subentry_id??null}}function Rt(e){return e?"kind"in e&&"string"==typeof e.kind?e:mt(e):null}function jt(e,t,i){const o=Rt(t);if(!o)return null;const s=It(e,o,Ct(i));return s?Ft(e,s):null}function Nt(e,t,i){const o=Rt(t);if(!o)return[];const s=It(e,o,Ct(i));if(!s)return[];const n=`${s.rows.key}_`;return i.filter(e=>e.platform===Ce&&e.unique_id?.startsWith(n))}function Pt(){let e=null;return(t,i,o)=>{const s=Rt(i),n=s?It(t,s,Ct(o)):null;if(!n)return e=null,null;const r=t.devices,a=n.rows.entities.target_position_sensor,l=n.rows.entities.control_status_sensor,c=a?t.states[a]:void 0,d=l?t.states[l]:void 0;if(null!==e&&e.registry===o&&e.rows===n.rows&&e.windowKey===n.windowKey&&e.devices===r&&e.posState===c&&e.ctrlState===d)return e.result;const h=Ft(t,n);return e={registry:o,rows:n.rows,windowKey:n.windowKey,devices:r,posState:c,ctrlState:d,result:h},h}}async function Kt(e){return e.callWS({type:"config/entity_registry/list"})}function Dt(e,t){let i=null,o=!1;return e.connection.subscribeEvents(e=>t(e.data),"entity_registry_updated").then(e=>{o?e():i=e}).catch(()=>{}),()=>{o=!0,i&&i()}}let Bt=null,Vt=null;function Gt(){return Bt}function Wt(e,t=!1){if(Vt)return Vt;if(!t&&Bt)return Promise.resolve(Bt);const i=Kt(e).then(e=>(Bt=e,Vt=null,e)).catch(e=>{throw Vt=null,e});return Vt=i,i}async function Ut(e){try{const t=await e.callWS({type:"config_entries/get",domain:Ce}),i={};for(const e of Array.isArray(t)?t:[])e?.domain===Ce&&e.entry_id&&e.title&&(i[e.entry_id]=e.title);return i}catch{return{}}}async function Yt(e){const[t,i]=await Promise.all([Wt(e),Ut(e)]);return function(e,t,i={}){const o=[];for(const s of Ct(t).withPosition){if(s.position?.disabled_by)continue;const t=Mt(e,s);let n=Tt(e,t);n===t.windowKey&&i[t.windowKey]&&(n=i[t.windowKey]);const r={window_key:t.windowKey,title:n},a=Ot(Et(e,s))[0];a&&(r.cover=a),o.push(r)}return o.sort((e,t)=>e.title.localeCompare(t.title)||e.window_key.localeCompare(t.window_key))}(e,Array.isArray(t)?t:[],i)}function Lt(e){return`acp-card:registry:v1:${e}`}const Qt={get(e){try{const t=localStorage.getItem(Lt(e));if(!t)return null;const i=JSON.parse(t);return 1!==i.schemaVersion?null:i.entries?.length?"number"==typeof i.fetchedAt&&Date.now()-i.fetchedAt>6e4?null:i:null}catch{return null}},set(e,t){if(0!==t.length)try{const i={schemaVersion:1,cardVersion:ve,fetchedAt:Date.now(),entries:t};localStorage.setItem(Lt(e),JSON.stringify(i))}catch{}},invalidate(e){try{localStorage.removeItem(Lt(e))}catch{}},clear(){try{const e="acp-card:registry:v1:",t=[];for(let i=0;i<localStorage.length;i++){const o=localStorage.key(i);o?.startsWith(e)&&t.push(o)}t.forEach(e=>localStorage.removeItem(e))}catch{}}};function Ht(e){return`${e.entity_id}|${e.unique_id}|${e.platform}|${e.config_entry_id??""}`}let qt=class extends ce{constructor(){super(...arguments),this.on=!1,this.readonly=!1,this.label="",this.title=""}_handleClick(){this.readonly||this.dispatchEvent(new CustomEvent("pill-click",{bubbles:!0,composed:!0}))}render(){return W`
+  `,e([ge({type:String})],ut.prototype,"text",void 0),e([ge({type:Number})],ut.prototype,"cursorX",void 0),e([ge({type:Number})],ut.prototype,"cursorY",void 0),e([ge({attribute:!1})],ut.prototype,"offset",void 0),e([ge({type:Boolean,reflect:!0})],ut.prototype,"visible",void 0),e([me()],ut.prototype,"_x",void 0),e([me()],ut.prototype,"_y",void 0),ut=e([he("acp-floating-tooltip")],ut);const pt={enabled:!0,offset:Ze,delay:400};function gt(e){void 0!==e.enabled&&(pt.enabled=e.enabled),void 0!==e.offset&&(pt.offset=e.offset),void 0!==e.delay&&(pt.delay=e.delay)}const mt="acp-floating-tooltip-bubble",ft=new class{constructor(){this._el=null,this._refs=0}get id(){return mt}retain(){this._refs+=1,this._ensure()}release(){this._refs=Math.max(0,this._refs-1)}_ensure(){if("undefined"==typeof document)return null;if(this._el&&this._el.isConnected)return this._el;const e=document.createElement("acp-floating-tooltip");return e.id=mt,document.body.appendChild(e),this._el=e,e}show(e,t,o,i){const s=this._ensure();s&&(s.text=e,s.cursorX=t,s.cursorY=o,s.offset=i,s.visible=!0)}move(e,t){this._el&&this._el.visible&&(this._el.cursorX=e,this._el.cursorY=t)}hide(){this._el&&(this._el.visible=!1)}_reset(){this._el&&this._el.parentNode&&this._el.parentNode.removeChild(this._el),this._el=null,this._refs=0}},_t=Ge(class extends Je{constructor(e){if(super(e),this._el=null,this._text="",this._offset=Ze,this._delay=400,this._enabled=!0,this._openTimer=null,this._shown=!1,this._retained=!1,this._lastX=0,this._lastY=0,this._onEnter=e=>this._handleEnter(e),this._onMove=e=>this._handleMove(e),this._onLeave=()=>this._dismiss(),this._onFocus=()=>this._handleFocus(),this._onBlur=()=>this._dismiss(),this._onKey=e=>{"Escape"===e.key&&this._dismiss()},this._onScroll=()=>this._dismiss(),6!==e.type)throw new Error("tooltip() can only be used as an element-part directive")}render(e,t){return Y}update(e,[t,o]){const i=e.element;return this._text=t??"",this._offset=o?.offset??pt.offset,this._delay=o?.delay??pt.delay,this._enabled=o?.enabled??pt.enabled,this._el!==i?(this._teardown(),this._el=i,this._wire()):this._applyAttributes(),this.render(t,o)}_wire(){const e=this._el;e&&(this._applyAttributes(),this._enabled&&(ft.retain(),this._retained=!0,e.addEventListener("pointerenter",this._onEnter),e.addEventListener("pointermove",this._onMove),e.addEventListener("pointerleave",this._onLeave),e.addEventListener("focusin",this._onFocus),e.addEventListener("focusout",this._onBlur),e.addEventListener("keydown",this._onKey),window.addEventListener("scroll",this._onScroll,!0)))}_applyAttributes(){const e=this._el;e&&(this._enabled?(e.removeAttribute("title"),e.setAttribute("data-tooltip",this._text),e.setAttribute("aria-describedby",ft.id)):(e.removeAttribute("data-tooltip"),e.removeAttribute("aria-describedby"),e.removeAttribute("acp-tt-shown"),e.setAttribute("title",this._text)))}_handleEnter(e){this._lastX=e.clientX,this._lastY=e.clientY,this._armOpen()}_handleFocus(){const e=this._el;if(e&&"function"==typeof e.getBoundingClientRect){const t=e.getBoundingClientRect();this._lastX=t.left+t.width/2,this._lastY=t.bottom}this._armOpen()}_armOpen(){null===this._openTimer&&(this._openTimer=setTimeout(()=>{this._openTimer=null,this._open()},this._delay))}_open(){this._el&&(ft.show(this._text,this._lastX,this._lastY,this._offset),this._shown=!0,this._el.setAttribute("acp-tt-shown",""))}_handleMove(e){this._lastX=e.clientX,this._lastY=e.clientY,this._shown&&ft.move(this._lastX,this._lastY)}_dismiss(){null!==this._openTimer&&(clearTimeout(this._openTimer),this._openTimer=null),this._shown&&(ft.hide(),this._shown=!1),this._el?.removeAttribute("acp-tt-shown")}_teardown(){const e=this._el;e&&(this._dismiss(),e.removeEventListener("pointerenter",this._onEnter),e.removeEventListener("pointermove",this._onMove),e.removeEventListener("pointerleave",this._onLeave),e.removeEventListener("focusin",this._onFocus),e.removeEventListener("focusout",this._onBlur),e.removeEventListener("keydown",this._onKey),"undefined"!=typeof window&&window.removeEventListener("scroll",this._onScroll,!0),this._retained&&(ft.release(),this._retained=!1),this._el=null)}disconnected(){this._teardown()}reconnected(){this._wire()}});function vt(e){return"string"==typeof e&&e.length>0}function yt(e){return e?vt(e.window)?{kind:"window",key:e.window}:vt(e.entry_id)?{kind:"entry",key:e.entry_id}:vt(e.cover)?{kind:"cover",entity_id:e.cover}:null:null}function wt(e){if(!e)return[];const t=[];for(const o of e.windows??[])vt(o)&&t.push({kind:"window",key:o});for(const o of e.covers??[])vt(o)&&t.push({kind:"cover",entity_id:o});for(const o of e.entry_ids??[])vt(o)&&t.push({kind:"entry",key:o});return t}function bt(e){return"cover"===e.kind?`cover:${e.entity_id}`:e.key}function xt(e){return"cover"===e.kind?e.entity_id:e.key}function $t(e,t){const o={...e,window:t};return delete o.entry_id,o}function kt(e){return e?vt(e.window)?e.window:vt(e.entry_id)?e.entry_id:"":""}const At=(()=>{const e={};for(const[t,o]of Object.entries(Be)){const i=t.indexOf(":"),s=t.slice(0,i);(e[s]??(e[s]=[])).push({suffix:t.slice(i+1),role:o})}for(const t of Object.values(e))t.sort((e,t)=>t.suffix.length-e.suffix.length);return e})(),Ct=new Set(["cover_blind","cover_awning","cover_tilt"]),St=new WeakMap;function Et(e){if(e.platform!==ze||"string"!=typeof e.unique_id)return null;const t=e.entity_id.split(".")[0];for(const{suffix:o,role:i}of At[t]??[]){const t=`_${o}`;if(e.unique_id.length>t.length&&e.unique_id.endsWith(t))return{key:e.unique_id.slice(0,-t.length),role:i}}return null}function zt(e){const t=St.get(e);if(t)return t;const o=new Map;for(const t of e){const e=Et(t);if(!e)continue;let i=o.get(e.key);i||(i={key:e.key,entities:{}},o.set(e.key,i)),i.entities[e.role]||(i.entities[e.role]=t.entity_id),"target_position_sensor"!==e.role||i.position||(i.position=t,t.device_id&&(i.deviceId=t.device_id)),!i.deviceId&&t.device_id&&(i.deviceId=t.device_id)}const i={byKey:o,withPosition:[...o.values()].filter(e=>e.position)};return St.set(e,i),i}function Ot(e,t){const o=t.position?.entity_id;return o?e.states[o]?.attributes:void 0}function Mt(e){return"string"==typeof e&&e.length>0}function It(e){const t=Mt(e?.cover_entity)?e.cover_entity:null,o=Array.isArray(e?.cover_entities)?e.cover_entities.filter(Mt):[],i=t?[t,...o]:o;return[...new Set(i)]}function Tt(e){return[...new Set([...Object.keys(e?.last_moves??{}),...Object.keys(e?.move_blocked_by??{})])].sort()}function Rt(e,t){const o=Ot(e,t)?.window_key;return{rows:t,windowKey:Mt(o)?o:t.key}}function Ft(e,t,o){if("cover"===t.kind){const i=t.entity_id;for(const t of o.withPosition)if(Ot(e,t)?.cover_entity===i)return Rt(e,t);for(const t of o.withPosition)if(It(Ot(e,t)).includes(i))return Rt(e,t);for(const t of o.withPosition){const o=Ot(e,t);if(!(It(o).length>0)&&Tt(o).includes(i))return Rt(e,t)}return null}for(const i of o.withPosition)if(Ot(e,i)?.window_key===t.key)return{rows:i,windowKey:t.key};const i=o.byKey.get(t.key);return i?{rows:i,windowKey:t.key}:null}function jt(e,t){const o=e.devices;if(o){const e=t.rows.deviceId?o[t.rows.deviceId]:void 0;if(e)return e.name_by_user||e.name||t.windowKey;if(!t.rows.deviceId)for(const e of Object.values(o))if(e.config_entries?.includes(t.windowKey))return e.name_by_user||e.name||t.windowKey}return t.windowKey}function Nt(e,t){const o=Ot(e,t.rows),i=It(o),s=i.length>0?i:Tt(o);let n="cover_blind";if(Mt(o?.cover_type)&&Ct.has(o.cover_type))n=o.cover_type;else if(s.length>0){const t=s.every(t=>{const o=e.states[t]?.attributes;return void 0!==o?.current_tilt_position&&void 0===o?.current_position});t&&(n="cover_tilt")}return{window_key:t.windowKey,entry_id:t.windowKey,entry_title:jt(e,t),cover_type:n,entities:{...t.rows.entities},managed_covers:s,device_id:t.rows.deviceId,config_entry_id:t.rows.position?.config_entry_id??null,config_subentry_id:t.rows.position?.config_subentry_id??null}}function Pt(e){return e?"kind"in e&&"string"==typeof e.kind?e:yt(e):null}function Kt(e,t,o){const i=Pt(t);if(!i)return null;const s=Ft(e,i,zt(o));return s?Nt(e,s):null}function Dt(e,t,o){const i=Pt(t);if(!i)return[];const s=Ft(e,i,zt(o));if(!s)return[];const n=`${s.rows.key}_`;return o.filter(e=>e.platform===ze&&e.unique_id?.startsWith(n))}function Bt(){let e=null;return(t,o,i)=>{const s=Pt(o),n=s?Ft(t,s,zt(i)):null;if(!n)return e=null,null;const r=t.devices,a=n.rows.entities.target_position_sensor,l=n.rows.entities.control_status_sensor,c=a?t.states[a]:void 0,d=l?t.states[l]:void 0;if(null!==e&&e.registry===i&&e.rows===n.rows&&e.windowKey===n.windowKey&&e.devices===r&&e.posState===c&&e.ctrlState===d)return e.result;const h=Nt(t,n);return e={registry:i,rows:n.rows,windowKey:n.windowKey,devices:r,posState:c,ctrlState:d,result:h},h}}async function Wt(e){return e.callWS({type:"config/entity_registry/list"})}function Vt(e,t){let o=null,i=!1;return e.connection.subscribeEvents(e=>t(e.data),"entity_registry_updated").then(e=>{i?e():o=e}).catch(()=>{}),()=>{i=!0,o&&o()}}let Gt=null,Ut=null;function Lt(){return Gt}function Yt(e,t=!1){if(Ut)return Ut;if(!t&&Gt)return Promise.resolve(Gt);const o=Wt(e).then(e=>(Gt=e,Ut=null,e)).catch(e=>{throw Ut=null,e});return Ut=o,o}async function Ht(e){try{const t=await e.callWS({type:"config_entries/get",domain:ze}),o={};for(const e of Array.isArray(t)?t:[])e?.domain===ze&&e.entry_id&&e.title&&(o[e.entry_id]=e.title);return o}catch{return{}}}async function Qt(e){const[t,o]=await Promise.all([Yt(e),Ht(e)]);return function(e,t,o={}){const i=[];for(const s of zt(t).withPosition){if(s.position?.disabled_by)continue;const t=Rt(e,s);let n=jt(e,t);n===t.windowKey&&o[t.windowKey]&&(n=o[t.windowKey]);const r={window_key:t.windowKey,title:n},a=It(Ot(e,s))[0];a&&(r.cover=a),i.push(r)}return i.sort((e,t)=>e.title.localeCompare(t.title)||e.window_key.localeCompare(t.window_key))}(e,Array.isArray(t)?t:[],o)}function qt(e){return`acp-card:registry:v1:${e}`}const Xt={get(e){try{const t=localStorage.getItem(qt(e));if(!t)return null;const o=JSON.parse(t);return 1!==o.schemaVersion?null:o.entries?.length?"number"==typeof o.fetchedAt&&Date.now()-o.fetchedAt>6e4?null:o:null}catch{return null}},set(e,t){if(0!==t.length)try{const o={schemaVersion:1,cardVersion:_e,fetchedAt:Date.now(),entries:t};localStorage.setItem(qt(e),JSON.stringify(o))}catch{}},invalidate(e){try{localStorage.removeItem(qt(e))}catch{}},clear(){try{const e="acp-card:registry:v1:",t=[];for(let o=0;o<localStorage.length;o++){const i=localStorage.key(o);i?.startsWith(e)&&t.push(i)}t.forEach(e=>localStorage.removeItem(e))}catch{}}};function Jt(e){return`${e.entity_id}|${e.unique_id}|${e.platform}|${e.config_entry_id??""}`}let Zt=class extends ce{constructor(){super(...arguments),this.on=!1,this.readonly=!1,this.label="",this.title=""}_handleClick(){this.readonly||this.dispatchEvent(new CustomEvent("pill-click",{bubbles:!0,composed:!0}))}render(){return G`
       <button
         class="pill ${this.on?"on":"off"} ${this.readonly?"readonly":""}"
-        ${gt(this.title)}
-        aria-disabled=${this.readonly?"true":L}
+        ${_t(this.title)}
+        aria-disabled=${this.readonly?"true":Y}
         tabindex=${this.readonly?"-1":"0"}
         @click=${this._handleClick}
       >
         ${this.label}
       </button>
-    `}};qt.styles=r`
+    `}};Zt.styles=r`
     .pill {
       padding: 2px 10px;
       border-radius: 999px;
@@ -73,17 +73,17 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
     .pill.on.readonly {
       opacity: 0.85;
     }
-  `,e([ge({type:Boolean})],qt.prototype,"on",void 0),e([ge({type:Boolean})],qt.prototype,"readonly",void 0),e([ge({type:String})],qt.prototype,"label",void 0),e([ge({type:String})],qt.prototype,"title",void 0),qt=e([he("acp-header-pill")],qt);const Xt=Be(class extends Ve{constructor(e){if(super(e),1!==e.type||"class"!==e.name||e.strings?.length>2)throw Error("`classMap()` can only be used in the `class` attribute and must be the only part in the attribute.")}render(e){return" "+Object.keys(e).filter(t=>e[t]).join(" ")+" "}update(e,[t]){if(void 0===this.st){this.st=new Set,void 0!==e.strings&&(this.nt=new Set(e.strings.join(" ").split(/\s/).filter(e=>""!==e)));for(const e in t)t[e]&&!this.nt?.has(e)&&this.st.add(e);return this.render(t)}const i=e.element.classList;for(const e of this.st)e in t||(i.remove(e),this.st.delete(e));for(const e in t){const o=!!t[e];o===this.st.has(e)||this.nt?.has(e)||(o?(i.add(e),this.st.add(e)):(i.remove(e),this.st.delete(e)))}return Y}});function Jt(e,t){const i=t.entities.target_position_sensor;if(!i)return;const o=e.states[i];return o?o.attributes:void 0}function Zt(e,t){const i=Jt(e,t);return i?.intent??"default"}function ei(e,t){const i=Jt(e,t);if(!i)return;const o=Array.isArray(i.decision_trace)?i.decision_trace:[],s=o.map((e,t)=>({handler:e,matched:t===o.length-1,reason:e,position:null}));return{trace:s,reason:o.length>0?o[o.length-1]:"",winner:i.intent??"default",sun_azimuth:i.sun?.azimuth,sun_elevation:i.sun?.elevation,gamma:i.sun?.gamma,in_field_of_view:i.sun?.in_fov,default_position:i.default,sunset_position:i.sunset_default}}function ti(e,t){const i=Jt(e,t),o=i?.sun;return o&&"number"==typeof o.azimuth&&"number"==typeof o.elevation?o:null}function ii(e,t,i){const o=e.states[i]?.attributes,s="cover_tilt"===t?o?.current_tilt_position:o?.current_position;return"number"==typeof s&&Number.isFinite(s)?s:null}function oi(e,t){const i=t.entities.target_position_sensor;if(!i)return null;const o=parseFloat(e.states[i]?.state??"");return Number.isNaN(o)?null:o}function si(e,t){const i={};for(const o of t.managed_covers)i[o]=ii(e,t.cover_type,o);return i}function ni(e,t){return 0===t.managed_covers.length?null:function(e){const t=Object.values(e).filter(e=>"number"==typeof e);return 0===t.length?null:t.reduce((e,t)=>e+t,0)/t.length}(si(e,t))}function ri(e,t){return oi(e,t)}function ai(e){return e&&e.__esModule&&Object.prototype.hasOwnProperty.call(e,"default")?e.default:e}var li,ci,di={exports:{}},hi=(li||(li=1,ci=di,function(){var e=Math.PI,t=Math.sin,i=Math.cos,o=Math.tan,s=Math.asin,n=Math.atan2,r=Math.acos,a=e/180,l=864e5,c=2440588,d=2451545;function h(e){return new Date((e+.5-c)*l)}function p(e){return function(e){return e.valueOf()/l-.5+c}(e)-d}var u=23.4397*a;function g(e,s){return n(t(e)*i(u)-o(s)*t(u),i(e))}function _(e,o){return s(t(o)*i(u)+i(o)*t(u)*t(e))}function m(e,s,r){return n(t(e),i(e)*t(s)-o(r)*i(s))}function v(e,o,n){return s(t(o)*t(n)+i(o)*i(n)*i(e))}function f(e,t){return a*(280.16+360.9856235*e)-t}function y(e){return a*(357.5291+.98560028*e)}function w(i){return i+a*(1.9148*t(i)+.02*t(2*i)+3e-4*t(3*i))+102.9372*a+e}function b(e){var t=w(y(e));return{dec:_(t,0),ra:g(t,0)}}var x={getPosition:function(e,t,i){var o=a*-i,s=a*t,n=p(e),r=b(n),l=f(n,o)-r.ra;return{azimuth:m(l,s,r.dec),altitude:v(l,s,r.dec)}}},$=x.times=[[-.833,"sunrise","sunset"],[-.3,"sunriseEnd","sunsetStart"],[-6,"dawn","dusk"],[-12,"nauticalDawn","nauticalDusk"],[-18,"nightEnd","night"],[6,"goldenHourEnd","goldenHour"]];x.addTime=function(e,t,i){$.push([e,t,i])};var k=9e-4;function A(t,i,o){return k+(t+i)/(2*e)+o}function C(e,i,o){return d+e+.0053*t(i)-.0069*t(2*o)}function E(e,o,s,n,a,l,c){var d=function(e,o,s){return r((t(e)-t(o)*t(s))/(i(o)*i(s)))}(e,s,n);return C(A(d,o,a),l,c)}function S(e){var o=a*(134.963+13.064993*e),s=a*(93.272+13.22935*e),n=a*(218.316+13.176396*e)+6.289*a*t(o),r=5.128*a*t(s),l=385001-20905*i(o);return{ra:g(n,r),dec:_(n,r),dist:l}}function O(e,t){return new Date(e.valueOf()+t*l/24)}x.getTimes=function(t,i,o,s){var n,r,l,c,d,u=a*-o,g=a*i,m=function(e){return-2.076*Math.sqrt(e)/60}(s=s||0),v=function(t,i){return Math.round(t-k-i/(2*e))}(p(t),u),f=A(0,u,v),b=y(f),x=w(b),S=_(x,0),O=C(f,b,x),z={solarNoon:h(O),nadir:h(O-.5)};for(n=0,r=$.length;n<r;n+=1)d=O-((c=E(((l=$[n])[0]+m)*a,u,g,S,v,b,x))-O),z[l[1]]=h(d),z[l[2]]=h(c);return z},x.getMoonPosition=function(e,s,r){var l=a*-r,c=a*s,d=p(e),h=S(d),u=f(d,l)-h.ra,g=v(u,c,h.dec),_=n(t(u),o(c)*i(h.dec)-t(h.dec)*i(u));return g+=function(e){return e<0&&(e=0),2967e-7/Math.tan(e+.00312536/(e+.08901179))}(g),{azimuth:m(u,c,h.dec),altitude:g,distance:h.dist,parallacticAngle:_}},x.getMoonIllumination=function(e){var o=p(e||new Date),s=b(o),a=S(o),l=149598e3,c=r(t(s.dec)*t(a.dec)+i(s.dec)*i(a.dec)*i(s.ra-a.ra)),d=n(l*t(c),a.dist-l*i(c)),h=n(i(s.dec)*t(s.ra-a.ra),t(s.dec)*i(a.dec)-i(s.dec)*t(a.dec)*i(s.ra-a.ra));return{fraction:(1+i(d))/2,phase:.5+.5*d*(h<0?-1:1)/Math.PI,angle:h}},x.getMoonTimes=function(e,t,i,o){var s=new Date(e);o?s.setUTCHours(0,0,0,0):s.setHours(0,0,0,0);for(var n,r,l,c,d,h,p,u,g,_,m,v,f,y=.133*a,w=x.getMoonPosition(s,t,i).altitude-y,b=1;b<=24&&(n=x.getMoonPosition(O(s,b),t,i).altitude-y,u=((d=(w+(r=x.getMoonPosition(O(s,b+1),t,i).altitude-y))/2-n)*(p=-(h=(r-w)/2)/(2*d))+h)*p+n,_=0,(g=h*h-4*d*n)>=0&&(m=p-(f=Math.sqrt(g)/(2*Math.abs(d))),v=p+f,Math.abs(m)<=1&&_++,Math.abs(v)<=1&&_++,m<-1&&(m=v)),1===_?w<0?l=b+m:c=b+m:2===_&&(l=b+(u<0?v:m),c=b+(u<0?m:v)),!l||!c);b+=2)w=r;var $={};return l&&($.rise=O(s,l)),c&&($.set=O(s,c)),l||c||($[u>0?"alwaysUp":"alwaysDown"]=!0),$},ci.exports=x}()),di.exports),pi=ai(hi);const ui=new Map;function gi(e,t,i,o=10){const s=`${e},${t},${i.getTime()},${o}`,n=ui.get(s);if(n)return ui.delete(s),ui.set(s,n),n;const r=[],a=i.getTime()+864e5;for(let s=i.getTime();s<=a;s+=60*o*1e3){const i=new Date(s),o=pi.getPosition(i,e,t);r.push({t:i,elevation:180*o.altitude/Math.PI,azimuth:((180*o.azimuth/Math.PI+180)%360+360)%360})}if(ui.set(s,r),ui.size>4){const e=ui.keys().next().value;void 0!==e&&ui.delete(e)}return r}function _i(e=new Date){const t=new Date(e);return t.setHours(0,0,0,0),t}function mi(e,t=new Date){if(!e)return _i(t);const i=new Intl.DateTimeFormat("en-CA",{timeZone:e,year:"numeric",month:"2-digit",day:"2-digit"}).format(t),[o,s,n]=i.split("-").map(Number),r=Date.UTC(o,s-1,n,0,0,0),a=function(e,t){const i=new Intl.DateTimeFormat("en-US",{timeZone:e,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}).formatToParts(t),o={};for(const e of i)"literal"!==e.type&&(o[e.type]=Number(e.value));return Date.UTC(o.year,o.month-1,o.day,o.hour,o.minute,o.second)-t.getTime()}(e,new Date(r));return new Date(r-a)}function vi(e,t,i,o){const s=((t-i)%360+360)%360;return((e-s)%360+360)%360<=((((t+o)%360+360)%360-s)%360+360)%360}function fi(e,t,i,o){const s=[];let n=-1;for(let r=0;r<e.length;r++){const a=e[r];a.elevation>0&&vi(a.azimuth,t,i,o)?-1===n&&(n=r):-1!==n&&(s.push({startIdx:n,endIdx:r-1}),n=-1)}return-1!==n&&s.push({startIdx:n,endIdx:e.length-1}),s}function yi(e,t,i=new Date){const o=pi.getMoonPosition(i,e,t),s=pi.getMoonIllumination(i);return{azimuth:((180*o.azimuth/Math.PI+180)%360+360)%360,elevation:180*o.altitude/Math.PI,phase:s.phase,fraction:s.fraction,phaseName:wi(s.phase)}}function wi(e){return e<.0625||e>=.9375?"New Moon":e<.1875?"Waxing Crescent":e<.3125?"First Quarter":e<.4375?"Waxing Gibbous":e<.5625?"Full Moon":e<.6875?"Waning Gibbous":e<.8125?"Last Quarter":"Waning Crescent"}function bi(e){return null==e||Number.isNaN(e)?"—":`${Math.round(e)}%`}function xi(e){return null==e||Number.isNaN(e)?"—":`${e.toFixed(1)}°`}function $i(e,t){if(!e)return"—";const i=new Date(e);return Number.isNaN(i.getTime())?"—":i.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",timeZone:t})}const ki=new Set(["outside_fov","in_fov_not_valid","hitting"]),Ai={night:"sun night",hitting:"sun valid",in_fov_not_valid:"sun in-fov",outside_fov:"sun up"};function Ci(e){return e.belowHorizon?"night":e.sunState&&ki.has(e.sunState)?e.sunState:e.directSunValid?"hitting":e.inFov?"in_fov_not_valid":"outside_fov"}const Ei=["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#17becf","#e377c2"];function Si(e){const t=Ei.length;return Ei[(e%t+t)%t]}function Oi(e,t){return"string"==typeof e&&e.length>0?{color:e,isOverride:!0}:{color:Si(t),isOverride:!1}}const zi="data:image/png;base64,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",Mi=110;let Ii=0,Ti=class extends ce{constructor(){super(...arguments),this.discovered_list=[],this.compact=!1,this.showStats=!0,this.showLegend=!0,this.showMoon=!1,this.showCardinals=!0,this.showBlindSpot=!0,this.showSunPath=!0,this.showSunriseSunset=!0,this.showCoverFill=!0,this.showWindowArrow=!0,this.coverColors=[],this.northOffsetDeg=0,this._hiddenEntries=new Set,this._legendMoonMaskId="acp-legend-moon-"+Ii++}shouldUpdate(e){return e.size>1||!e.has("hass")||me(e.get("hass"),this.hass,this._relevantIds())}_relevantIds(){const e=[];for(const t of this.discovered_list){const i=t.entities;e.push(i.target_position_sensor,i.manual_override_binary,i.sun_infront_binary,i.start_sensor,i.end_sensor,...t.managed_covers)}return e}_toggleEntry(e){const t=new Set(this._hiddenEntries);t.has(e)?t.delete(e):t.add(e),this._hiddenEntries=t}_sunFor(e){return ti(this.hass,e)}_sunInfrontFor(e){const t=e.entities.sun_infront_binary;return!!t&&"on"===this.hass.states[t]?.state}_sunDotStateFor(e,t){return Ci({belowHorizon:t.elevation<=0,sunState:null,directSunValid:this._sunInfrontFor(e),inFov:!0===t.in_fov})}_readActiveAzimuth(e){if(!e)return null;const t=this.hass.states[e];if(!t)return null;if("unavailable"===t.state||"unknown"===t.state)return null;const i=t.attributes.azimuth;return"number"==typeof i&&Number.isFinite(i)?i:null}_buildOverlays(){const e=[];return this.discovered_list.forEach((t,i)=>{const o=this._sunFor(t);if(!o)return;const s=o.azimuth,{color:n,isOverride:r}=Oi(this.coverColors?.[i],i);e.push({d:t,sun:o,sunAzi:s,sunInfront:this._sunInfrontFor(t),dotState:this._sunDotStateFor(t,o),coverPos:ri(this.hass,t),actualPos:ni(this.hass,t),coverType:t.cover_type,color:n,isOverride:r,index:i})}),e}render(){if(!this.hass)return L;if(!this.discovered_list||0===this.discovered_list.length)return W`<div class="placeholder">${De("compass.placeholder_no_entries")}</div>`;const e=this._buildOverlays();if(0===e.length)return W`<div class="placeholder">${De("compass.placeholder_no_sun")}</div>`;const t=e.filter(e=>!this._hiddenEntries.has(e.d.window_key)),i=tt(this.northOffsetDeg),o=e.length>1,s=e[0],n=s.sunAzi,r=s.sun.elevation,a=et(n,r,i),l={night:-1,outside_fov:0,in_fov_not_valid:1,hitting:2},c=r<=0?"night":e.reduce((e,t)=>l[t.dotState]>l[e]?t.dotState:e,"outside_fov"),d=Ai[c],{latitude:h,longitude:p,time_zone:u}=this.hass.config,g=void 0!==h&&void 0!==p?gi(h,p,mi(u)):[],_=this.showMoon&&void 0!==h&&void 0!==p?yi(h,p):null,m=null!==_&&_.elevation>0,v=_?at(_.phase,6):0,f=m?et(_.azimuth,_.elevation,i):null,y=f?f.x*Mi:0,w=f?f.y*Mi:0,b=this.showSunPath?function(e){const t=[];let i=-1;for(let o=0;o<e.length;o++)e[o].elevation>0?-1===i&&(i=o):-1!==i&&(t.push({startIdx:i,endIdx:o-1}),i=-1);return-1!==i&&t.push({startIdx:i,endIdx:e.length-1}),t}(g).map(e=>g.slice(e.startIdx,e.endIdx+1).map(e=>{const t=et(e.azimuth,e.elevation,i);return{x:t.x*Mi,y:t.y*Mi,elev:e.elevation}})):[],x=[122,127,135],$=[245,197,24],k=e=>{const t=Math.sqrt(Math.max(0,Math.min(1,e/90))),i=x.map((e,i)=>Math.round(e+($[i]-e)*t));return`rgb(${i[0]},${i[1]},${i[2]})`},A=this.showSunPath&&this.showSunriseSunset?b.filter(e=>e.length>1).map((e,t)=>{const i=e[0],o=e[e.length-1],s=o.x-i.x,n=o.y-i.y,r=s*s+n*n||1,a=e.filter((t,i)=>i%6==0||i===e.length-1).map(e=>({offset:100*Math.max(0,Math.min(1,((e.x-i.x)*s+(e.y-i.y)*n)/r)),color:k(e.elev)}));return{id:`sun-path-grad-${t}`,x1:i.x,y1:i.y,x2:o.x,y2:o.y,stops:a}}):[],C=e=>this.showSunriseSunset?`url(#sun-path-grad-${e})`:"var(--warning-color, gold)",E=Xe(0,124,i),S=Xe(90,124,i),O=Xe(180,124,i),z=Xe(270,124,i),M=Xe(0,Mi,i),I=Xe(180,Mi,i),T=Xe(90,Mi,i),F=Xe(270,Mi,i),R=De("compass.sun_tooltip",{az:xi(n),el:xi(r)}),j=null!==_?De("compass.moon_tooltip",{phase:_.phaseName,pct:Math.round(100*_.fraction)}):"",N=De("compass.sun_path_tooltip");return W`
+  `,e([ge({type:Boolean})],Zt.prototype,"on",void 0),e([ge({type:Boolean})],Zt.prototype,"readonly",void 0),e([ge({type:String})],Zt.prototype,"label",void 0),e([ge({type:String})],Zt.prototype,"title",void 0),Zt=e([he("acp-header-pill")],Zt);const eo=Ge(class extends Ue{constructor(e){if(super(e),1!==e.type||"class"!==e.name||e.strings?.length>2)throw Error("`classMap()` can only be used in the `class` attribute and must be the only part in the attribute.")}render(e){return" "+Object.keys(e).filter(t=>e[t]).join(" ")+" "}update(e,[t]){if(void 0===this.st){this.st=new Set,void 0!==e.strings&&(this.nt=new Set(e.strings.join(" ").split(/\s/).filter(e=>""!==e)));for(const e in t)t[e]&&!this.nt?.has(e)&&this.st.add(e);return this.render(t)}const o=e.element.classList;for(const e of this.st)e in t||(o.remove(e),this.st.delete(e));for(const e in t){const i=!!t[e];i===this.st.has(e)||this.nt?.has(e)||(i?(o.add(e),this.st.add(e)):(o.remove(e),this.st.delete(e)))}return L}});function to(e,t){const o=t.entities.target_position_sensor;if(!o)return;const i=e.states[o];return i?i.attributes:void 0}function oo(e,t){const o=to(e,t);return o?.intent??"default"}function io(e,t){const o=to(e,t);if(!o)return;const i=Array.isArray(o.decision_trace)?o.decision_trace:[],s=i.map((e,t)=>({handler:e,matched:t===i.length-1,reason:e,position:null}));return{trace:s,reason:i.length>0?i[i.length-1]:"",winner:o.intent??"default",sun_azimuth:o.sun?.azimuth,sun_elevation:o.sun?.elevation,gamma:o.sun?.gamma,in_field_of_view:o.sun?.in_fov,default_position:o.default,sunset_position:o.sunset_default}}function so(e,t){const o=to(e,t),i=o?.sun;return i&&"number"==typeof i.azimuth&&"number"==typeof i.elevation?i:null}function no(e,t,o){const i=e.states[o]?.attributes,s="cover_tilt"===t?i?.current_tilt_position:i?.current_position;return"number"==typeof s&&Number.isFinite(s)?s:null}function ro(e,t){const o=t.entities.target_position_sensor;if(!o)return null;const i=parseFloat(e.states[o]?.state??"");return Number.isNaN(i)?null:i}function ao(e,t){const o={};for(const i of t.managed_covers)o[i]=no(e,t.cover_type,i);return o}function lo(e,t){return 0===t.managed_covers.length?null:function(e){const t=Object.values(e).filter(e=>"number"==typeof e);return 0===t.length?null:t.reduce((e,t)=>e+t,0)/t.length}(ao(e,t))}function co(e,t){return ro(e,t)}function ho(e){return e&&e.__esModule&&Object.prototype.hasOwnProperty.call(e,"default")?e.default:e}var uo,po,go={exports:{}},mo=(uo||(uo=1,po=go,function(){var e=Math.PI,t=Math.sin,o=Math.cos,i=Math.tan,s=Math.asin,n=Math.atan2,r=Math.acos,a=e/180,l=864e5,c=2440588,d=2451545;function h(e){return new Date((e+.5-c)*l)}function u(e){return function(e){return e.valueOf()/l-.5+c}(e)-d}var p=23.4397*a;function g(e,s){return n(t(e)*o(p)-i(s)*t(p),o(e))}function m(e,i){return s(t(i)*o(p)+o(i)*t(p)*t(e))}function f(e,s,r){return n(t(e),o(e)*t(s)-i(r)*o(s))}function _(e,i,n){return s(t(i)*t(n)+o(i)*o(n)*o(e))}function v(e,t){return a*(280.16+360.9856235*e)-t}function y(e){return a*(357.5291+.98560028*e)}function w(o){return o+a*(1.9148*t(o)+.02*t(2*o)+3e-4*t(3*o))+102.9372*a+e}function b(e){var t=w(y(e));return{dec:m(t,0),ra:g(t,0)}}var x={getPosition:function(e,t,o){var i=a*-o,s=a*t,n=u(e),r=b(n),l=v(n,i)-r.ra;return{azimuth:f(l,s,r.dec),altitude:_(l,s,r.dec)}}},$=x.times=[[-.833,"sunrise","sunset"],[-.3,"sunriseEnd","sunsetStart"],[-6,"dawn","dusk"],[-12,"nauticalDawn","nauticalDusk"],[-18,"nightEnd","night"],[6,"goldenHourEnd","goldenHour"]];x.addTime=function(e,t,o){$.push([e,t,o])};var k=9e-4;function A(t,o,i){return k+(t+o)/(2*e)+i}function C(e,o,i){return d+e+.0053*t(o)-.0069*t(2*i)}function S(e,i,s,n,a,l,c){var d=function(e,i,s){return r((t(e)-t(i)*t(s))/(o(i)*o(s)))}(e,s,n);return C(A(d,i,a),l,c)}function E(e){var i=a*(134.963+13.064993*e),s=a*(93.272+13.22935*e),n=a*(218.316+13.176396*e)+6.289*a*t(i),r=5.128*a*t(s),l=385001-20905*o(i);return{ra:g(n,r),dec:m(n,r),dist:l}}function z(e,t){return new Date(e.valueOf()+t*l/24)}x.getTimes=function(t,o,i,s){var n,r,l,c,d,p=a*-i,g=a*o,f=function(e){return-2.076*Math.sqrt(e)/60}(s=s||0),_=function(t,o){return Math.round(t-k-o/(2*e))}(u(t),p),v=A(0,p,_),b=y(v),x=w(b),E=m(x,0),z=C(v,b,x),O={solarNoon:h(z),nadir:h(z-.5)};for(n=0,r=$.length;n<r;n+=1)d=z-((c=S(((l=$[n])[0]+f)*a,p,g,E,_,b,x))-z),O[l[1]]=h(d),O[l[2]]=h(c);return O},x.getMoonPosition=function(e,s,r){var l=a*-r,c=a*s,d=u(e),h=E(d),p=v(d,l)-h.ra,g=_(p,c,h.dec),m=n(t(p),i(c)*o(h.dec)-t(h.dec)*o(p));return g+=function(e){return e<0&&(e=0),2967e-7/Math.tan(e+.00312536/(e+.08901179))}(g),{azimuth:f(p,c,h.dec),altitude:g,distance:h.dist,parallacticAngle:m}},x.getMoonIllumination=function(e){var i=u(e||new Date),s=b(i),a=E(i),l=149598e3,c=r(t(s.dec)*t(a.dec)+o(s.dec)*o(a.dec)*o(s.ra-a.ra)),d=n(l*t(c),a.dist-l*o(c)),h=n(o(s.dec)*t(s.ra-a.ra),t(s.dec)*o(a.dec)-o(s.dec)*t(a.dec)*o(s.ra-a.ra));return{fraction:(1+o(d))/2,phase:.5+.5*d*(h<0?-1:1)/Math.PI,angle:h}},x.getMoonTimes=function(e,t,o,i){var s=new Date(e);i?s.setUTCHours(0,0,0,0):s.setHours(0,0,0,0);for(var n,r,l,c,d,h,u,p,g,m,f,_,v,y=.133*a,w=x.getMoonPosition(s,t,o).altitude-y,b=1;b<=24&&(n=x.getMoonPosition(z(s,b),t,o).altitude-y,p=((d=(w+(r=x.getMoonPosition(z(s,b+1),t,o).altitude-y))/2-n)*(u=-(h=(r-w)/2)/(2*d))+h)*u+n,m=0,(g=h*h-4*d*n)>=0&&(f=u-(v=Math.sqrt(g)/(2*Math.abs(d))),_=u+v,Math.abs(f)<=1&&m++,Math.abs(_)<=1&&m++,f<-1&&(f=_)),1===m?w<0?l=b+f:c=b+f:2===m&&(l=b+(p<0?_:f),c=b+(p<0?f:_)),!l||!c);b+=2)w=r;var $={};return l&&($.rise=z(s,l)),c&&($.set=z(s,c)),l||c||($[p>0?"alwaysUp":"alwaysDown"]=!0),$},po.exports=x}()),go.exports),fo=ho(mo);const _o=new Map;function vo(e,t,o,i=10){const s=`${e},${t},${o.getTime()},${i}`,n=_o.get(s);if(n)return _o.delete(s),_o.set(s,n),n;const r=[],a=o.getTime()+864e5;for(let s=o.getTime();s<=a;s+=60*i*1e3){const o=new Date(s),i=fo.getPosition(o,e,t);r.push({t:o,elevation:180*i.altitude/Math.PI,azimuth:((180*i.azimuth/Math.PI+180)%360+360)%360})}if(_o.set(s,r),_o.size>4){const e=_o.keys().next().value;void 0!==e&&_o.delete(e)}return r}function yo(e=new Date){const t=new Date(e);return t.setHours(0,0,0,0),t}function wo(e,t=new Date){if(!e)return yo(t);const o=new Intl.DateTimeFormat("en-CA",{timeZone:e,year:"numeric",month:"2-digit",day:"2-digit"}).format(t),[i,s,n]=o.split("-").map(Number),r=Date.UTC(i,s-1,n,0,0,0),a=function(e,t){const o=new Intl.DateTimeFormat("en-US",{timeZone:e,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}).formatToParts(t),i={};for(const e of o)"literal"!==e.type&&(i[e.type]=Number(e.value));return Date.UTC(i.year,i.month-1,i.day,i.hour,i.minute,i.second)-t.getTime()}(e,new Date(r));return new Date(r-a)}function bo(e,t,o,i){const s=((t-o)%360+360)%360;return((e-s)%360+360)%360<=((((t+i)%360+360)%360-s)%360+360)%360}function xo(e,t,o,i){const s=[];let n=-1;for(let r=0;r<e.length;r++){const a=e[r];a.elevation>0&&bo(a.azimuth,t,o,i)?-1===n&&(n=r):-1!==n&&(s.push({startIdx:n,endIdx:r-1}),n=-1)}return-1!==n&&s.push({startIdx:n,endIdx:e.length-1}),s}function $o(e,t,o=new Date){const i=fo.getMoonPosition(o,e,t),s=fo.getMoonIllumination(o);return{azimuth:((180*i.azimuth/Math.PI+180)%360+360)%360,elevation:180*i.altitude/Math.PI,phase:s.phase,fraction:s.fraction,phaseName:ko(s.phase)}}function ko(e){return e<.0625||e>=.9375?"New Moon":e<.1875?"Waxing Crescent":e<.3125?"First Quarter":e<.4375?"Waxing Gibbous":e<.5625?"Full Moon":e<.6875?"Waning Gibbous":e<.8125?"Last Quarter":"Waning Crescent"}function Ao(e){return null==e||Number.isNaN(e)?"—":`${Math.round(e)}%`}function Co(e){return null==e||Number.isNaN(e)?"—":`${e.toFixed(1)}°`}function So(e,t){if(!e)return"—";const o=new Date(e);return Number.isNaN(o.getTime())?"—":o.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",timeZone:t})}const Eo=new Set(["outside_fov","in_fov_not_valid","hitting"]),zo={night:"sun night",hitting:"sun valid",in_fov_not_valid:"sun in-fov",outside_fov:"sun up"};function Oo(e){return e.belowHorizon?"night":e.sunState&&Eo.has(e.sunState)?e.sunState:e.directSunValid?"hitting":e.inFov?"in_fov_not_valid":"outside_fov"}const Mo=["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#17becf","#e377c2"];function Io(e){const t=Mo.length;return Mo[(e%t+t)%t]}function To(e,t){return"string"==typeof e&&e.length>0?{color:e,isOverride:!0}:{color:Io(t),isOverride:!1}}const Ro="data:image/png;base64,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",Fo=110;let jo=0,No=class extends ce{constructor(){super(...arguments),this.discovered_list=[],this.compact=!1,this.showStats=!0,this.showLegend=!0,this.showMoon=!1,this.showCardinals=!0,this.showBlindSpot=!0,this.showSunPath=!0,this.showSunriseSunset=!0,this.showCoverFill=!0,this.showWindowArrow=!0,this.coverColors=[],this.northOffsetDeg=0,this._hiddenEntries=new Set,this._legendMoonMaskId="acp-legend-moon-"+jo++}shouldUpdate(e){return e.size>1||!e.has("hass")||fe(e.get("hass"),this.hass,this._relevantIds())}_relevantIds(){const e=[];for(const t of this.discovered_list){const o=t.entities;e.push(o.target_position_sensor,o.manual_override_binary,o.sun_infront_binary,o.start_sensor,o.end_sensor,...t.managed_covers)}return e}_toggleEntry(e){const t=new Set(this._hiddenEntries);t.has(e)?t.delete(e):t.add(e),this._hiddenEntries=t}_sunFor(e){return so(this.hass,e)}_sunInfrontFor(e){const t=e.entities.sun_infront_binary;return!!t&&"on"===this.hass.states[t]?.state}_sunDotStateFor(e,t){return Oo({belowHorizon:t.elevation<=0,sunState:null,directSunValid:this._sunInfrontFor(e),inFov:!0===t.in_fov})}_readActiveAzimuth(e){if(!e)return null;const t=this.hass.states[e];if(!t)return null;if("unavailable"===t.state||"unknown"===t.state)return null;const o=t.attributes.azimuth;return"number"==typeof o&&Number.isFinite(o)?o:null}_buildOverlays(){const e=[];return this.discovered_list.forEach((t,o)=>{const i=this._sunFor(t);if(!i)return;const s=i.azimuth,{color:n,isOverride:r}=To(this.coverColors?.[o],o);e.push({d:t,sun:i,sunAzi:s,sunInfront:this._sunInfrontFor(t),dotState:this._sunDotStateFor(t,i),coverPos:co(this.hass,t),actualPos:lo(this.hass,t),coverType:t.cover_type,color:n,isOverride:r,index:o})}),e}render(){if(!this.hass)return Y;if(!this.discovered_list||0===this.discovered_list.length)return G`<div class="placeholder">${Ve("compass.placeholder_no_entries")}</div>`;const e=this._buildOverlays();if(0===e.length)return G`<div class="placeholder">${Ve("compass.placeholder_no_sun")}</div>`;const t=e.filter(e=>!this._hiddenEntries.has(e.d.window_key)),o=st(this.northOffsetDeg),i=e.length>1,s=e[0],n=s.sunAzi,r=s.sun.elevation,a=it(n,r,o),l={night:-1,outside_fov:0,in_fov_not_valid:1,hitting:2},c=r<=0?"night":e.reduce((e,t)=>l[t.dotState]>l[e]?t.dotState:e,"outside_fov"),d=zo[c],{latitude:h,longitude:u,time_zone:p}=this.hass.config,g=void 0!==h&&void 0!==u?vo(h,u,wo(p)):[],m=this.showMoon&&void 0!==h&&void 0!==u?$o(h,u):null,f=null!==m&&m.elevation>0,_=m?dt(m.phase,6):0,v=f?it(m.azimuth,m.elevation,o):null,y=v?v.x*Fo:0,w=v?v.y*Fo:0,b=this.showSunPath?function(e){const t=[];let o=-1;for(let i=0;i<e.length;i++)e[i].elevation>0?-1===o&&(o=i):-1!==o&&(t.push({startIdx:o,endIdx:i-1}),o=-1);return-1!==o&&t.push({startIdx:o,endIdx:e.length-1}),t}(g).map(e=>g.slice(e.startIdx,e.endIdx+1).map(e=>{const t=it(e.azimuth,e.elevation,o);return{x:t.x*Fo,y:t.y*Fo,elev:e.elevation}})):[],x=[122,127,135],$=[245,197,24],k=e=>{const t=Math.sqrt(Math.max(0,Math.min(1,e/90))),o=x.map((e,o)=>Math.round(e+($[o]-e)*t));return`rgb(${o[0]},${o[1]},${o[2]})`},A=this.showSunPath&&this.showSunriseSunset?b.filter(e=>e.length>1).map((e,t)=>{const o=e[0],i=e[e.length-1],s=i.x-o.x,n=i.y-o.y,r=s*s+n*n||1,a=e.filter((t,o)=>o%6==0||o===e.length-1).map(e=>({offset:100*Math.max(0,Math.min(1,((e.x-o.x)*s+(e.y-o.y)*n)/r)),color:k(e.elev)}));return{id:`sun-path-grad-${t}`,x1:o.x,y1:o.y,x2:i.x,y2:i.y,stops:a}}):[],C=e=>this.showSunriseSunset?`url(#sun-path-grad-${e})`:"var(--warning-color, gold)",S=et(0,124,o),E=et(90,124,o),z=et(180,124,o),O=et(270,124,o),M=et(0,Fo,o),I=et(180,Fo,o),T=et(90,Fo,o),R=et(270,Fo,o),F=Ve("compass.sun_tooltip",{az:Co(n),el:Co(r)}),j=null!==m?Ve("compass.moon_tooltip",{phase:m.phaseName,pct:Math.round(100*m.fraction)}):"",N=Ve("compass.sun_path_tooltip");return G`
       <div class="compass">
         <svg viewBox="${-140} ${-140} ${280} ${280}">
           ${U`
             <defs>
-              ${m?U`
+              ${f?U`
                 <mask id="moon-phase-mask">
                   <circle cx=${y} cy=${w} r=${6} fill="white"></circle>
-                  <circle cx=${y+v} cy=${w} r=${6} fill="black"></circle>
+                  <circle cx=${y+_} cy=${w} r=${6} fill="black"></circle>
                 </mask>
-              `:L}
+              `:Y}
               ${A.map(e=>U`
                 <linearGradient id=${e.id} gradientUnits="userSpaceOnUse"
                   x1=${e.x1} y1=${e.y1} x2=${e.x2} y2=${e.y2}>
@@ -92,33 +92,33 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
               `)}
             </defs>
 
-            <circle class="grid" r=${Mi}></circle>
+            <circle class="grid" r=${Fo}></circle>
             <circle class="grid" r=${220/3}></circle>
-            <circle class="grid" r=${Mi/3}></circle>
+            <circle class="grid" r=${Fo/3}></circle>
             <line class="grid thin" x1=${M.x} y1=${M.y} x2=${I.x} y2=${I.y}></line>
-            <line class="grid thin" x1=${T.x} y1=${T.y} x2=${F.x} y2=${F.y}></line>
+            <line class="grid thin" x1=${T.x} y1=${T.y} x2=${R.x} y2=${R.y}></line>
 
-            ${t.map(e=>this._renderEntryLayers(e,o,i,g))}
+            ${t.map(e=>this._renderEntryLayers(e,i,o,g))}
 
-            ${this.showSunPath&&b.length?U`<g ${gt(N)}>${b.filter(e=>e.length>1).flatMap((e,t)=>{const i=e.map(e=>`${e.x},${e.y}`).join(" "),o=U`<polyline class="sun-path-line" points=${i}
-                        style="stroke:${C(t)}"></polyline>`,s=[];for(let t=0;t<e.length;t+=10){const i=e[t],o=e[Math.max(0,t-1)],n=e[Math.min(e.length-1,t+1)],r=180*Math.atan2(n.y-o.y,n.x-o.x)/Math.PI,a=this.showSunriseSunset?k(i.elev):"var(--warning-color, gold)";s.push(U`<path class="sun-path-chevron"
-                          transform=${`translate(${i.x} ${i.y}) rotate(${r})`}
+            ${this.showSunPath&&b.length?U`<g ${_t(N)}>${b.filter(e=>e.length>1).flatMap((e,t)=>{const o=e.map(e=>`${e.x},${e.y}`).join(" "),i=U`<polyline class="sun-path-line" points=${o}
+                        style="stroke:${C(t)}"></polyline>`,s=[];for(let t=0;t<e.length;t+=10){const o=e[t],i=e[Math.max(0,t-1)],n=e[Math.min(e.length-1,t+1)],r=180*Math.atan2(n.y-i.y,n.x-i.x)/Math.PI,a=this.showSunriseSunset?k(o.elev):"var(--warning-color, gold)";s.push(U`<path class="sun-path-chevron"
+                          transform=${`translate(${o.x} ${o.y}) rotate(${r})`}
                           d="M -2.4 -3 L 1.8 0 L -2.4 3 L -0.7 0 Z"
-                          style=${`fill:${a}`}></path>`)}return[o,...s]})}</g>`:L}
+                          style=${`fill:${a}`}></path>`)}return[i,...s]})}</g>`:Y}
 
             ${this.showCardinals?U`
-              <text class="cardinal" x=${E.x} y=${E.y} text-anchor="middle" dominant-baseline="central">N</text>
-              <text class="cardinal" x=${S.x} y=${S.y} text-anchor="middle" dominant-baseline="central">E</text>
-              <text class="cardinal" x=${O.x} y=${O.y} text-anchor="middle" dominant-baseline="central">S</text>
-              <text class="cardinal" x=${z.x} y=${z.y} text-anchor="middle" dominant-baseline="central">W</text>
-            `:L}
+              <text class="cardinal" x=${S.x} y=${S.y} text-anchor="middle" dominant-baseline="central">N</text>
+              <text class="cardinal" x=${E.x} y=${E.y} text-anchor="middle" dominant-baseline="central">E</text>
+              <text class="cardinal" x=${z.x} y=${z.y} text-anchor="middle" dominant-baseline="central">S</text>
+              <text class="cardinal" x=${O.x} y=${O.y} text-anchor="middle" dominant-baseline="central">W</text>
+            `:Y}
 
-            ${m?U`
-              <g ${gt(j)}>
+            ${f?U`
+              <g ${_t(j)}>
                 <circle class="moon-outline" cx=${y} cy=${w} r=${6}></circle>
                 <image
                   class="moon-img"
-                  href=${zi}
+                  href=${Ro}
                   x=${y-6}
                   y=${w-6}
                   width=${12}
@@ -126,49 +126,49 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
                   mask="url(#moon-phase-mask)"
                 ></image>
               </g>
-            `:L}
+            `:Y}
 
-            <g ${gt(R)}>
-              <circle class=${d} cx=${a.x*Mi} cy=${a.y*Mi} r="7"></circle>
+            <g ${_t(F)}>
+              <circle class=${d} cx=${a.x*Fo} cy=${a.y*Fo} r="7"></circle>
             </g>
           `}
         </svg>
-        ${this.showLegend?this._renderLegend(e,o,d,_):L}
-        ${this.showStats?this._renderStats(e,o):L}
+        ${this.showLegend?this._renderLegend(e,i,d,m):Y}
+        ${this.showStats?this._renderStats(e,i):Y}
       </div>
-    `}_renderEntryLayers(e,t,i=0,o=[]){const s=tt(e.sun.window_azimuth),n=tt(s-e.sun.fov_left),r=tt(s+e.sun.fov_right),a=this._readActiveAzimuth(e.d.entities.start_sensor),l=this._readActiveAzimuth(e.d.entities.end_sensor),c=null!==a&&null!==l;let d,h;if(c)({wedgeStart:d,wedgeEnd:h}=function(e,t,i,o,s){const n=((i-o)%360+360)%360,r=o+s,a=((t-n)%360+360)%360,l=e=>e<=r?e:e-r<360-e?r:0,c=l(((e-n)%360+360)%360),d=l(a);return c===d?{wedgeStart:n,wedgeEnd:((n+r)%360+360)%360}:{wedgeStart:((n+Math.min(c,d))%360+360)%360,wedgeEnd:((n+Math.max(c,d))%360+360)%360}}(tt(a),tt(l),s,e.sun.fov_left,e.sun.fov_right));else{const t=function(e,t,i,o,s){if(void 0===s)return null;const n=tt(t-i),r=i+o,a=e.filter(e=>((e.azimuth-n)%360+360)%360<=r&&e.elevation>s);return 0===a.length?null:{wedgeStart:a[0].azimuth,wedgeEnd:a[a.length-1].azimuth}}(o,s,e.sun.fov_left,e.sun.fov_right,e.sun.min_elevation);d=t?t.wedgeStart:n,h=t?t.wedgeEnd:r}const p=Xe(s,Mi,i),{outer:u,inner:g}=(_=e.sun.min_elevation,m=e.sun.max_elevation,v=Mi,void 0!==_&&void 0!==m&&_>m?{outer:v,inner:0}:{outer:void 0!==_?v*Je(_):v,inner:void 0!==m?v*Je(m):0});var _,m,v;const f=null!==e.coverPos?rt(e.coverPos,e.coverType,Mi,u):null,y=null!==e.actualPos?rt(e.actualPos,e.coverType,Mi,u):null,w=e.sun.blind_spot_range?[tt((b=s)-(x=e.sun.blind_spot_range)[1]),tt(b-x[0])]:null;var b,x;const $=w?Ze(w[0],w[1],Mi,0,i):null,k=Ze(d,h,u,g,i),A=c&&(d!==n||h!==r),C=A?Ze(n,r,u,g,i):"",E=null!==f&&f>g?Ze(d,h,f,g,i):"",S=null!==y&&y>g?Ze(d,h,y,g,i):"",O=[];for(const t of fi(o,s,e.sun.fov_left,e.sun.fov_right)){const s=it(o,t.startIdx,t.endIdx,e.sun.min_elevation);s&&!nt(s.wedgeStart,s.wedgeEnd,d,h)&&O.push({fov:Ze(s.wedgeStart,s.wedgeEnd,u,g,i),cover:this.showCoverFill&&null!==f&&f>g?Ze(s.wedgeStart,s.wedgeEnd,f,g,i):"",actual:this.showCoverFill&&null!==y&&y>g?Ze(s.wedgeStart,s.wedgeEnd,y,g,i):"",from:s.wedgeStart,to:s.wedgeEnd})}const z=t?`${e.d.entry_title}: `:"",M=void 0!==e.sun.min_elevation||void 0!==e.sun.max_elevation?De("compass.elev_suffix",{min:xi(e.sun.min_elevation??0),max:xi(e.sun.max_elevation??90)}):"",I=c?`${z}${De("compass.active_sun_arc",{from:xi(d),to:xi(h),elev:M})}`:`${z}${De("compass.fov_arc",{left:xi(e.sun.fov_left),right:xi(e.sun.fov_right),elev:M})}`,T=`${z}${De("compass.window_normal_tooltip",{bearing:xi(s)})}`,F=[];if(null!==e.coverPos){const t="cover_awning"===e.coverType?"compass.cover_position_target_awning":"compass.cover_position_target";F.push(`${z}${De(t,{pct:e.coverPos})}`),null!==e.actualPos&&F.push(De("compass.cover_position_actual",{pct:Math.round(e.actualPos)}))}const R=F.join("\n"),j=w?`${z}${De("compass.blind_spot",{from:xi(w[0]),to:xi(w[1])})}`:"",N=t||e.isOverride,P=t||e.isOverride,K=N?`fill: ${e.color}; stroke: ${e.color};`:"",D=P?`fill: ${e.color}; stroke: ${e.color};`:"",B=N?`fill: ${e.color}; stroke: ${e.color};`:"",V=N?`stroke: ${e.color};`:"",G=N?`fill: ${e.color};`:"",W=this.showCoverFill&&""!==E,Y=this.showBlindSpot&&!!$,Q=this.showWindowArrow,H=`M 0 0 L ${p.x} ${p.y}`,q=N?`fill: ${e.color}; stroke: ${e.color};`:"",X=lt(p.x,p.y,s+i,9,5),J="display: none;",Z=`${z}${De("compass.fov_arc",{left:xi(e.sun.fov_left),right:xi(e.sun.fov_right),elev:M})}`;return U`<g class="entry-overlay">
-      ${A?U`<g ${gt(Z)}>
+    `}_renderEntryLayers(e,t,o=0,i=[]){const s=st(e.sun.window_azimuth),n=st(s-e.sun.fov_left),r=st(s+e.sun.fov_right),a=this._readActiveAzimuth(e.d.entities.start_sensor),l=this._readActiveAzimuth(e.d.entities.end_sensor),c=null!==a&&null!==l;let d,h;if(c)({wedgeStart:d,wedgeEnd:h}=function(e,t,o,i,s){const n=((o-i)%360+360)%360,r=i+s,a=((t-n)%360+360)%360,l=e=>e<=r?e:e-r<360-e?r:0,c=l(((e-n)%360+360)%360),d=l(a);return c===d?{wedgeStart:n,wedgeEnd:((n+r)%360+360)%360}:{wedgeStart:((n+Math.min(c,d))%360+360)%360,wedgeEnd:((n+Math.max(c,d))%360+360)%360}}(st(a),st(l),s,e.sun.fov_left,e.sun.fov_right));else{const t=function(e,t,o,i,s){if(void 0===s)return null;const n=st(t-o),r=o+i,a=e.filter(e=>((e.azimuth-n)%360+360)%360<=r&&e.elevation>s);return 0===a.length?null:{wedgeStart:a[0].azimuth,wedgeEnd:a[a.length-1].azimuth}}(i,s,e.sun.fov_left,e.sun.fov_right,e.sun.min_elevation);d=t?t.wedgeStart:n,h=t?t.wedgeEnd:r}const u=et(s,Fo,o),{outer:p,inner:g}=(m=e.sun.min_elevation,f=e.sun.max_elevation,_=Fo,void 0!==m&&void 0!==f&&m>f?{outer:_,inner:0}:{outer:void 0!==m?_*tt(m):_,inner:void 0!==f?_*tt(f):0});var m,f,_;const v=null!==e.coverPos?ct(e.coverPos,e.coverType,Fo,p):null,y=null!==e.actualPos?ct(e.actualPos,e.coverType,Fo,p):null,w=e.sun.blind_spot_range?[st((b=s)-(x=e.sun.blind_spot_range)[1]),st(b-x[0])]:null;var b,x;const $=w?ot(w[0],w[1],Fo,0,o):null,k=ot(d,h,p,g,o),A=c&&(d!==n||h!==r),C=A?ot(n,r,p,g,o):"",S=null!==v&&v>g?ot(d,h,v,g,o):"",E=null!==y&&y>g?ot(d,h,y,g,o):"",z=[];for(const t of xo(i,s,e.sun.fov_left,e.sun.fov_right)){const s=nt(i,t.startIdx,t.endIdx,e.sun.min_elevation);s&&!lt(s.wedgeStart,s.wedgeEnd,d,h)&&z.push({fov:ot(s.wedgeStart,s.wedgeEnd,p,g,o),cover:this.showCoverFill&&null!==v&&v>g?ot(s.wedgeStart,s.wedgeEnd,v,g,o):"",actual:this.showCoverFill&&null!==y&&y>g?ot(s.wedgeStart,s.wedgeEnd,y,g,o):"",from:s.wedgeStart,to:s.wedgeEnd})}const O=t?`${e.d.entry_title}: `:"",M=void 0!==e.sun.min_elevation||void 0!==e.sun.max_elevation?Ve("compass.elev_suffix",{min:Co(e.sun.min_elevation??0),max:Co(e.sun.max_elevation??90)}):"",I=c?`${O}${Ve("compass.active_sun_arc",{from:Co(d),to:Co(h),elev:M})}`:`${O}${Ve("compass.fov_arc",{left:Co(e.sun.fov_left),right:Co(e.sun.fov_right),elev:M})}`,T=`${O}${Ve("compass.window_normal_tooltip",{bearing:Co(s)})}`,R=[];if(null!==e.coverPos){const t="cover_awning"===e.coverType?"compass.cover_position_target_awning":"compass.cover_position_target";R.push(`${O}${Ve(t,{pct:e.coverPos})}`),null!==e.actualPos&&R.push(Ve("compass.cover_position_actual",{pct:Math.round(e.actualPos)}))}const F=R.join("\n"),j=w?`${O}${Ve("compass.blind_spot",{from:Co(w[0]),to:Co(w[1])})}`:"",N=t||e.isOverride,P=t||e.isOverride,K=N?`fill: ${e.color}; stroke: ${e.color};`:"",D=P?`fill: ${e.color}; stroke: ${e.color};`:"",B=N?`fill: ${e.color}; stroke: ${e.color};`:"",W=N?`stroke: ${e.color};`:"",V=N?`fill: ${e.color};`:"",G=this.showCoverFill&&""!==S,L=this.showBlindSpot&&!!$,H=this.showWindowArrow,Q=`M 0 0 L ${u.x} ${u.y}`,q=N?`fill: ${e.color}; stroke: ${e.color};`:"",X=ht(u.x,u.y,s+o,9,5),J="display: none;",Z=`${O}${Ve("compass.fov_arc",{left:Co(e.sun.fov_left),right:Co(e.sun.fov_right),elev:M})}`;return U`<g class="entry-overlay">
+      ${A?U`<g ${_t(Z)}>
               <path class="fov fov-static" style=${K} d=${C}></path>
-            </g>`:L}
-      <g ${gt(I)}>
+            </g>`:Y}
+      <g ${_t(I)}>
         <path class="fov" style=${K} d=${k}></path>
       </g>
-      ${O.map(e=>{const t=`${z}${De("compass.active_sun_arc",{from:xi(e.from),to:xi(e.to),elev:M})}`;return U`<g ${gt(t)}>
+      ${z.map(e=>{const t=`${O}${Ve("compass.active_sun_arc",{from:Co(e.from),to:Co(e.to),elev:M})}`;return U`<g ${_t(t)}>
           <path class="fov-extra" style=${K} d=${e.fov}></path>
-          ${e.cover?U`<path class="cover-fill-extra" style=${D} d=${e.cover}></path>`:L}
-          ${e.actual?U`<path class="cover-actual-extra" style=${D} d=${e.actual}></path>`:L}
+          ${e.cover?U`<path class="cover-fill-extra" style=${D} d=${e.cover}></path>`:Y}
+          ${e.actual?U`<path class="cover-actual-extra" style=${D} d=${e.actual}></path>`:Y}
         </g>`})}
-      <g class="arrow-group" style=${Q?"":J} ${gt(T)}>
-        <path class="window" style=${V} d=${H}></path>
+      <g class="arrow-group" style=${H?"":J} ${_t(T)}>
+        <path class="window" style=${W} d=${Q}></path>
         <path class="window-head" style=${q} d=${X}></path>
-        <circle class="window-base" style=${G} cx="0" cy="0" r="4"></circle>
+        <circle class="window-base" style=${V} cx="0" cy="0" r="4"></circle>
       </g>
-      <g class="cover-group" style=${W?"":J} ${gt(R)}>
-        <path class="cover-fill" style=${D} d=${E}></path>
-        ${this.showCoverFill&&S?U`<path class="cover-actual" style=${D} d=${S}></path>`:L}
+      <g class="cover-group" style=${G?"":J} ${_t(F)}>
+        <path class="cover-fill" style=${D} d=${S}></path>
+        ${this.showCoverFill&&E?U`<path class="cover-actual" style=${D} d=${E}></path>`:Y}
       </g>
-      <g class="blind-group" style=${Y?"":J} ${gt(j)}>
+      <g class="blind-group" style=${L?"":J} ${_t(j)}>
         <path class="blind-spot" style=${B} d=${$??""}></path>
       </g>
-    </g>`}_legendSunGlyph(e){return W`<span class="glyph"
+    </g>`}_legendSunGlyph(e){return G`<span class="glyph"
       ><svg viewBox="-8 -8 16 16" width="20" height="20">
         ${U`<circle class=${e} cx="0" cy="0" r="5"></circle>`}
       </svg></span
-    >`}_legendMoonGlyph(e){const t=e?at(e.phase,4):0,i=this._legendMoonMaskId;return W`<span class="glyph"
+    >`}_legendMoonGlyph(e){const t=e?dt(e.phase,4):0,o=this._legendMoonMaskId;return G`<span class="glyph"
       ><svg viewBox="-5 -5 10 10" width="11" height="11">
         ${U`
           <defs>
-            <mask id=${i}>
+            <mask id=${o}>
               <circle cx="0" cy="0" r=${4} fill="white"></circle>
               <circle cx=${t} cy="0" r=${4} fill="black"></circle>
             </mask>
@@ -176,30 +176,30 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
           <circle class="moon-outline" cx="0" cy="0" r=${4}></circle>
           <image
             class="moon-img"
-            href=${zi}
+            href=${Ro}
             x=${-4}
             y=${-4}
             width=${8}
             height=${8}
-            mask=${`url(#${i})`}
+            mask=${`url(#${o})`}
           ></image>
         `}
       </svg></span
-    >`}_legendWindowGlyph(e){const t=e?`stroke: ${e};`:"",i=e?`fill: ${e};`:"",o=lt(5,0,90,4,2);return W`<span class="glyph"
+    >`}_legendWindowGlyph(e){const t=e?`stroke: ${e};`:"",o=e?`fill: ${e};`:"",i=ht(5,0,90,4,2);return G`<span class="glyph"
       ><svg class="window-glyph" viewBox="-6 -6 12 12" width="13" height="13">
         ${U`
           <line class="window" style=${t} x1="-5" y1="0" x2="1.5" y2="0"></line>
-          <path class="window-head" style=${i} d=${o}></path>
+          <path class="window-head" style=${o} d=${i}></path>
         `}
       </svg></span
-    >`}_renderLegend(e,t,i,o){const s=e[0]?.isOverride?e[0].color??null:null,n=e[0],r=null!==n?.coverPos&&null!=n?.actualPos&&void 0!==n?.coverPos&&Math.round(n.actualPos)!==Math.round(n.coverPos);return t?W`
+    >`}_renderLegend(e,t,o,i){const s=e[0]?.isOverride?e[0].color??null:null,n=e[0],r=null!==n?.coverPos&&null!=n?.actualPos&&void 0!==n?.coverPos&&Math.round(n.actualPos)!==Math.round(n.coverPos);return t?G`
         <div class="legend">
-          <div>${this._legendSunGlyph(i)} ${De("compass.sun")}</div>
-          ${this.showMoon?W`<div>${this._legendMoonGlyph(o)} ${De("compass.moon")}</div>`:L}
-          ${e.map(e=>W`
+          <div>${this._legendSunGlyph(o)} ${Ve("compass.sun")}</div>
+          ${this.showMoon?G`<div>${this._legendMoonGlyph(i)} ${Ve("compass.moon")}</div>`:Y}
+          ${e.map(e=>G`
               <button
                 type="button"
-                class=${Xt({"entry-toggle":!0,hidden:this._hiddenEntries.has(e.d.window_key)})}
+                class=${eo({"entry-toggle":!0,hidden:this._hiddenEntries.has(e.d.window_key)})}
                 aria-pressed=${!this._hiddenEntries.has(e.d.window_key)}
                 @click=${()=>this._toggleEntry(e.d.window_key)}
               >
@@ -207,13 +207,13 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
                   ><span class="swatch entry" style="background: ${e.color}"></span
                 ></span>
                 ${e.d.entry_title}
-                ${e.sunInfront?W`<span class="status valid">${De("compass.in_fov_check")}</span>`:e.sun.in_fov?W`<span class="status in-fov">${De("compass.in_fov")}</span>`:W`<span class="status">${De("compass.none")}</span>`}
+                ${e.sunInfront?G`<span class="status valid">${Ve("compass.in_fov_check")}</span>`:e.sun.in_fov?G`<span class="status in-fov">${Ve("compass.in_fov")}</span>`:G`<span class="status">${Ve("compass.none")}</span>`}
               </button>
             `)}
         </div>
-      `:W`<div class="legend">
-      <div>${this._legendSunGlyph(i)} ${De("compass.sun")}</div>
-      ${this.showMoon?W`<div>${this._legendMoonGlyph(o)} ${De("compass.moon")}</div>`:L}
+      `:G`<div class="legend">
+      <div>${this._legendSunGlyph(o)} ${Ve("compass.sun")}</div>
+      ${this.showMoon?G`<div>${this._legendMoonGlyph(i)} ${Ve("compass.moon")}</div>`:Y}
       <div>
         <span class="licell"
           ><span
@@ -221,56 +221,56 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
             style=${s?`background: ${s}`:""}
           ></span
         ></span>
-        ${De("compass.window_fov")}
+        ${Ve("compass.window_fov")}
       </div>
-      ${this.showCoverFill?W`<div>
+      ${this.showCoverFill?G`<div>
             <span class="licell"
               ><span
                 class="swatch cover-fill-swatch"
                 style=${s?`background: ${s}`:""}
               ></span
             ></span>
-            ${De("compass.cover_target")}
-          </div>`:L}
-      ${this.showCoverFill&&r?W`<div>
+            ${Ve("compass.cover_target")}
+          </div>`:Y}
+      ${this.showCoverFill&&r?G`<div>
             <span class="licell"
               ><span
                 class="swatch cover-actual-swatch"
                 style=${s?`border-color: ${s}`:""}
               ></span
             ></span>
-            ${De("compass.cover_held")}
-          </div>`:L}
-      ${this.showWindowArrow?W`<div>${this._legendWindowGlyph(s)} ${De("compass.window_normal")}</div>`:L}
-    </div>`}_renderStats(e,t){const i=e[0],o=i.sunAzi,s=i.sun.elevation,{latitude:n,longitude:r}=this.hass.config,a=this.showMoon&&void 0!==n&&void 0!==r?yi(n,r):null;return t?W`
+            ${Ve("compass.cover_held")}
+          </div>`:Y}
+      ${this.showWindowArrow?G`<div>${this._legendWindowGlyph(s)} ${Ve("compass.window_normal")}</div>`:Y}
+    </div>`}_renderStats(e,t){const o=e[0],i=o.sunAzi,s=o.sun.elevation,{latitude:n,longitude:r}=this.hass.config,a=this.showMoon&&void 0!==n&&void 0!==r?$o(n,r):null;return t?G`
         <div class="stats dim">
           <div class="stats-row">
             <span
-              >${De("compass.stat_sun")}${xi(o)} / ${xi(s)}</span
+              >${Ve("compass.stat_sun")}${Co(i)} / ${Co(s)}</span
             >
-            ${this.showMoon&&a?W`<span>${a.phaseName} ${Math.round(100*a.fraction)}%</span>`:L}
+            ${this.showMoon&&a?G`<span>${a.phaseName} ${Math.round(100*a.fraction)}%</span>`:Y}
           </div>
-          ${e.map(e=>W`
+          ${e.map(e=>G`
               <div class="stats-row entry-row">
                 <span class="swatch entry" style="background: ${e.color}"></span>
                 <span class="entry-name">${e.d.entry_title}</span>
-                <span>∠${xi(e.sun.gamma)}</span>
-                <span>W ${xi(tt(e.sun.window_azimuth))}</span>
-                ${e.sun.in_fov?W`<span class="status in-fov" ${gt(De("compass.in_fov_tooltip"))}
+                <span>∠${Co(e.sun.gamma)}</span>
+                <span>W ${Co(st(e.sun.window_azimuth))}</span>
+                ${e.sun.in_fov?G`<span class="status in-fov" ${_t(Ve("compass.in_fov_tooltip"))}
                       >✓</span
-                    >`:L}
+                    >`:Y}
               </div>
             `)}
         </div>
-      `:W`<div class="stats dim">
-      <span>${De("compass.stat_azi")}${xi(o)}</span>
-      <span>${De("compass.stat_elev")}${xi(s)}</span>
-      <span>∠: ${xi(i.sun.gamma)}</span>
+      `:G`<div class="stats dim">
+      <span>${Ve("compass.stat_azi")}${Co(i)}</span>
+      <span>${Ve("compass.stat_elev")}${Co(s)}</span>
+      <span>∠: ${Co(o.sun.gamma)}</span>
       <span
-        >${De("compass.stat_window")}${xi(tt(i.sun.window_azimuth))}</span
+        >${Ve("compass.stat_window")}${Co(st(o.sun.window_azimuth))}</span
       >
-      ${this.showMoon&&a?W`<span>${a.phaseName} ${Math.round(100*a.fraction)}%</span>`:L}
-    </div>`}};function Fi(e){let t=null,i=null;const o=6e4-Date.now()%6e4;return t=setTimeout(()=>{t=null,e(),i=setInterval(e,6e4)},o),()=>{null!==t&&(clearTimeout(t),t=null),null!==i&&(clearInterval(i),i=null)}}Ti.styles=r`
+      ${this.showMoon&&a?G`<span>${a.phaseName} ${Math.round(100*a.fraction)}%</span>`:Y}
+    </div>`}};function Po(e){let t=null,o=null;const i=6e4-Date.now()%6e4;return t=setTimeout(()=>{t=null,e(),o=setInterval(e,6e4)},i),()=>{null!==t&&(clearTimeout(t),t=null),null!==o&&(clearInterval(o),o=null)}}No.styles=r`
     :host {
       display: block;
       width: 100%;
@@ -622,39 +622,39 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
     [data-tooltip][acp-tt-shown] {
       cursor: default;
     }
-  `,e([ge({attribute:!1})],Ti.prototype,"hass",void 0),e([ge({attribute:!1})],Ti.prototype,"discovered_list",void 0),e([ge({type:Boolean,reflect:!0})],Ti.prototype,"compact",void 0),e([ge({attribute:!1})],Ti.prototype,"showStats",void 0),e([ge({attribute:!1})],Ti.prototype,"showLegend",void 0),e([ge({attribute:!1})],Ti.prototype,"showMoon",void 0),e([ge({attribute:!1})],Ti.prototype,"showCardinals",void 0),e([ge({attribute:!1})],Ti.prototype,"showBlindSpot",void 0),e([ge({attribute:!1})],Ti.prototype,"showSunPath",void 0),e([ge({attribute:!1})],Ti.prototype,"showSunriseSunset",void 0),e([ge({attribute:!1})],Ti.prototype,"showCoverFill",void 0),e([ge({attribute:!1})],Ti.prototype,"showWindowArrow",void 0),e([ge({attribute:!1})],Ti.prototype,"coverColors",void 0),e([ge({attribute:!1})],Ti.prototype,"northOffsetDeg",void 0),e([_e()],Ti.prototype,"_hiddenEntries",void 0),Ti=e([he("acp-sky-compass")],Ti);const Ri=32,ji=864e5;function Ni(e){if(!e)return null;const t=new Date(e);return Number.isNaN(t.getTime())?null:t}let Pi=class extends ce{constructor(){super(...arguments),this.discoveredList=[],this.coverColors=[],this.compact=!1,this._cancelMinuteTimer=null}connectedCallback(){super.connectedCallback(),this._cancelMinuteTimer=Fi(()=>this.requestUpdate())}disconnectedCallback(){super.disconnectedCallback(),this._cancelMinuteTimer?.(),this._cancelMinuteTimer=null}shouldUpdate(e){if(e.size>1||!e.has("hass"))return!0;const t=e.get("hass"),i=[];for(const e of this.discoveredList){const t=e.entities;i.push(t.target_position_sensor,t.sun_infront_binary)}return me(t,this.hass,i)}_sunAttrsFor(e){return ti(this.hass,e)}_sunDotTraceInputs(){const e=this.discoveredList[0]?.entities.sun_infront_binary;return{sunState:null,directSunValid:!!e&&"on"===this.hass.states[e]?.state}}_scheduleBounds(){const e=this.discoveredList[0]?.entities.control_status_sensor;if(!e)return null;const t=this.hass.states[e]?.attributes;return t?{start:Ni(t.schedule_start),end:Ni(t.schedule_end)}:null}render(){if(!this.hass||0===this.discoveredList.length)return L;const e=this._sunAttrsFor(this.discoveredList[0]),{latitude:t,longitude:i,time_zone:o}=this.hass.config??{};if(void 0===t||void 0===i||!e)return W`<div class="placeholder">${De("elevation.placeholder")}</div>`;const s=mi(o),n=gi(t,i,s),r=new Date,a=e=>{const t=e.getTime()-s.getTime();return Ri+t/864e5*360},l=e=>138-(e- -10)/100*128,c=n.map(e=>`${a(e.t).toFixed(1)},${l(e.elevation).toFixed(1)}`).join(" "),d=l(0),h=a(r),p=this._interpAt(n,r),u=p?l(p.elevation):null,g=!p||p.elevation<=0,_=this._sunDotTraceInputs(),m=Ai[Ci({belowHorizon:g,sunState:_.sunState,directSunValid:_.directSunValid,inFov:!0===e.in_fov})].replace(/^sun /,""),v=e=>138-128*e,f=this.discoveredList.length>1,y=this._scheduleBounds(),w=y?function(e,t,i,o){if(!e&&!t)return{offSchedule:[],bars:[]};const s=e=>(e.getTime()-i)/o,n=e=>Math.max(0,Math.min(1,e)),r=e=>n(e),a=e=>e>1?e-Math.floor(e):n(e),l=e=>e>0&&e<1?[e]:[];if(e&&!t){const t=s(e);return{offSchedule:[{x0:0,x1:r(t)}],bars:l(t)}}if(!e&&t){const e=s(t);return{offSchedule:[{x0:a(e),x1:1}],bars:l(e)}}const c=s(e),d=s(t),h=r(c),p=a(d),u=[...l(c),...l(d)];if(h>p)return{offSchedule:[{x0:p,x1:h}],bars:u};const g=[];return h>0&&g.push({x0:0,x1:h}),p<1&&g.push({x0:p,x1:1}),{offSchedule:g,bars:u}}(y.start,y.end,s.getTime(),ji):{offSchedule:[],bars:[]},b=e=>Ri+360*e,x=w.offSchedule.map(e=>({x:b(e.x0),width:b(e.x1)-b(e.x0)})),$=y?.start&&s?(y.start.getTime()-s.getTime())/ji:null,k=w.bars.map(e=>{const t=null!==$&&Math.abs(e-$)<1e-9?y.start.toISOString():y.end.toISOString(),i=null!==$&&Math.abs(e-$)<1e-9,s=b(e);return{x:s,anchor:s>=391?"end":s<=33?"start":"middle",label:$i(t,o),tooltip:De(i?"elevation.schedule_start_tooltip":"elevation.schedule_end_tooltip")}}),A=(()=>{if(!y)return null;const e=y.start?$i(y.start.toISOString(),o):null,t=y.end?$i(y.end.toISOString(),o):null;return e&&t?De("elevation.schedule",{from:e,to:t}):e?De("elevation.schedule_from",{from:e}):t?De("elevation.schedule_until",{to:t}):null})(),C=this.discoveredList.map((e,t)=>{const i=this._sunAttrsFor(e),{color:s,isOverride:r}=Oi(this.coverColors?.[t],t),l=r;if(!i)return{d:e,runs:[],inPlotBands:[],runBars:[],label:"",color:s,inlineFill:l};const c=fi(n,i.window_azimuth,i.fov_left,i.fov_right),d="number"==typeof i.min_elevation,h="number"==typeof i.max_elevation,{loFrac:p,hiFrac:u}=function(e,t){if(void 0!==e&&void 0!==t&&e>t)return{loFrac:0,hiFrac:1};const i=e=>Math.max(0,Math.min(1,(e- -10)/100));return{loFrac:void 0!==e?i(e):0,hiFrac:void 0!==t?i(t):1}}(i.min_elevation,i.max_elevation),g=d||h?v(u):10,_=d||h?v(p):138,m=g,y=Math.max(0,_-g),w=c.map(e=>({x0:a(n[e.startIdx].t),x1:a(n[e.endIdx].t),y:m,height:y})),b=c.map(e=>({x0:a(n[e.startIdx].t),x1:a(n[e.endIdx].t),range:`${$i(n[e.startIdx].t.toISOString(),o)} → ${$i(n[e.endIdx].t.toISOString(),o)}`})),x=c.map(e=>`${$i(n[e.startIdx].t.toISOString(),o)} → ${$i(n[e.endIdx].t.toISOString(),o)}`).join(", "),$=[];return f||(d&&$.push(_),h&&$.push(g)),{d:e,runs:c,inPlotBands:w,runBars:b,label:x,color:s,inlineFill:l,limitLines:$}}),E=C.some(e=>e.runs.length>0),S=f?function(e){if(e<=0)return{rows:[],height:0};const t=Array.from({length:e},(e,t)=>({y:0+11*t,height:8}));return{rows:t,height:0+8*e+3*(e-1)+0}}(C.length):{rows:[],height:0},O=138-S.height-3;return W`
+  `,e([ge({attribute:!1})],No.prototype,"hass",void 0),e([ge({attribute:!1})],No.prototype,"discovered_list",void 0),e([ge({type:Boolean,reflect:!0})],No.prototype,"compact",void 0),e([ge({attribute:!1})],No.prototype,"showStats",void 0),e([ge({attribute:!1})],No.prototype,"showLegend",void 0),e([ge({attribute:!1})],No.prototype,"showMoon",void 0),e([ge({attribute:!1})],No.prototype,"showCardinals",void 0),e([ge({attribute:!1})],No.prototype,"showBlindSpot",void 0),e([ge({attribute:!1})],No.prototype,"showSunPath",void 0),e([ge({attribute:!1})],No.prototype,"showSunriseSunset",void 0),e([ge({attribute:!1})],No.prototype,"showCoverFill",void 0),e([ge({attribute:!1})],No.prototype,"showWindowArrow",void 0),e([ge({attribute:!1})],No.prototype,"coverColors",void 0),e([ge({attribute:!1})],No.prototype,"northOffsetDeg",void 0),e([me()],No.prototype,"_hiddenEntries",void 0),No=e([he("acp-sky-compass")],No);const Ko=32,Do=864e5;function Bo(e){if(!e)return null;const t=new Date(e);return Number.isNaN(t.getTime())?null:t}let Wo=class extends ce{constructor(){super(...arguments),this.discoveredList=[],this.coverColors=[],this.compact=!1,this._cancelMinuteTimer=null}connectedCallback(){super.connectedCallback(),this._cancelMinuteTimer=Po(()=>this.requestUpdate())}disconnectedCallback(){super.disconnectedCallback(),this._cancelMinuteTimer?.(),this._cancelMinuteTimer=null}shouldUpdate(e){if(e.size>1||!e.has("hass"))return!0;const t=e.get("hass"),o=[];for(const e of this.discoveredList){const t=e.entities;o.push(t.target_position_sensor,t.sun_infront_binary)}return fe(t,this.hass,o)}_sunAttrsFor(e){return so(this.hass,e)}_sunDotTraceInputs(){const e=this.discoveredList[0]?.entities.sun_infront_binary;return{sunState:null,directSunValid:!!e&&"on"===this.hass.states[e]?.state}}_scheduleBounds(){const e=this.discoveredList[0]?.entities.control_status_sensor;if(!e)return null;const t=this.hass.states[e]?.attributes;return t?{start:Bo(t.schedule_start),end:Bo(t.schedule_end)}:null}render(){if(!this.hass||0===this.discoveredList.length)return Y;const e=this._sunAttrsFor(this.discoveredList[0]),{latitude:t,longitude:o,time_zone:i}=this.hass.config??{};if(void 0===t||void 0===o||!e)return G`<div class="placeholder">${Ve("elevation.placeholder")}</div>`;const s=wo(i),n=vo(t,o,s),r=new Date,a=e=>{const t=e.getTime()-s.getTime();return Ko+t/864e5*360},l=e=>138-(e- -10)/100*128,c=n.map(e=>`${a(e.t).toFixed(1)},${l(e.elevation).toFixed(1)}`).join(" "),d=l(0),h=a(r),u=this._interpAt(n,r),p=u?l(u.elevation):null,g=!u||u.elevation<=0,m=this._sunDotTraceInputs(),f=zo[Oo({belowHorizon:g,sunState:m.sunState,directSunValid:m.directSunValid,inFov:!0===e.in_fov})].replace(/^sun /,""),_=e=>138-128*e,v=this.discoveredList.length>1,y=this._scheduleBounds(),w=y?function(e,t,o,i){if(!e&&!t)return{offSchedule:[],bars:[]};const s=e=>(e.getTime()-o)/i,n=e=>Math.max(0,Math.min(1,e)),r=e=>n(e),a=e=>e>1?e-Math.floor(e):n(e),l=e=>e>0&&e<1?[e]:[];if(e&&!t){const t=s(e);return{offSchedule:[{x0:0,x1:r(t)}],bars:l(t)}}if(!e&&t){const e=s(t);return{offSchedule:[{x0:a(e),x1:1}],bars:l(e)}}const c=s(e),d=s(t),h=r(c),u=a(d),p=[...l(c),...l(d)];if(h>u)return{offSchedule:[{x0:u,x1:h}],bars:p};const g=[];return h>0&&g.push({x0:0,x1:h}),u<1&&g.push({x0:u,x1:1}),{offSchedule:g,bars:p}}(y.start,y.end,s.getTime(),Do):{offSchedule:[],bars:[]},b=e=>Ko+360*e,x=w.offSchedule.map(e=>({x:b(e.x0),width:b(e.x1)-b(e.x0)})),$=y?.start&&s?(y.start.getTime()-s.getTime())/Do:null,k=w.bars.map(e=>{const t=null!==$&&Math.abs(e-$)<1e-9?y.start.toISOString():y.end.toISOString(),o=null!==$&&Math.abs(e-$)<1e-9,s=b(e);return{x:s,anchor:s>=391?"end":s<=33?"start":"middle",label:So(t,i),tooltip:Ve(o?"elevation.schedule_start_tooltip":"elevation.schedule_end_tooltip")}}),A=(()=>{if(!y)return null;const e=y.start?So(y.start.toISOString(),i):null,t=y.end?So(y.end.toISOString(),i):null;return e&&t?Ve("elevation.schedule",{from:e,to:t}):e?Ve("elevation.schedule_from",{from:e}):t?Ve("elevation.schedule_until",{to:t}):null})(),C=this.discoveredList.map((e,t)=>{const o=this._sunAttrsFor(e),{color:s,isOverride:r}=To(this.coverColors?.[t],t),l=r;if(!o)return{d:e,runs:[],inPlotBands:[],runBars:[],label:"",color:s,inlineFill:l};const c=xo(n,o.window_azimuth,o.fov_left,o.fov_right),d="number"==typeof o.min_elevation,h="number"==typeof o.max_elevation,{loFrac:u,hiFrac:p}=function(e,t){if(void 0!==e&&void 0!==t&&e>t)return{loFrac:0,hiFrac:1};const o=e=>Math.max(0,Math.min(1,(e- -10)/100));return{loFrac:void 0!==e?o(e):0,hiFrac:void 0!==t?o(t):1}}(o.min_elevation,o.max_elevation),g=d||h?_(p):10,m=d||h?_(u):138,f=g,y=Math.max(0,m-g),w=c.map(e=>({x0:a(n[e.startIdx].t),x1:a(n[e.endIdx].t),y:f,height:y})),b=c.map(e=>({x0:a(n[e.startIdx].t),x1:a(n[e.endIdx].t),range:`${So(n[e.startIdx].t.toISOString(),i)} → ${So(n[e.endIdx].t.toISOString(),i)}`})),x=c.map(e=>`${So(n[e.startIdx].t.toISOString(),i)} → ${So(n[e.endIdx].t.toISOString(),i)}`).join(", "),$=[];return v||(d&&$.push(m),h&&$.push(g)),{d:e,runs:c,inPlotBands:w,runBars:b,label:x,color:s,inlineFill:l,limitLines:$}}),S=C.some(e=>e.runs.length>0),E=v?function(e){if(e<=0)return{rows:[],height:0};const t=Array.from({length:e},(e,t)=>({y:0+11*t,height:8}));return{rows:t,height:0+8*e+3*(e-1)+0}}(C.length):{rows:[],height:0},z=138-E.height-3;return G`
       <div class="wrap">
         <div class="head">
-          <span class="label">${De("elevation.title")}</span>
+          <span class="label">${Ve("elevation.title")}</span>
           <span class="head-meta">
-            ${f?L:E?W`<span class="dim"
-                      >${De("elevation.fov_windows",{windows:C[0].label})}</span
-                    >`:W`<span class="dim">${De("elevation.no_fov_today")}</span>`}
-            ${A?W`<span class="dim schedule">${A}</span>`:L}
+            ${v?Y:S?G`<span class="dim"
+                      >${Ve("elevation.fov_windows",{windows:C[0].label})}</span
+                    >`:G`<span class="dim">${Ve("elevation.no_fov_today")}</span>`}
+            ${A?G`<span class="dim schedule">${A}</span>`:Y}
           </span>
         </div>
         <svg viewBox="0 0 ${400} ${160}" preserveAspectRatio="none">
           ${U`
             <!-- y-axis gridlines -->
             ${[0,30,60,90].map(e=>U`
-              <line class="grid" x1=${Ri} y1=${l(e)} x2=${392} y2=${l(e)} />
+              <line class="grid" x1=${Ko} y1=${l(e)} x2=${392} y2=${l(e)} />
               <text class="tick" x=${28} y=${l(e)+3} text-anchor="end">${e}°</text>
             `)}
 
             <!-- horizon -->
-            <line class="horizon" x1=${Ri} y1=${d} x2=${392} y2=${d} />
+            <line class="horizon" x1=${Ko} y1=${d} x2=${392} y2=${d} />
 
             <!-- elevation limit gridlines (single-window legacy path only) -->
-            ${C.flatMap(e=>(e.limitLines??[]).map(e=>U`<line class="limit-line" x1=${Ri} y1=${e} x2=${392} y2=${e} />`))}
+            ${C.flatMap(e=>(e.limitLines??[]).map(e=>U`<line class="limit-line" x1=${Ko} y1=${e} x2=${392} y2=${e} />`))}
 
             <!-- In-plot FOV bands: single-window legacy path only. -->
-            ${f?L:C.flatMap(e=>e.inPlotBands.map(t=>U`<rect
+            ${v?Y:C.flatMap(e=>e.inPlotBands.map(t=>U`<rect
                         class="fov-band"
                         x=${t.x0}
                         y=${t.y}
                         width=${t.x1-t.x0}
                         height=${t.height}
-                        style=${e.inlineFill?`fill:${e.color}`:L}
+                        style=${e.inlineFill?`fill:${e.color}`:Y}
                       />`))}
 
             <!-- Per-window FOV ribbon (multi-window only): one row per window,
@@ -662,23 +662,23 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
                  sharing the plot's xAt() time scale. Overlaid as a band anchored
                  to the bottom of the plot; drawn BEFORE the curve so the blue
                  curve stays crisp on top. -->
-            ${S.rows.flatMap((e,t)=>{const i=C[t],o=O+e.y,s=i.runs.length?i.d.entry_title:De("elevation.fov_window_named",{name:i.d.entry_title,windows:De("elevation.no_fov_today")}),n=U`<rect
+            ${E.rows.flatMap((e,t)=>{const o=C[t],i=z+e.y,s=o.runs.length?o.d.entry_title:Ve("elevation.fov_window_named",{name:o.d.entry_title,windows:Ve("elevation.no_fov_today")}),n=U`<rect
                 class="ribbon-track"
-                x=${Ri}
-                y=${o}
+                x=${Ko}
+                y=${i}
                 width=${360}
                 height=${e.height}
                 rx="2"
-                ${gt(s)}
-              ></rect>`,r=i.runBars.map(t=>U`<rect
+                ${_t(s)}
+              ></rect>`,r=o.runBars.map(t=>U`<rect
                   class="ribbon-bar"
                   x=${t.x0}
-                  y=${o}
+                  y=${i}
                   width=${t.x1-t.x0}
                   height=${e.height}
                   rx="2"
-                  style=${`fill:${i.color}`}
-                  ${gt(De("elevation.fov_window_named",{name:i.d.entry_title,windows:t.range}))}
+                  style=${`fill:${o.color}`}
+                  ${_t(Ve("elevation.fov_window_named",{name:o.d.entry_title,windows:t.range}))}
                 ></rect>`);return[n,...r]})}
 
             <!-- Schedule window overlay (issue #128): faint off-schedule gray
@@ -699,7 +699,7 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
                 y1=${10}
                 x2=${e.x}
                 y2=${138}
-                ${gt(e.tooltip)}
+                ${_t(e.tooltip)}
               ></line>`,U`<text
                 class="schedule-tick"
                 x=${e.x}
@@ -713,24 +713,24 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
             <!-- current-time cursor + sun dot, drawn last so they sit on top of
                  the curve AND the ribbon bars. A wide transparent hit-line widens
                  the hover target so the thin now-line is easy to tooltip. -->
-            <g class="now-group" ${gt($i(r.toISOString(),o))}>
+            <g class="now-group" ${_t(So(r.toISOString(),i))}>
               <line class="now-hit" x1=${h} y1=${10} x2=${h} y2=${138} />
               <line class="now" x1=${h} y1=${10} x2=${h} y2=${138} />
             </g>
-            ${null!==u?U`<circle class="sun-dot ${m}" cx=${h} cy=${u} r="4" />`:L}
+            ${null!==p?U`<circle class="sun-dot ${f}" cx=${h} cy=${p} r="4" />`:Y}
 
             <!-- x-axis gridlines + time labels at every 6h, drawn last so the
                  axis sits on the topmost layer (nothing paints over the times).
                  Edge labels anchor inward (start at 00:00, end at 24:00) so they
                  don't clip past the viewBox. -->
-            ${[0,6,12,18,24].map(e=>{const t=new Date(s.getTime()+36e5*e),i=0===e?"start":24===e?"end":"middle";return U`
+            ${[0,6,12,18,24].map(e=>{const t=new Date(s.getTime()+36e5*e),o=0===e?"start":24===e?"end":"middle";return U`
                 <line class="grid faint" x1=${a(t)} y1=${10} x2=${a(t)} y2=${138} />
-                <text class="tick" x=${a(t)} y=${152} text-anchor=${i}>${e.toString().padStart(2,"0")}:00</text>
+                <text class="tick" x=${a(t)} y=${152} text-anchor=${o}>${e.toString().padStart(2,"0")}:00</text>
               `})}
           `}
         </svg>
       </div>
-    `}_interpAt(e,t){if(0===e.length)return null;const i=t.getTime();if(i<=e[0].t.getTime())return e[0];if(i>=e[e.length-1].t.getTime())return e[e.length-1];for(let o=1;o<e.length;o++)if(e[o].t.getTime()>=i){const s=e[o-1],n=e[o],r=(i-s.t.getTime())/(n.t.getTime()-s.t.getTime());return{t:t,elevation:s.elevation+(n.elevation-s.elevation)*r,azimuth:s.azimuth+(n.azimuth-s.azimuth)*r}}return e[e.length-1]}};function Ki(e){return String(e??"").trim().toLowerCase()}function Di(e,t,i,o=Se,s=null){const n=o[Ki(i)]??i,r=null!==s?` ${bi(s)}`:"",a=t.reason??(e.length>0?e[e.length-1].reason:"");return a?`${n}${r} — ${a}`:`${n}${r}`.trimEnd()}Pi.styles=r`
+    `}_interpAt(e,t){if(0===e.length)return null;const o=t.getTime();if(o<=e[0].t.getTime())return e[0];if(o>=e[e.length-1].t.getTime())return e[e.length-1];for(let i=1;i<e.length;i++)if(e[i].t.getTime()>=o){const s=e[i-1],n=e[i],r=(o-s.t.getTime())/(n.t.getTime()-s.t.getTime());return{t:t,elevation:s.elevation+(n.elevation-s.elevation)*r,azimuth:s.azimuth+(n.azimuth-s.azimuth)*r}}return e[e.length-1]}};function Vo(e){return String(e??"").trim().toLowerCase()}function Go(e,t,o,i=Me,s=null){const n=i[Vo(o)]??o,r=null!==s?` ${Ao(s)}`:"",a=t.reason??(e.length>0?e[e.length-1].reason:"");return a?`${n}${r} — ${a}`:`${n}${r}`.trimEnd()}Wo.styles=r`
     :host {
       display: block;
       width: 100%;
@@ -880,22 +880,22 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
       text-align: center;
       padding: 20px;
     }
-  `,e([ge({attribute:!1})],Pi.prototype,"hass",void 0),e([ge({attribute:!1})],Pi.prototype,"discoveredList",void 0),e([ge({attribute:!1})],Pi.prototype,"coverColors",void 0),e([ge({type:Boolean,reflect:!0})],Pi.prototype,"compact",void 0),Pi=e([he("acp-elevation-chart")],Pi);let Bi=class extends ce{constructor(){super(...arguments),this.compact=!1,this.showSummary=!0,this.hideInactive=!1}shouldUpdate(e){if(e.size>1||!e.has("hass"))return!0;const t=e.get("hass"),i=this.discovered?.entities;return me(t,this.hass,[i?.target_position_sensor])}_winnerLabel(e){const t=Ki(e);return function(e){return Ee.includes(e)}(t)?De(Oe[t]):e}render(){if(!this.hass||!this.discovered)return L;const e=ei(this.hass,this.discovered);if(!e||0===e.trace.length)return W`<div class="placeholder">${De("decision.placeholder")}</div>`;const t=this._winnerLabel(e.winner),i=Di(e.trace,e,e.winner,this._labels(),oi(this.hass,this.discovered)),o=this.hideInactive?e.trace.slice(-1):e.trace;return W`
+  `,e([ge({attribute:!1})],Wo.prototype,"hass",void 0),e([ge({attribute:!1})],Wo.prototype,"discoveredList",void 0),e([ge({attribute:!1})],Wo.prototype,"coverColors",void 0),e([ge({type:Boolean,reflect:!0})],Wo.prototype,"compact",void 0),Wo=e([he("acp-elevation-chart")],Wo);let Uo=class extends ce{constructor(){super(...arguments),this.compact=!1,this.showSummary=!0,this.hideInactive=!1}shouldUpdate(e){if(e.size>1||!e.has("hass"))return!0;const t=e.get("hass"),o=this.discovered?.entities;return fe(t,this.hass,[o?.target_position_sensor])}_winnerLabel(e){const t=Vo(e);return function(e){return Oe.includes(e)}(t)?Ve(Ie[t]):e}render(){if(!this.hass||!this.discovered)return Y;const e=io(this.hass,this.discovered);if(!e||0===e.trace.length)return G`<div class="placeholder">${Ve("decision.placeholder")}</div>`;const t=this._winnerLabel(e.winner),o=Go(e.trace,e,e.winner,this._labels(),ro(this.hass,this.discovered)),i=this.hideInactive?e.trace.slice(-1):e.trace;return G`
       <div class="wrap">
         <div class="head">
-          <span class="label">${De("decision.pipeline")}</span>
-          <span class="winner">${De("decision.winner",{name:t})}</span>
+          <span class="label">${Ve("decision.pipeline")}</span>
+          <span class="winner">${Ve("decision.winner",{name:t})}</span>
         </div>
-        ${this.showSummary&&i?W`<div class="summary" ${gt(De("decision.summary_tooltip"))}>${i}</div>`:L}
-        <div class="rows">${o.map((e,t)=>this._row(e,t))}</div>
+        ${this.showSummary&&o?G`<div class="summary" ${_t(Ve("decision.summary_tooltip"))}>${o}</div>`:Y}
+        <div class="rows">${i.map((e,t)=>this._row(e,t))}</div>
       </div>
-    `}_labels(){const e={};for(const[t,i]of Object.entries(Oe))e[t]=De(i);return e}_row(e,t){return W`
+    `}_labels(){const e={};for(const[t,o]of Object.entries(Ie))e[t]=Ve(o);return e}_row(e,t){return G`
       <div class="row ${e.matched?"winner":"match"}">
         <span class="idx dim">${t+1}</span>
         <span class="reason-inline">${e.handler}</span>
-        ${e.matched?W`<span class="badge">✓</span>`:L}
+        ${e.matched?G`<span class="badge">✓</span>`:Y}
       </div>
-    `}};var Vi,Gi;Bi.styles=r`
+    `}};var Lo,Yo;Uo.styles=r`
     :host {
       display: block;
     }
@@ -988,23 +988,23 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
       padding: 16px;
       text-align: center;
     }
-  `,e([ge({attribute:!1})],Bi.prototype,"hass",void 0),e([ge({attribute:!1})],Bi.prototype,"discovered",void 0),e([ge({type:Boolean,reflect:!0})],Bi.prototype,"compact",void 0),e([ge({type:Boolean,reflect:!0,attribute:"show-summary"})],Bi.prototype,"showSummary",void 0),e([ge({type:Boolean,reflect:!0,attribute:"hide-inactive"})],Bi.prototype,"hideInactive",void 0),Bi=e([he("acp-decision-strip")],Bi),function(e){e.language="language",e.system="system",e.comma_decimal="comma_decimal",e.decimal_comma="decimal_comma",e.space_comma="space_comma",e.none="none"}(Vi||(Vi={})),function(e){e.language="language",e.system="system",e.am_pm="12",e.twenty_four="24"}(Gi||(Gi={}));const Wi=["closed","locked","off"],Ui=(e,t,i,o)=>{o=o||{},i=null==i?{}:i;const s=new Event(t,{bubbles:void 0===o.bubbles||o.bubbles,cancelable:Boolean(o.cancelable),composed:void 0===o.composed||o.composed});return s.detail=i,e.dispatchEvent(s),s},Yi=e=>{Ui(window,"haptic",e)};function Li(e){return void 0!==e&&"none"!==e.action}function Qi(e,t,i){return e.filter(e=>"off"===e||("solar"===e?function(e){return e.solarMatched}(i)&&!1!==t?.solar:!1!==t?.[e]))}function Hi(e){if(!1===e.integrationEnabled)return"off";if(e.manualActive)return"manual";const t=Ki(e.winner);return Te[t]??"auto"}function qi(e,t){return{solarMatched:"calculated"===Ki(t)}}function Xi(e){const t=null!=e&&Number.isFinite(e)?De("overrides.resume_confirm_pos",{position:String(Math.round(e))}):De("overrides.resume_confirm");return window.confirm(t)}function Ji(e,t){if(!e||!t)return null;const i=parseFloat(e.states[t]?.state??"");return Number.isNaN(i)?null:i}let Zi=class extends ce{constructor(){super(...arguments),this.winner="default",this.compact=!1,this.integrationEnabled=!0,this.manualActive=!1,this.resumable=!1}render(){const e=this._kind(),t=Fe[e],i=De(Re[e]),o=je[e],s=W`${o?W`<ha-icon class="badge-icon" icon=${o}></ha-icon>`:L}${i}${this.resumable?W`<ha-icon class="resume-icon" icon="mdi:restore"></ha-icon>`:L}`;if(this.resumable){const i=De("tile.resume_aria");return W`<button
+  `,e([ge({attribute:!1})],Uo.prototype,"hass",void 0),e([ge({attribute:!1})],Uo.prototype,"discovered",void 0),e([ge({type:Boolean,reflect:!0})],Uo.prototype,"compact",void 0),e([ge({type:Boolean,reflect:!0,attribute:"show-summary"})],Uo.prototype,"showSummary",void 0),e([ge({type:Boolean,reflect:!0,attribute:"hide-inactive"})],Uo.prototype,"hideInactive",void 0),Uo=e([he("acp-decision-strip")],Uo),function(e){e.language="language",e.system="system",e.comma_decimal="comma_decimal",e.decimal_comma="decimal_comma",e.space_comma="space_comma",e.none="none"}(Lo||(Lo={})),function(e){e.language="language",e.system="system",e.am_pm="12",e.twenty_four="24"}(Yo||(Yo={}));const Ho=["closed","locked","off"],Qo=(e,t,o,i)=>{i=i||{},o=null==o?{}:o;const s=new Event(t,{bubbles:void 0===i.bubbles||i.bubbles,cancelable:Boolean(i.cancelable),composed:void 0===i.composed||i.composed});return s.detail=o,e.dispatchEvent(s),s},qo=e=>{Qo(window,"haptic",e)};function Xo(e){return void 0!==e&&"none"!==e.action}function Jo(e,t,o){return e.filter(e=>"off"===e||("solar"===e?function(e){return e.solarMatched}(o)&&!1!==t?.solar:!1!==t?.[e]))}function Zo(e){if(!1===e.integrationEnabled)return"off";if(e.manualActive)return"manual";const t=Vo(e.winner);return je[t]??"auto"}function ei(e,t){return{solarMatched:"calculated"===Vo(t)}}function ti(e){const t=null!=e&&Number.isFinite(e)?Ve("overrides.resume_confirm_pos",{position:String(Math.round(e))}):Ve("overrides.resume_confirm");return window.confirm(t)}function oi(e,t){if(!e||!t)return null;const o=parseFloat(e.states[t]?.state??"");return Number.isNaN(o)?null:o}let ii=class extends ce{constructor(){super(...arguments),this.winner="default",this.compact=!1,this.integrationEnabled=!0,this.manualActive=!1,this.resumable=!1}render(){const e=this._kind(),t=Ne[e],o=Ve(Pe[e]),i=Ke[e],s=G`${i?G`<ha-icon class="badge-icon" icon=${i}></ha-icon>`:Y}${o}${this.resumable?G`<ha-icon class="resume-icon" icon="mdi:restore"></ha-icon>`:Y}`;if(this.resumable){const o=Ve("tile.resume_aria");return G`<button
         class="badge kind-${e} resumable"
         style="background:${t.bg};color:${t.fg};"
         part="badge"
         type="button"
-        ${gt(i)}
-        aria-label=${i}
+        ${_t(o)}
+        aria-label=${o}
         @click=${this._onResumeClick}
         @pointerdown=${this._stop}
       >
         ${s}
-      </button>`}return W`<span
+      </button>`}return G`<span
       class="badge kind-${e}"
       style="background:${t.bg};color:${t.fg};"
       part="badge"
       >${s}</span
-    >`}_stop(e){e.stopPropagation()}_onResumeClick(e){e.stopPropagation(),this.dispatchEvent(new CustomEvent("acp-resume",{bubbles:!0,composed:!0}))}_kind(){return this.kindOverride??Hi({winner:this.winner,integrationEnabled:this.integrationEnabled,manualActive:this.manualActive})}};Zi.styles=r`
+    >`}_stop(e){e.stopPropagation()}_onResumeClick(e){e.stopPropagation(),this.dispatchEvent(new CustomEvent("acp-resume",{bubbles:!0,composed:!0}))}_kind(){return this.kindOverride??Zo({winner:this.winner,integrationEnabled:this.integrationEnabled,manualActive:this.manualActive})}};function si(e){const t=e.config_entry_id||e.window_key;return e.config_subentry_id?{kind:"subentry",entry_id:t,subentry_id:e.config_subentry_id}:{kind:"entry",entry_id:t}}function ni(e){const t=`/config/integrations/integration/${ze}`;switch(e.kind){case"subentry":case"entry":return`${t}#config_entry=${encodeURIComponent(e.entry_id)}`}}ii.styles=r`
     :host {
       display: inline-flex;
     }
@@ -1051,30 +1051,30 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
     :host([compact]) .badge-icon {
       --mdc-icon-size: 12px;
     }
-  `,e([ge({attribute:!1})],Zi.prototype,"hass",void 0),e([ge()],Zi.prototype,"winner",void 0),e([ge({type:Boolean,reflect:!0})],Zi.prototype,"compact",void 0),e([ge({type:Boolean,attribute:"integration-enabled"})],Zi.prototype,"integrationEnabled",void 0),e([ge({type:Boolean,attribute:"manual-active"})],Zi.prototype,"manualActive",void 0),e([ge({attribute:"kind-override"})],Zi.prototype,"kindOverride",void 0),e([ge({type:Boolean,reflect:!0})],Zi.prototype,"resumable",void 0),Zi=e([he("acp-tile-badge")],Zi);let eo=class extends ce{constructor(){super(...arguments),this.compact=!1,this.resetEnabled=!0}shouldUpdate(e){if(e.size>1||!e.has("hass"))return!0;const t=e.get("hass"),i=this.discovered?.entities;return me(t,this.hass,[i?.manual_override_binary,i?.reset_override_button])}_manualActive(){const e=this.discovered.entities.manual_override_binary;return!!e&&"on"===this.hass.states[e]?.state}_manualList(){const e=this.discovered.entities.manual_override_binary;if(!e)return[];const t=this.hass.states[e]?.attributes?.manual_controlled;return Array.isArray(t)?t:[]}_resetManual(){const e=this.discovered.entities.reset_override_button;e&&Xi(Ji(this.hass,this.discovered.entities.target_position_sensor))&&this.hass.callService("button","press",{entity_id:e})}render(){if(!this.hass||!this.discovered)return L;const e=this._manualActive(),t=this._manualList(),i=this.discovered.entities.reset_override_button,o=De("overrides.reset_manual");return W`
+  `,e([ge({attribute:!1})],ii.prototype,"hass",void 0),e([ge()],ii.prototype,"winner",void 0),e([ge({type:Boolean,reflect:!0})],ii.prototype,"compact",void 0),e([ge({type:Boolean,attribute:"integration-enabled"})],ii.prototype,"integrationEnabled",void 0),e([ge({type:Boolean,attribute:"manual-active"})],ii.prototype,"manualActive",void 0),e([ge({attribute:"kind-override"})],ii.prototype,"kindOverride",void 0),e([ge({type:Boolean,reflect:!0})],ii.prototype,"resumable",void 0),ii=e([he("acp-tile-badge")],ii);let ri=class extends ce{constructor(){super(...arguments),this.compact=!1,this.resetEnabled=!0}shouldUpdate(e){if(e.size>1||!e.has("hass"))return!0;const t=e.get("hass"),o=this.discovered?.entities;return fe(t,this.hass,[o?.manual_override_binary,o?.reset_override_button])}_manualActive(){const e=this.discovered.entities.manual_override_binary;return!!e&&"on"===this.hass.states[e]?.state}_manualList(){const e=this.discovered.entities.manual_override_binary;if(!e)return[];const t=this.hass.states[e]?.attributes?.manual_controlled;return Array.isArray(t)?t:[]}_resetManual(){const e=this.discovered.entities.reset_override_button;e&&ti(oi(this.hass,this.discovered.entities.target_position_sensor))&&this.hass.callService("button","press",{entity_id:e})}render(){if(!this.hass||!this.discovered)return Y;const e=this._manualActive(),t=this._manualList(),o=this.discovered.entities.reset_override_button,i=Ve("overrides.reset_manual");return G`
       <div class="wrap">
-        <div class="label dim">${De("overrides.title")}</div>
+        <div class="label dim">${Ve("overrides.title")}</div>
         <div class="grid">
           <div class="tile ${e?"active":""}">
-            <div class="tile-label">${De("overrides.manual")}</div>
+            <div class="tile-label">${Ve("overrides.manual")}</div>
             <div class="tile-value">
-              ${De(e?"overrides.active":"overrides.off")}
+              ${Ve(e?"overrides.active":"overrides.off")}
             </div>
-            ${e&&t.length>0?W`<div class="tile-sub dim">
-                  ${De("overrides.active_count",{count:t.length})}
-                </div>`:L}
+            ${e&&t.length>0?G`<div class="tile-sub dim">
+                  ${Ve("overrides.active_count",{count:t.length})}
+                </div>`:Y}
           </div>
 
-          ${i?this.resetEnabled?W`<button class="tile action" @click=${this._resetManual}>
+          ${o?this.resetEnabled?G`<button class="tile action" @click=${this._resetManual}>
                   <ha-icon icon="mdi:restore"></ha-icon>
-                  <div class="tile-value">${o}</div>
-                </button>`:W`<button class="tile action readonly" aria-disabled="true" tabindex="-1">
+                  <div class="tile-value">${i}</div>
+                </button>`:G`<button class="tile action readonly" aria-disabled="true" tabindex="-1">
                   <ha-icon icon="mdi:restore"></ha-icon>
-                  <div class="tile-value">${o}</div>
-                </button>`:L}
+                  <div class="tile-value">${i}</div>
+                </button>`:Y}
         </div>
       </div>
-    `}};eo.styles=r`
+    `}};ri.styles=r`
     :host {
       display: block;
     }
@@ -1158,39 +1158,39 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
     ha-icon {
       --mdc-icon-size: 18px;
     }
-  `,e([ge({attribute:!1})],eo.prototype,"hass",void 0),e([ge({attribute:!1})],eo.prototype,"discovered",void 0),e([ge({type:Boolean,reflect:!0})],eo.prototype,"compact",void 0),e([ge({type:Boolean,attribute:"reset-enabled"})],eo.prototype,"resetEnabled",void 0),eo=e([he("acp-overrides-panel")],eo);let to=class extends ce{constructor(){super(...arguments),this.compact=!1,this.coverColor=null}shouldUpdate(e){if(e.size>1||!e.has("hass"))return!0;const t=e.get("hass"),i=this.discovered?.entities;return me(t,this.hass,[i?.target_position_sensor,i?.manual_override_binary,...this.discovered?.managed_covers??[]])}_setPosition(e,t){"cover_tilt"===this.discovered.cover_type?this.hass.callService("cover","set_cover_tilt_position",{entity_id:e,tilt_position:t}):this.hass.callService("cover","set_cover_position",{entity_id:e,position:t})}render(){if(!this.hass||!this.discovered)return L;const e=ri(this.hass,this.discovered),t=si(this.hass,this.discovered),i=function(e,t){if(!function(e,t){const i=t.entities.manual_override_binary;return!!i&&"on"===e.states[i]?.state}(e,t))return!1;const i=oi(e,t),o=ni(e,t);return null!==i&&null!==o&&Math.round(o)!==Math.round(i)}(this.hass,this.discovered),o=Object.entries(t);return 0===o.length?W`<div class="placeholder">${De("covers.placeholder")}</div>`:W`
-      <div class="wrap" style=${this.coverColor?`--acp-cover-color:${this.coverColor}`:L}>
+  `,e([ge({attribute:!1})],ri.prototype,"hass",void 0),e([ge({attribute:!1})],ri.prototype,"discovered",void 0),e([ge({type:Boolean,reflect:!0})],ri.prototype,"compact",void 0),e([ge({type:Boolean,attribute:"reset-enabled"})],ri.prototype,"resetEnabled",void 0),ri=e([he("acp-overrides-panel")],ri);let ai=class extends ce{constructor(){super(...arguments),this.compact=!1,this.coverColor=null}shouldUpdate(e){if(e.size>1||!e.has("hass"))return!0;const t=e.get("hass"),o=this.discovered?.entities;return fe(t,this.hass,[o?.target_position_sensor,o?.manual_override_binary,...this.discovered?.managed_covers??[]])}_setPosition(e,t){"cover_tilt"===this.discovered.cover_type?this.hass.callService("cover","set_cover_tilt_position",{entity_id:e,tilt_position:t}):this.hass.callService("cover","set_cover_position",{entity_id:e,position:t})}render(){if(!this.hass||!this.discovered)return Y;const e=co(this.hass,this.discovered),t=ao(this.hass,this.discovered),o=function(e,t){if(!function(e,t){const o=t.entities.manual_override_binary;return!!o&&"on"===e.states[o]?.state}(e,t))return!1;const o=ro(e,t),i=lo(e,t);return null!==o&&null!==i&&Math.round(i)!==Math.round(o)}(this.hass,this.discovered),i=Object.entries(t);return 0===i.length?G`<div class="placeholder">${Ve("covers.placeholder")}</div>`:G`
+      <div class="wrap" style=${this.coverColor?`--acp-cover-color:${this.coverColor}`:Y}>
         <div class="head">
-          <span class="label">${De("covers.title")}</span>
+          <span class="label">${Ve("covers.title")}</span>
           <span class="targets">
             <span class="target"
-              >${De(i?"covers.target_solar":"covers.target",{pct:bi(e)})}</span
+              >${Ve(o?"covers.target_solar":"covers.target",{pct:Ao(e)})}</span
             >
           </span>
         </div>
-        ${o.map(([t,o])=>W`
-            <div class="cover-group">${this._bar(t,o,e,i)}</div>
+        ${i.map(([t,i])=>G`
+            <div class="cover-group">${this._bar(t,i,e,o)}</div>
           `)}
       </div>
-    `}_bar(e,t,i,o){const s=this.hass.states[e]?.attributes?.friendly_name??e,n=t??0,r=i??0;return W`
+    `}_bar(e,t,o,i){const s=this.hass.states[e]?.attributes?.friendly_name??e,n=t??0,r=o??0;return G`
       <div class="cover">
-        <div class="name" ${gt(e)}>${s}</div>
-        <div class="num">${bi(t)}</div>
+        <div class="name" ${_t(e)}>${s}</div>
+        <div class="num">${Ao(t)}</div>
         <div
           class="track"
           @click=${t=>this._handleTrackClick(t,e)}
-          ${gt(De("covers.click_to_set"))}
+          ${_t(Ve("covers.click_to_set"))}
         >
           <div class="fill" style="width:${n}%"></div>
           <div class="fill-closed" style="width:${100-n}%"></div>
-          ${null!==i?W`<div
+          ${null!==o?G`<div
                 class="marker"
                 style="left:clamp(1px, ${r}%, calc(100% - 1px))"
-                ${gt(De(o?"covers.target_tooltip_override":"covers.target_tooltip",{pct:r}))}
-              ></div>`:L}
+                ${_t(Ve(i?"covers.target_tooltip_override":"covers.target_tooltip",{pct:r}))}
+              ></div>`:Y}
         </div>
       </div>
-    `}_handleTrackClick(e,t){const i=e.currentTarget.getBoundingClientRect(),o=Math.round((e.clientX-i.left)/i.width*100),s=Math.max(0,Math.min(100,o));this._setPosition(t,s)}};var io;to.styles=r`
+    `}_handleTrackClick(e,t){const o=e.currentTarget.getBoundingClientRect(),i=Math.round((e.clientX-o.left)/o.width*100),s=Math.max(0,Math.min(100,i));this._setPosition(t,s)}};var li;ai.styles=r`
     :host {
       display: block;
     }
@@ -1288,36 +1288,36 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
       text-align: center;
       padding: 16px;
     }
-  `,e([ge({attribute:!1})],to.prototype,"hass",void 0),e([ge({attribute:!1})],to.prototype,"discovered",void 0),e([ge({type:Boolean,reflect:!0})],to.prototype,"compact",void 0),e([ge({attribute:!1})],to.prototype,"coverColor",void 0),to=e([he("acp-cover-bar")],to);const oo=864e5;let so=io=class extends ce{constructor(){super(...arguments),this.samples=[],this.events=[],this.now=Date.now(),this._hoverIdx=null,this._onPointerMove=e=>{const t=e.currentTarget.getBoundingClientRect();if(t.width<=0)return;const i=(e.clientX-t.left)/t.width,o=Math.max(0,Math.min(1,i))*io.VIEW_W;this._hoverIdx=this._nearestSampleIdx(o)},this._onPointerLeave=()=>{this._hoverIdx=null}}render(){if(!this.samples||0===this.samples.length)return L;const{VIEW_W:e,VIEW_H:t,TOP_PAD:i,EVENT_HIT_W:o}=io,s=t-i,n=_i(new Date(this.now)).getTime(),r=t=>ot(t,n,e),a=this.samples.map(e=>{const t=Date.parse(e.t);return{t:t,x:r(t),y:i+(1-no(e.position)/100)*s,sample:e,inDay:!Number.isNaN(t)&&t>=n&&t<=n+oo}}),l=a.filter(e=>e.inDay).map(e=>`${e.x.toFixed(1)},${e.y.toFixed(1)}`).join(" "),c=(this.events??[]).map(e=>{const s=Date.parse(e.t);if(Number.isNaN(s)||s<n||s>n+oo)return null;const a=r(s),l=`evt-${e.kind}`,c=function(e){const t=`forecast.event.${e.kind}`,i=De(t),o=i===t?e.label??e.kind:i,s=$i(e.t);return"—"===s?o:`${o} — ${s}`}(e);return U`<g class="event-group" ${gt(c)}>
+  `,e([ge({attribute:!1})],ai.prototype,"hass",void 0),e([ge({attribute:!1})],ai.prototype,"discovered",void 0),e([ge({type:Boolean,reflect:!0})],ai.prototype,"compact",void 0),e([ge({attribute:!1})],ai.prototype,"coverColor",void 0),ai=e([he("acp-cover-bar")],ai);const ci=864e5;let di=li=class extends ce{constructor(){super(...arguments),this.samples=[],this.events=[],this.now=Date.now(),this._hoverIdx=null,this._onPointerMove=e=>{const t=e.currentTarget.getBoundingClientRect();if(t.width<=0)return;const o=(e.clientX-t.left)/t.width,i=Math.max(0,Math.min(1,o))*li.VIEW_W;this._hoverIdx=this._nearestSampleIdx(i)},this._onPointerLeave=()=>{this._hoverIdx=null}}render(){if(!this.samples||0===this.samples.length)return Y;const{VIEW_W:e,VIEW_H:t,TOP_PAD:o,EVENT_HIT_W:i}=li,s=t-o,n=yo(new Date(this.now)).getTime(),r=t=>rt(t,n,e),a=this.samples.map(e=>{const t=Date.parse(e.t);return{t:t,x:r(t),y:o+(1-hi(e.position)/100)*s,sample:e,inDay:!Number.isNaN(t)&&t>=n&&t<=n+ci}}),l=a.filter(e=>e.inDay).map(e=>`${e.x.toFixed(1)},${e.y.toFixed(1)}`).join(" "),c=(this.events??[]).map(e=>{const s=Date.parse(e.t);if(Number.isNaN(s)||s<n||s>n+ci)return null;const a=r(s),l=`evt-${e.kind}`,c=function(e){const t=`forecast.event.${e.kind}`,o=Ve(t),i=o===t?e.label??e.kind:o,s=So(e.t);return"—"===s?i:`${i} — ${s}`}(e);return U`<g class="event-group" ${_t(c)}>
           <line
             class="event-hit"
             x1=${a.toFixed(1)}
             x2=${a.toFixed(1)}
-            y1=${i}
+            y1=${o}
             y2=${t}
-            stroke-width=${o}
+            stroke-width=${i}
           ></line>
           <line
             class="event-marker ${l}"
             x1=${a.toFixed(1)}
             x2=${a.toFixed(1)}
-            y1=${i}
+            y1=${o}
             y2=${t}
           ></line>
         </g>`}).filter(e=>null!==e),d=null!==this._hoverIdx&&this._hoverIdx>=0&&this._hoverIdx<a.length?a[this._hoverIdx]:null,h=d?U`<g class="hover-guide" pointer-events="none">
           <line class="hover-line"
             x1=${d.x.toFixed(1)} x2=${d.x.toFixed(1)}
-            y1=${i} y2=${t}></line>
+            y1=${o} y2=${t}></line>
           <circle class="hover-dot" cx=${d.x.toFixed(1)} cy=${d.y.toFixed(1)} r="3"></circle>
-        </g>`:L,p=d?W`<div class="hover-label" style=${`left: ${(d.x/e*100).toFixed(2)}%`}>
-          ${function(e){const t=$i(e.t),i=`${Math.round(no(e.position))}%`;return e.handler?`${t} · ${i} · ${e.handler}`:`${t} · ${i}`}(d.sample)}
-        </div>`:L,u=[0,6,12,18,24].map(e=>{const o=r(n+36e5*e);return U`
-        <line class="grid faint" x1=${o} y1=${i} x2=${o} y2=${t-.5} />
-        <text class="axis-label tick-time" x=${o} y=${t-3} text-anchor="middle">${e.toString().padStart(2,"0")}:00</text>
-      `}),g=this.now,_=r(g),m=g>=n&&g<=n+oo?U`<g class="now-group" ${gt($i(new Date(g).toISOString()))}>
-          <line class="now-hit" x1=${_.toFixed(1)} y1=${i} x2=${_.toFixed(1)} y2=${t-.5}></line>
-          <line class="now" x1=${_.toFixed(1)} y1=${i} x2=${_.toFixed(1)} y2=${t-.5}></line>
-        </g>`:L;return W`
+        </g>`:Y,u=d?G`<div class="hover-label" style=${`left: ${(d.x/e*100).toFixed(2)}%`}>
+          ${function(e){const t=So(e.t),o=`${Math.round(hi(e.position))}%`;return e.handler?`${t} · ${o} · ${e.handler}`:`${t} · ${o}`}(d.sample)}
+        </div>`:Y,p=[0,6,12,18,24].map(e=>{const i=r(n+36e5*e);return U`
+        <line class="grid faint" x1=${i} y1=${o} x2=${i} y2=${t-.5} />
+        <text class="axis-label tick-time" x=${i} y=${t-3} text-anchor="middle">${e.toString().padStart(2,"0")}:00</text>
+      `}),g=this.now,m=r(g),f=g>=n&&g<=n+ci?U`<g class="now-group" ${_t(So(new Date(g).toISOString()))}>
+          <line class="now-hit" x1=${m.toFixed(1)} y1=${o} x2=${m.toFixed(1)} y2=${t-.5}></line>
+          <line class="now" x1=${m.toFixed(1)} y1=${o} x2=${m.toFixed(1)} y2=${t-.5}></line>
+        </g>`:Y;return G`
       <div class="wrap">
         <svg
           viewBox="0 0 ${e} ${t}"
@@ -1327,14 +1327,14 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
           @pointerleave=${this._onPointerLeave}
         >
           <line class="baseline" x1="0" y1=${t-.5} x2=${e} y2=${t-.5}></line>
-          <text class="axis-label" x="4" y=${i+8} text-anchor="start">100%</text>
-          ${u}
+          <text class="axis-label" x="4" y=${o+8} text-anchor="start">100%</text>
+          ${p}
           <polyline class="curve" points=${l} fill="none"></polyline>
-          ${c} ${h} ${m}
+          ${c} ${h} ${f}
         </svg>
-        ${p}
+        ${u}
       </div>
-    `}_nearestSampleIdx(e){const t=_i(new Date(this.now)).getTime();let i=-1,o=Number.POSITIVE_INFINITY;for(let s=0;s<this.samples.length;s++){const n=Date.parse(this.samples[s].t);if(Number.isNaN(n)||n<t||n>t+oo)continue;const r=ot(n,t,io.VIEW_W),a=Math.abs(r-e);a<o&&(o=a,i=s)}return i>=0?i:null}};function no(e){return Number.isNaN(e)||e<0?0:e>100?100:e}so.VIEW_W=600,so.VIEW_H=80,so.TOP_PAD=10,so.EVENT_HIT_W=12,so.styles=r`
+    `}_nearestSampleIdx(e){const t=yo(new Date(this.now)).getTime();let o=-1,i=Number.POSITIVE_INFINITY;for(let s=0;s<this.samples.length;s++){const n=Date.parse(this.samples[s].t);if(Number.isNaN(n)||n<t||n>t+ci)continue;const r=rt(n,t,li.VIEW_W),a=Math.abs(r-e);a<i&&(i=a,o=s)}return o>=0?o:null}};function hi(e){return Number.isNaN(e)||e<0?0:e>100?100:e}di.VIEW_W=600,di.VIEW_H=80,di.TOP_PAD=10,di.EVENT_HIT_W=12,di.styles=r`
     :host {
       display: block;
     }
@@ -1437,17 +1437,17 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
       stroke: transparent;
       stroke-width: 10;
     }
-  `,e([ge({attribute:!1})],so.prototype,"hass",void 0),e([ge({attribute:!1})],so.prototype,"samples",void 0),e([ge({attribute:!1})],so.prototype,"events",void 0),e([ge({attribute:!1})],so.prototype,"now",void 0),e([_e()],so.prototype,"_hoverIdx",void 0),so=io=e([he("acp-forecast-strip")],so);let ro=class extends ce{constructor(){super(...arguments),this.open=!1,this.advancedOpen=!1,this.showCompass=!0,this.showElevationChart=!0,this._cancelMinuteTimer=null,this._listSource=null,this._list=[],this._onResume=()=>{const e=this.discovered.entities.reset_override_button;e&&Xi(this._target())&&this.hass.callService("button","press",{entity_id:e})},this._toggleAdvanced=()=>{this.advancedOpen=!this.advancedOpen},this._openDevicePage=()=>{const e=this.discovered.device_id;e&&this._navigate(`/config/devices/device/${e}`)},this._openWindowSettings=()=>{this._navigate(function(e){const t=`/config/integrations/integration/${Ce}`;switch(e.kind){case"subentry":case"entry":return`${t}#config_entry=${encodeURIComponent(e.entry_id)}`}}(function(e){const t=e.config_entry_id||e.window_key;return e.config_subentry_id?{kind:"subentry",entry_id:t,subentry_id:e.config_subentry_id}:{kind:"entry",entry_id:t}}(this.discovered)))},this._onBackdrop=e=>{e.target===e.currentTarget&&this._emitClose()},this._emitClose=()=>{this.dispatchEvent(new CustomEvent("acp-dialog-close",{bubbles:!0,composed:!0}))},this._stop=e=>{e.stopPropagation()}}updated(){this._syncMinuteTimer(this.open)}disconnectedCallback(){super.disconnectedCallback(),this._syncMinuteTimer(!1)}_syncMinuteTimer(e){e&&null===this._cancelMinuteTimer?this._cancelMinuteTimer=Fi(()=>this.requestUpdate()):e||null===this._cancelMinuteTimer||(this._cancelMinuteTimer(),this._cancelMinuteTimer=null)}get _discoveredList(){return this.discovered!==this._listSource&&(this._listSource=this.discovered,this._list=this.discovered?[this.discovered]:[]),this._list}_buildHandlerLabels(){const e={};for(const[t,i]of Object.entries(Oe))e[t]=De(i);return e}render(){if(!this.open||!this.hass||!this.discovered)return L;const e=Zt(this.hass,this.discovered),t=ei(this.hass,this.discovered),i=this._target(),o=t?Di(t.trace,t,e,this._buildHandlerLabels(),i):"",s=this._shouldShowResume(),n=this._switchOn("automatic_control_switch"),r=this._badgeKinds(e,n),a=De("dialog.window_settings"),l=De("dialog.open_device_page"),c=De("dialog.close");return W`
+  `,e([ge({attribute:!1})],di.prototype,"hass",void 0),e([ge({attribute:!1})],di.prototype,"samples",void 0),e([ge({attribute:!1})],di.prototype,"events",void 0),e([ge({attribute:!1})],di.prototype,"now",void 0),e([me()],di.prototype,"_hoverIdx",void 0),di=li=e([he("acp-forecast-strip")],di);let ui=class extends ce{constructor(){super(...arguments),this.open=!1,this.advancedOpen=!1,this.showCompass=!0,this.showElevationChart=!0,this._cancelMinuteTimer=null,this._listSource=null,this._list=[],this._onResume=()=>{const e=this.discovered.entities.reset_override_button;e&&ti(this._target())&&this.hass.callService("button","press",{entity_id:e})},this._toggleAdvanced=()=>{this.advancedOpen=!this.advancedOpen},this._openDevicePage=()=>{const e=this.discovered.device_id;e&&this._navigate(`/config/devices/device/${e}`)},this._openWindowSettings=()=>{this._navigate(ni(si(this.discovered)))},this._onBackdrop=e=>{e.target===e.currentTarget&&this._emitClose()},this._emitClose=()=>{this.dispatchEvent(new CustomEvent("acp-dialog-close",{bubbles:!0,composed:!0}))},this._stop=e=>{e.stopPropagation()}}updated(){this._syncMinuteTimer(this.open)}disconnectedCallback(){super.disconnectedCallback(),this._syncMinuteTimer(!1)}_syncMinuteTimer(e){e&&null===this._cancelMinuteTimer?this._cancelMinuteTimer=Po(()=>this.requestUpdate()):e||null===this._cancelMinuteTimer||(this._cancelMinuteTimer(),this._cancelMinuteTimer=null)}get _discoveredList(){return this.discovered!==this._listSource&&(this._listSource=this.discovered,this._list=this.discovered?[this.discovered]:[]),this._list}_buildHandlerLabels(){const e={};for(const[t,o]of Object.entries(Ie))e[t]=Ve(o);return e}render(){if(!this.open||!this.hass||!this.discovered)return Y;const e=oo(this.hass,this.discovered),t=io(this.hass,this.discovered),o=this._target(),i=t?Go(t.trace,t,e,this._buildHandlerLabels(),o):"",s=this._shouldShowResume(),n=this._switchOn("automatic_control_switch"),r=this._badgeKinds(e,n),a=Ve("dialog.window_settings"),l=Ve("dialog.open_device_page"),c=Ve("dialog.close");return G`
       <div class="backdrop" data-open @click=${this._onBackdrop}>
         <div class="dialog" @click=${this._stop} role="dialog" aria-modal="true">
           <div class="header">
             <ha-icon
               class="cover-icon"
-              icon=${ze[this.discovered.cover_type]??"mdi:window-shutter"}
+              icon=${Te[this.discovered.cover_type]??"mdi:window-shutter"}
             ></ha-icon>
             <div class="title">${this.discovered.entry_title}</div>
             <div class="badges">
-              ${r.map(t=>W`<acp-tile-badge
+              ${r.map(t=>G`<acp-tile-badge
                     .hass=${this.hass}
                     .winner=${e}
                     .kindOverride=${t}
@@ -1458,46 +1458,46 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
               class="icon-btn options-link"
               type="button"
               aria-label=${a}
-              ${gt(a)}
+              ${_t(a)}
               @click=${this._openWindowSettings}
             >
               <ha-icon icon="mdi:tune-variant"></ha-icon>
             </button>
-            ${this.discovered.device_id?W`<button
+            ${this.discovered.device_id?G`<button
                   class="icon-btn device-link"
                   type="button"
                   aria-label=${l}
-                  ${gt(l)}
+                  ${_t(l)}
                   @click=${this._openDevicePage}
                 >
                   <ha-icon icon="mdi:cog"></ha-icon>
-                </button>`:L}
+                </button>`:Y}
             <button class="close" type="button" aria-label=${c} @click=${this._emitClose}>
               ✕
             </button>
           </div>
 
-          ${o?W`<div class="summary">${o}</div>`:L}
+          ${i?G`<div class="summary">${i}</div>`:Y}
 
           <div class="position-block">
-            <div class="position-label">${De("dialog.target")}</div>
-            <div class="position-value">${bi(i)}</div>
+            <div class="position-label">${Ve("dialog.target")}</div>
+            <div class="position-value">${Ao(o)}</div>
           </div>
 
           <acp-cover-bar .hass=${this.hass} .discovered=${this.discovered}></acp-cover-bar>
 
           ${this._renderForecastStrip()} ${this._renderControls()}
-          ${s?W`<div class="actions">
+          ${s?G`<div class="actions">
                 <button class="resume" type="button" @click=${this._onResume}>
-                  ${De("dialog.resume_auto")}
+                  ${Ve("dialog.resume_auto")}
                 </button>
-              </div>`:L}
+              </div>`:Y}
 
           <button class="advanced-toggle" type="button" @click=${this._toggleAdvanced}>
-            ${this.advancedOpen?De("dialog.hide_advanced"):De("dialog.show_advanced")}
+            ${this.advancedOpen?Ve("dialog.hide_advanced"):Ve("dialog.show_advanced")}
           </button>
-          ${this.advancedOpen?W`<div class="advanced">
-                ${this.showCompass?W`<div class="advanced-compass">
+          ${this.advancedOpen?G`<div class="advanced">
+                ${this.showCompass?G`<div class="advanced-compass">
                       <acp-sky-compass
                         .hass=${this.hass}
                         .discovered_list=${this._discoveredList}
@@ -1505,12 +1505,12 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
                         .showLegend=${!1}
                         .showStats=${!0}
                       ></acp-sky-compass>
-                    </div>`:L}
-                ${this.showElevationChart?W`<acp-elevation-chart
+                    </div>`:Y}
+                ${this.showElevationChart?G`<acp-elevation-chart
                       .hass=${this.hass}
                       .discoveredList=${this._discoveredList}
                       ?compact=${!0}
-                    ></acp-elevation-chart>`:L}
+                    ></acp-elevation-chart>`:Y}
                 <acp-decision-strip
                   .hass=${this.hass}
                   .discovered=${this.discovered}
@@ -1520,50 +1520,50 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
                   .hass=${this.hass}
                   .discovered=${this.discovered}
                 ></acp-overrides-panel>
-              </div>`:L}
+              </div>`:Y}
         </div>
       </div>
-    `}_badgeKinds(e,t){ei(this.hass,this.discovered);const i=Hi({winner:e,integrationEnabled:t,manualActive:this._manualOverrideOn()}),o=qi(0,e);return Qi([i],this.badges,o)}_target(){const e=this.discovered.entities.target_position_sensor;if(!e)return null;const t=this.hass.states[e];if(!t)return null;const i=parseFloat(t.state);return Number.isNaN(i)?null:i}_manualOverrideOn(){const e=this.discovered.entities.manual_override_binary;return!!e&&"on"===this.hass.states[e]?.state}_switchOn(e){const t=this.discovered.entities[e];return!t||"off"!==this.hass.states[t]?.state}_shouldShowResume(){return!!this.discovered.entities.reset_override_button&&this._manualOverrideOn()}_renderControls(){const e=[{role:"automatic_control_switch",label:De("dialog.automatic")},{role:"climate_mode_switch",label:De("dialog.climate")},{role:"manual_toggle_switch",label:De("dialog.manual_detection")}].filter(e=>!!this.discovered.entities[e.role]);return 0===e.length?L:W`<div class="controls-block">
-      <div class="controls-label">${De("dialog.controls")}</div>
+    `}_badgeKinds(e,t){io(this.hass,this.discovered);const o=Zo({winner:e,integrationEnabled:t,manualActive:this._manualOverrideOn()}),i=ei(0,e);return Jo([o],this.badges,i)}_target(){const e=this.discovered.entities.target_position_sensor;if(!e)return null;const t=this.hass.states[e];if(!t)return null;const o=parseFloat(t.state);return Number.isNaN(o)?null:o}_manualOverrideOn(){const e=this.discovered.entities.manual_override_binary;return!!e&&"on"===this.hass.states[e]?.state}_switchOn(e){const t=this.discovered.entities[e];return!t||"off"!==this.hass.states[t]?.state}_shouldShowResume(){return!!this.discovered.entities.reset_override_button&&this._manualOverrideOn()}_renderControls(){const e=[{role:"automatic_control_switch",label:Ve("dialog.automatic")},{role:"climate_mode_switch",label:Ve("dialog.climate")},{role:"manual_toggle_switch",label:Ve("dialog.manual_detection")}].filter(e=>!!this.discovered.entities[e.role]);return 0===e.length?Y:G`<div class="controls-block">
+      <div class="controls-label">${Ve("dialog.controls")}</div>
       <div class="controls-row">${e.map(e=>this._renderSwitchChip(e.role,e.label))}</div>
-    </div>`}_renderSwitchChip(e,t){const i=this.discovered.entities[e],o="on"===this.hass.states[i]?.state,s=De(o?"dialog.state_on":"dialog.state_off"),n=De(o?"dialog.on":"dialog.off");return W`<button
-      class="ctrl-toggle ${o?"on":"off"}"
+    </div>`}_renderSwitchChip(e,t){const o=this.discovered.entities[e],i="on"===this.hass.states[o]?.state,s=Ve(i?"dialog.state_on":"dialog.state_off"),n=Ve(i?"dialog.on":"dialog.off");return G`<button
+      class="ctrl-toggle ${i?"on":"off"}"
       type="button"
-      aria-pressed=${o}
-      aria-label=${De("dialog.toggle_hint",{label:t,state:s})}
-      @click=${()=>this._toggleSwitch(i,o)}
+      aria-pressed=${i}
+      aria-label=${Ve("dialog.toggle_hint",{label:t,state:s})}
+      @click=${()=>this._toggleSwitch(o,i)}
     >
       <span class="ctrl-label">${t}</span>
       <span class="ctrl-state">${n}</span>
-    </button>`}_toggleSwitch(e,t){this.hass.callService("switch",t?"turn_off":"turn_on",{entity_id:e})}_renderForecastStrip(){const e=function(e,t){const i=Jt(e,t),o=i?.forecast_today;if(!Array.isArray(o)||0===o.length)return null;const s=[],n=[];let r=null;for(const e of o)e&&"string"==typeof e.time&&(null!==r&&(s.push({t:e.time,position:r.position,handler:r.intent}),e.intent!==r.intent&&n.push({t:e.time,kind:e.intent,label:e.intent})),s.push({t:e.time,position:e.position,handler:e.intent}),r=e);if(null!==r){const e=Date.parse(r.time);if(!Number.isNaN(e)){const t=new Date(e);t.setHours(23,59,59,0),t.getTime()-e<864e5&&s.push({t:t.toISOString(),position:r.position,handler:r.intent})}}return{forecast:s,events:n}}(this.hass,this.discovered);return e&&0!==e.forecast.length?W`<div class="forecast-block">
-      <div class="forecast-label">${De("dialog.todays_forecast")}</div>
+    </button>`}_toggleSwitch(e,t){this.hass.callService("switch",t?"turn_off":"turn_on",{entity_id:e})}_renderForecastStrip(){const e=function(e,t){const o=to(e,t),i=o?.forecast_today;if(!Array.isArray(i)||0===i.length)return null;const s=[],n=[];let r=null;for(const e of i)e&&"string"==typeof e.time&&(null!==r&&(s.push({t:e.time,position:r.position,handler:r.intent}),e.intent!==r.intent&&n.push({t:e.time,kind:e.intent,label:e.intent})),s.push({t:e.time,position:e.position,handler:e.intent}),r=e);if(null!==r){const e=Date.parse(r.time);if(!Number.isNaN(e)){const t=new Date(e);t.setHours(23,59,59,0),t.getTime()-e<864e5&&s.push({t:t.toISOString(),position:r.position,handler:r.intent})}}return{forecast:s,events:n}}(this.hass,this.discovered);return e&&0!==e.forecast.length?G`<div class="forecast-block">
+      <div class="forecast-label">${Ve("dialog.todays_forecast")}</div>
       <acp-forecast-strip
         .hass=${this.hass}
         .samples=${e.forecast}
         .events=${e.events}
         .now=${Date.now()}
       ></acp-forecast-strip>
-      <div class="forecast-note">${De("forecast.solar_only_note")}</div>
-    </div>`:L}_renderMoves(){const e=Jt(this.hass,this.discovered),t=Object.entries(e?.last_moves??{}),i=Object.entries(e?.move_blocked_by??{});if(0===t.length&&0===i.length)return L;const o=e=>this.hass.states[e]?.attributes?.friendly_name??e;return W`<div class="moves-section">
-      <div class="moves-label">${De("dialog.last_moves")}</div>
-      ${t.map(([e,t])=>W`<div class="move-row">
-            <span class="move-name" ${gt(e)}>${o(e)}</span>
+      <div class="forecast-note">${Ve("forecast.solar_only_note")}</div>
+    </div>`:Y}_renderMoves(){const e=to(this.hass,this.discovered),t=Object.entries(e?.last_moves??{}),o=Object.entries(e?.move_blocked_by??{});if(0===t.length&&0===o.length)return Y;const i=e=>this.hass.states[e]?.attributes?.friendly_name??e;return G`<div class="moves-section">
+      <div class="moves-label">${Ve("dialog.last_moves")}</div>
+      ${t.map(([e,t])=>G`<div class="move-row">
+            <span class="move-name" ${_t(e)}>${i(e)}</span>
             <span class="move-line dim">${t}</span>
           </div>`)}
-      ${i.map(([e,t])=>W`<div class="move-row blocked">
-            <span class="move-name" ${gt(e)}>${o(e)}</span>
-            <span class="move-line">${De("dialog.move_blocked",{gate:t})}</span>
+      ${o.map(([e,t])=>G`<div class="move-row blocked">
+            <span class="move-name" ${_t(e)}>${i(e)}</span>
+            <span class="move-line">${Ve("dialog.move_blocked",{gate:t})}</span>
           </div>`)}
-    </div>`}_navigate(e){history.pushState(null,"",e),window.dispatchEvent(new CustomEvent("location-changed",{detail:{replace:!1}})),this._emitClose()}};function ao(){return W`
+    </div>`}_navigate(e){history.pushState(null,"",e),window.dispatchEvent(new CustomEvent("location-changed",{detail:{replace:!1}})),this._emitClose()}};function pi(){return G`
     <div
       class="editor-footer"
       style="display:flex;align-items:center;justify-content:flex-end;gap:8px;"
     >
       <span class="version-footer dim">
-        ${De("root.footer_version",{version:ve})}
+        ${Ve("root.footer_version",{version:_e})}
       </span>
     </div>
-  `}ro.styles=r`
+  `}ui.styles=r`
     :host {
       display: contents;
     }
@@ -1791,23 +1791,23 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
     .ctrl-toggle:hover {
       background: rgba(var(--rgb-primary-color, 33, 150, 243), 0.08);
     }
-  `,e([ge({attribute:!1})],ro.prototype,"hass",void 0),e([ge({attribute:!1})],ro.prototype,"discovered",void 0),e([ge({type:Boolean,reflect:!0})],ro.prototype,"open",void 0),e([ge({type:Boolean})],ro.prototype,"advancedOpen",void 0),e([ge({type:Boolean})],ro.prototype,"showCompass",void 0),e([ge({type:Boolean})],ro.prototype,"showElevationChart",void 0),e([ge({attribute:!1})],ro.prototype,"badges",void 0),ro=e([he("acp-more-info-dialog")],ro);const lo=["auto","solar","manual","climate","glare_zone","privacy","sunset"],co={show_position:!0,show_state:!0,show_decision_summary:!1,show_controls:!0,show_badge:!0,show_compass:!0,show_elevation_chart:!0,layout:"detailed",badge_auto:!0,badge_solar:!0,badge_manual:!0,badge_climate:!0,badge_glare_zone:!0,badge_privacy:!0,badge_sunset:!0},ho={window:"editor.common.window",name:"editor.tile.name",icon:"editor.tile.icon",cover:"editor.tile.cover",layout:"editor.tile.layout",show_position:"editor.tile.show_position",show_state:"editor.tile.show_state",show_decision_summary:"editor.tile.show_decision_summary",show_controls:"editor.tile.show_controls",show_badge:"editor.tile.show_badge",badge_section:"editor.tile.badge_section",badge_auto:"editor.tile.badge_auto",badge_solar:"editor.tile.badge_solar",badge_manual:"editor.tile.badge_manual",badge_climate:"editor.tile.badge_climate",badge_glare_zone:"editor.tile.badge_glare_zone",badge_privacy:"editor.tile.badge_privacy",badge_sunset:"editor.tile.badge_sunset",show_compass:"editor.tile.show_compass",show_elevation_chart:"editor.tile.show_elevation_chart",tap_action:"editor.tile.tap_action",hold_action:"editor.tile.hold_action",double_tap_action:"editor.tile.double_tap_action"};let po=class extends ce{constructor(){super(...arguments),this._windows=null,this._windowsError=null,this._registry=null,this._managedCovers=[],this._windowsFetchInFlight=!1,this._registryFetchInFlight=!1,this._unsubRegistry=null,this._computeLabel=e=>{const t=ho[e.name];return t?De(t):e.name},this._valueChanged=e=>{e.stopPropagation();const t={...e.detail.value};for(const[e,i]of Object.entries(co))e.startsWith("badge_")?t[e]===i&&delete t[e]:this._config&&Object.prototype.hasOwnProperty.call(this._config,e)||t[e]!==i||delete t[e];const i={};for(const e of lo){const o=`badge_${e}`;!1===t[o]&&(i[e]=!1),delete t[o]}const o=t.window;delete t.window;let s={...this._config??{type:""},...t};"string"==typeof o&&o&&o!==bt(this._config)&&(s=wt(s,o)),Object.keys(i).length>0?s.badges=i:delete s.badges,this._emit(s)}}setConfig(e){this._config={...e}}disconnectedCallback(){super.disconnectedCallback(),this._unsubRegistry&&(this._unsubRegistry(),this._unsubRegistry=null)}updated(e){e.has("hass")&&this.hass&&(this._ensureWindows(),this._ensureRegistry()),e.has("_registry")&&null!==this._registry&&this._maybePrefillCover()}_ensureWindows(){this._windows||this._windowsFetchInFlight||(this._windowsFetchInFlight=!0,Yt(this.hass).then(e=>{this._windows=e,this._windowsError=null,this._hasBinding()||1!==e.length||this._emit(wt(this._config??{type:""},e[0].window_key)),this._maybePrefillCover()}).catch(e=>{this._windowsError=e?.message??"failed to load windows"}).finally(()=>{this._windowsFetchInFlight=!1}))}_hasBinding(){return!!(this._config?.window||this._config?.entry_id||this._config?.cover)}_ensureRegistry(){null!==this._registry||this._registryFetchInFlight||(this._registryFetchInFlight=!0,Kt(this.hass).then(e=>{this._registry=e,this._maybePrefillCover()}).catch(()=>{this._registry=[]}).finally(()=>{this._registryFetchInFlight=!1})),this._unsubRegistry||(this._unsubRegistry=Dt(this.hass,()=>{this._registryFetchInFlight=!0,Kt(this.hass).then(e=>{this._registry=e}).catch(()=>{}).finally(()=>{this._registryFetchInFlight=!1})}))}_emit(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0}))}_maybePrefillCover(){const e=this._config;if(!e||!bt(e)||e.cover||!this._registry||!this.hass)return;const t=jt(this.hass,e,this._registry);this._managedCovers=t?.managed_covers??[],1===t?.managed_covers.length&&this._emit({...e,cover:t.managed_covers[0]})}render(){if(!this._config)return L;if(this._windowsError&&!this._windows)return W`
+  `,e([ge({attribute:!1})],ui.prototype,"hass",void 0),e([ge({attribute:!1})],ui.prototype,"discovered",void 0),e([ge({type:Boolean,reflect:!0})],ui.prototype,"open",void 0),e([ge({type:Boolean})],ui.prototype,"advancedOpen",void 0),e([ge({type:Boolean})],ui.prototype,"showCompass",void 0),e([ge({type:Boolean})],ui.prototype,"showElevationChart",void 0),e([ge({attribute:!1})],ui.prototype,"badges",void 0),ui=e([he("acp-more-info-dialog")],ui);const gi=["auto","solar","manual","climate","glare_zone","privacy","sunset"],mi={show_position:!0,show_state:!0,show_decision_summary:!1,show_controls:!0,show_badge:!0,show_compass:!0,show_elevation_chart:!0,layout:"detailed",badge_auto:!0,badge_solar:!0,badge_manual:!0,badge_climate:!0,badge_glare_zone:!0,badge_privacy:!0,badge_sunset:!0},fi={window:"editor.common.window",name:"editor.tile.name",icon:"editor.tile.icon",cover:"editor.tile.cover",layout:"editor.tile.layout",show_position:"editor.tile.show_position",show_state:"editor.tile.show_state",show_decision_summary:"editor.tile.show_decision_summary",show_controls:"editor.tile.show_controls",show_badge:"editor.tile.show_badge",badge_section:"editor.tile.badge_section",badge_auto:"editor.tile.badge_auto",badge_solar:"editor.tile.badge_solar",badge_manual:"editor.tile.badge_manual",badge_climate:"editor.tile.badge_climate",badge_glare_zone:"editor.tile.badge_glare_zone",badge_privacy:"editor.tile.badge_privacy",badge_sunset:"editor.tile.badge_sunset",show_compass:"editor.tile.show_compass",show_elevation_chart:"editor.tile.show_elevation_chart",tap_action:"editor.tile.tap_action",hold_action:"editor.tile.hold_action",double_tap_action:"editor.tile.double_tap_action"};let _i=class extends ce{constructor(){super(...arguments),this._windows=null,this._windowsError=null,this._registry=null,this._managedCovers=[],this._windowsFetchInFlight=!1,this._registryFetchInFlight=!1,this._unsubRegistry=null,this._computeLabel=e=>{const t=fi[e.name];return t?Ve(t):e.name},this._valueChanged=e=>{e.stopPropagation();const t={...e.detail.value};for(const[e,o]of Object.entries(mi))e.startsWith("badge_")?t[e]===o&&delete t[e]:this._config&&Object.prototype.hasOwnProperty.call(this._config,e)||t[e]!==o||delete t[e];const o={};for(const e of gi){const i=`badge_${e}`;!1===t[i]&&(o[e]=!1),delete t[i]}const i=t.window;delete t.window;let s={...this._config??{type:""},...t};"string"==typeof i&&i&&i!==kt(this._config)&&(s=$t(s,i)),Object.keys(o).length>0?s.badges=o:delete s.badges,this._emit(s)}}setConfig(e){this._config={...e}}disconnectedCallback(){super.disconnectedCallback(),this._unsubRegistry&&(this._unsubRegistry(),this._unsubRegistry=null)}updated(e){e.has("hass")&&this.hass&&(this._ensureWindows(),this._ensureRegistry()),e.has("_registry")&&null!==this._registry&&this._maybePrefillCover()}_ensureWindows(){this._windows||this._windowsFetchInFlight||(this._windowsFetchInFlight=!0,Qt(this.hass).then(e=>{this._windows=e,this._windowsError=null,this._hasBinding()||1!==e.length||this._emit($t(this._config??{type:""},e[0].window_key)),this._maybePrefillCover()}).catch(e=>{this._windowsError=e?.message??"failed to load windows"}).finally(()=>{this._windowsFetchInFlight=!1}))}_hasBinding(){return!!(this._config?.window||this._config?.entry_id||this._config?.cover)}_ensureRegistry(){null!==this._registry||this._registryFetchInFlight||(this._registryFetchInFlight=!0,Wt(this.hass).then(e=>{this._registry=e,this._maybePrefillCover()}).catch(()=>{this._registry=[]}).finally(()=>{this._registryFetchInFlight=!1})),this._unsubRegistry||(this._unsubRegistry=Vt(this.hass,()=>{this._registryFetchInFlight=!0,Wt(this.hass).then(e=>{this._registry=e}).catch(()=>{}).finally(()=>{this._registryFetchInFlight=!1})}))}_emit(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0}))}_maybePrefillCover(){const e=this._config;if(!e||!kt(e)||e.cover||!this._registry||!this.hass)return;const t=Kt(this.hass,e,this._registry);this._managedCovers=t?.managed_covers??[],1===t?.managed_covers.length&&this._emit({...e,cover:t.managed_covers[0]})}render(){if(!this._config)return Y;if(this._windowsError&&!this._windows)return G`
         <div class="form">
-          <div class="error">${De("editor.common.load_failed",{error:this._windowsError})}</div>
+          <div class="error">${Ve("editor.common.load_failed",{error:this._windowsError})}</div>
           <label class="field-label" for="entry-id-fallback"
-            >${De("editor.common.window_fallback_label")}</label
+            >${Ve("editor.common.window_fallback_label")}</label
           >
           <input
             id="entry-id-fallback"
             type="text"
             class="text-input"
-            .value=${bt(this._config)}
-            placeholder=${De("editor.common.window_manual_placeholder")}
-            @change=${e=>this._emit(wt(this._config??{type:""},e.target.value))}
+            .value=${kt(this._config)}
+            placeholder=${Ve("editor.common.window_manual_placeholder")}
+            @change=${e=>this._emit($t(this._config??{type:""},e.target.value))}
           />
-          ${ao()}
+          ${pi()}
         </div>
-      `;const e=this._schema(),{badges:t,entry_id:i,...o}=this._config,s={};for(const e of lo)t&&!1===t[e]&&(s[`badge_${e}`]=!1);const n=bt(this._config),r={...co,...o,...s,...n?{window:n}:{}};return W`
+      `;const e=this._schema(),{badges:t,entry_id:o,...i}=this._config,s={};for(const e of gi)t&&!1===t[e]&&(s[`badge_${e}`]=!1);const n=kt(this._config),r={...mi,...i,...s,...n?{window:n}:{}};return G`
       <div class="form">
         <ha-form
           .hass=${this.hass}
@@ -1816,10 +1816,10 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
           .computeLabel=${this._computeLabel}
           @value-changed=${this._valueChanged}
         ></ha-form>
-        ${this._managedCovers.length>1&&!this._config?.cover?W`<div class="hint">${De("editor.tile.cover_blank_hint")}</div>`:L}
-        ${ao()}
+        ${this._managedCovers.length>1&&!this._config?.cover?G`<div class="hint">${Ve("editor.tile.cover_blank_hint")}</div>`:Y}
+        ${pi()}
       </div>
-    `}_schema(){const e=this._windowOptions(),t=[{value:"one-line",label:De("editor.tile.layout_option_one_line")},{value:"detailed",label:De("editor.tile.layout_option_detailed")}];let i={entity:{domain:"cover"}};if(this._registry&&bt(this._config)){const e=jt(this.hass,this._config,this._registry);e&&e.managed_covers.length>0&&(i={entity:{domain:"cover",include_entities:e.managed_covers}})}return[{name:"window",required:!this._config?.cover,selector:{select:{options:e,mode:"dropdown"}}},{name:"name",selector:{text:{}}},{name:"icon",selector:{icon:{}}},{name:"cover",selector:i},{name:"layout",selector:{select:{mode:"list",options:t}}},{name:"show_position",selector:{boolean:{}}},{name:"show_state",selector:{boolean:{}}},{name:"show_decision_summary",selector:{boolean:{}}},{name:"show_controls",selector:{boolean:{}}},{name:"show_badge",selector:{boolean:{}}},{type:"expandable",name:"",title:De("editor.tile.badge_section"),icon:"mdi:label-multiple-outline",schema:[{type:"grid",name:"",schema:lo.map(e=>({name:`badge_${e}`,selector:{boolean:{}}}))}]},{name:"show_compass",selector:{boolean:{}}},{name:"show_elevation_chart",selector:{boolean:{}}},{name:"tap_action",selector:{ui_action:{}}},{name:"hold_action",selector:{ui_action:{}}},{name:"double_tap_action",selector:{ui_action:{}}}]}_windowOptions(){const e=(this._windows??[]).map(e=>({value:e.window_key,label:e.title})),t=bt(this._config);return t&&!e.some(e=>e.value===t)&&e.unshift({value:t,label:De("editor.common.unknown_entry",{entry:t})}),e}};po.styles=r`
+    `}_schema(){const e=this._windowOptions(),t=[{value:"one-line",label:Ve("editor.tile.layout_option_one_line")},{value:"detailed",label:Ve("editor.tile.layout_option_detailed")}];let o={entity:{domain:"cover"}};if(this._registry&&kt(this._config)){const e=Kt(this.hass,this._config,this._registry);e&&e.managed_covers.length>0&&(o={entity:{domain:"cover",include_entities:e.managed_covers}})}return[{name:"window",required:!this._config?.cover,selector:{select:{options:e,mode:"dropdown"}}},{name:"name",selector:{text:{}}},{name:"icon",selector:{icon:{}}},{name:"cover",selector:o},{name:"layout",selector:{select:{mode:"list",options:t}}},{name:"show_position",selector:{boolean:{}}},{name:"show_state",selector:{boolean:{}}},{name:"show_decision_summary",selector:{boolean:{}}},{name:"show_controls",selector:{boolean:{}}},{name:"show_badge",selector:{boolean:{}}},{type:"expandable",name:"",title:Ve("editor.tile.badge_section"),icon:"mdi:label-multiple-outline",schema:[{type:"grid",name:"",schema:gi.map(e=>({name:`badge_${e}`,selector:{boolean:{}}}))}]},{name:"show_compass",selector:{boolean:{}}},{name:"show_elevation_chart",selector:{boolean:{}}},{name:"tap_action",selector:{ui_action:{}}},{name:"hold_action",selector:{ui_action:{}}},{name:"double_tap_action",selector:{ui_action:{}}}]}_windowOptions(){const e=(this._windows??[]).map(e=>({value:e.window_key,label:e.title})),t=kt(this._config);return t&&!e.some(e=>e.value===t)&&e.unshift({value:t,label:Ve("editor.common.unknown_entry",{entry:t})}),e}};_i.styles=r`
     :host {
       display: block;
     }
@@ -1860,13 +1860,13 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
     .dim {
       color: var(--secondary-text-color);
     }
-  `,e([ge({attribute:!1})],po.prototype,"hass",void 0),e([_e()],po.prototype,"_config",void 0),e([_e()],po.prototype,"_windows",void 0),e([_e()],po.prototype,"_windowsError",void 0),e([_e()],po.prototype,"_registry",void 0),e([_e()],po.prototype,"_managedCovers",void 0),po=e([he($e)],po);let uo=class extends ce{constructor(){super(...arguments),this._registry=null,this._registryError=null,this._dialogOpen=!1,this._unsubRegistry=null,this._fetchInFlight=!1,this._memo=Pt(),this._discovered=null,this._fetchGen=0,this._closeDialog=()=>{this._dialogOpen=!1},this._holdTimer=null,this._pendingTapTimer=null,this._holdFired=!1,this._onPointerDown=()=>{this._holdFired=!1,null!=this._holdTimer&&clearTimeout(this._holdTimer),Li(this._config?.hold_action)&&(this._holdTimer=setTimeout(()=>{this._holdFired=!0,this._holdTimer=null,this._fireAction("hold")},500))},this._onPointerUp=()=>{null!=this._holdTimer&&(clearTimeout(this._holdTimer),this._holdTimer=null)},this._onPointerCancel=()=>{null!=this._holdTimer&&(clearTimeout(this._holdTimer),this._holdTimer=null)},this._onClick=()=>{if(!this._holdFired)return Li(this._config?.double_tap_action)?null!=this._pendingTapTimer?(clearTimeout(this._pendingTapTimer),this._pendingTapTimer=null,void this._fireAction("double_tap")):void(this._pendingTapTimer=setTimeout(()=>{this._pendingTapTimer=null,this._fireAction("tap")},250)):void this._fireAction("tap");this._holdFired=!1}}setConfig(e){const t=mt(e);if(!t)throw new Error(`${xe}: set \`window\` (window key) or \`cover\` (cover entity); a legacy \`entry_id\` also works. It must be a non-empty string.`);let i={...e};if("string"==typeof i.tap_action&&(i={...i,tap_action:"none"===i.tap_action?{action:"none"}:void 0}),this._config=i,i.tooltips&&ht(i.tooltips),null===this._registry){const e=Qt.get(ft(t));e&&(this._registry=e.entries)}}getCardSize(){return 1}getGridOptions(){return{columns:"full",rows:"auto",min_columns:3,min_rows:"one-line"!==this._config?.layout?2:1}}static async getStubConfig(e){let t="";try{const i=await Yt(e);t=i[0]?.window_key??""}catch{}return{type:`custom:${xe}`,window:t}}static async getConfigElement(){return document.createElement($e)}connectedCallback(){if(super.connectedCallback(),null===this._registry){const e=Gt();e&&(this._registry=e)}this.hass&&this._ensureRegistry()}disconnectedCallback(){super.disconnectedCallback(),this._unsubRegistry&&(this._unsubRegistry(),this._unsubRegistry=null)}updated(e){e.has("hass")&&this.hass&&this._ensureRegistry()}shouldUpdate(e){return e.size>1||!e.has("hass")||(!this._discovered||me(e.get("hass"),this.hass,[...Object.values(this._discovered.entities),...this._discovered.managed_covers]))}willUpdate(e){this._config&&this.hass&&null!==this._registry&&(e.has("hass")||e.has("_registry")||e.has("_config"))&&(this._discovered=this._memo(this.hass,this._config,this._registry))}_ensureRegistry(){this._fetchRegistry(),this._unsubRegistry||(this._unsubRegistry=Dt(this.hass,()=>{this._fetchRegistry(!0)}))}_fetchRegistry(e=!1){if(this._fetchInFlight)return;this._fetchInFlight=!0;const t=++this._fetchGen;Wt(this.hass,e).then(e=>{if(t!==this._fetchGen)return;if(e===this._registry)return;this._registry=e,this._registryError=null;const i=mt(this._config);i&&this.hass&&Qt.set(ft(i),Nt(this.hass,i,e))}).catch(e=>{t===this._fetchGen&&(this._registryError=e?.message??"entity registry fetch failed")}).finally(()=>{t===this._fetchGen&&(this._fetchInFlight=!1)})}render(){if(!this._config||!this.hass)return L;if(null===this._registry)return W`<ha-card>
+  `,e([ge({attribute:!1})],_i.prototype,"hass",void 0),e([me()],_i.prototype,"_config",void 0),e([me()],_i.prototype,"_windows",void 0),e([me()],_i.prototype,"_windowsError",void 0),e([me()],_i.prototype,"_registry",void 0),e([me()],_i.prototype,"_managedCovers",void 0),_i=e([he($e)],_i);let vi=class extends ce{constructor(){super(...arguments),this._registry=null,this._registryError=null,this._dialogOpen=!1,this._unsubRegistry=null,this._fetchInFlight=!1,this._memo=Bt(),this._discovered=null,this._fetchGen=0,this._closeDialog=()=>{this._dialogOpen=!1},this._holdTimer=null,this._pendingTapTimer=null,this._holdFired=!1,this._onPointerDown=()=>{this._holdFired=!1,null!=this._holdTimer&&clearTimeout(this._holdTimer),Xo(this._config?.hold_action)&&(this._holdTimer=setTimeout(()=>{this._holdFired=!0,this._holdTimer=null,this._fireAction("hold")},500))},this._onPointerUp=()=>{null!=this._holdTimer&&(clearTimeout(this._holdTimer),this._holdTimer=null)},this._onPointerCancel=()=>{null!=this._holdTimer&&(clearTimeout(this._holdTimer),this._holdTimer=null)},this._onClick=()=>{if(!this._holdFired)return Xo(this._config?.double_tap_action)?null!=this._pendingTapTimer?(clearTimeout(this._pendingTapTimer),this._pendingTapTimer=null,void this._fireAction("double_tap")):void(this._pendingTapTimer=setTimeout(()=>{this._pendingTapTimer=null,this._fireAction("tap")},250)):void this._fireAction("tap");this._holdFired=!1}}setConfig(e){const t=yt(e);if(!t)throw new Error(`${xe}: set \`window\` (window key) or \`cover\` (cover entity); a legacy \`entry_id\` also works. It must be a non-empty string.`);let o={...e};if("string"==typeof o.tap_action&&(o={...o,tap_action:"none"===o.tap_action?{action:"none"}:void 0}),this._config=o,o.tooltips&&gt(o.tooltips),null===this._registry){const e=Xt.get(bt(t));e&&(this._registry=e.entries)}}getCardSize(){return 1}getGridOptions(){return{columns:"full",rows:"auto",min_columns:3,min_rows:"one-line"!==this._config?.layout?2:1}}static async getStubConfig(e){let t="";try{const o=await Qt(e);t=o[0]?.window_key??""}catch{}return{type:`custom:${xe}`,window:t}}static async getConfigElement(){return document.createElement($e)}connectedCallback(){if(super.connectedCallback(),null===this._registry){const e=Lt();e&&(this._registry=e)}this.hass&&this._ensureRegistry()}disconnectedCallback(){super.disconnectedCallback(),this._unsubRegistry&&(this._unsubRegistry(),this._unsubRegistry=null)}updated(e){e.has("hass")&&this.hass&&this._ensureRegistry()}shouldUpdate(e){return e.size>1||!e.has("hass")||(!this._discovered||fe(e.get("hass"),this.hass,[...Object.values(this._discovered.entities),...this._discovered.managed_covers]))}willUpdate(e){this._config&&this.hass&&null!==this._registry&&(e.has("hass")||e.has("_registry")||e.has("_config"))&&(this._discovered=this._memo(this.hass,this._config,this._registry))}_ensureRegistry(){this._fetchRegistry(),this._unsubRegistry||(this._unsubRegistry=Vt(this.hass,()=>{this._fetchRegistry(!0)}))}_fetchRegistry(e=!1){if(this._fetchInFlight)return;this._fetchInFlight=!0;const t=++this._fetchGen;Yt(this.hass,e).then(e=>{if(t!==this._fetchGen)return;if(e===this._registry)return;this._registry=e,this._registryError=null;const o=yt(this._config);o&&this.hass&&Xt.set(bt(o),Dt(this.hass,o,e))}).catch(e=>{t===this._fetchGen&&(this._registryError=e?.message??"entity registry fetch failed")}).finally(()=>{t===this._fetchGen&&(this._fetchInFlight=!1)})}render(){if(!this._config||!this.hass)return Y;if(null===this._registry)return G`<ha-card>
         <div class="empty">
           <p class="dim">
-            ${this._registryError?De("tile.registry_failed",{error:this._registryError}):De("tile.loading")}
+            ${this._registryError?Ve("tile.registry_failed",{error:this._registryError}):Ve("tile.loading")}
           </p>
         </div>
-      </ha-card>`;const e=this._discovered;return e?W`
+      </ha-card>`;const e=this._discovered;return e?G`
       <ha-card>${this._renderTile(e)}</ha-card>
       <acp-more-info-dialog
         .hass=${this.hass}
@@ -1877,34 +1877,34 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
         .badges=${this._config.badges}
         @acp-dialog-close=${this._closeDialog}
       ></acp-more-info-dialog>
-    `:W`<ha-card>
+    `:G`<ha-card>
         <div class="empty">
           <p class="dim">
-            ${De("tile.entry_not_found",{entry:this._notFoundLabel()})}
+            ${Ve("tile.entry_not_found",{entry:this._notFoundLabel()})}
           </p>
         </div>
-      </ha-card>`}_buildHandlerLabels(){const e={};for(const[t,i]of Object.entries(Oe))e[t]=De(i);return e}_renderTile(e){const t=this._config,i=t.name??e.entry_title,o=this._targetCovers(e),s=o[0],n=this._liveCoverPosition(e,s),r=t.icon??function(e,t){if(null!==t&&!Number.isNaN(t)){if(t>=95)return Me[e]??"mdi:window-shutter-open";if(t<=5)return Ie[e]??"mdi:window-shutter"}return ze[e]??"mdi:window-shutter"}(e.cover_type,n),a=!1!==t.show_position,l=!1!==t.show_state,c=!1!==t.show_controls,d=!1!==t.show_badge,h="one-line"!==t.layout,p=this._currentPosition(e),u=n??p,g=null!==n&&n>=100,_=null!==n&&n<=0,m=Zt(this.hass,e),v=ei(this.hass,e),f=this._isFullyInert(t),y=!0===t.show_decision_summary&&v?Di(v.trace,v,m,this._buildHandlerLabels(),p):"",w=!!y&&h,b=this._switchOn(e,"automatic_control_switch"),x=this._manualOverrideOn(e),$=function(e){const t=Hi(e);return!1===e.inTimeWindow&&!1!==e.badges?.off_schedule&&"off"!==t&&"manual"!==t?"off_schedule":t}({winner:m,integrationEnabled:b,manualActive:x,badges:t.badges}),k=qi(0,m),A=null!==$&&Qi([$],t.badges,k).length>0,C=d&&A,E=!!(S={integrationEnabled:b,automaticControl:b,manualActive:x}).integrationEnabled&&!!S.automaticControl&&!S.manualActive;var S;const O=h&&d&&!1!==t.badges?.auto&&E,z=!(O&&"auto"===$),M=l&&s?function(e,t){if(!e||!t)return null;const i=e.states[t];if(!i?.state||"unknown"===i.state||"unavailable"===i.state)return null;if("function"==typeof e.formatEntityState){const t=e.formatEntityState(i);if(t)return t}if("function"==typeof e.localize){const t=e.localize(`component.cover.entity_component._.state.${i.state}`);if(t)return t}return i.state.charAt(0).toUpperCase()+i.state.slice(1)}(this.hass,s):null,I=[M,a&&null!==u?bi(u):null].filter(e=>!!e),T=!!M,F=x&&!!e.entities.reset_override_button,R=!1===t.show_battery?null:function(e,t){if(!e||!t)return null;const i=e.find(e=>e.entity_id===t);if(!i?.device_id)return null;const o=e.find(e=>e.device_id===i.device_id&&e.entity_id.startsWith("sensor.")&&/(^|_)battery(_|$)/.test(e.entity_id.split(".")[1]));return o?.entity_id??null}(this._registry,s),j=function(e,t){if(!t)return null;const i=e.states[t];if(!i||"unavailable"===i.state||"unknown"===i.state)return{level:null,available:!1};const o=parseFloat(i.state);return Number.isNaN(o)?{level:null,available:!1}:{level:o,available:!0}}(this.hass,R);let N=L;if(null!==j){const e=j.available?j.level<=12?" low":j.level<=25?" warn":"":" low",t=j.available?j.level<=25?"mdi:battery-alert":"mdi:battery-outline":"mdi:battery-unknown",i=j.available?j.level<=40?`${Math.round(j.level)}%`:"":"?";N=W`<span class=${`battery${e}`} title=${De("tile.battery")}
-        ><ha-icon icon=${t}></ha-icon>${i}</span
-      >`}const P=I.length>0||null!==j?W`<div class="position">
-            ${I.length>0?W`<span class="pos-text">${I.join(" · ")}</span>`:L}${N}
-          </div>`:L,K=C?W`<acp-tile-badge
+      </ha-card>`}_buildHandlerLabels(){const e={};for(const[t,o]of Object.entries(Ie))e[t]=Ve(o);return e}_renderTile(e){const t=this._config,o=t.name??e.entry_title,i=this._targetCovers(e),s=i[0],n=this._liveCoverPosition(e,s),r=t.icon??function(e,t){if(null!==t&&!Number.isNaN(t)){if(t>=95)return Re[e]??"mdi:window-shutter-open";if(t<=5)return Fe[e]??"mdi:window-shutter"}return Te[e]??"mdi:window-shutter"}(e.cover_type,n),a=!1!==t.show_position,l=!1!==t.show_state,c=!1!==t.show_controls,d=!1!==t.show_badge,h="one-line"!==t.layout,u=this._currentPosition(e),p=n??u,g=null!==n&&n>=100,m=null!==n&&n<=0,f=oo(this.hass,e),_=io(this.hass,e),v=this._isFullyInert(t),y=!0===t.show_decision_summary&&_?Go(_.trace,_,f,this._buildHandlerLabels(),u):"",w=!!y&&h,b=this._switchOn(e,"automatic_control_switch"),x=this._manualOverrideOn(e),$=function(e){const t=Zo(e);return!1===e.inTimeWindow&&!1!==e.badges?.off_schedule&&"off"!==t&&"manual"!==t?"off_schedule":t}({winner:f,integrationEnabled:b,manualActive:x,badges:t.badges}),k=ei(0,f),A=null!==$&&Jo([$],t.badges,k).length>0,C=d&&A,S=!!(E={integrationEnabled:b,automaticControl:b,manualActive:x}).integrationEnabled&&!!E.automaticControl&&!E.manualActive;var E;const z=h&&d&&!1!==t.badges?.auto&&S,O=!(z&&"auto"===$),M=l&&s?function(e,t){if(!e||!t)return null;const o=e.states[t];if(!o?.state||"unknown"===o.state||"unavailable"===o.state)return null;if("function"==typeof e.formatEntityState){const t=e.formatEntityState(o);if(t)return t}if("function"==typeof e.localize){const t=e.localize(`component.cover.entity_component._.state.${o.state}`);if(t)return t}return o.state.charAt(0).toUpperCase()+o.state.slice(1)}(this.hass,s):null,I=[M,a&&null!==p?Ao(p):null].filter(e=>!!e),T=!!M,R=x&&!!e.entities.reset_override_button,F=!1===t.show_battery?null:function(e,t){if(!e||!t)return null;const o=e.find(e=>e.entity_id===t);if(!o?.device_id)return null;const i=e.find(e=>e.device_id===o.device_id&&e.entity_id.startsWith("sensor.")&&/(^|_)battery(_|$)/.test(e.entity_id.split(".")[1]));return i?.entity_id??null}(this._registry,s),j=function(e,t){if(!t)return null;const o=e.states[t];if(!o||"unavailable"===o.state||"unknown"===o.state)return{level:null,available:!1};const i=parseFloat(o.state);return Number.isNaN(i)?{level:null,available:!1}:{level:i,available:!0}}(this.hass,F);let N=Y;if(null!==j){const e=j.available?j.level<=12?" low":j.level<=25?" warn":"":" low",t=j.available?j.level<=25?"mdi:battery-alert":"mdi:battery-outline":"mdi:battery-unknown",o=j.available?j.level<=40?`${Math.round(j.level)}%`:"":"?";N=G`<span class=${`battery${e}`} title=${Ve("tile.battery")}
+        ><ha-icon icon=${t}></ha-icon>${o}</span
+      >`}const P=I.length>0||null!==j?G`<div class="position">
+            ${I.length>0?G`<span class="pos-text">${I.join(" · ")}</span>`:Y}${N}
+          </div>`:Y,K=C?G`<acp-tile-badge
           .hass=${this.hass}
-          .winner=${m}
+          .winner=${f}
           .kindOverride=${$??void 0}
           .integrationEnabled=${b}
           .manualActive=${x}
-          .resumable=${F}
+          .resumable=${R}
           @acp-resume=${()=>this._resume(e)}
-        ></acp-tile-badge>`:L,D=O?W`<acp-tile-badge
+        ></acp-tile-badge>`:Y,D=z?G`<acp-tile-badge
           .hass=${this.hass}
-          .winner=${m}
+          .winner=${f}
           .kindOverride=${"auto"}
           .integrationEnabled=${b}
-        ></acp-tile-badge>`:L;return W`
+        ></acp-tile-badge>`:Y;return G`
       <div
         class=${`tile-body${h?" detailed":""}${w?" has-summary":""}${T?" has-state-label":""}`}
-        role=${f?"group":"button"}
-        tabindex=${f?-1:0}
+        role=${v?"group":"button"}
+        tabindex=${v?-1:0}
         @pointerdown=${this._onPointerDown}
         @pointerup=${this._onPointerUp}
         @pointercancel=${this._onPointerCancel}
@@ -1915,46 +1915,46 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
           <ha-icon class="cover-icon" icon=${r}></ha-icon>
         </div>
         <div class="label">
-          <div class="title">${i}</div>
-          ${y&&!h?W`<div class="summary">${y}</div>`:L}
-          ${w?W`<div class="summary inline-summary" ${gt(y)}>${y}</div>`:L}
+          <div class="title">${o}</div>
+          ${y&&!h?G`<div class="summary">${y}</div>`:Y}
+          ${w?G`<div class="summary inline-summary" ${_t(y)}>${y}</div>`:Y}
         </div>
-        ${h&&O?W`<div class="auto-line">${D}</div>`:L}
-        ${h?W`<div class="detail-line">
-              ${P}${z?K:L}
-            </div>`:W`${P}`}
-        ${c?W`<div class="controls" @click=${this._stop} @pointerdown=${this._stop}>
+        ${h&&z?G`<div class="auto-line">${D}</div>`:Y}
+        ${h?G`<div class="detail-line">
+              ${P}${O?K:Y}
+            </div>`:G`${P}`}
+        ${c?G`<div class="controls" @click=${this._stop} @pointerdown=${this._stop}>
               <button
                 class="up"
                 type="button"
-                aria-label=${De("tile.open")}
-                ?disabled=${0===o.length||g}
-                @click=${()=>this._setCoversPosition(e,o,100)}
+                aria-label=${Ve("tile.open")}
+                ?disabled=${0===i.length||g}
+                @click=${()=>this._setCoversPosition(e,i,100)}
               >
                 <ha-icon icon="mdi:arrow-up"></ha-icon>
               </button>
               <button
                 class="stop"
                 type="button"
-                aria-label=${De("tile.stop")}
-                ?disabled=${0===o.length}
-                @click=${()=>this._stopCovers(o)}
+                aria-label=${Ve("tile.stop")}
+                ?disabled=${0===i.length}
+                @click=${()=>this._stopCovers(i)}
               >
                 <ha-icon icon="mdi:stop"></ha-icon>
               </button>
               <button
                 class="down"
                 type="button"
-                aria-label=${De("tile.close")}
-                ?disabled=${0===o.length||_}
-                @click=${()=>this._setCoversPosition(e,o,0)}
+                aria-label=${Ve("tile.close")}
+                ?disabled=${0===i.length||m}
+                @click=${()=>this._setCoversPosition(e,i,0)}
               >
                 <ha-icon icon="mdi:arrow-down"></ha-icon>
               </button>
-            </div>`:L}
-        ${h?L:K}
+            </div>`:Y}
+        ${h?Y:K}
       </div>
-    `}_targetCovers(e){return this._config?.cover?[this._config.cover]:e.managed_covers}_currentPosition(e){const t=e.entities.target_position_sensor;if(!t)return null;const i=this.hass.states[t];if(!i)return null;const o=parseFloat(i.state);return Number.isNaN(o)?null:o}_liveCoverPosition(e,t){return t?ii(this.hass,e.cover_type,t):null}_manualOverrideOn(e){const t=e.entities.manual_override_binary;return!!t&&"on"===this.hass.states[t]?.state}_switchOn(e,t){const i=e.entities[t];return!i||"off"!==this.hass.states[i]?.state}_setCoversPosition(e,t,i){0!==t.length&&("cover_tilt"===e.cover_type?this.hass.callService("cover","set_cover_tilt_position",{entity_id:t,tilt_position:i}):this.hass.callService("cover","set_cover_position",{entity_id:t,position:i}))}_stopCovers(e){0!==e.length&&this.hass.callService("cover","stop_cover",{entity_id:e})}_resume(e){const t=e.entities.reset_override_button;t&&Xi(Ji(this.hass,e.entities.target_position_sensor))&&this.hass.callService("button","press",{entity_id:t})}_tapActionConfig(){const e=this._config?.tap_action;if("string"!=typeof e)return e}_isFullyInert(e){return!!(e=>!!e&&"none"===e.action)(this._tapActionConfig())&&!Li(e.hold_action)&&!Li(e.double_tap_action)}_fireAction(e){if(!this._config||!this.hass)return;const t=this._tapActionConfig();if("tap"===e&&void 0===t)return this._dialogOpen=!0,void this.dispatchEvent(new CustomEvent("acp-tile-tap",{bubbles:!0,composed:!0}));const i=this._resolvedCoverFromState();((e,t,i,o)=>{let s;"double_tap"===o&&i.double_tap_action?s=i.double_tap_action:"hold"===o&&i.hold_action?s=i.hold_action:"tap"===o&&i.tap_action&&(s=i.tap_action),((e,t,i,o)=>{if(o||(o={action:"more-info"}),!o.confirmation||o.confirmation.exemptions&&o.confirmation.exemptions.some(e=>e.user===t.user.id)||(Yi("warning"),confirm(o.confirmation.text||`Are you sure you want to ${o.action}?`)))switch(o.action){case"more-info":(i.entity||i.camera_image)&&Ui(e,"hass-more-info",{entityId:i.entity?i.entity:i.camera_image});break;case"navigate":o.navigation_path&&((e,t,i=!1)=>{i?history.replaceState(null,"",t):history.pushState(null,"",t),Ui(window,"location-changed",{replace:i})})(0,o.navigation_path);break;case"url":o.url_path&&window.open(o.url_path);break;case"toggle":i.entity&&(((e,t)=>{((e,t,i=!0)=>{const o=function(e){return e.substr(0,e.indexOf("."))}(t),s="group"===o?"homeassistant":o;let n;switch(o){case"lock":n=i?"unlock":"lock";break;case"cover":n=i?"open_cover":"close_cover";break;default:n=i?"turn_on":"turn_off"}e.callService(s,n,{entity_id:t})})(e,t,Wi.includes(e.states[t].state))})(t,i.entity),Yi("success"));break;case"call-service":{if(!o.service)return void Yi("failure");const[e,i]=o.service.split(".",2);t.callService(e,i,o.service_data,o.target),Yi("success");break}case"fire-dom-event":Ui(e,"ll-custom",o)}})(e,t,i,s)})(this,this.hass,{entity:i,tap_action:t,hold_action:this._config.hold_action,double_tap_action:this._config.double_tap_action},e)}_resolvedCoverFromState(){if(this._config?.cover)return this._config.cover;if(null===this._registry)return;const e=this._discovered??this._memo(this.hass,this._config,this._registry);return e?.managed_covers[0]}_notFoundLabel(){const e=mt(this._config);return e?yt(e):""}_stop(e){e.stopPropagation()}};uo.styles=r`
+    `}_targetCovers(e){return this._config?.cover?[this._config.cover]:e.managed_covers}_currentPosition(e){const t=e.entities.target_position_sensor;if(!t)return null;const o=this.hass.states[t];if(!o)return null;const i=parseFloat(o.state);return Number.isNaN(i)?null:i}_liveCoverPosition(e,t){return t?no(this.hass,e.cover_type,t):null}_manualOverrideOn(e){const t=e.entities.manual_override_binary;return!!t&&"on"===this.hass.states[t]?.state}_switchOn(e,t){const o=e.entities[t];return!o||"off"!==this.hass.states[o]?.state}_setCoversPosition(e,t,o){0!==t.length&&("cover_tilt"===e.cover_type?this.hass.callService("cover","set_cover_tilt_position",{entity_id:t,tilt_position:o}):this.hass.callService("cover","set_cover_position",{entity_id:t,position:o}))}_stopCovers(e){0!==e.length&&this.hass.callService("cover","stop_cover",{entity_id:e})}_resume(e){const t=e.entities.reset_override_button;t&&ti(oi(this.hass,e.entities.target_position_sensor))&&this.hass.callService("button","press",{entity_id:t})}_tapActionConfig(){const e=this._config?.tap_action;if("string"!=typeof e)return e}_isFullyInert(e){return!!(e=>!!e&&"none"===e.action)(this._tapActionConfig())&&!Xo(e.hold_action)&&!Xo(e.double_tap_action)}_fireAction(e){if(!this._config||!this.hass)return;const t=this._tapActionConfig();if("tap"===e&&void 0===t)return this._dialogOpen=!0,void this.dispatchEvent(new CustomEvent("acp-tile-tap",{bubbles:!0,composed:!0}));const o=this._resolvedCoverFromState();((e,t,o,i)=>{let s;"double_tap"===i&&o.double_tap_action?s=o.double_tap_action:"hold"===i&&o.hold_action?s=o.hold_action:"tap"===i&&o.tap_action&&(s=o.tap_action),((e,t,o,i)=>{if(i||(i={action:"more-info"}),!i.confirmation||i.confirmation.exemptions&&i.confirmation.exemptions.some(e=>e.user===t.user.id)||(qo("warning"),confirm(i.confirmation.text||`Are you sure you want to ${i.action}?`)))switch(i.action){case"more-info":(o.entity||o.camera_image)&&Qo(e,"hass-more-info",{entityId:o.entity?o.entity:o.camera_image});break;case"navigate":i.navigation_path&&((e,t,o=!1)=>{o?history.replaceState(null,"",t):history.pushState(null,"",t),Qo(window,"location-changed",{replace:o})})(0,i.navigation_path);break;case"url":i.url_path&&window.open(i.url_path);break;case"toggle":o.entity&&(((e,t)=>{((e,t,o=!0)=>{const i=function(e){return e.substr(0,e.indexOf("."))}(t),s="group"===i?"homeassistant":i;let n;switch(i){case"lock":n=o?"unlock":"lock";break;case"cover":n=o?"open_cover":"close_cover";break;default:n=o?"turn_on":"turn_off"}e.callService(s,n,{entity_id:t})})(e,t,Ho.includes(e.states[t].state))})(t,o.entity),qo("success"));break;case"call-service":{if(!i.service)return void qo("failure");const[e,o]=i.service.split(".",2);t.callService(e,o,i.service_data,i.target),qo("success");break}case"fire-dom-event":Qo(e,"ll-custom",i)}})(e,t,o,s)})(this,this.hass,{entity:o,tap_action:t,hold_action:this._config.hold_action,double_tap_action:this._config.double_tap_action},e)}_resolvedCoverFromState(){if(this._config?.cover)return this._config.cover;if(null===this._registry)return;const e=this._discovered??this._memo(this.hass,this._config,this._registry);return e?.managed_covers[0]}_notFoundLabel(){const e=yt(this._config);return e?xt(e):""}_stop(e){e.stopPropagation()}};vi.styles=r`
     :host {
       display: block;
       height: 100%;
@@ -2246,27 +2246,27 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
       color: var(--secondary-text-color);
       margin: 0;
     }
-  `,e([ge({attribute:!1})],uo.prototype,"hass",void 0),e([_e()],uo.prototype,"_config",void 0),e([_e()],uo.prototype,"_registry",void 0),e([_e()],uo.prototype,"_registryError",void 0),e([_e()],uo.prototype,"_dialogOpen",void 0),uo=e([he(xe)],uo),window.customCards=window.customCards||[],window.customCards.some(e=>e.type===xe)||window.customCards.push({type:xe,name:"Adaptive Cover — Tile",description:"Compact chip-style tile for one Adaptive Cover instance: icon, name, position, ↑■↓, contextual badge.",preview:!0,documentationURL:"https://github.com/mrvollger/adaptive-cover-card"});const go={summer:"mdi:weather-sunny",winter:"mdi:snowflake",intermediate:"mdi:weather-partly-cloudy",basic:"mdi:sun-compass"};let _o=class extends ce{constructor(){super(...arguments),this.compact=!1}shouldUpdate(e){if(e.size>1||!e.has("hass"))return!0;const t=e.get("hass"),i=this.discovered?.entities;return me(t,this.hass,[i?.control_status_sensor,i?.climate_mode_switch])}render(){if(!this.hass||!this.discovered)return L;const e=this.discovered.entities.climate_mode_switch;if(!e)return L;const t=this.discovered.entities.control_status_sensor;if(!t)return L;const i=this.hass.states[t];if(!i||"unavailable"===i.state)return L;const o="off"===this.hass.states[e]?.state;if(o||"unknown"===i.state||""===i.state){const e=De(o?"climate.mode_off":"climate.standby"),t=o?"mdi:power-off":"mdi:thermostat";return W`
+  `,e([ge({attribute:!1})],vi.prototype,"hass",void 0),e([me()],vi.prototype,"_config",void 0),e([me()],vi.prototype,"_registry",void 0),e([me()],vi.prototype,"_registryError",void 0),e([me()],vi.prototype,"_dialogOpen",void 0),vi=e([he(xe)],vi),window.customCards=window.customCards||[],window.customCards.some(e=>e.type===xe)||window.customCards.push({type:xe,name:"Adaptive Cover — Tile",description:"Compact chip-style tile for one Adaptive Cover instance: icon, name, position, ↑■↓, contextual badge.",preview:!0,documentationURL:"https://github.com/mrvollger/adaptive-cover-card"});const yi={summer:"mdi:weather-sunny",winter:"mdi:snowflake",intermediate:"mdi:weather-partly-cloudy",basic:"mdi:sun-compass"};let wi=class extends ce{constructor(){super(...arguments),this.compact=!1}shouldUpdate(e){if(e.size>1||!e.has("hass"))return!0;const t=e.get("hass"),o=this.discovered?.entities;return fe(t,this.hass,[o?.control_status_sensor,o?.climate_mode_switch])}render(){if(!this.hass||!this.discovered)return Y;const e=this.discovered.entities.climate_mode_switch;if(!e)return Y;const t=this.discovered.entities.control_status_sensor;if(!t)return Y;const o=this.hass.states[t];if(!o||"unavailable"===o.state)return Y;const i="off"===this.hass.states[e]?.state;if(i||"unknown"===o.state||""===o.state){const e=Ve(i?"climate.mode_off":"climate.standby"),t=i?"mdi:power-off":"mdi:thermostat";return G`
         <div class="wrap">
           <div class="head">
-            <span class="label">${De("climate.title")}</span>
+            <span class="label">${Ve("climate.title")}</span>
           </div>
           <div class="strategy standby">
             <ha-icon icon=${t}></ha-icon>
             <span class="strategy-name dim">${e}</span>
           </div>
         </div>
-      `}const s=i.state,n=go[s]??"mdi:thermostat",r=this.hass.formatEntityState,a="function"==typeof r?r(i)??s:s;return W`
+      `}const s=o.state,n=yi[s]??"mdi:thermostat",r=this.hass.formatEntityState,a="function"==typeof r?r(o)??s:s;return G`
       <div class="wrap">
         <div class="head">
-          <span class="label">${De("climate.title")}</span>
+          <span class="label">${Ve("climate.title")}</span>
         </div>
         <div class="strategy">
           <ha-icon icon=${n}></ha-icon>
           <span class="strategy-name">${a}</span>
         </div>
       </div>
-    `}};_o.styles=r`
+    `}};wi.styles=r`
     :host {
       display: block;
     }
@@ -2308,17 +2308,17 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
     .dim {
       color: var(--secondary-text-color);
     }
-  `,e([ge({attribute:!1})],_o.prototype,"hass",void 0),e([ge({attribute:!1})],_o.prototype,"discovered",void 0),e([ge({type:Boolean,reflect:!0})],_o.prototype,"compact",void 0),_o=e([he("acp-climate-panel")],_o);const mo=[{key:"sky",labelKey:"editor.main.section_sky_label",descKey:"editor.main.section_sky_desc"},{key:"elevation",labelKey:"editor.main.section_elevation_label",descKey:"editor.main.section_elevation_desc"},{key:"decision",labelKey:"editor.main.section_decision_label",descKey:"editor.main.section_decision_desc"},{key:"covers",labelKey:"editor.main.section_covers_label",descKey:"editor.main.section_covers_desc"},{key:"overrides",labelKey:"editor.main.section_overrides_label",descKey:"editor.main.section_overrides_desc"},{key:"climate",labelKey:"editor.main.section_climate_label",descKey:"editor.main.section_climate_desc"}],vo=mo.filter(e=>!1!==e.enabledByDefault).map(e=>e.key);let fo=class extends ce{constructor(){super(...arguments),this._windows=null,this._windowsError=null,this._fetchInFlight=!1}setConfig(e){this._config=e}updated(e){e.has("hass")&&this.hass&&!this._windows&&!this._fetchInFlight&&(this._fetchInFlight=!0,Yt(this.hass).then(e=>{this._windows=e,this._windowsError=null,this._config?.window||this._config?.entry_id||this._config?.cover||1!==e.length||this._emit(wt(this._config??{type:""},e[0].window_key))}).catch(e=>{this._windowsError=e?.message??"failed to load windows"}).finally(()=>{this._fetchInFlight=!1}))}get _currentSections(){return this._config?.show_sections??vo}_emit(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0}))}_onWindowChange(e){const t=e.target.value;t!==bt(this._config)&&this._emit(wt(this._config??{type:""},t))}_onSectionToggle(e,t){const i=new Set(this._currentSections);t?i.add(e):i.delete(e);const o=mo.map(e=>e.key).filter(e=>i.has(e));this._emit({...this._config??{type:""},show_sections:o})}_onCompactToggle(e){this._emit({...this._config??{type:""},compact:e})}_onCompassStatsToggle(e){this._emit({...this._config??{type:""},show_compass_stats:e})}_onCompassLegendToggle(e){this._emit({...this._config??{type:""},show_compass_legend:e})}_onMoonToggle(e){this._emit({...this._config??{type:""},show_moon:e})}_onHideInactiveToggle(e){this._emit({...this._config??{type:""},hide_inactive_handlers:e})}_onNorthOffsetChange(e){const t=parseFloat(e.target.value),i=Number.isFinite(t)?t:0;this._emit({...this._config??{type:""},north_offset:i})}_onControlToggle(e,t){const i=this._config??{type:""};this._emit({...i,controls:{...i.controls,[e]:t}})}_onCoverColorChange(e){const t=this._config??{type:""};this._emit({...t,cover_colors:[e]})}_onCoverColorReset(){const e={...this._config??{type:""}};delete e.cover_colors,this._emit(e)}render(){if(!this._config)return L;const e=new Set(this._currentSections);return W`
+  `,e([ge({attribute:!1})],wi.prototype,"hass",void 0),e([ge({attribute:!1})],wi.prototype,"discovered",void 0),e([ge({type:Boolean,reflect:!0})],wi.prototype,"compact",void 0),wi=e([he("acp-climate-panel")],wi);const bi=[{key:"sky",labelKey:"editor.main.section_sky_label",descKey:"editor.main.section_sky_desc"},{key:"elevation",labelKey:"editor.main.section_elevation_label",descKey:"editor.main.section_elevation_desc"},{key:"decision",labelKey:"editor.main.section_decision_label",descKey:"editor.main.section_decision_desc"},{key:"covers",labelKey:"editor.main.section_covers_label",descKey:"editor.main.section_covers_desc"},{key:"overrides",labelKey:"editor.main.section_overrides_label",descKey:"editor.main.section_overrides_desc"},{key:"climate",labelKey:"editor.main.section_climate_label",descKey:"editor.main.section_climate_desc"}],xi=bi.filter(e=>!1!==e.enabledByDefault).map(e=>e.key);let $i=class extends ce{constructor(){super(...arguments),this._windows=null,this._windowsError=null,this._fetchInFlight=!1}setConfig(e){this._config=e}updated(e){e.has("hass")&&this.hass&&!this._windows&&!this._fetchInFlight&&(this._fetchInFlight=!0,Qt(this.hass).then(e=>{this._windows=e,this._windowsError=null,this._config?.window||this._config?.entry_id||this._config?.cover||1!==e.length||this._emit($t(this._config??{type:""},e[0].window_key))}).catch(e=>{this._windowsError=e?.message??"failed to load windows"}).finally(()=>{this._fetchInFlight=!1}))}get _currentSections(){return this._config?.show_sections??xi}_emit(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0}))}_onWindowChange(e){const t=e.target.value;t!==kt(this._config)&&this._emit($t(this._config??{type:""},t))}_onSectionToggle(e,t){const o=new Set(this._currentSections);t?o.add(e):o.delete(e);const i=bi.map(e=>e.key).filter(e=>o.has(e));this._emit({...this._config??{type:""},show_sections:i})}_onCompactToggle(e){this._emit({...this._config??{type:""},compact:e})}_onCompassStatsToggle(e){this._emit({...this._config??{type:""},show_compass_stats:e})}_onCompassLegendToggle(e){this._emit({...this._config??{type:""},show_compass_legend:e})}_onMoonToggle(e){this._emit({...this._config??{type:""},show_moon:e})}_onHideInactiveToggle(e){this._emit({...this._config??{type:""},hide_inactive_handlers:e})}_onNorthOffsetChange(e){const t=parseFloat(e.target.value),o=Number.isFinite(t)?t:0;this._emit({...this._config??{type:""},north_offset:o})}_onControlToggle(e,t){const o=this._config??{type:""};this._emit({...o,controls:{...o.controls,[e]:t}})}_onCoverColorChange(e){const t=this._config??{type:""};this._emit({...t,cover_colors:[e]})}_onCoverColorReset(){const e={...this._config??{type:""}};delete e.cover_colors,this._emit(e)}render(){if(!this._config)return Y;const e=new Set(this._currentSections);return G`
       <div class="form">
         <div class="section">
-          <label class="field-label">${De("editor.common.window")}</label>
+          <label class="field-label">${Ve("editor.common.window")}</label>
           ${this._renderWindowPicker()}
         </div>
 
         <div class="section">
-          <label class="field-label">${De("editor.main.sections")}</label>
-          <div class="hint">${De("editor.main.sections_hint")}</div>
-          ${mo.map(t=>W`
+          <label class="field-label">${Ve("editor.main.sections")}</label>
+          <div class="hint">${Ve("editor.main.sections_hint")}</div>
+          ${bi.map(t=>G`
               <label class="toggle-row">
                 <input
                   type="checkbox"
@@ -2326,16 +2326,16 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
                   @change=${e=>this._onSectionToggle(t.key,e.target.checked)}
                 />
                 <span class="toggle-text">
-                  <span class="toggle-label">${De(t.labelKey)}</span>
-                  <span class="toggle-desc">${De(t.descKey)}</span>
+                  <span class="toggle-label">${Ve(t.labelKey)}</span>
+                  <span class="toggle-desc">${Ve(t.descKey)}</span>
                 </span>
               </label>
             `)}
         </div>
 
         <div class="section">
-          <label class="field-label">${De("editor.main.controls")}</label>
-          <div class="hint">${De("editor.main.controls_hint")}</div>
+          <label class="field-label">${Ve("editor.main.controls")}</label>
+          <div class="hint">${Ve("editor.main.controls_hint")}</div>
           <label class="toggle-row">
             <input
               type="checkbox"
@@ -2343,8 +2343,8 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
               @change=${e=>this._onControlToggle("integration_enabled",e.target.checked)}
             />
             <span class="toggle-text">
-              <span class="toggle-label">${De("editor.main.integration_pill_label")}</span>
-              <span class="toggle-desc">${De("editor.main.integration_pill_desc")}</span>
+              <span class="toggle-label">${Ve("editor.main.integration_pill_label")}</span>
+              <span class="toggle-desc">${Ve("editor.main.integration_pill_desc")}</span>
             </span>
           </label>
           <label class="toggle-row">
@@ -2354,8 +2354,8 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
               @change=${e=>this._onControlToggle("automatic_control",e.target.checked)}
             />
             <span class="toggle-text">
-              <span class="toggle-label">${De("editor.main.automatic_pill_label")}</span>
-              <span class="toggle-desc">${De("editor.main.automatic_pill_desc")}</span>
+              <span class="toggle-label">${Ve("editor.main.automatic_pill_label")}</span>
+              <span class="toggle-desc">${Ve("editor.main.automatic_pill_desc")}</span>
             </span>
           </label>
           <label class="toggle-row">
@@ -2365,17 +2365,17 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
               @change=${e=>this._onControlToggle("reset_manual_override",e.target.checked)}
             />
             <span class="toggle-text">
-              <span class="toggle-label">${De("editor.main.reset_button_label")}</span>
-              <span class="toggle-desc">${De("editor.main.reset_button_desc")}</span>
+              <span class="toggle-label">${Ve("editor.main.reset_button_label")}</span>
+              <span class="toggle-desc">${Ve("editor.main.reset_button_desc")}</span>
             </span>
           </label>
         </div>
 
-        ${bt(this._config)||this._config.cover?W`
+        ${kt(this._config)||this._config.cover?G`
               <div class="section">
-                <label class="field-label">${De("editor.compass.cover_colors")}</label>
-                <div class="hint">${De("editor.compass.cover_colors_hint")}</div>
-                ${(()=>{const e=this._config.cover_colors?.[0]??null,t=e??Si(0);return W`
+                <label class="field-label">${Ve("editor.compass.cover_colors")}</label>
+                <div class="hint">${Ve("editor.compass.cover_colors_hint")}</div>
+                ${(()=>{const e=this._config.cover_colors?.[0]??null,t=e??Io(0);return G`
                     <div class="color-row">
                       <input
                         type="color"
@@ -2384,7 +2384,7 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
                       />
                       <span class="toggle-text">
                         <span class="toggle-desc"
-                          >${e||De("editor.compass.default_color")}</span
+                          >${e||Ve("editor.compass.default_color")}</span
                         >
                       </span>
                       <button
@@ -2393,15 +2393,15 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
                         ?disabled=${!e}
                         @click=${()=>this._onCoverColorReset()}
                       >
-                        ${De("editor.common.reset")}
+                        ${Ve("editor.common.reset")}
                       </button>
                     </div>
                   `})()}
               </div>
-            `:L}
+            `:Y}
 
         <div class="section">
-          <label class="field-label">${De("editor.main.display")}</label>
+          <label class="field-label">${Ve("editor.main.display")}</label>
           <label class="toggle-row">
             <input
               type="checkbox"
@@ -2409,8 +2409,8 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
               @change=${e=>this._onCompactToggle(e.target.checked)}
             />
             <span class="toggle-text">
-              <span class="toggle-label">${De("editor.main.compact_label")}</span>
-              <span class="toggle-desc">${De("editor.main.compact_desc")}</span>
+              <span class="toggle-label">${Ve("editor.main.compact_label")}</span>
+              <span class="toggle-desc">${Ve("editor.main.compact_desc")}</span>
             </span>
           </label>
           <label class="toggle-row">
@@ -2420,8 +2420,8 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
               @change=${e=>this._onCompassStatsToggle(e.target.checked)}
             />
             <span class="toggle-text">
-              <span class="toggle-label">${De("editor.main.show_compass_stats_label")}</span>
-              <span class="toggle-desc">${De("editor.main.show_compass_stats_desc")}</span>
+              <span class="toggle-label">${Ve("editor.main.show_compass_stats_label")}</span>
+              <span class="toggle-desc">${Ve("editor.main.show_compass_stats_desc")}</span>
             </span>
           </label>
           <label class="toggle-row">
@@ -2431,8 +2431,8 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
               @change=${e=>this._onCompassLegendToggle(e.target.checked)}
             />
             <span class="toggle-text">
-              <span class="toggle-label">${De("editor.main.show_compass_legend_label")}</span>
-              <span class="toggle-desc">${De("editor.main.show_compass_legend_desc")}</span>
+              <span class="toggle-label">${Ve("editor.main.show_compass_legend_label")}</span>
+              <span class="toggle-desc">${Ve("editor.main.show_compass_legend_desc")}</span>
             </span>
           </label>
           <label class="toggle-row">
@@ -2442,8 +2442,8 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
               @change=${e=>this._onMoonToggle(e.target.checked)}
             />
             <span class="toggle-text">
-              <span class="toggle-label">${De("editor.main.show_moon_label")}</span>
-              <span class="toggle-desc">${De("editor.main.show_moon_desc")}</span>
+              <span class="toggle-label">${Ve("editor.main.show_moon_label")}</span>
+              <span class="toggle-desc">${Ve("editor.main.show_moon_desc")}</span>
             </span>
           </label>
           <label class="toggle-row">
@@ -2453,15 +2453,15 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
               @change=${e=>this._onHideInactiveToggle(e.target.checked)}
             />
             <span class="toggle-text">
-              <span class="toggle-label">${De("editor.main.hide_inactive_label")}</span>
-              <span class="toggle-desc">${De("editor.main.hide_inactive_desc")}</span>
+              <span class="toggle-label">${Ve("editor.main.hide_inactive_label")}</span>
+              <span class="toggle-desc">${Ve("editor.main.hide_inactive_desc")}</span>
             </span>
           </label>
         </div>
 
         <div class="section">
-          <label class="field-label">${De("editor.common.north_offset")}</label>
-          <div class="hint">${De("editor.common.north_offset_hint")}</div>
+          <label class="field-label">${Ve("editor.common.north_offset")}</label>
+          <div class="hint">${Ve("editor.common.north_offset_hint")}</div>
           <input
             type="number"
             class="text-input"
@@ -2471,32 +2471,32 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
             @change=${this._onNorthOffsetChange}
           />
         </div>
-        ${ao()}
+        ${pi()}
       </div>
-    `}_renderWindowPicker(){const e=bt(this._config);return this._windowsError?W`
-        <div class="error">${De("editor.common.load_failed",{error:this._windowsError})}</div>
+    `}_renderWindowPicker(){const e=kt(this._config);return this._windowsError?G`
+        <div class="error">${Ve("editor.common.load_failed",{error:this._windowsError})}</div>
         <input
           type="text"
           .value=${e}
-          placeholder=${De("editor.common.window_manual_placeholder")}
+          placeholder=${Ve("editor.common.window_manual_placeholder")}
           @change=${this._onWindowChange}
           class="text-input"
         />
-      `:this._windows?0===this._windows.length?W`
+      `:this._windows?0===this._windows.length?G`
         <div class="error">
-          ${De("editor.common.no_entries")}
-          <code>${De("editor.common.no_entries_path")}</code>${De("editor.common.no_entries_then")}
+          ${Ve("editor.common.no_entries")}
+          <code>${Ve("editor.common.no_entries_path")}</code>${Ve("editor.common.no_entries_then")}
         </div>
-      `:W`
+      `:G`
       <select class="select" .value=${e} @change=${this._onWindowChange}>
-        ${e&&!this._windows.some(t=>t.window_key===e)?W`<option value=${e}>
-              ${De("editor.common.unknown_entry",{entry:e})}
-            </option>`:L}
-        ${this._windows.map(t=>W`
+        ${e&&!this._windows.some(t=>t.window_key===e)?G`<option value=${e}>
+              ${Ve("editor.common.unknown_entry",{entry:e})}
+            </option>`:Y}
+        ${this._windows.map(t=>G`
             <option value=${t.window_key} ?selected=${t.window_key===e}>${t.title}</option>
           `)}
       </select>
-    `:W`<div class="hint">${De("editor.common.loading_entries")}</div>`}};fo.styles=r`
+    `:G`<div class="hint">${Ve("editor.common.loading_entries")}</div>`}};$i.styles=r`
     :host {
       display: block;
     }
@@ -2611,58 +2611,58 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
     .dim {
       color: var(--secondary-text-color);
     }
-  `,e([ge({attribute:!1})],fo.prototype,"hass",void 0),e([_e()],fo.prototype,"_config",void 0),e([_e()],fo.prototype,"_windows",void 0),e([_e()],fo.prototype,"_windowsError",void 0),fo=e([he(ye)],fo);const yo=[{key:"compact",labelKey:"editor.compass.toggle_compact_label",descKey:"editor.compass.toggle_compact_desc",defaultOn:!1},{key:"show_legend",labelKey:"editor.compass.toggle_legend_label",descKey:"editor.compass.toggle_legend_desc",defaultOn:!0},{key:"show_stats",labelKey:"editor.compass.toggle_stats_label",descKey:"editor.compass.toggle_stats_desc",defaultOn:!0},{key:"show_moon",labelKey:"editor.compass.toggle_moon_label",descKey:"editor.compass.toggle_moon_desc",defaultOn:!1},{key:"show_cardinals",labelKey:"editor.compass.toggle_cardinals_label",descKey:"editor.compass.toggle_cardinals_desc",defaultOn:!0},{key:"show_blind_spot",labelKey:"editor.compass.toggle_blind_spot_label",descKey:"editor.compass.toggle_blind_spot_desc",defaultOn:!0},{key:"show_sun_path",labelKey:"editor.compass.toggle_sun_path_label",descKey:"editor.compass.toggle_sun_path_desc",defaultOn:!0},{key:"show_sunrise_sunset",labelKey:"editor.compass.toggle_sunrise_sunset_label",descKey:"editor.compass.toggle_sunrise_sunset_desc",defaultOn:!0},{key:"show_cover_fill",labelKey:"editor.compass.toggle_cover_fill_label",descKey:"editor.compass.toggle_cover_fill_desc",defaultOn:!0},{key:"show_window_arrow",labelKey:"editor.compass.toggle_window_arrow_label",descKey:"editor.compass.toggle_window_arrow_desc",defaultOn:!0},{key:"show_elevation_chart",labelKey:"editor.compass.toggle_elevation_chart_label",descKey:"editor.compass.toggle_elevation_chart_desc",defaultOn:!0}];let wo=class extends ce{constructor(){super(...arguments),this._windows=null,this._windowsError=null,this._fetchInFlight=!1}setConfig(e){this._config=e}updated(e){e.has("hass")&&this.hass&&!this._windows&&!this._fetchInFlight&&(this._fetchInFlight=!0,Yt(this.hass).then(e=>{this._windows=e,this._windowsError=null}).catch(e=>{this._windowsError=e?.message??"failed to load windows"}).finally(()=>{this._fetchInFlight=!1}))}_emit(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0}))}_baseConfig(){return this._config??{type:`custom:${we}`,windows:[]}}_trimColors(e){let t=-1;for(let i=0;i<e.length;i++)e[i]&&(t=i);if(!(t<0))return e.slice(0,t+1)}_emitWithColors(e,t,i){const o=this._trimColors(t),{cover_colors:s,...n}=e,r=o?{...n,...i,cover_colors:o}:{...n,...i};this._emit(r)}_onCoverColorChange(e,t){const i=this._baseConfig(),o=[...i.cover_colors??[]];for(;o.length<=e;)o.push(null);o[e]=t,this._emitWithColors(i,o)}_onCoverColorReset(e){const t=this._baseConfig(),i=[...t.cover_colors??[]];e<i.length&&(i[e]=null),this._emitWithColors(t,i)}_selectedKeys(e){return[...e.windows??[],...e.entry_ids??[]]}_onWindowToggle(e,t){const i=this._baseConfig(),o=new Set(this._selectedKeys(i));t?o.add(e):o.delete(e);const s=(this._windows??[]).map(e=>e.window_key).filter(e=>o.has(e)),n={...i,windows:s};delete n.entry_ids;const r=vt(i).map(ft),a=i.cover_colors??[],l=vt(n).map(e=>{const t=r.indexOf(ft(e));return t>=0?a[t]??null:null});this._emitWithColors(n,l)}_refTitle(e){if("cover"===e.kind){const t=this.hass?.states?.[e.entity_id]?.attributes?.friendly_name;return"string"==typeof t&&t?t:e.entity_id}return this._windows?.find(t=>t.window_key===e.key)?.title??yt(e)}_onToggle(e,t){this._emit({...this._baseConfig(),[e]:t})}_onNorthOffsetChange(e){const t=parseFloat(e.target.value),i=Number.isFinite(t)?t:0;this._emit({...this._baseConfig(),north_offset:i})}_onTitleChange(e){const t=e.target.value,i=this._baseConfig();if(t)this._emit({...i,title:t});else{const{title:e,...t}=i;this._emit(t)}}render(){if(!this._config)return L;const e=new Set(this._selectedKeys(this._config)),t=vt(this._config);return W`
+  `,e([ge({attribute:!1})],$i.prototype,"hass",void 0),e([me()],$i.prototype,"_config",void 0),e([me()],$i.prototype,"_windows",void 0),e([me()],$i.prototype,"_windowsError",void 0),$i=e([he(ye)],$i);const ki=[{key:"compact",labelKey:"editor.compass.toggle_compact_label",descKey:"editor.compass.toggle_compact_desc",defaultOn:!1},{key:"show_legend",labelKey:"editor.compass.toggle_legend_label",descKey:"editor.compass.toggle_legend_desc",defaultOn:!0},{key:"show_stats",labelKey:"editor.compass.toggle_stats_label",descKey:"editor.compass.toggle_stats_desc",defaultOn:!0},{key:"show_moon",labelKey:"editor.compass.toggle_moon_label",descKey:"editor.compass.toggle_moon_desc",defaultOn:!1},{key:"show_cardinals",labelKey:"editor.compass.toggle_cardinals_label",descKey:"editor.compass.toggle_cardinals_desc",defaultOn:!0},{key:"show_blind_spot",labelKey:"editor.compass.toggle_blind_spot_label",descKey:"editor.compass.toggle_blind_spot_desc",defaultOn:!0},{key:"show_sun_path",labelKey:"editor.compass.toggle_sun_path_label",descKey:"editor.compass.toggle_sun_path_desc",defaultOn:!0},{key:"show_sunrise_sunset",labelKey:"editor.compass.toggle_sunrise_sunset_label",descKey:"editor.compass.toggle_sunrise_sunset_desc",defaultOn:!0},{key:"show_cover_fill",labelKey:"editor.compass.toggle_cover_fill_label",descKey:"editor.compass.toggle_cover_fill_desc",defaultOn:!0},{key:"show_window_arrow",labelKey:"editor.compass.toggle_window_arrow_label",descKey:"editor.compass.toggle_window_arrow_desc",defaultOn:!0},{key:"show_elevation_chart",labelKey:"editor.compass.toggle_elevation_chart_label",descKey:"editor.compass.toggle_elevation_chart_desc",defaultOn:!0}];let Ai=class extends ce{constructor(){super(...arguments),this._windows=null,this._windowsError=null,this._fetchInFlight=!1}setConfig(e){this._config=e}updated(e){e.has("hass")&&this.hass&&!this._windows&&!this._fetchInFlight&&(this._fetchInFlight=!0,Qt(this.hass).then(e=>{this._windows=e,this._windowsError=null}).catch(e=>{this._windowsError=e?.message??"failed to load windows"}).finally(()=>{this._fetchInFlight=!1}))}_emit(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0}))}_baseConfig(){return this._config??{type:`custom:${we}`,windows:[]}}_trimColors(e){let t=-1;for(let o=0;o<e.length;o++)e[o]&&(t=o);if(!(t<0))return e.slice(0,t+1)}_emitWithColors(e,t,o){const i=this._trimColors(t),{cover_colors:s,...n}=e,r=i?{...n,...o,cover_colors:i}:{...n,...o};this._emit(r)}_onCoverColorChange(e,t){const o=this._baseConfig(),i=[...o.cover_colors??[]];for(;i.length<=e;)i.push(null);i[e]=t,this._emitWithColors(o,i)}_onCoverColorReset(e){const t=this._baseConfig(),o=[...t.cover_colors??[]];e<o.length&&(o[e]=null),this._emitWithColors(t,o)}_selectedKeys(e){return[...e.windows??[],...e.entry_ids??[]]}_onWindowToggle(e,t){const o=this._baseConfig(),i=new Set(this._selectedKeys(o));t?i.add(e):i.delete(e);const s=(this._windows??[]).map(e=>e.window_key).filter(e=>i.has(e)),n={...o,windows:s};delete n.entry_ids;const r=wt(o).map(bt),a=o.cover_colors??[],l=wt(n).map(e=>{const t=r.indexOf(bt(e));return t>=0?a[t]??null:null});this._emitWithColors(n,l)}_refTitle(e){if("cover"===e.kind){const t=this.hass?.states?.[e.entity_id]?.attributes?.friendly_name;return"string"==typeof t&&t?t:e.entity_id}return this._windows?.find(t=>t.window_key===e.key)?.title??xt(e)}_onToggle(e,t){this._emit({...this._baseConfig(),[e]:t})}_onNorthOffsetChange(e){const t=parseFloat(e.target.value),o=Number.isFinite(t)?t:0;this._emit({...this._baseConfig(),north_offset:o})}_onTitleChange(e){const t=e.target.value,o=this._baseConfig();if(t)this._emit({...o,title:t});else{const{title:e,...t}=o;this._emit(t)}}render(){if(!this._config)return Y;const e=new Set(this._selectedKeys(this._config)),t=wt(this._config);return G`
       <div class="form">
         <div class="section">
-          <label class="field-label">${De("editor.compass.instances")}</label>
-          <div class="hint">${De("editor.compass.instances_hint")}</div>
+          <label class="field-label">${Ve("editor.compass.instances")}</label>
+          <div class="hint">${Ve("editor.compass.instances_hint")}</div>
           ${this._renderWindowPicker(e)}
         </div>
 
         <div class="section">
-          <label class="field-label">${De("editor.common.title_optional")}</label>
+          <label class="field-label">${Ve("editor.common.title_optional")}</label>
           <input
             type="text"
             class="text-input"
             .value=${this._config.title??""}
-            placeholder=${De("editor.common.title_placeholder")}
+            placeholder=${Ve("editor.common.title_placeholder")}
             @change=${this._onTitleChange}
           />
         </div>
 
-        ${t.length>0?W`
+        ${t.length>0?G`
               <div class="section">
-                <label class="field-label">${De("editor.compass.cover_colors")}</label>
-                <div class="hint">${De("editor.compass.cover_colors_hint")}</div>
-                ${t.map((e,t)=>{const i=this._config.cover_colors?.[t]??null,o=i??Si(t);return W`
+                <label class="field-label">${Ve("editor.compass.cover_colors")}</label>
+                <div class="hint">${Ve("editor.compass.cover_colors_hint")}</div>
+                ${t.map((e,t)=>{const o=this._config.cover_colors?.[t]??null,i=o??Io(t);return G`
                     <div class="color-row">
                       <input
                         type="color"
-                        .value=${o}
+                        .value=${i}
                         @change=${e=>this._onCoverColorChange(t,e.target.value)}
                       />
                       <span class="toggle-text">
                         <span class="toggle-label">${this._refTitle(e)}</span>
                         <span class="toggle-desc"
-                          >${i||De("editor.compass.default_color")}</span
+                          >${o||Ve("editor.compass.default_color")}</span
                         >
                       </span>
                       <button
                         type="button"
                         class="reset-btn"
-                        ?disabled=${!i}
+                        ?disabled=${!o}
                         @click=${()=>this._onCoverColorReset(t)}
                       >
-                        ${De("editor.common.reset")}
+                        ${Ve("editor.common.reset")}
                       </button>
                     </div>
                   `})}
               </div>
-            `:L}
+            `:Y}
 
         <div class="section">
-          <label class="field-label">${De("editor.compass.display")}</label>
-          ${yo.map(e=>W`
+          <label class="field-label">${Ve("editor.compass.display")}</label>
+          ${ki.map(e=>G`
               <label class="toggle-row">
                 <input
                   type="checkbox"
@@ -2670,16 +2670,16 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
                   @change=${t=>this._onToggle(e.key,t.target.checked)}
                 />
                 <span class="toggle-text">
-                  <span class="toggle-label">${De(e.labelKey)}</span>
-                  <span class="toggle-desc">${De(e.descKey)}</span>
+                  <span class="toggle-label">${Ve(e.labelKey)}</span>
+                  <span class="toggle-desc">${Ve(e.descKey)}</span>
                 </span>
               </label>
             `)}
         </div>
 
         <div class="section">
-          <label class="field-label">${De("editor.common.north_offset")}</label>
-          <div class="hint">${De("editor.common.north_offset_hint")}</div>
+          <label class="field-label">${Ve("editor.common.north_offset")}</label>
+          <div class="hint">${Ve("editor.common.north_offset_hint")}</div>
           <input
             type="number"
             class="text-input"
@@ -2689,18 +2689,18 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
             @change=${this._onNorthOffsetChange}
           />
         </div>
-        ${ao()}
+        ${pi()}
       </div>
-    `}_renderWindowPicker(e){return this._windowsError?W`<div class="error">
-        ${De("editor.common.load_failed",{error:this._windowsError})}
-      </div>`:this._windows?0===this._windows.length?W`
+    `}_renderWindowPicker(e){return this._windowsError?G`<div class="error">
+        ${Ve("editor.common.load_failed",{error:this._windowsError})}
+      </div>`:this._windows?0===this._windows.length?G`
         <div class="error">
-          ${De("editor.common.no_entries")}
-          <code>${De("editor.common.no_entries_path")}</code>${De("editor.common.no_entries_then")}
+          ${Ve("editor.common.no_entries")}
+          <code>${Ve("editor.common.no_entries_path")}</code>${Ve("editor.common.no_entries_then")}
         </div>
-      `:W`
+      `:G`
       <div class="entry-list">
-        ${this._windows.map(t=>W`
+        ${this._windows.map(t=>G`
             <label class="toggle-row">
               <input
                 type="checkbox"
@@ -2714,7 +2714,7 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
             </label>
           `)}
       </div>
-    `:W`<div class="hint">${De("editor.common.loading_entries")}</div>`}};wo.styles=r`
+    `:G`<div class="hint">${Ve("editor.common.loading_entries")}</div>`}};Ai.styles=r`
     :host {
       display: block;
     }
@@ -2831,49 +2831,49 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
     .dim {
       color: var(--secondary-text-color);
     }
-  `,e([ge({attribute:!1})],wo.prototype,"hass",void 0),e([_e()],wo.prototype,"_config",void 0),e([_e()],wo.prototype,"_windows",void 0),e([_e()],wo.prototype,"_windowsError",void 0),wo=e([he(be)],wo);let bo=class extends ce{constructor(){super(...arguments),this._registry=null,this._registryError=null,this._unsubRegistry=null,this._fetchInFlight=!1,this._listMemo=function(){const e=new Map;let t=[],i=[],o={list:[],missing:[]};return(s,n,r)=>{const a=n.map(ft),l=n.map((t,i)=>{let o=e.get(a[i]);return o||(o=Pt(),e.set(a[i],o)),o(s,t,r)});if(e.size>a.length)for(const t of e.keys())a.includes(t)||e.delete(t);const c=t.length===a.length&&t.every((e,t)=>e===a[t])&&i.length===l.length&&i.every((e,t)=>e===l[t]);if(c)return o;t=a,i=l;const d=[],h=[],p=new Set;return n.forEach((e,t)=>{const i=l[t];i?p.has(i.window_key)||(p.add(i.window_key),d.push(i)):h.push(e)}),o={list:d,missing:h},o}}(),this._discoveredResult={list:[],missing:[]},this._refs=[]}setConfig(e){const t=["windows","covers","entry_ids"].filter(t=>void 0!==e?.[t]);for(const i of t){const t=e[i];if(!Array.isArray(t))throw new Error(`adaptive-cover-sky-compass-card: \`${i}\` must be an array`);if(t.some(e=>"string"!=typeof e||0===e.length))throw new Error(`adaptive-cover-sky-compass-card: every \`${i}\` item must be a non-empty string`)}const i=vt(e);if(0===i.length)throw new Error("adaptive-cover-sky-compass-card: list at least one window in `windows` (or `covers`, or the legacy `entry_ids`)");this._config={...e};for(const i of t)this._config[i]=[...e[i]];if(this._refs=i,e.tooltips&&ht(e.tooltips),null===this._registry){const e=i.map(e=>Qt.get(ft(e))?.entries);e.every(e=>void 0!==e)&&(this._registry=e.flat())}}getCardSize(){return 4}getGridOptions(){return{columns:12,rows:"auto",min_columns:6,max_columns:12}}static async getConfigElement(){return document.createElement(be)}static async getStubConfig(e){let t=[];try{const i=await Yt(e);i[0]&&(t=[i[0].window_key])}catch{}return{type:`custom:${we}`,windows:t}}connectedCallback(){if(super.connectedCallback(),null===this._registry){const e=Gt();e&&(this._registry=e)}this.hass&&this._ensureRegistry()}disconnectedCallback(){super.disconnectedCallback(),this._unsubRegistry&&(this._unsubRegistry(),this._unsubRegistry=null)}updated(e){e.has("hass")&&this.hass&&this._ensureRegistry()}shouldUpdate(e){if(e.size>1||!e.has("hass"))return!0;const t=[];for(const e of this._discoveredResult.list)t.push(...Object.values(e.entities));return 0===t.length||me(e.get("hass"),this.hass,t)}willUpdate(e){this._config&&this.hass&&null!==this._registry&&(e.has("hass")||e.has("_registry")||e.has("_config"))&&(this._discoveredResult=this._listMemo(this.hass,this._refs,this._registry))}_ensureRegistry(){this._fetchRegistry(),this._unsubRegistry||(this._unsubRegistry=Dt(this.hass,()=>{this._fetchRegistry(!0)}))}_fetchRegistry(e=!1){this._fetchInFlight||(this._fetchInFlight=!0,Wt(this.hass,e).then(e=>{if(e!==this._registry&&(this._registry=e,this._registryError=null,this._config&&this.hass))for(const t of this._refs)Qt.set(ft(t),Nt(this.hass,t,e))}).catch(e=>{this._registryError=e?.message??"entity registry fetch failed"}).finally(()=>{this._fetchInFlight=!1}))}render(){if(!this._config||!this.hass)return L;if(null===this._registry)return W`<ha-card>
+  `,e([ge({attribute:!1})],Ai.prototype,"hass",void 0),e([me()],Ai.prototype,"_config",void 0),e([me()],Ai.prototype,"_windows",void 0),e([me()],Ai.prototype,"_windowsError",void 0),Ai=e([he(be)],Ai);let Ci=class extends ce{constructor(){super(...arguments),this._registry=null,this._registryError=null,this._unsubRegistry=null,this._fetchInFlight=!1,this._listMemo=function(){const e=new Map;let t=[],o=[],i={list:[],missing:[]};return(s,n,r)=>{const a=n.map(bt),l=n.map((t,o)=>{let i=e.get(a[o]);return i||(i=Bt(),e.set(a[o],i)),i(s,t,r)});if(e.size>a.length)for(const t of e.keys())a.includes(t)||e.delete(t);const c=t.length===a.length&&t.every((e,t)=>e===a[t])&&o.length===l.length&&o.every((e,t)=>e===l[t]);if(c)return i;t=a,o=l;const d=[],h=[],u=new Set;return n.forEach((e,t)=>{const o=l[t];o?u.has(o.window_key)||(u.add(o.window_key),d.push(o)):h.push(e)}),i={list:d,missing:h},i}}(),this._discoveredResult={list:[],missing:[]},this._refs=[]}setConfig(e){const t=["windows","covers","entry_ids"].filter(t=>void 0!==e?.[t]);for(const o of t){const t=e[o];if(!Array.isArray(t))throw new Error(`adaptive-cover-sky-compass-card: \`${o}\` must be an array`);if(t.some(e=>"string"!=typeof e||0===e.length))throw new Error(`adaptive-cover-sky-compass-card: every \`${o}\` item must be a non-empty string`)}const o=wt(e);if(0===o.length)throw new Error("adaptive-cover-sky-compass-card: list at least one window in `windows` (or `covers`, or the legacy `entry_ids`)");this._config={...e};for(const o of t)this._config[o]=[...e[o]];if(this._refs=o,e.tooltips&&gt(e.tooltips),null===this._registry){const e=o.map(e=>Xt.get(bt(e))?.entries);e.every(e=>void 0!==e)&&(this._registry=e.flat())}}getCardSize(){return 4}getGridOptions(){return{columns:12,rows:"auto",min_columns:6,max_columns:12}}static async getConfigElement(){return document.createElement(be)}static async getStubConfig(e){let t=[];try{const o=await Qt(e);o[0]&&(t=[o[0].window_key])}catch{}return{type:`custom:${we}`,windows:t}}connectedCallback(){if(super.connectedCallback(),null===this._registry){const e=Lt();e&&(this._registry=e)}this.hass&&this._ensureRegistry()}disconnectedCallback(){super.disconnectedCallback(),this._unsubRegistry&&(this._unsubRegistry(),this._unsubRegistry=null)}updated(e){e.has("hass")&&this.hass&&this._ensureRegistry()}shouldUpdate(e){if(e.size>1||!e.has("hass"))return!0;const t=[];for(const e of this._discoveredResult.list)t.push(...Object.values(e.entities));return 0===t.length||fe(e.get("hass"),this.hass,t)}willUpdate(e){this._config&&this.hass&&null!==this._registry&&(e.has("hass")||e.has("_registry")||e.has("_config"))&&(this._discoveredResult=this._listMemo(this.hass,this._refs,this._registry))}_ensureRegistry(){this._fetchRegistry(),this._unsubRegistry||(this._unsubRegistry=Vt(this.hass,()=>{this._fetchRegistry(!0)}))}_fetchRegistry(e=!1){this._fetchInFlight||(this._fetchInFlight=!0,Yt(this.hass,e).then(e=>{if(e!==this._registry&&(this._registry=e,this._registryError=null,this._config&&this.hass))for(const t of this._refs)Xt.set(bt(t),Dt(this.hass,t,e))}).catch(e=>{this._registryError=e?.message??"entity registry fetch failed"}).finally(()=>{this._fetchInFlight=!1}))}render(){if(!this._config||!this.hass)return Y;if(null===this._registry)return G`<ha-card>
         <div class="empty">
           <p class="dim">
-            ${this._registryError?De("tile.registry_failed",{error:this._registryError}):De("root.loading_registry")}
+            ${this._registryError?Ve("tile.registry_failed",{error:this._registryError}):Ve("root.loading_registry")}
           </p>
         </div>
-      </ha-card>`;const{list:e,missing:t}=this._discoveredResult;if(0===e.length)return W`<ha-card>
+      </ha-card>`;const{list:e,missing:t}=this._discoveredResult;if(0===e.length)return G`<ha-card>
         <div class="empty">
-          <p><strong>${De("root.compass_no_match")}</strong></p>
+          <p><strong>${Ve("root.compass_no_match")}</strong></p>
           <p class="dim">
-            ${De("root.compass_configured",{entries:this._refs.map(yt).join(", ")})}
+            ${Ve("root.compass_configured",{entries:this._refs.map(xt).join(", ")})}
           </p>
         </div>
-      </ha-card>`;const i=this._config;return W`
+      </ha-card>`;const o=this._config;return G`
       <ha-card>
-        ${i.title?W`<div class="card-header">${i.title}</div>`:L}
+        ${o.title?G`<div class="card-header">${o.title}</div>`:Y}
         <acp-sky-compass
           .hass=${this.hass}
           .discovered_list=${e}
-          ?compact=${!!i.compact}
-          .showLegend=${i.show_legend??!0}
-          .showStats=${i.show_stats??!0}
-          .showMoon=${i.show_moon??!1}
-          .showCardinals=${i.show_cardinals??!0}
-          .showBlindSpot=${i.show_blind_spot??!0}
-          .showSunPath=${i.show_sun_path??!0}
-          .showSunriseSunset=${i.show_sunrise_sunset??!0}
-          .showCoverFill=${i.show_cover_fill??!0}
-          .showWindowArrow=${i.show_window_arrow??!0}
-          .coverColors=${i.cover_colors??[]}
-          .northOffsetDeg=${tt(i.north_offset??0)}
+          ?compact=${!!o.compact}
+          .showLegend=${o.show_legend??!0}
+          .showStats=${o.show_stats??!0}
+          .showMoon=${o.show_moon??!1}
+          .showCardinals=${o.show_cardinals??!0}
+          .showBlindSpot=${o.show_blind_spot??!0}
+          .showSunPath=${o.show_sun_path??!0}
+          .showSunriseSunset=${o.show_sunrise_sunset??!0}
+          .showCoverFill=${o.show_cover_fill??!0}
+          .showWindowArrow=${o.show_window_arrow??!0}
+          .coverColors=${o.cover_colors??[]}
+          .northOffsetDeg=${st(o.north_offset??0)}
         ></acp-sky-compass>
-        ${!1!==i.show_elevation_chart?W`<acp-elevation-chart
+        ${!1!==o.show_elevation_chart?G`<acp-elevation-chart
               .hass=${this.hass}
               .discoveredList=${e}
-              .coverColors=${i.cover_colors??[]}
-              ?compact=${!!i.compact}
-            ></acp-elevation-chart>`:L}
-        ${t.length>0?W`<div class="warn dim">
-              ${De("root.compass_not_found",{entries:t.map(yt).join(", ")})}
-            </div>`:L}
+              .coverColors=${o.cover_colors??[]}
+              ?compact=${!!o.compact}
+            ></acp-elevation-chart>`:Y}
+        ${t.length>0?G`<div class="warn dim">
+              ${Ve("root.compass_not_found",{entries:t.map(xt).join(", ")})}
+            </div>`:Y}
       </ha-card>
-    `}};bo.styles=r`
+    `}};Ci.styles=r`
     :host {
       display: block;
     }
@@ -2900,23 +2900,23 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
       font-size: 0.78rem;
       text-align: center;
     }
-  `,e([ge({attribute:!1})],bo.prototype,"hass",void 0),e([_e()],bo.prototype,"_config",void 0),e([_e()],bo.prototype,"_registry",void 0),e([_e()],bo.prototype,"_registryError",void 0),bo=e([he(we)],bo),window.customCards=window.customCards||[],window.customCards.some(e=>e.type===we)||window.customCards.push({type:we,name:"Adaptive Cover — Sky Compass",description:"Polar sun-vs-FOV plot; overlay one or more Adaptive Cover entries on a single compass.",preview:!0,documentationURL:"https://github.com/mrvollger/adaptive-cover-card"});const xo={compact:!1,hide_inactive_handlers:!1,show_decision_summary:!0},$o={window:"editor.common.window",title:"editor.decision.title",compact:"editor.decision.compact_label",hide_inactive_handlers:"editor.decision.hide_inactive_handlers_label",show_decision_summary:"editor.decision.show_decision_summary_label"},ko={compact:"editor.decision.compact_desc",hide_inactive_handlers:"editor.decision.hide_inactive_handlers_desc",show_decision_summary:"editor.decision.show_decision_summary_desc"};let Ao=class extends ce{constructor(){super(...arguments),this._windows=null,this._windowsError=null,this._windowsFetchInFlight=!1,this._computeLabel=e=>{const t=$o[e.name];return t?De(t):e.name},this._computeHelper=e=>{const t=ko[e.name];return t?De(t):void 0},this._valueChanged=e=>{e.stopPropagation();const t={...e.detail.value};for(const[e,i]of Object.entries(xo))this._config&&Object.prototype.hasOwnProperty.call(this._config,e)||t[e]!==i||delete t[e];const i=t.window;delete t.window;let o={...this._config??{type:""},...t};"string"==typeof i&&i&&i!==bt(this._config)&&(o=wt(o,i)),this._emit(o)}}setConfig(e){this._config={...e}}updated(e){e.has("hass")&&this.hass&&this._ensureWindows()}_ensureWindows(){this._windows||this._windowsFetchInFlight||(this._windowsFetchInFlight=!0,Yt(this.hass).then(e=>{this._windows=e,this._windowsError=null,this._config?.window||this._config?.entry_id||this._config?.cover||1!==e.length||this._emit(wt(this._config??{type:""},e[0].window_key))}).catch(e=>{this._windowsError=e?.message??"failed to load windows"}).finally(()=>{this._windowsFetchInFlight=!1}))}_emit(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0}))}render(){if(!this._config)return L;if(this._windowsError&&!this._windows)return W`
+  `,e([ge({attribute:!1})],Ci.prototype,"hass",void 0),e([me()],Ci.prototype,"_config",void 0),e([me()],Ci.prototype,"_registry",void 0),e([me()],Ci.prototype,"_registryError",void 0),Ci=e([he(we)],Ci),window.customCards=window.customCards||[],window.customCards.some(e=>e.type===we)||window.customCards.push({type:we,name:"Adaptive Cover — Sky Compass",description:"Polar sun-vs-FOV plot; overlay one or more Adaptive Cover entries on a single compass.",preview:!0,documentationURL:"https://github.com/mrvollger/adaptive-cover-card"});const Si={compact:!1,hide_inactive_handlers:!1,show_decision_summary:!0},Ei={window:"editor.common.window",title:"editor.decision.title",compact:"editor.decision.compact_label",hide_inactive_handlers:"editor.decision.hide_inactive_handlers_label",show_decision_summary:"editor.decision.show_decision_summary_label"},zi={compact:"editor.decision.compact_desc",hide_inactive_handlers:"editor.decision.hide_inactive_handlers_desc",show_decision_summary:"editor.decision.show_decision_summary_desc"};let Oi=class extends ce{constructor(){super(...arguments),this._windows=null,this._windowsError=null,this._windowsFetchInFlight=!1,this._computeLabel=e=>{const t=Ei[e.name];return t?Ve(t):e.name},this._computeHelper=e=>{const t=zi[e.name];return t?Ve(t):void 0},this._valueChanged=e=>{e.stopPropagation();const t={...e.detail.value};for(const[e,o]of Object.entries(Si))this._config&&Object.prototype.hasOwnProperty.call(this._config,e)||t[e]!==o||delete t[e];const o=t.window;delete t.window;let i={...this._config??{type:""},...t};"string"==typeof o&&o&&o!==kt(this._config)&&(i=$t(i,o)),this._emit(i)}}setConfig(e){this._config={...e}}updated(e){e.has("hass")&&this.hass&&this._ensureWindows()}_ensureWindows(){this._windows||this._windowsFetchInFlight||(this._windowsFetchInFlight=!0,Qt(this.hass).then(e=>{this._windows=e,this._windowsError=null,this._config?.window||this._config?.entry_id||this._config?.cover||1!==e.length||this._emit($t(this._config??{type:""},e[0].window_key))}).catch(e=>{this._windowsError=e?.message??"failed to load windows"}).finally(()=>{this._windowsFetchInFlight=!1}))}_emit(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0}))}render(){if(!this._config)return Y;if(this._windowsError&&!this._windows)return G`
         <div class="form">
-          <div class="error">${De("editor.common.load_failed",{error:this._windowsError})}</div>
+          <div class="error">${Ve("editor.common.load_failed",{error:this._windowsError})}</div>
           <label class="field-label" for="entry-id-fallback"
-            >${De("editor.common.window_fallback_label")}</label
+            >${Ve("editor.common.window_fallback_label")}</label
           >
           <input
             id="entry-id-fallback"
             type="text"
             class="text-input"
-            .value=${bt(this._config)}
-            placeholder=${De("editor.common.window_manual_placeholder")}
-            @change=${e=>this._emit(wt(this._config??{type:""},e.target.value))}
+            .value=${kt(this._config)}
+            placeholder=${Ve("editor.common.window_manual_placeholder")}
+            @change=${e=>this._emit($t(this._config??{type:""},e.target.value))}
           />
-          ${ao()}
+          ${pi()}
         </div>
-      `;const e=this._schema(),{entry_id:t,...i}=this._config,o=bt(this._config),s={...xo,...i,...o?{window:o}:{}};return W`
+      `;const e=this._schema(),{entry_id:t,...o}=this._config,i=kt(this._config),s={...Si,...o,...i?{window:i}:{}};return G`
       <div class="form">
         <ha-form
           .hass=${this.hass}
@@ -2926,9 +2926,9 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
           .computeHelper=${this._computeHelper}
           @value-changed=${this._valueChanged}
         ></ha-form>
-        ${ao()}
+        ${pi()}
       </div>
-    `}_schema(){const e=(this._windows??[]).map(e=>({value:e.window_key,label:e.title})),t=bt(this._config);return t&&!e.some(e=>e.value===t)&&e.unshift({value:t,label:De("editor.common.unknown_entry",{entry:t})}),[{name:"window",required:!this._config?.cover,selector:{select:{options:e,mode:"dropdown"}}},{name:"title",selector:{text:{}}},{name:"compact",selector:{boolean:{}}},{name:"hide_inactive_handlers",selector:{boolean:{}}},{name:"show_decision_summary",selector:{boolean:{}}}]}};Ao.styles=r`
+    `}_schema(){const e=(this._windows??[]).map(e=>({value:e.window_key,label:e.title})),t=kt(this._config);return t&&!e.some(e=>e.value===t)&&e.unshift({value:t,label:Ve("editor.common.unknown_entry",{entry:t})}),[{name:"window",required:!this._config?.cover,selector:{select:{options:e,mode:"dropdown"}}},{name:"title",selector:{text:{}}},{name:"compact",selector:{boolean:{}}},{name:"hide_inactive_handlers",selector:{boolean:{}}},{name:"show_decision_summary",selector:{boolean:{}}}]}};Oi.styles=r`
     :host {
       display: block;
     }
@@ -2964,21 +2964,21 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
     .dim {
       color: var(--secondary-text-color);
     }
-  `,e([ge({attribute:!1})],Ao.prototype,"hass",void 0),e([_e()],Ao.prototype,"_config",void 0),e([_e()],Ao.prototype,"_windows",void 0),e([_e()],Ao.prototype,"_windowsError",void 0),Ao=e([he(Ae)],Ao);let Co=class extends ce{constructor(){super(...arguments),this._registry=null,this._registryError=null,this._unsubRegistry=null,this._fetchInFlight=!1,this._fetchGen=0,this._memo=Pt(),this._discovered=null}setConfig(e){const t=mt(e);if(!t)throw new Error(`${ke}: set \`window\` (window key) or \`cover\` (cover entity); a legacy \`entry_id\` also works. It must be a non-empty string.`);if(this._config={...e},e.tooltips&&ht(e.tooltips),null===this._registry){const e=Qt.get(ft(t));e&&(this._registry=e.entries)}}getCardSize(){return 3}getGridOptions(){return{columns:12,rows:"auto",min_columns:4,max_columns:12}}static async getStubConfig(e){let t="";try{const i=await Yt(e);t=i[0]?.window_key??""}catch{}return{type:`custom:${ke}`,window:t}}static async getConfigElement(){return document.createElement(Ae)}connectedCallback(){if(super.connectedCallback(),null===this._registry){const e=Gt();e&&(this._registry=e)}this.hass&&this._ensureRegistry()}disconnectedCallback(){super.disconnectedCallback(),this._unsubRegistry&&(this._unsubRegistry(),this._unsubRegistry=null)}updated(e){e.has("hass")&&this.hass&&this._ensureRegistry()}shouldUpdate(e){return e.size>1||!e.has("hass")||(!this._discovered||me(e.get("hass"),this.hass,Object.values(this._discovered.entities)))}willUpdate(e){this._config&&this.hass&&null!==this._registry&&(e.has("hass")||e.has("_registry")||e.has("_config"))&&(this._discovered=this._memo(this.hass,this._config,this._registry))}_ensureRegistry(){this._fetchRegistry(),this._unsubRegistry||(this._unsubRegistry=Dt(this.hass,()=>{this._fetchRegistry(!0)}))}_fetchRegistry(e=!1){if(this._fetchInFlight)return;this._fetchInFlight=!0;const t=++this._fetchGen;Wt(this.hass,e).then(e=>{if(t!==this._fetchGen)return;if(e===this._registry)return;this._registry=e,this._registryError=null;const i=mt(this._config);i&&this.hass&&Qt.set(ft(i),Nt(this.hass,i,e))}).catch(e=>{t===this._fetchGen&&(this._registryError=e?.message??"entity registry fetch failed")}).finally(()=>{t===this._fetchGen&&(this._fetchInFlight=!1)})}render(){if(!this._config||!this.hass)return L;if(null===this._registry)return W`<ha-card>
+  `,e([ge({attribute:!1})],Oi.prototype,"hass",void 0),e([me()],Oi.prototype,"_config",void 0),e([me()],Oi.prototype,"_windows",void 0),e([me()],Oi.prototype,"_windowsError",void 0),Oi=e([he(Ae)],Oi);let Mi=class extends ce{constructor(){super(...arguments),this._registry=null,this._registryError=null,this._unsubRegistry=null,this._fetchInFlight=!1,this._fetchGen=0,this._memo=Bt(),this._discovered=null}setConfig(e){const t=yt(e);if(!t)throw new Error(`${ke}: set \`window\` (window key) or \`cover\` (cover entity); a legacy \`entry_id\` also works. It must be a non-empty string.`);if(this._config={...e},e.tooltips&&gt(e.tooltips),null===this._registry){const e=Xt.get(bt(t));e&&(this._registry=e.entries)}}getCardSize(){return 3}getGridOptions(){return{columns:12,rows:"auto",min_columns:4,max_columns:12}}static async getStubConfig(e){let t="";try{const o=await Qt(e);t=o[0]?.window_key??""}catch{}return{type:`custom:${ke}`,window:t}}static async getConfigElement(){return document.createElement(Ae)}connectedCallback(){if(super.connectedCallback(),null===this._registry){const e=Lt();e&&(this._registry=e)}this.hass&&this._ensureRegistry()}disconnectedCallback(){super.disconnectedCallback(),this._unsubRegistry&&(this._unsubRegistry(),this._unsubRegistry=null)}updated(e){e.has("hass")&&this.hass&&this._ensureRegistry()}shouldUpdate(e){return e.size>1||!e.has("hass")||(!this._discovered||fe(e.get("hass"),this.hass,Object.values(this._discovered.entities)))}willUpdate(e){this._config&&this.hass&&null!==this._registry&&(e.has("hass")||e.has("_registry")||e.has("_config"))&&(this._discovered=this._memo(this.hass,this._config,this._registry))}_ensureRegistry(){this._fetchRegistry(),this._unsubRegistry||(this._unsubRegistry=Vt(this.hass,()=>{this._fetchRegistry(!0)}))}_fetchRegistry(e=!1){if(this._fetchInFlight)return;this._fetchInFlight=!0;const t=++this._fetchGen;Yt(this.hass,e).then(e=>{if(t!==this._fetchGen)return;if(e===this._registry)return;this._registry=e,this._registryError=null;const o=yt(this._config);o&&this.hass&&Xt.set(bt(o),Dt(this.hass,o,e))}).catch(e=>{t===this._fetchGen&&(this._registryError=e?.message??"entity registry fetch failed")}).finally(()=>{t===this._fetchGen&&(this._fetchInFlight=!1)})}render(){if(!this._config||!this.hass)return Y;if(null===this._registry)return G`<ha-card>
         <div class="empty">
           <p class="dim">
-            ${this._registryError?De("tile.registry_failed",{error:this._registryError}):De("tile.loading")}
+            ${this._registryError?Ve("tile.registry_failed",{error:this._registryError}):Ve("tile.loading")}
           </p>
         </div>
-      </ha-card>`;const e=this._discovered;if(!e)return W`<ha-card>
+      </ha-card>`;const e=this._discovered;if(!e)return G`<ha-card>
         <div class="empty">
           <p class="dim">
-            ${De("tile.entry_not_found",{entry:yt(mt(this._config))})}
+            ${Ve("tile.entry_not_found",{entry:xt(yt(this._config))})}
           </p>
         </div>
-      </ha-card>`;const t=this._config;return W`
+      </ha-card>`;const t=this._config;return G`
       <ha-card>
-        ${t.title?W`<div class="card-header">${t.title}</div>`:L}
+        ${t.title?G`<div class="card-header">${t.title}</div>`:Y}
         <acp-decision-strip
           .hass=${this.hass}
           .discovered=${e}
@@ -2987,7 +2987,7 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
           .showSummary=${!1!==t.show_decision_summary}
         ></acp-decision-strip>
       </ha-card>
-    `}};Co.styles=r`
+    `}};Mi.styles=r`
     :host {
       display: block;
     }
@@ -3011,37 +3011,948 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
       color: var(--secondary-text-color);
       margin: 0;
     }
-  `,e([ge({attribute:!1})],Co.prototype,"hass",void 0),e([_e()],Co.prototype,"_config",void 0),e([_e()],Co.prototype,"_registry",void 0),e([_e()],Co.prototype,"_registryError",void 0),Co=e([he(ke)],Co),window.customCards=window.customCards||[],window.customCards.some(e=>e.type===ke)||window.customCards.push({type:ke,name:"Adaptive Cover — Decision Strip",description:"Standalone decision strip: all pipeline handlers for one Adaptive Cover instance with the winning row highlighted.",preview:!0,documentationURL:"https://github.com/mrvollger/adaptive-cover-card"});const Eo=["sky","elevation","decision","covers","overrides","climate"];let So=class extends ce{constructor(){super(...arguments),this._registry=null,this._registryError=null,this._discovered=null,this._discoveredList=[],this._discoveredListSource=null,this._unsubRegistry=null,this._fetchInFlight=!1,this._memo=Pt(),this._debounceTimer=null,this._debounceFirstAt=null,this._DEBOUNCE_DELAY=500,this._DEBOUNCE_MAX=2e3}setConfig(e){const t=mt(e);if(!t)throw new Error("adaptive-cover-card: set `window` (window key) or `cover` (cover entity); a legacy `entry_id` also works.");if(this._config={...e},e.tooltips&&ht(e.tooltips),null===this._registry){const e=Qt.get(ft(t));e&&(this._registry=e.entries)}}get _ref(){return mt(this._config)}_slice(e){const t=this._ref;return t&&this.hass?Nt(this.hass,t,e):[]}getCardSize(){return 6}getGridOptions(){return{columns:12,rows:"auto",min_columns:6,max_columns:12}}static async getConfigElement(){return document.createElement(ye)}static async getStubConfig(e){let t="";try{const i=await Yt(e);t=i[0]?.window_key??""}catch{}return{type:`custom:${fe}`,window:t}}connectedCallback(){if(super.connectedCallback(),null===this._registry){const e=Gt();e&&(this._registry=e)}this.hass&&this._ensureRegistry()}disconnectedCallback(){super.disconnectedCallback(),this._unsubRegistry&&(this._unsubRegistry(),this._unsubRegistry=null),null!==this._debounceTimer&&(clearTimeout(this._debounceTimer),this._debounceTimer=null,this._debounceFirstAt=null)}updated(e){e.has("hass")&&this.hass&&this._ensureRegistry()}shouldUpdate(e){return e.size>1||!e.has("hass")||(!this._discovered||me(e.get("hass"),this.hass,Object.values(this._discovered.entities)))}willUpdate(e){null!==this._registry&&this._config&&this.hass&&(e.has("hass")||e.has("_registry")||e.has("_config"))&&(this._discovered=this._memo(this.hass,this._config,this._registry)),this._discovered!==this._discoveredListSource&&(this._discoveredListSource=this._discovered,this._discoveredList=this._discovered?[this._discovered]:[])}_ensureRegistry(){this._fetchRegistry(),this._unsubRegistry||(this._unsubRegistry=Dt(this.hass,e=>{const t=new Set(this._slice(this._registry??[]).map(e=>e.entity_id));(function(e,t){return"create"===e.action||t.has(e.entity_id)})(e,t)&&this._scheduleRefetch()}))}_fetchRegistry(e=!1){this._fetchInFlight||(this._fetchInFlight=!0,Wt(this.hass,e).then(e=>{if(e===this._registry)return;const t=this._ref;if(t){const i=this._slice(e);(null===this._registry||function(e,t){if(e.length!==t.length)return!0;const i=new Map(e.map(e=>[e.entity_id,Ht(e)]));for(const e of t)if(i.get(e.entity_id)!==Ht(e))return!0;return!1}(this._slice(this._registry),i))&&(this._registry=e,i.length&&Qt.set(ft(t),i))}else this._registry=e;this._registryError=null}).catch(e=>{this._registryError=e?.message??"entity registry fetch failed"}).finally(()=>{this._fetchInFlight=!1}))}_scheduleRefetch(){const e=Date.now();null===this._debounceFirstAt&&(this._debounceFirstAt=e);const t=e-this._debounceFirstAt,i=this._DEBOUNCE_MAX-t,o=Math.min(this._DEBOUNCE_DELAY,i);if(null!==this._debounceTimer&&clearTimeout(this._debounceTimer),o<=0)return this._debounceFirstAt=null,void this._fetchRegistry(!0);this._debounceTimer=setTimeout(()=>{this._debounceTimer=null,this._debounceFirstAt=null,this._fetchRegistry(!0)},o)}get _sections(){return this._config?.show_sections??Eo}_renderHeader(e,t){const i=ze[e.cover_type]??"mdi:window-shutter",o=e.entities.automatic_control_switch,s=!o||"on"===this.hass.states[o]?.state;return W`
+  `,e([ge({attribute:!1})],Mi.prototype,"hass",void 0),e([me()],Mi.prototype,"_config",void 0),e([me()],Mi.prototype,"_registry",void 0),e([me()],Mi.prototype,"_registryError",void 0),Mi=e([he(ke)],Mi),window.customCards=window.customCards||[],window.customCards.some(e=>e.type===ke)||window.customCards.push({type:ke,name:"Adaptive Cover — Decision Strip",description:"Standalone decision strip: all pipeline handlers for one Adaptive Cover instance with the winning row highlighted.",preview:!0,documentationURL:"https://github.com/mrvollger/adaptive-cover-card"});const Ii={"sensor:target_position":"position","select:mode":"mode","button:return_to_auto":"returnButton","binary_sensor:manual_override":"manualOverride","binary_sensor:sun_motion":"sunInFront","sensor:control":"controlMethod","switch:control_toggle":"controlSwitch","switch:switch_mode":"climateSwitch"},Ti={"sensor:Cover Position":"position","select:mode_select":"mode","button:Reset Manual Override":"returnButton","binary_sensor:Manual Override":"manualOverride","binary_sensor:Sun Infront":"sunInFront","sensor:Control Method":"controlMethod","switch:Toggle Control":"controlSwitch","switch:Climate Mode":"climateSwitch"},Ri=Object.fromEntries(Object.entries(Ti).map(([e,t])=>[t,e.slice(e.indexOf(":")+1)])),Fi={"select:house_mode":"modeSelect","button:return_all_to_auto":"returnButton"},ji={"cover:cover":"cover","select:house_mode":"modeSelect","button:reset_all":"returnButton"};function Ni(e){return"string"==typeof e&&e.length>0}function Pi(e){return e.slice(0,e.indexOf("."))}const Ki=new WeakMap,Di=new WeakMap;function Bi(e,t){if(!Ni(e))return;const o=`_${Ri[t]}`;return e.length>o.length&&e.endsWith(o)?e.slice(0,-o.length):void 0}function Wi(e,t){const o=Pi(e.entity_id),i=t?.unique_id;if("cover"===o)return{row:e,hub:"cover",reg:t};const s=e.translation_key??t?.translation_key;if(Ni(s)){const n=Fi[`${o}:${s}`];if(n)return{row:e,hub:n,reg:t};const r=Ii[`${o}:${s}`];return r?{row:e,window:r,uidKey:Bi(i,r),reg:t}:null}if(!Ni(i))return null;if(i.startsWith("adaptive_cover_hub_")){const s=ji[`${o}:${i.slice(19)}`];return s?{row:e,hub:s,reg:t}:null}for(const[s,n]of Object.entries(Ti)){if(!s.startsWith(`${o}:`))continue;const r=Bi(i,n);if(r)return{row:e,window:n,uidKey:r,reg:t}}return null}function Vi(e,t){return e.states[t]?.attributes}function Gi(e){const t=[];return Ni(e?.cover_entity)&&t.push(e.cover_entity),Array.isArray(e?.cover_entities)&&t.push(...e.cover_entities.filter(Ni)),0===t.length&&(t.push(...Object.keys(e?.last_moves??{}),...Object.keys(e?.move_blocked_by??{})),t.sort()),[...new Set(t)]}const Ui=new Set(["cover_blind","cover_awning","cover_tilt"]);function Li(e,t){const o=e.entities?.[t];if(!o)return null;if(Ni(o.area_id))return o.area_id;const i=o.device_id?e.devices?.[o.device_id]:void 0;return Ni(i?.area_id)?i.area_id:null}function Yi(e,t){return!(!Ni(t)||e.areas&&!e.areas[t])}function Hi(e,t){if(!t)return e;const o=e.toLowerCase(),i=t.toLowerCase();if(!o.startsWith(i)||e.length<=t.length)return e;const s=e.slice(t.length);if(!/^[\s\-–—:·]/.test(s))return e;const n=s.replace(/^[\s\-–—:·]+/,"");return n?n.charAt(0).toUpperCase()+n.slice(1):e}const Qi=(e,t)=>e.name.localeCompare(t.name,void 0,{numeric:!0,sensitivity:"base"});function qi(e,t,o={}){const i=e,s=t,n=function(e){if(!e)return null;let t=Di.get(e);return t||(t=new Map(e.map(e=>[e.entity_id,e])),Di.set(e,t)),t}(s);let r=!1;const a=[];for(const e of function(e,t){const o=e.entities;if(o){const e=Ki.get(o);if(e)return e;const t=Object.values(o).filter(e=>e?.platform===ze);return Ki.set(o,t),t}return(t??[]).filter(e=>e.platform===ze).map(e=>({entity_id:e.entity_id,platform:e.platform,device_id:e.device_id,area_id:e.area_id??null,translation_key:e.translation_key??null,hidden:!!e.hidden_by,disabled_by:e.disabled_by??null}))}(i,s)){const t=n?.get(e.entity_id);if(e.hidden||e.disabled_by||t?.hidden_by||t?.disabled_by)continue;const o=Wi(e,t);o?a.push(o):Ni(e.translation_key)||t||"number"===Pi(e.entity_id)||(r=!0)}const l={};for(const e of a)e.hub&&!l[e.hub]&&(l[e.hub]=e.row.entity_id);const c=[],d=new Map,h=new Map,u=new Set;for(const t of a){if("position"!==t.window)continue;const o=Vi(e,t.row.entity_id)?.window_key,i=Ni(o)?o:t.uidKey??t.row.device_id??t.row.entity_id;if(u.has(i))continue;u.add(i);const s={key:i,uidKey:t.uidKey,position:t,entities:{position:t.row.entity_id}};c.push(s),t.uidKey&&d.set(t.uidKey,s),Ni(o)&&d.set(o,d.get(o)??s),t.row.device_id&&!h.has(t.row.device_id)&&h.set(t.row.device_id,s)}for(const e of a){if(!e.window||"position"===e.window)continue;const t=(e.uidKey?d.get(e.uidKey):void 0)??(e.row.device_id?h.get(e.row.device_id):void 0);t&&!t.entities[e.window]&&(t.entities[e.window]=e.row.entity_id)}const p=new Set(o.floors??[]),g=new Set(o.areas??[]),m=p.size>0||g.size>0,f=[];for(const t of c){const o=t.position.row.entity_id,s=Vi(e,o),n=Gi(s),r=t.position.row.device_id??null,a=r?i.devices?.[r]:void 0,l=e.states[o]?.attributes?.friendly_name,c=a?.name_by_user||a?.name||(Ni(l)?l:t.key),d=[t.position.row.area_id,a?.area_id,...n.map(e=>Li(i,e))],h=d.find(e=>Yi(i,e))??null,u=h?i.areas?.[h]:void 0,_=Ni(u?.floor_id)&&i.floors?.[u.floor_id]?u.floor_id:null;if(m&&(!_||!p.has(_))&&(!h||!g.has(h)))continue;const v=s?.cover_type;f.push({key:t.key,name:Hi(c,u?.name),deviceName:c,deviceId:r,areaId:h,floorId:_,coverType:Ni(v)&&Ui.has(v)?v:"cover_blind",covers:n,entities:t.entities,configEntryId:t.position.reg?.config_entry_id??null,configSubentryId:t.position.reg?.config_subentry_id??null})}const _=new Map,v=new Map;for(const e of f){let t=_.get(e.floorId);if(!t){const o=e.floorId?i.floors?.[e.floorId]:void 0;t={id:e.floorId,name:o?.name??"Other",level:"number"==typeof o?.level?o.level:null,rooms:[]},_.set(e.floorId,t)}const o=`${e.floorId??""}|${e.areaId??""}`;let s=v.get(o);s||(s={id:e.areaId,name:e.areaId?i.areas?.[e.areaId]?.name??e.areaId:"Unassigned",windows:[]},v.set(o,s),t.rooms.push(s)),s.windows.push(e)}const y=[..._.values()];y.sort((e,t)=>null===e.id!=(null===t.id)?null===e.id?1:-1:null===e.level!=(null===t.level)?null===e.level?1:-1:null!==e.level&&null!==t.level&&e.level!==t.level?t.level-e.level:Qi(e,t));for(const e of y){e.rooms.sort((e,t)=>null===e.id!=(null===t.id)?null===e.id?1:-1:Qi(e,t));for(const t of e.rooms)t.windows.sort(Qi)}1===y.length&&null===y[0].id&&(y[0].name="");const w=y.flatMap(e=>e.rooms.flatMap(e=>e.windows));return{floors:y,windows:w,hub:l,needsRegistry:r&&!t}}const Xi=/^(manual|off)$/i,Ji=/^hold$/i,Zi=/^(auto|adaptive)$/i,es=/climate/i;function ts(e,t){return t?e.states[t]?.state:void 0}function os(e,t){const o=t?e.states[t]?.attributes?.options:void 0;return Array.isArray(o)?o.filter(e=>"string"==typeof e):[]}function is(e){return e.find(e=>Xi.test(e))}function ss(e){return e.find(e=>Ji.test(e))}function ns(e,t){const o=e.find(e=>Zi.test(e));if(o)return o;const i=e.filter(e=>!Xi.test(e)&&!Ji.test(e));if(t){const e=i.find(e=>es.test(e));if(e)return e}return i.find(e=>!es.test(e))??i[0]}function rs(e,t){const o=ts(e,t.entities.climateSwitch);return void 0===o||"on"===o}function as(e,t){const o=ts(e,t.entities.mode);return o&&Xi.test(o)||"off"===ts(e,t.entities.controlSwitch)?"off":o&&Ji.test(o)||"on"===ts(e,t.entities.manualOverride)?"hold":"auto"}function ls(e){return 0===e.length?null:e.every(t=>t===e[0])?e[0]:"mixed"}function cs(e){const t="number"==typeof e?e:parseFloat(String(e??""));return Number.isFinite(t)?t:null}function ds(e,t){const o=t.entities.position,i=o?e.states[o]:void 0,s=i?.attributes??{},n=as(e,t),r=!!i&&"unavailable"!==i.state&&"unknown"!==i.state,a=r?cs(i.state):null,l=t.covers.length>0?no(e,t.coverType,t.covers[0]):null;let c=null;if("hold"===n){const o=t.entities.manualOverride?e.states[t.entities.manualOverride]?.attributes?.until:void 0;c="string"==typeof o&&o?o:"string"==typeof s.override_until&&s.override_until?s.override_until:null}const d=t.entities.sunInFront,h=d?"on"===e.states[d]?.state:!0===s.sun?.in_fov,u=s.next_move;return{mode:n,holdUntil:c,position:l??a,target:a,sunOnGlass:h,nextMove:u&&"string"==typeof u.time&&u.time?{time:u.time,position:cs(u.position)}:null,intent:"string"==typeof s.intent?s.intent:null,trace:Array.isArray(s.decision_trace)?s.decision_trace.filter(e=>"string"==typeof e):[],azimuth:cs(s.azimuth_window??s.sun?.window_azimuth),available:r}}function hs(e,t){return t.length>0&&t.every(t=>!!ss(os(e,t.entities.mode)))}function us(e,t){const o=new Map;for(const{key:t,id:i}of e){const e=o.get(t)??[];e.includes(i)||e.push(i),o.set(t,e)}return[...o.entries()].map(([e,o])=>t(e,o))}const ps=(e,t)=>({domain:"select",service:"select_option",data:{entity_id:t,option:e}}),gs=(e,t,o)=>({domain:e,service:t,data:{entity_id:o}});function ms(e,t,o){const i=[],s=[];for(const n of t){const t=os(e,n.entities.mode),r=o?ns(t,rs(e,n)):is(t);n.entities.mode&&r?i.push({key:r,id:n.entities.mode}):n.entities.controlSwitch&&s.push(n.entities.controlSwitch)}const n=us(i,(e,t)=>ps(e,t));return s.length>0&&n.push(gs("switch",o?"turn_on":"turn_off",s)),n}function fs(e,t,o){const i=new Map(t.map(t=>[t,as(e,t)])),s=t.filter(e=>i.get(e)!==o);if(0===s.length)return[];if("off"===o)return ms(e,s,!1);if("hold"===o){const t=s.flatMap(t=>{const o=ss(os(e,t.entities.mode));return t.entities.mode&&o?[{key:o,id:t.entities.mode}]:[]});return us(t,(e,t)=>ps(e,t))}const n=ms(e,s.filter(e=>"off"===i.get(e)),!0),r=s.map(e=>e.entities.returnButton).filter(e=>!!e);return r.length>0&&n.push(gs("button","press",r)),n}function _s(e,t){const{hub:o,windows:i,useHub:s}=t;if(!s)return fs(e,i,"auto");const n=[],r=i.some(t=>"off"===as(e,t));if(r){const t=o.modeSelect?ns(os(e,o.modeSelect),!1):void 0;o.modeSelect&&t?n.push(ps(t,[o.modeSelect])):n.push(...ms(e,i.filter(t=>"off"===as(e,t)),!0))}if(o.returnButton)n.push(gs("button","press",[o.returnButton]));else{const e=i.map(e=>e.entities.returnButton).filter(e=>!!e);e.length>0&&n.push(gs("button","press",e))}return n}const vs={open:["open_cover","open_cover_tilt"],close:["close_cover","close_cover_tilt"],stop:["stop_cover","stop_cover_tilt"]};function ys(e,t){const[o,i]=vs[t],s=e.flatMap(e=>e.covers.map(t=>({key:"cover_tilt"===e.coverType?i:o,id:t})));return us(s,(e,t)=>gs("cover",e,t))}function ws(e,t){return e.useHub&&e.hub.cover?[gs("cover",vs[t][0],[e.hub.cover])]:ys(e.windows,t)}function bs(e){return e.locale??{}}function xs(e){if("local"===bs(e).time_zone)return;const t=e.config?.time_zone;return t||void 0}function $s(e,t){if(!t)return"";const o=new Date(t);if(Number.isNaN(o.getTime()))return"";const i=bs(e),s={hour:"numeric",minute:"2-digit",hour12:"12"===i.time_format||"24"!==i.time_format&&void 0},n=i.language||e.language||"en";try{return o.toLocaleTimeString(n,{...s,timeZone:xs(e)})}catch{return o.toLocaleTimeString(void 0,s)}}function ks(e,t){if(!e)return null;const o=Date.parse(e);if(Number.isNaN(o))return null;const i=Math.ceil((o-t)/6e4);if(i<1)return Ve("house.left_under_minute");const s=Math.floor(i/60),n=i%60;return s>0?`${s}h ${n}m`:`${n}m`}const As=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];function Cs(e){const t=Math.round((e%360+360)%360/22.5)%16;return As[t]}function Ss(e,t){return Ve(`house.count.${e}_${1===t?"one":"other"}`,{n:t})}function Es(e){return null===e?"—":`${Math.round(e)}%`}function zs(e){return Es(e.position)}function Os(e,t,o){if(!t.available)return Ve("house.next.unavailable");if("off"===t.mode)return Ve("house.next.off");if("hold"===t.mode){const e=ks(t.holdUntil,o);return e?Ve("house.next.hold",{left:e}):Ve("house.next.hold_unknown")}if(t.nextMove){const o=$s(e,t.nextMove.time);if(o&&null!==t.nextMove.position)return Ve("house.next.move",{position:Es(t.nextMove.position),time:o});if(o)return Ve("house.next.change",{time:o})}return Ve("house.next.none")}function Ms(e,t){if("hold"===e.mode){const o=ks(e.holdUntil,t);return o?Ve("house.chip_hold_left",{left:o}):Ve("house.mode.hold")}return Ve(`house.mode.${e.mode}`)}const Is=["all","sun","hold","off"],Ts=["auto","hold","off"],Rs=864e5,Fs=`/config/integrations/integration/${ze}`;function js(e){return"auto"===e.s.mode&&e.s.sunOnGlass}function Ns(e,t){return`${e.id??""}|${t.id??""}`}let Ps=class extends ce{constructor(){super(...arguments),this._filter="all",this._selected=null,this._width=0,this._expanded={},this._registry=null,this._watched=[],this._registryFor=null,this._resizeObserver=null,this._cancelMinuteTimer=null,this._focusSheet=!1,this._onKeydown=e=>{"Escape"===e.key&&(this._selected=null)}}setConfig(e){if(!e||"object"!=typeof e)throw new Error("Invalid configuration");for(const t of["floors","areas"]){const o=e[t];if(!(void 0===o||Array.isArray(o)&&o.every(e=>"string"==typeof e)))throw new Error(`adaptive-cover-house-card: \`${t}\` must be a list of ids`)}this._config={...e}}static getStubConfig(){return{type:`custom:${Ce}`}}static getConfigForm(){return{schema:[{name:"title",selector:{text:{}}},{name:"floors",selector:{floor:{multiple:!0}}},{name:"areas",selector:{area:{multiple:!0}}},{name:"layout",selector:{select:{mode:"dropdown",options:["auto","wide","narrow"].map(e=>({value:e,label:Ve(`editor.house.layout_${e}`)}))}}},{name:"show_upcoming",selector:{boolean:{}}}],computeLabel:e=>Ve(`editor.house.${e.name}`),computeHelper:e=>{const t=`editor.house.${e.name}_help`,o=Ve(t);return o===t?void 0:o}}}getCardSize(){return 12}getGridOptions(){return{columns:"full",rows:"auto",min_columns:6}}connectedCallback(){super.connectedCallback(),this._cancelMinuteTimer??(this._cancelMinuteTimer=Po(()=>this.requestUpdate())),"undefined"==typeof ResizeObserver||this._resizeObserver||(this._resizeObserver=new ResizeObserver(e=>{const t=e[0]?.contentRect.width??0;Math.abs(t-this._width)>=1&&(this._width=t)}),this._resizeObserver.observe(this))}disconnectedCallback(){super.disconnectedCallback(),this._cancelMinuteTimer?.(),this._cancelMinuteTimer=null,this._resizeObserver?.disconnect(),this._resizeObserver=null,window.removeEventListener("keydown",this._onKeydown)}shouldUpdate(e){if(!this._config)return!1;if(1!==e.size||!e.has("hass"))return!0;const t=e.get("hass");if(!t||!this.hass)return!0;const o=t,i=this.hass;return o.entities!==i.entities||o.devices!==i.devices||o.areas!==i.areas||o.floors!==i.floors||o.locale!==i.locale||fe(t,this.hass,this._watched)}updated(e){if(e.has("_selected")&&(this._selected?(window.addEventListener("keydown",this._onKeydown),this._focusSheet=!0):window.removeEventListener("keydown",this._onKeydown)),this._focusSheet){const e=this.renderRoot.querySelector(".sheet .close");e&&(this._focusSheet=!1,e.focus())}}_model(){const e=this._config,t=qi(this.hass,this._registry,{floors:e.floors,areas:e.areas}),o=this.hass.entities;return t.needsRegistry&&this._registryFor!==o&&(this._registryFor=o,Yt(this.hass,null!==this._registry).then(e=>{this._registry=Array.isArray(e)?e:[]}).catch(()=>{})),t}_filtered(){const e=this._config;return(e.floors?.length??0)>0||(e.areas?.length??0)>0}_scope(e){return{hub:e.hub,windows:e.windows,useHub:!this._filtered()}}_narrow(){const e=this._config?.layout??"auto";return"narrow"===e||"wide"!==e&&this._width>0&&this._width<600}_views(e){return e.floors.map(e=>{const t=e.rooms.map(t=>{const o=t.windows.map(o=>({w:o,s:ds(this.hass,o),floor:e,room:t}));return{room:t,key:Ns(e,t),all:o,shown:o.filter(e=>function(e,t){switch(t){case"sun":return js(e);case"hold":return"hold"===e.s.mode;case"off":return"off"===e.s.mode;default:return!0}}(e,this._filter)),mode:ls(o.map(e=>e.s.mode)),sunCount:o.filter(js).length}});return{floor:e,rooms:t,total:t.reduce((e,t)=>e+t.all.length,0)}})}async _run(e){if(0!==e.length)try{await async function(e,t){for(const o of t)await e.callService(o.domain,o.service,o.data)}(this.hass,e)}catch(e){const t=e instanceof Error?e.message:String(e);this.dispatchEvent(new CustomEvent("hass-notification",{detail:{message:Ve("house.action_failed",{message:t})},bubbles:!0,composed:!0}))}}_setWindows(e,t){this._run(fs(this.hass,e,t))}_navigate(e,t){e.preventDefault(),history.pushState(null,"",t),window.dispatchEvent(new CustomEvent("location-changed",{detail:{replace:!1}})),this._selected=null}render(){if(!this._config||!this.hass)return Y;const e=this._model();this._watched=function(e){const t=new Set;for(const o of e.windows){for(const e of Object.values(o.entities))e&&t.add(e);for(const e of o.covers)t.add(e)}for(const o of Object.values(e.hub))o&&t.add(o);return t.add("sun.sun"),[...t]}(e);const t=Date.now(),o=this._views(e),i=o.flatMap(e=>e.rooms.flatMap(e=>e.all)),s=this._narrow();if(0===i.length)return G`<ha-card>
+        <div class="root ${s?"narrow":"wide"}">
+          ${this._renderHeader(e,o,s)}
+          <p class="empty">${Ve("house.empty")}</p>
+        </div>
+      </ha-card>`;const n=this._selected?i.find(e=>e.w.key===this._selected):void 0;return G`<ha-card>
+      <div class="root ${s?"narrow":"wide"}">
+        ${this._renderHeader(e,o,s)} ${this._renderHouseBar(e,i,s)}
+        ${s?o.map(e=>this._renderPhoneFloor(e,t)):G`${this._renderFilters(i)} ${this._renderWide(o,i,t)}`}
+      </div>
+      ${n?this._renderSheet(n,t,s):Y}
+    </ha-card>`}_renderHeader(e,t,o){const i=function(e,t=!1){const o=e.states["sun.sun"];if(!o)return null;const i=o.attributes;if("above_horizon"===o.state&&"number"==typeof i.elevation){const o=$s(e,i.next_setting);return Ve(t?"house.sun_up_short":"house.sun_up",{azimuth:Math.round(i.azimuth??0),elevation:Math.round(i.elevation),time:o})}const s=$s(e,i.next_rising);return s?Ve("house.sun_down",{time:s}):Ve("house.sun_down_plain")}(this.hass,o),s=t.reduce((e,t)=>e+t.rooms.length,0),n=t.filter(e=>null!==e.floor.id).length,r=[Ss("window",e.windows.length),Ss("room",s)];return n>0&&r.push(Ss("floor",n)),G`<header class="top">
+      <div class="titles">
+        <h1>${this._config?.title||Ve("house.title")}</h1>
+        ${o?Y:G`<div class="muted sub">${r.join(" · ")}</div>`}
+      </div>
+      ${i?G`<div class="sun-pill">
+            <ha-icon icon="mdi:white-balance-sunny"></ha-icon><span>${i}</span>
+          </div>`:Y}
+    </header>`}_houseLabel(e,t){const o=ls(e);if("mixed"===o){const o=function(e){const t={auto:0,hold:0,off:0};for(const o of e)t[o]+=1;return t}(e);return Ve(t?"house.mixed_short":"house.mixed_long",o)}return Ve(`house.all_${o??"auto"}`)}_renderHouseBar(e,t,o){const i=this._scope(e),s=t.map(e=>e.s.mode),n=ls(s),r=i.useHub&&e.hub.modeSelect?!!ss(os(this.hass,e.hub.modeSelect)):hs(this.hass,e.windows);const a=this._filtered()?Ve("house.these_windows"):Ve("house.whole_house"),l=this._segmented(n,Ve("house.house_mode_label"),r,e=>{this._run(function(e,t,o){const{hub:i,windows:s,useHub:n}=t;if(!n||!i.modeSelect)return fs(e,s,o);const r=s.map(t=>as(e,t));if(r.length>0&&r.every(e=>e===o))return[];const a=os(e,i.modeSelect);if("off"===o){const t=is(a);return t?[ps(t,[i.modeSelect])]:fs(e,s,"off")}if("hold"===o){const t=ss(a);return t?[ps(t,[i.modeSelect])]:fs(e,s,"hold")}return _s(e,t)}(this.hass,i,e))},"lg"),c=G`<button
+      type="button"
+      class="btn return-all"
+      @click=${()=>{this._run(_s(this.hass,i))}}
+    >
+      ${Ve("house.return_all")}
+    </button>`,d=G`<a
+      class="link settings"
+      href=${Fs}
+      @click=${e=>this._navigate(e,Fs)}
+      ><ha-icon icon="mdi:tune-variant"></ha-icon>${Ve(o?"house.settings_short":"house.settings")}</a
+    >`;return o?G`<section class="house-bar narrow-bar">
+        <div class="bar-head">
+          <span class="bar-title">${a}</span>
+          <span class="muted">${this._houseLabel(s,!0)}</span>
+        </div>
+        ${l}
+        <div class="bar-row">${c} ${d}</div>
+      </section>`:G`<section class="house-bar">
+      <div class="bar-label">
+        <div class="eyebrow">${a}</div>
+        <div class="bar-state">${this._houseLabel(s,!1)}</div>
+      </div>
+      ${l} ${c}
+      <div class="pair">
+        <button
+          type="button"
+          class="btn open-all"
+          @click=${()=>{this._run(ws(i,"open"))}}
+        >
+          ${Ve("house.open_all")}
+        </button>
+        <button
+          type="button"
+          class="btn close-all"
+          @click=${()=>{this._run(ws(i,"close"))}}
+        >
+          ${Ve("house.close_all")}
+        </button>
+      </div>
+      <div class="grow"></div>
+      ${this._renderClimate(e.windows)} ${d}
+    </section>`}_renderClimate(e){const t=function(e,t){const o=t.map(t=>ts(e,t.entities.climateSwitch)).filter(e=>"on"===e||"off"===e);return 0===o.length?null:o.every(e=>"on"===e)?"on":o.every(e=>"off"===e)?"off":"mixed"}(this.hass,e);if(null===t)return Y;let o;if("on"===t){const t=function(e,t){const o=new Map;for(const i of t){if("on"!==ts(e,i.entities.climateSwitch))continue;const t=ts(e,i.entities.controlMethod);"winter"!==t&&"summer"!==t&&"intermediate"!==t||o.set(t,(o.get(t)??0)+1)}let i=null,s=0;for(const[e,t]of o)t>s&&(i=e,s=t);return i}(this.hass,e);o=Ve(`house.climate_state.${t??"on"}`)}else if("off"===t)o=Ve("house.climate_state.off");else{const t=e.filter(e=>e.entities.climateSwitch),i=t.filter(e=>"on"===this.hass.states[e.entities.climateSwitch]?.state).length;o=Ve("house.climate_state.mixed",{on:i,total:t.length})}return G`<button
+      type="button"
+      class="btn climate ${t}"
+      aria-pressed=${"on"===t?"true":"off"===t?"false":"mixed"}
+      @click=${()=>{this._run(function(e,t){const o=e.map(e=>e.entities.climateSwitch).filter(e=>!!e);return o.length>0?[gs("switch",t?"turn_on":"turn_off",o)]:[]}(e,"on"!==t))}}
+    >
+      <span class="track"><span class="knob"></span></span>
+      <span class="strong">${Ve("house.climate")}</span>
+      <span class="muted">${o}</span>
+    </button>`}_segmented(e,t,o,i,s){return G`<div class="seg ${s}" role="group" aria-label=${t}>
+      ${Ts.map(t=>{const s=e===t,n="hold"===t&&!o;return G`<button
+          type="button"
+          class="seg-btn ${t} ${s?"on":""}"
+          data-mode=${t}
+          aria-pressed=${s?"true":"false"}
+          aria-disabled=${n?"true":"false"}
+          title=${n?Ve("house.hold_disabled"):Y}
+          @click=${()=>{n||s||i(t)}}
+        >
+          ${Ve(`house.mode.${t}`)}
+        </button>`})}
+    </div>`}_renderFilters(e){const t={all:e.length,sun:e.filter(js).length,hold:e.filter(e=>"hold"===e.s.mode).length,off:e.filter(e=>"off"===e.s.mode).length};return G`<div class="filters" role="group" aria-label=${Ve("house.filter.label")}>
+      ${Is.map(e=>G`<button
+            type="button"
+            class="chip-btn ${this._filter===e?"on":""}"
+            data-filter=${e}
+            aria-pressed=${this._filter===e?"true":"false"}
+            @click=${()=>this._filter=e}
+          >
+            ${Ve(`house.filter.${e}`,{n:t[e]})}
+          </button>`)}
+    </div>`}_renderWide(e,t,o){const i=e.map(e=>({...e,rooms:e.rooms.filter(e=>e.shown.length>0)})).filter(e=>e.rooms.length>0),s=!1===this._config?.show_upcoming?[]:this._upcoming(t,o),n=[];for(const e of i){const t=n[n.length-1];e.rooms.length>1?n.push({wide:e}):t&&"pack"in t?t.pack.push(e):n.push({pack:[e]})}const r=s.length>0?this._renderUpcoming(s):Y,a=n[n.length-1],l=!!a&&"pack"in a;return G`${0===i.length?G`<p class="empty">${Ve("house.empty_filter")}</p>`:Y}
+    ${n.map((e,t)=>"wide"in e?G`<section class="floor">
+            ${this._floorHead(e.wide)}
+            <div class="grid">${e.wide.rooms.map(e=>this._renderRoom(e,o))}</div>
+          </section>`:G`<div class="grid">
+            ${e.pack.map(e=>G`<section class="floor">
+                  ${this._floorHead(e)} ${e.rooms.map(e=>this._renderRoom(e,o))}
+                </section>`)}
+            ${l&&t===n.length-1?r:Y}
+          </div>`)}
+    ${l?Y:r}`}_floorHead(e){return e.floor.name?G`<div class="floor-head">
+      <h2>${e.floor.name}</h2>
+      <span class="muted">${Ss("window",e.total)}</span>
+    </div>`:Y}_roomSummary(e){const t=[Ss("window",e.all.length)];return e.sunCount>0&&t.push(Ve("house.room_sun",{n:e.sunCount})),"mixed"===e.mode&&t.push(Ve("house.room_mixed")),t.join(" · ")}_roomSegments(e,t){const o=e.all.map(e=>e.w);return this._segmented(e.mode,Ve("house.room_mode_label",{room:e.room.name}),hs(this.hass,o),e=>this._setWindows(o,e),t)}_renderRoom(e,t){return G`<div class="room" data-room=${e.room.id??""}>
+      <div class="room-head">
+        <div class="room-title">
+          <h3>${e.room.name}</h3>
+          <span class="muted">${this._roomSummary(e)}</span>
+        </div>
+        ${this._roomSegments(e,"sm")}
+      </div>
+      ${e.shown.map(e=>this._renderRow(e,t))}
+    </div>`}_glyph(e,t=!1){const o=null===e.position?0:Math.max(0,Math.min(100,100-e.position));return G`<span
+      class="glyph ${t?"big":""} ${e.sunOnGlass?"sun":""}"
+      style="--fabric: ${o}%"
+      aria-hidden="true"
+      ><span class="fabric"></span
+    ></span>`}_renderRow(e,t){const{w:o,s:i}=e;return G`<button
+      type="button"
+      class="row"
+      data-window=${o.key}
+      @click=${()=>this._selected=o.key}
+    >
+      ${this._glyph(i)}
+      <span class="row-main">
+        <span class="row-name"
+          >${o.name}${js(e)?G`<ha-icon
+                class="sun-icon"
+                icon="mdi:white-balance-sunny"
+                title=${Ve("house.sun_on_glass")}
+              ></ha-icon>`:Y}</span
+        >
+        <span class="row-next muted">${Os(this.hass,i,t)}</span>
+      </span>
+      <span class="row-end">
+        <span class="pos">${zs(i)}</span>
+        <span class="chip ${i.mode}">${Ms(i,t)}</span>
+      </span>
+    </button>`}_renderPhoneFloor(e,t){return 0===e.rooms.length?Y:G`<section class="floor">
+      ${e.floor.name?G`<h2 class="phone-floor">${e.floor.name}</h2>`:Y}
+      ${e.rooms.map(e=>this._renderPhoneRoom(e,t))}
+    </section>`}_renderPhoneRoom(e,t){const o=e.all.some(e=>"auto"!==e.s.mode),i=this._expanded[e.key]??o,s=e.mode??"auto";return G`<div class="room phone-room" data-room=${e.room.id??""}>
+      <button
+        type="button"
+        class="room-toggle"
+        aria-expanded=${i?"true":"false"}
+        @click=${()=>this._expanded={...this._expanded,[e.key]:!i}}
+      >
+        <span class="room-title">
+          <span class="strong">${e.room.name}</span>
+          <span class="muted">${this._roomSummary(e)}</span>
+        </span>
+        <span class="chip ${s}">${Ve(`house.mode.${s}`)}</span>
+        <ha-icon class="chevron ${i?"open":""}" icon="mdi:chevron-right"></ha-icon>
+      </button>
+      ${i?G`<div class="room-body">
+            ${this._roomSegments(e,"lg")} ${e.all.map(e=>this._renderRow(e,t))}
+          </div>`:Y}
+    </div>`}_upcoming(e,t){const o=[];for(const i of e){if("auto"!==i.s.mode||!i.s.nextMove)continue;const e=Date.parse(i.s.nextMove.time);if(Number.isNaN(e)||e<t-6e4||e>t+Rs)continue;const s=Math.floor(e/6e4),n=o.find(e=>Math.floor(e.at/6e4)===s&&e.position===i.s.nextMove.position);n?n.names.push(i.w.deviceName):o.push({at:e,time:i.s.nextMove.time,position:i.s.nextMove.position,names:[i.w.deviceName]})}const i=o.map(e=>({at:e.at,time:$s(this.hass,e.time),what:e.names.join(", "),detail:null===e.position?Ve("house.upcoming.changes"):Ve("house.upcoming.follows",{position:`${Math.round(e.position)}%`})})),s=this.hass.states["sun.sun"],n="above_horizon"===s?.state?s.attributes?.next_setting:void 0,r="string"==typeof n?Date.parse(n):NaN;return!Number.isNaN(r)&&r>t&&r<t+Rs&&i.push({at:r,time:$s(this.hass,n),what:Ve("house.upcoming.sunset"),detail:Ve("house.upcoming.sunset_detail")}),i.sort((e,t)=>e.at-t.at),i.slice(0,5)}_renderUpcoming(e){return G`<section class="floor upcoming">
+      <div class="floor-head">
+        <h2>${Ve("house.upcoming.title")}</h2>
+        <span class="muted">${Ve("house.upcoming.today")}</span>
+      </div>
+      <div class="room upcoming-list">
+        ${e.map(e=>G`<div class="up-row">
+              <span class="up-time">${e.time}</span>
+              <span class="up-main">
+                <span class="strong">${e.what}</span>
+                <span class="muted">${e.detail}</span>
+              </span>
+            </div>`)}
+      </div>
+    </section>`}_renderSheet(e,t,o){const{w:i,s:s}=e,n=[e.floor.name,e.room.name].filter(Boolean).join(" · "),r=hs(this.hass,[i]),a=ni(si({window_key:i.key,config_entry_id:i.configEntryId,config_subentry_id:i.configSubentryId})),l=function(e){return null===e.azimuth?null:Ve("house.sheet.faces",{deg:Math.round(e.azimuth),dir:Cs(e.azimuth)})}(s),c=e=>()=>{this._run(ys([i],e))},d=null!==s.target&&null!==s.position&&Math.round(s.target)!==Math.round(s.position);return G`<div class="scrim" @click=${()=>this._selected=null}></div>
+      <aside
+        class="sheet ${o?"bottom":"side"}"
+        role="dialog"
+        aria-modal="true"
+        aria-label=${Ve("house.sheet.label")}
+      >
+        <div class="sheet-head">
+          <div class="sheet-title">
+            <span class="muted">${n}</span>
+            <h2>${i.name}</h2>
+          </div>
+          <button
+            type="button"
+            class="close icon-btn"
+            aria-label=${Ve("house.sheet.close")}
+            @click=${()=>this._selected=null}
+          >
+            <ha-icon icon="mdi:close"></ha-icon>
+          </button>
+        </div>
+        <div class="sheet-pos">
+          ${this._glyph(s,!0)}
+          <div class="sheet-pos-text">
+            <span class="big-pos">${zs(s)}</span>
+            <span class="muted">${Ve("house.sheet.open_word")}</span>
+            ${d?G`<span class="muted target"
+                  >${Ve("house.sheet.target",{position:`${Math.round(s.target)}%`})}</span
+                >`:Y}
+            <span class="chip ${s.mode}">${Ms(s,t)}</span>
+          </div>
+        </div>
+        <div class="cmds">
+          <button type="button" class="btn cmd-open" @click=${c("open")}>
+            ${Ve("house.sheet.open")}
+          </button>
+          <button type="button" class="btn cmd-stop" @click=${c("stop")}>
+            ${Ve("house.sheet.stop")}
+          </button>
+          <button type="button" class="btn cmd-close" @click=${c("close")}>
+            ${Ve("house.sheet.close_cover")}
+          </button>
+        </div>
+        <div class="mode-block">
+          <span class="eyebrow">${Ve("house.sheet.mode")}</span>
+          ${this._segmented(s.mode,Ve("house.window_mode_label"),r,e=>this._setWindows([i],e),"lg")}
+          ${r?Y:G`<p class="hint muted">${Ve("house.sheet.hold_hint")}</p>`}
+        </div>
+        <div class="why">
+          <span class="eyebrow">${Ve("house.why.title")}</span>
+          <p class="why-text">${function(e,t){if("off"===t.mode)return Ve("house.why.off");if("hold"===t.mode){const o=$s(e,t.holdUntil);return o?Ve("house.why.hold",{time:o}):Ve("house.why.hold_unknown")}const o=(i=t.intent)?Oe.includes(i)?Ve(`handler.${i}`):i:null;var i;const s=t.trace.length>0?t.trace[t.trace.length-1]:"";return o&&s?`${o}: ${s}`:o||s||Ve("house.why.none")}(this.hass,s)}</p>
+          <p class="muted">${Os(this.hass,s,t)}</p>
+          ${"auto"===s.mode&&s.trace.length>1?G`<details>
+                <summary>${Ve("house.why.steps")}</summary>
+                <ol>
+                  ${s.trace.map(e=>G`<li>${e}</li>`)}
+                </ol>
+              </details>`:Y}
+        </div>
+        <div class="grow"></div>
+        <div class="sheet-foot">
+          <span class="setup">
+            <a class="link" href=${a} @click=${e=>this._navigate(e,a)}
+              >${Ve("house.sheet.setup")}</a
+            >
+            <span class="muted">${Ve("house.sheet.setup_hint")}</span>
+          </span>
+          ${l?G`<span class="muted">${l}</span>`:Y}
+        </div>
+      </aside>`}};Ps.styles=r`
+    :host {
+      display: block;
+      --acp-auto: var(--primary-color, #03a9f4);
+      --acp-on-auto: var(--text-primary-color, #fff);
+      --acp-hold: var(--warning-color, #ffa600);
+      --acp-on-hold: #1f1f1f;
+      --acp-off: var(--secondary-text-color, #727272);
+      --acp-on-off: var(--card-background-color, #fff);
+      --acp-sun: var(--amber-color, #ffc107);
+      --acp-sun-strong: var(--orange-color, #ff9800);
+      --acp-line: var(--divider-color, rgba(0, 0, 0, 0.12));
+      --acp-surface: var(--card-background-color, var(--ha-card-background, #fff));
+      --acp-track: var(--secondary-background-color, #efefef);
+      --acp-radius: 14px;
+    }
+    .root {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 20px 24px 24px;
+      color: var(--primary-text-color);
+      font-variant-numeric: tabular-nums;
+    }
+    .root.narrow {
+      gap: 14px;
+      padding: 16px;
+    }
+    .muted {
+      color: var(--secondary-text-color);
+    }
+    .strong {
+      font-weight: 600;
+    }
+    .eyebrow {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--secondary-text-color);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    .grow {
+      flex-grow: 1;
+    }
+    .empty {
+      margin: 0;
+      color: var(--secondary-text-color);
+    }
+    button {
+      font: inherit;
+      cursor: pointer;
+    }
+    button:focus-visible,
+    a:focus-visible {
+      outline: 3px solid var(--acp-auto);
+      outline-offset: 2px;
+    }
+    .link {
+      color: var(--primary-color);
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .link ha-icon {
+      --mdc-icon-size: 18px;
+    }
+
+    /* Header */
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .narrow .top {
+      align-items: center;
+    }
+    .titles {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 2.2rem;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+    }
+    .narrow h1 {
+      font-size: 1.8rem;
+    }
+    .sub {
+      font-size: 0.95rem;
+    }
+    .sun-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      background: rgba(255, 193, 7, 0.16);
+      background: color-mix(in srgb, var(--acp-sun) 18%, transparent);
+    }
+    .sun-pill ha-icon {
+      --mdc-icon-size: 18px;
+      color: var(--acp-sun-strong);
+    }
+    .narrow .sun-pill {
+      padding: 6px 12px;
+      font-size: 0.85rem;
+    }
+
+    /* Buttons */
+    .btn {
+      min-height: 44px;
+      padding: 0 16px;
+      border: 1px solid var(--acp-line);
+      border-radius: 10px;
+      background: var(--acp-surface);
+      color: var(--primary-text-color);
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .btn:hover {
+      background: var(--acp-track);
+    }
+    .pair {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Whole-house bar */
+    .house-bar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px 14px;
+      padding: 16px 20px;
+      border: 1px solid var(--acp-line);
+      border-radius: 16px;
+    }
+    .bar-label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 170px;
+    }
+    .house-bar:not(.narrow-bar) .settings {
+      margin-left: auto;
+    }
+    .bar-state {
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+    .narrow-bar {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      padding: 14px;
+    }
+    .bar-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .bar-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    .bar-row {
+      display: flex;
+      gap: 8px;
+    }
+    .bar-row .return-all {
+      flex-grow: 1;
+    }
+    .bar-row .settings {
+      min-height: 44px;
+      padding: 0 12px;
+      border: 1px solid var(--acp-line);
+      border-radius: 10px;
+    }
+    .climate {
+      padding-left: 8px;
+    }
+    .climate .track {
+      width: 40px;
+      height: 24px;
+      border-radius: 999px;
+      padding: 0 3px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      background: var(--disabled-text-color, #bdbdbd);
+    }
+    .climate.on .track {
+      justify-content: flex-end;
+      background: var(--acp-auto);
+    }
+    .climate.mixed .track {
+      justify-content: center;
+      background: var(--acp-hold);
+    }
+    .climate .knob {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: #fff;
+    }
+    .climate .muted {
+      font-weight: 400;
+    }
+
+    /* Segmented Auto / Hold / Off */
+    .seg {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      border-radius: 12px;
+      background: var(--acp-track);
+    }
+    .seg.sm {
+      gap: 3px;
+      padding: 3px;
+      border-radius: 10px;
+    }
+    .seg-btn {
+      flex-grow: 1;
+      min-height: 44px;
+      padding: 0 18px;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--primary-text-color);
+      font-weight: 600;
+    }
+    .seg.sm .seg-btn {
+      min-height: 36px;
+      padding: 0 10px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+    .seg-btn[aria-disabled='true'] {
+      cursor: not-allowed;
+      color: var(--disabled-text-color, #9e9e9e);
+      opacity: 0.6;
+    }
+    .seg-btn.on[aria-disabled='true'] {
+      opacity: 1;
+    }
+    .seg-btn.on.auto {
+      background: var(--acp-auto);
+      color: var(--acp-on-auto);
+    }
+    .seg-btn.on.hold {
+      background: var(--acp-hold);
+      color: var(--acp-on-hold);
+    }
+    .seg-btn.on.off {
+      background: var(--acp-off);
+      color: var(--acp-on-off);
+    }
+
+    /* Filter chips */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip-btn {
+      min-height: 40px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid var(--acp-line);
+      background: var(--acp-surface);
+      color: var(--primary-text-color);
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .chip-btn.on {
+      background: var(--primary-text-color);
+      color: var(--acp-surface);
+      border-color: var(--primary-text-color);
+    }
+
+    /* Floors and rooms */
+    .floor {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
+    .floor-head {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+    h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+    .room {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 14px;
+      border: 1px solid var(--acp-line);
+      border-radius: var(--acp-radius);
+      background: var(--acp-surface);
+      min-width: 0;
+    }
+    .room-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 2px 4px 8px;
+      flex-wrap: wrap;
+    }
+    .room-title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    .room-title .muted {
+      font-size: 0.85rem;
+    }
+
+    /* Window rows */
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      min-height: 60px;
+      padding: 8px;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--primary-text-color);
+      text-align: left;
+    }
+    .row:hover {
+      background: var(--acp-track);
+    }
+    .row-main {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      gap: 2px;
+      min-width: 0;
+    }
+    .row-name {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+    }
+    .sun-icon {
+      --mdc-icon-size: 16px;
+      color: var(--acp-sun-strong);
+    }
+    .row-next {
+      font-size: 0.85rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .row-end {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+    .pos {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    .chip {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .chip.auto {
+      color: var(--acp-auto);
+      background: rgba(3, 169, 244, 0.14);
+      background: color-mix(in srgb, var(--acp-auto) 15%, transparent);
+    }
+    .chip.hold {
+      color: var(--primary-text-color);
+      background: rgba(255, 166, 0, 0.3);
+      background: color-mix(in srgb, var(--acp-hold) 32%, transparent);
+    }
+    .chip.off,
+    .chip.mixed {
+      color: var(--primary-text-color);
+      background: var(--acp-track);
+    }
+
+    /* Shade glyph: the fabric covers (100 - position)% from the top. */
+    .glyph {
+      width: 28px;
+      height: 38px;
+      flex-shrink: 0;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 2px solid var(--primary-text-color);
+      border-radius: 3px;
+      background: rgba(3, 155, 229, 0.16);
+      background: color-mix(in srgb, var(--info-color, #039be5) 18%, var(--acp-surface));
+    }
+    .glyph.sun {
+      background: rgba(255, 193, 7, 0.4);
+      background: color-mix(in srgb, var(--acp-sun) 45%, var(--acp-surface));
+    }
+    .glyph .fabric {
+      width: 100%;
+      height: var(--fabric, 0%);
+      box-sizing: border-box;
+      background: var(--secondary-text-color);
+      opacity: 0.55;
+      border-bottom: 2px solid var(--primary-text-color);
+    }
+    .glyph.big {
+      width: 96px;
+      height: 128px;
+      border-width: 3px;
+      border-radius: 5px;
+    }
+
+    /* Coming up */
+    .upcoming-list {
+      padding: 6px 16px;
+      gap: 0;
+    }
+    .up-row {
+      display: flex;
+      gap: 14px;
+      align-items: baseline;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--acp-line);
+    }
+    .up-row:last-child {
+      border-bottom: none;
+    }
+    .up-time {
+      width: 72px;
+      flex-shrink: 0;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .up-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 0.9rem;
+    }
+
+    /* Phone */
+    .phone-floor {
+      margin: 4px 4px 0;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--secondary-text-color);
+    }
+    .phone-room {
+      padding: 0;
+      gap: 0;
+      overflow: hidden;
+    }
+    .room-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      min-height: 60px;
+      padding: 10px 14px;
+      border: none;
+      background: transparent;
+      color: var(--primary-text-color);
+      text-align: left;
+    }
+    .room-toggle .room-title {
+      flex-grow: 1;
+    }
+    .chevron {
+      --mdc-icon-size: 20px;
+      color: var(--secondary-text-color);
+      transition: transform 0.15s;
+    }
+    .chevron.open {
+      transform: rotate(90deg);
+    }
+    .room-body {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 0 14px 12px;
+    }
+    .room-body .seg {
+      margin-bottom: 6px;
+    }
+    .room-body .row {
+      border-top: 1px solid var(--acp-line);
+      border-radius: 0;
+      padding: 8px 0;
+    }
+
+    /* Detail sheet */
+    .scrim {
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      background: rgba(0, 0, 0, 0.32);
+    }
+    .sheet {
+      position: fixed;
+      z-index: 9999;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 28px;
+      overflow-y: auto;
+      background: var(--acp-surface);
+      color: var(--primary-text-color);
+      box-shadow: -12px 0 40px rgba(0, 0, 0, 0.25);
+    }
+    .sheet.side {
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(440px, 100vw);
+    }
+    .sheet.bottom {
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-height: 92vh;
+      padding: 20px 16px 24px;
+      border-radius: 16px 16px 0 0;
+      box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.25);
+    }
+    .sheet-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .sheet-title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .sheet-title h2 {
+      font-size: 1.8rem;
+      font-weight: 600;
+    }
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      border: none;
+      border-radius: 10px;
+      background: var(--acp-track);
+      color: var(--primary-text-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sheet-pos {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+    }
+    .sheet-pos-text {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: flex-start;
+    }
+    .big-pos {
+      font-size: 2.8rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .cmds {
+      display: flex;
+      gap: 8px;
+    }
+    .cmds .btn {
+      flex-grow: 1;
+      min-height: 48px;
+    }
+    .mode-block {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .hint {
+      margin: 0;
+      font-size: 0.85rem;
+    }
+    .why {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 16px;
+      border-radius: 12px;
+      background: var(--acp-track);
+    }
+    .why p {
+      margin: 0;
+      line-height: 1.5;
+    }
+    .why details {
+      font-size: 0.85rem;
+      color: var(--secondary-text-color);
+    }
+    .why ol {
+      margin: 6px 0 0;
+      padding-left: 20px;
+    }
+    .sheet-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding-top: 16px;
+      border-top: 1px solid var(--acp-line);
+    }
+    .setup {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .setup .muted,
+    .sheet-foot > .muted {
+      font-size: 0.85rem;
+    }
+  `,e([ge({attribute:!1})],Ps.prototype,"hass",void 0),e([me()],Ps.prototype,"_config",void 0),e([me()],Ps.prototype,"_filter",void 0),e([me()],Ps.prototype,"_selected",void 0),e([me()],Ps.prototype,"_width",void 0),e([me()],Ps.prototype,"_expanded",void 0),e([me()],Ps.prototype,"_registry",void 0),Ps=e([he(Ce)],Ps),window.customCards=window.customCards||[],window.customCards.some(e=>e.type===Ce)||window.customCards.push({type:Ce,name:Ve("house.card_name"),description:Ve("house.card_description"),preview:!1,documentationURL:"https://github.com/mrvollger/adaptive-cover"});class Ks extends HTMLElement{static async generate(e,t){return function(e,t){const o=e?.title||Ve("house.title"),i={type:`custom:${Ce}`};e?.title&&(i.title=e.title),e?.floors?.length&&(i.floors=[...e.floors]),e?.areas?.length&&(i.areas=[...e.areas]);const s=qi(t,null,{floors:i.floors,areas:i.areas});return{title:o,views:[{title:o,path:"shades",icon:"mdi:blinds-horizontal",type:"panel",cards:0!==s.windows.length||s.needsRegistry?[i]:[{type:"markdown",content:Ve("house.empty")}]}]}}(e,t)}}customElements.get(Ee)||customElements.define(Ee,Ks),window.customStrategies=window.customStrategies||[],window.customStrategies.some(e=>e.type===Se)||window.customStrategies.push({type:Se,strategyType:"dashboard",name:Ve("house.strategy_name"),description:Ve("house.strategy_description"),documentationURL:"https://github.com/mrvollger/adaptive-cover"});const Ds=["sky","elevation","decision","covers","overrides","climate"];let Bs=class extends ce{constructor(){super(...arguments),this._registry=null,this._registryError=null,this._discovered=null,this._discoveredList=[],this._discoveredListSource=null,this._unsubRegistry=null,this._fetchInFlight=!1,this._memo=Bt(),this._debounceTimer=null,this._debounceFirstAt=null,this._DEBOUNCE_DELAY=500,this._DEBOUNCE_MAX=2e3}setConfig(e){const t=yt(e);if(!t)throw new Error("adaptive-cover-card: set `window` (window key) or `cover` (cover entity); a legacy `entry_id` also works.");if(this._config={...e},e.tooltips&&gt(e.tooltips),null===this._registry){const e=Xt.get(bt(t));e&&(this._registry=e.entries)}}get _ref(){return yt(this._config)}_slice(e){const t=this._ref;return t&&this.hass?Dt(this.hass,t,e):[]}getCardSize(){return 6}getGridOptions(){return{columns:12,rows:"auto",min_columns:6,max_columns:12}}static async getConfigElement(){return document.createElement(ye)}static async getStubConfig(e){let t="";try{const o=await Qt(e);t=o[0]?.window_key??""}catch{}return{type:`custom:${ve}`,window:t}}connectedCallback(){if(super.connectedCallback(),null===this._registry){const e=Lt();e&&(this._registry=e)}this.hass&&this._ensureRegistry()}disconnectedCallback(){super.disconnectedCallback(),this._unsubRegistry&&(this._unsubRegistry(),this._unsubRegistry=null),null!==this._debounceTimer&&(clearTimeout(this._debounceTimer),this._debounceTimer=null,this._debounceFirstAt=null)}updated(e){e.has("hass")&&this.hass&&this._ensureRegistry()}shouldUpdate(e){return e.size>1||!e.has("hass")||(!this._discovered||fe(e.get("hass"),this.hass,Object.values(this._discovered.entities)))}willUpdate(e){null!==this._registry&&this._config&&this.hass&&(e.has("hass")||e.has("_registry")||e.has("_config"))&&(this._discovered=this._memo(this.hass,this._config,this._registry)),this._discovered!==this._discoveredListSource&&(this._discoveredListSource=this._discovered,this._discoveredList=this._discovered?[this._discovered]:[])}_ensureRegistry(){this._fetchRegistry(),this._unsubRegistry||(this._unsubRegistry=Vt(this.hass,e=>{const t=new Set(this._slice(this._registry??[]).map(e=>e.entity_id));(function(e,t){return"create"===e.action||t.has(e.entity_id)})(e,t)&&this._scheduleRefetch()}))}_fetchRegistry(e=!1){this._fetchInFlight||(this._fetchInFlight=!0,Yt(this.hass,e).then(e=>{if(e===this._registry)return;const t=this._ref;if(t){const o=this._slice(e);(null===this._registry||function(e,t){if(e.length!==t.length)return!0;const o=new Map(e.map(e=>[e.entity_id,Jt(e)]));for(const e of t)if(o.get(e.entity_id)!==Jt(e))return!0;return!1}(this._slice(this._registry),o))&&(this._registry=e,o.length&&Xt.set(bt(t),o))}else this._registry=e;this._registryError=null}).catch(e=>{this._registryError=e?.message??"entity registry fetch failed"}).finally(()=>{this._fetchInFlight=!1}))}_scheduleRefetch(){const e=Date.now();null===this._debounceFirstAt&&(this._debounceFirstAt=e);const t=e-this._debounceFirstAt,o=this._DEBOUNCE_MAX-t,i=Math.min(this._DEBOUNCE_DELAY,o);if(null!==this._debounceTimer&&clearTimeout(this._debounceTimer),i<=0)return this._debounceFirstAt=null,void this._fetchRegistry(!0);this._debounceTimer=setTimeout(()=>{this._debounceTimer=null,this._debounceFirstAt=null,this._fetchRegistry(!0)},i)}get _sections(){return this._config?.show_sections??Ds}_renderHeader(e,t){const o=Te[e.cover_type]??"mdi:window-shutter",i=e.entities.automatic_control_switch,s=!i||"on"===this.hass.states[i]?.state;return G`
       <div class="header">
-        <ha-icon .icon=${i}></ha-icon>
+        <ha-icon .icon=${o}></ha-icon>
         <span class="title">${e.entry_title}</span>
         <span class="spacer"></span>
-        ${o?W`<acp-header-pill
+        ${i?G`<acp-header-pill
               .on=${s}
               .readonly=${!t.automatic_control}
-              .label=${De("header.auto")}
-              title=${De("header.automatic_control")}
-              @pill-click=${()=>this._toggle(o)}
-            ></acp-header-pill>`:L}
+              .label=${Ve("header.auto")}
+              title=${Ve("header.automatic_control")}
+              @pill-click=${()=>this._toggle(i)}
+            ></acp-header-pill>`:Y}
       </div>
-    `}_toggle(e){const t=e.split(".")[0];this.hass.callService(t,"toggle",{entity_id:e})}_renderLoading(){return W`
+    `}_toggle(e){const t=e.split(".")[0];this.hass.callService(t,"toggle",{entity_id:e})}_renderLoading(){return G`
       <ha-card>
         <div class="empty">
-          <p class="dim">${De("root.loading_registry")}</p>
+          <p class="dim">${Ve("root.loading_registry")}</p>
         </div>
       </ha-card>
-    `}_renderEmpty(e){const t=this._ref,i="cover"===t?.kind?"cover":"entry"===t?.kind?"entry_id":"window",o=this._registry?.length??0,s=this._registry?this._slice(this._registry).length:void 0;return W`
+    `}_renderEmpty(e){const t=this._ref,o="cover"===t?.kind?"cover":"entry"===t?.kind?"entry_id":"window",i=this._registry?.length??0,s=this._registry?this._slice(this._registry).length:void 0;return G`
       <ha-card>
         <div class="empty">
-          <p><strong>${De("root.no_entities_title")}</strong></p>
+          <p><strong>${Ve("root.no_entities_title")}</strong></p>
           <p class="dim">
-            Configured <code>${i}</code>: <code>${t?yt(t):""}</code>
+            Configured <code>${o}</code>: <code>${t?xt(t):""}</code>
           </p>
           <ul class="diag">
             <li>Reason: <code>${e}</code></li>
-            <li>Registry entries loaded: <code>${o}</code></li>
+            <li>Registry entries loaded: <code>${i}</code></li>
             <li>Adaptive Cover entities of this window: <code>${s??"—"}</code></li>
-            ${this._registryError?W`<li>Registry fetch error: <code>${this._registryError}</code></li>`:L}
+            ${this._registryError?G`<li>Registry fetch error: <code>${this._registryError}</code></li>`:Y}
           </ul>
           <p class="dim">
             If the count is 0, the window key is wrong. The Cover Position sensor of each window
@@ -3050,11 +3961,11 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
           </p>
         </div>
       </ha-card>
-    `}render(){if(!this._config||!this.hass)return L;if(null===this._registry)return this._registryError?this._renderEmpty("registry fetch failed"):this._renderLoading();const e=this._discovered;if(!e)return this._renderEmpty("no window matches the configured key or cover");const t=(i=this._config,{...Ne,...i?.controls});var i;const o=this._sections;return W`
+    `}render(){if(!this._config||!this.hass)return Y;if(null===this._registry)return this._registryError?this._renderEmpty("registry fetch failed"):this._renderLoading();const e=this._discovered;if(!e)return this._renderEmpty("no window matches the configured key or cover");const t=(o=this._config,{...De,...o?.controls});var o;const i=this._sections;return G`
       <ha-card>
         ${this._renderHeader(e,t)}
         <div class="body ${this._config.compact?"compact":""}">
-          ${o.includes("sky")?W`<acp-sky-compass
+          ${i.includes("sky")?G`<acp-sky-compass
                 .hass=${this.hass}
                 .discovered_list=${this._discoveredList}
                 ?compact=${!!this._config.compact}
@@ -3062,41 +3973,41 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
                 .showLegend=${this._config.show_compass_legend??!0}
                 .showMoon=${this._config.show_moon??!1}
                 .coverColors=${this._config.cover_colors??[]}
-                .northOffsetDeg=${tt(this._config.north_offset??0)}
-              ></acp-sky-compass>`:L}
-          ${o.includes("elevation")?W`<acp-elevation-chart
+                .northOffsetDeg=${st(this._config.north_offset??0)}
+              ></acp-sky-compass>`:Y}
+          ${i.includes("elevation")?G`<acp-elevation-chart
                 .hass=${this.hass}
                 .discoveredList=${this._discoveredList}
                 ?compact=${!!this._config.compact}
                 .coverColors=${this._config.cover_colors??[]}
-              ></acp-elevation-chart>`:L}
-          ${o.includes("decision")?W`<acp-decision-strip
+              ></acp-elevation-chart>`:Y}
+          ${i.includes("decision")?G`<acp-decision-strip
                 .hass=${this.hass}
                 .discovered=${e}
                 ?compact=${!!this._config.compact}
                 ?hide-inactive=${!!this._config.hide_inactive_handlers||!!this._config.compact}
                 .showSummary=${!1!==this._config.show_decision_summary}
-              ></acp-decision-strip>`:L}
-          ${o.includes("covers")?W`<acp-cover-bar
+              ></acp-decision-strip>`:Y}
+          ${i.includes("covers")?G`<acp-cover-bar
                 .hass=${this.hass}
                 .discovered=${e}
                 ?compact=${!!this._config.compact}
                 .coverColor=${this._config.cover_colors?.[0]??null}
-              ></acp-cover-bar>`:L}
-          ${o.includes("overrides")?W`<acp-overrides-panel
+              ></acp-cover-bar>`:Y}
+          ${i.includes("overrides")?G`<acp-overrides-panel
                 .hass=${this.hass}
                 .discovered=${e}
                 ?compact=${!!this._config.compact}
                 .resetEnabled=${t.reset_manual_override}
-              ></acp-overrides-panel>`:L}
-          ${o.includes("climate")?W`<acp-climate-panel
+              ></acp-overrides-panel>`:Y}
+          ${i.includes("climate")?G`<acp-climate-panel
                 .hass=${this.hass}
                 .discovered=${e}
                 ?compact=${!!this._config.compact}
-              ></acp-climate-panel>`:L}
+              ></acp-climate-panel>`:Y}
         </div>
       </ha-card>
-    `}};So.styles=r`
+    `}};Bs.styles=r`
     :host {
       display: block;
     }
@@ -3150,4 +4061,4 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
     .dim {
       color: var(--secondary-text-color);
     }
-  `,e([ge({attribute:!1})],So.prototype,"hass",void 0),e([_e()],So.prototype,"_config",void 0),e([_e()],So.prototype,"_registry",void 0),e([_e()],So.prototype,"_registryError",void 0),e([_e()],So.prototype,"_discovered",void 0),So=e([he(fe)],So),window.customCards=window.customCards||[],window.customCards.push({type:fe,name:"Adaptive Cover",description:"Visualize sun/window geometry, the decision trace, and live cover positions with inline controls.",preview:!0,documentationURL:"https://github.com/mrvollger/adaptive-cover-card"}),console.info(`%c adaptive-cover-card %c v${ve} `,"color: white; background: #3f51b5; font-weight: 700;","color: #3f51b5; background: white; font-weight: 700;");export{So as AdaptiveCoverCard};
+  `,e([ge({attribute:!1})],Bs.prototype,"hass",void 0),e([me()],Bs.prototype,"_config",void 0),e([me()],Bs.prototype,"_registry",void 0),e([me()],Bs.prototype,"_registryError",void 0),e([me()],Bs.prototype,"_discovered",void 0),Bs=e([he(ve)],Bs),window.customCards=window.customCards||[],window.customCards.push({type:ve,name:"Adaptive Cover",description:"Visualize sun/window geometry, the decision trace, and live cover positions with inline controls.",preview:!0,documentationURL:"https://github.com/mrvollger/adaptive-cover-card"}),console.info(`%c adaptive-cover-card %c v${_e} `,"color: white; background: #3f51b5; font-weight: 700;","color: #3f51b5; background: white; font-weight: 700;");export{Bs as AdaptiveCoverCard};
