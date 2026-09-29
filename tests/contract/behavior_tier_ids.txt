@@ -1682,6 +1682,7 @@ tests/simulation/test_device_failures.py::test_no_position_event_no_latch
 tests/simulation/test_device_failures.py::test_pending_end_snap_real_retry[control-off]
 tests/simulation/test_device_failures.py::test_pending_end_snap_real_retry[control-on]
 tests/simulation/test_device_failures.py::test_regression_late_delivery_not_manual
+tests/simulation/test_device_failures.py::test_regression_missing_cover_not_commanded
 tests/simulation/test_device_failures.py::test_service_raise_non_fatal
 tests/simulation/test_device_failures.py::test_unknown_position_still_commanded
 tests/simulation/test_gates_and_windows.py::test_climate_switch_flips_live

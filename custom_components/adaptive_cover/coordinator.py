@@ -13,6 +13,7 @@ from homeassistant.const import (
     ATTR_ENTITY_ID,
     SERVICE_SET_COVER_POSITION,
     SERVICE_SET_COVER_TILT_POSITION,
+    STATE_UNAVAILABLE,
 )
 from homeassistant.core import (
     CALLBACK_TYPE,
@@ -251,6 +252,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self._our_context_ids: deque[str] = deque(maxlen=64)
         self._sun_table = None
         self._poll_cancels: dict[str, CALLBACK_TYPE] = {}
+        self._missing_warned: set[str] = set()
         # Sends that raised but may still have reached the motor:
         # entity -> (target, sent_at, source, reason). See _adopt_late_delivery.
         self._unconfirmed_sends: dict[
@@ -1257,10 +1259,25 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         already in position), False when delivery failed — e.g. the device
         is unavailable — so one-shot moves (end-of-day close) can retry.
         """
-        entity_state = get_safe_state(self.hass, entity)
-        if entity_state in ("unavailable", "unknown"):
+        # get_safe_state() maps unknown/unavailable/missing all to None, so
+        # the old `in ("unavailable", "unknown")` check never fired: missing
+        # covers (renamed or removed) were commanded on every tick. Read the
+        # raw state. "unknown" stays commandable - a shade that has not
+        # reported since a restart must still get the end-of-day close.
+        current = self.hass.states.get(entity)
+        if current is None:
+            if entity not in self._missing_warned:
+                self._missing_warned.add(entity)
+                self.logger.warning(
+                    "Cannot command %s: no such entity (renamed or removed? "
+                    "update this window's cover)",
+                    entity,
+                )
+            return False
+        self._missing_warned.discard(entity)
+        if current.state == STATE_UNAVAILABLE:
             self.logger.warning(
-                "Cannot command %s to %s: entity is %s", entity, state, entity_state
+                "Cannot command %s to %s: entity is unavailable", entity, state
             )
             return False
         if self.check_position(entity, state):

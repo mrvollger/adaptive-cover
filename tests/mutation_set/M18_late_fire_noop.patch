@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -298,6 +298,10 @@
+@@ -300,6 +300,10 @@
          exception: the end time was moved LATER after arming — re-arm.
          """
          current_end = self._end_time
