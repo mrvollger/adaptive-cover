@@ -43,12 +43,7 @@ export class OverridesPanel extends LitElement {
   private _resetManual(): void {
     const id = this.discovered.entities.reset_override_button;
     if (!id) return;
-    if (
-      !confirmResume(
-        this.hass,
-        resumeTarget(this.hass, this.discovered.entities.target_position_sensor),
-      )
-    )
+    if (!confirmResume(resumeTarget(this.hass, this.discovered.entities.target_position_sensor)))
       return;
     this.hass.callService('button', 'press', { entity_id: id });
   }
@@ -58,20 +53,20 @@ export class OverridesPanel extends LitElement {
     const manualActive = this._manualActive();
     const manualList = this._manualList();
     const resetId = this.discovered.entities.reset_override_button;
-    const resetLabel = t('overrides.reset_manual', this.hass);
+    const resetLabel = t('overrides.reset_manual');
 
     return html`
       <div class="wrap">
-        <div class="label dim">${t('overrides.title', this.hass)}</div>
+        <div class="label dim">${t('overrides.title')}</div>
         <div class="grid">
           <div class="tile ${manualActive ? 'active' : ''}">
-            <div class="tile-label">${t('overrides.manual', this.hass)}</div>
+            <div class="tile-label">${t('overrides.manual')}</div>
             <div class="tile-value">
-              ${manualActive ? t('overrides.active', this.hass) : t('overrides.off', this.hass)}
+              ${manualActive ? t('overrides.active') : t('overrides.off')}
             </div>
             ${manualActive && manualList.length > 0
               ? html`<div class="tile-sub dim">
-                  ${t('overrides.active_count', this.hass, { count: manualList.length })}
+                  ${t('overrides.active_count', { count: manualList.length })}
                 </div>`
               : nothing}
           </div>

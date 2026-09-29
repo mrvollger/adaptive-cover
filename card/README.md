@@ -100,7 +100,7 @@ npm run lint           # eslint + prettier --check
 npm run check-bundle   # fails if the committed www/ bundle differs from a fresh build
 ```
 
-The integration serves the bundle from `custom_components/adaptive_cover/www/`, so any change under `src/` needs `npm run build` and the rebuilt bundle in the same commit; CI runs `check-bundle` to enforce that.
+The integration serves the bundle from `custom_components/adaptive_cover/www/`, so any change under `src/` needs `npm run build` and the rebuilt bundle in the same commit; CI runs `check-bundle` to enforce that. The card's own strings are English-only, like the integration; they live in `src/lib/i18n/en.ts`.
 
 The upstream dev harness (a browser playground that simulated the Pro integration's 11-handler pipeline) was removed in this fork; the vitest suite covers the components against the `adaptive_cover` schema.
 

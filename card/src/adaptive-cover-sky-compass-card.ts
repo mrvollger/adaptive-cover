@@ -179,8 +179,8 @@ export class AdaptiveCoverSkyCompassCard extends LitElement {
         <div class="empty">
           <p class="dim">
             ${this._registryError
-              ? t('tile.registry_failed', this.hass, { error: this._registryError })
-              : t('root.loading_registry', this.hass)}
+              ? t('tile.registry_failed', { error: this._registryError })
+              : t('root.loading_registry')}
           </p>
         </div>
       </ha-card>`;
@@ -191,9 +191,9 @@ export class AdaptiveCoverSkyCompassCard extends LitElement {
     if (discoveredList.length === 0) {
       return html`<ha-card>
         <div class="empty">
-          <p><strong>${t('root.compass_no_match', this.hass)}</strong></p>
+          <p><strong>${t('root.compass_no_match')}</strong></p>
           <p class="dim">
-            ${t('root.compass_configured', this.hass, {
+            ${t('root.compass_configured', {
               entries: this._config.entry_ids.join(', '),
             })}
           </p>
@@ -231,7 +231,7 @@ export class AdaptiveCoverSkyCompassCard extends LitElement {
           : nothing}
         ${missing.length > 0
           ? html`<div class="warn dim">
-              ${t('root.compass_not_found', this.hass, { entries: missing.join(', ') })}
+              ${t('root.compass_not_found', { entries: missing.join(', ') })}
             </div>`
           : nothing}
       </ha-card>

@@ -93,12 +93,12 @@ export class AdaptiveCoverDecisionCardEditor extends LitElement implements Lovel
 
   private _computeLabel = (schema: HaFormSchemaItem): string => {
     const key = LABEL_KEYS[schema.name];
-    return key ? t(key, this.hass) : schema.name;
+    return key ? t(key) : schema.name;
   };
 
   private _computeHelper = (schema: HaFormSchemaItem): string | undefined => {
     const key = HELPER_KEYS[schema.name];
-    return key ? t(key, this.hass) : undefined;
+    return key ? t(key) : undefined;
   };
 
   private _valueChanged = (e: ValueChangedEvent): void => {
@@ -127,25 +127,23 @@ export class AdaptiveCoverDecisionCardEditor extends LitElement implements Lovel
       // Fall back to a manual entry_id text input.
       return html`
         <div class="form">
-          <div class="error">
-            ${t('editor.common.load_failed', this.hass, { error: this._entriesError })}
-          </div>
+          <div class="error">${t('editor.common.load_failed', { error: this._entriesError })}</div>
           <label class="field-label" for="entry-id-fallback"
-            >${t('editor.common.entry_id_fallback_label', this.hass)}</label
+            >${t('editor.common.entry_id_fallback_label')}</label
           >
           <input
             id="entry-id-fallback"
             type="text"
             class="text-input"
             .value=${this._config.entry_id ?? ''}
-            placeholder=${t('editor.common.entry_id_manual_placeholder', this.hass)}
+            placeholder=${t('editor.common.entry_id_manual_placeholder')}
             @change=${(e: Event) =>
               this._emit({
                 ...(this._config ?? { type: '', entry_id: '' }),
                 entry_id: (e.target as HTMLInputElement).value,
               })}
           />
-          ${renderEditorFooter(this.hass)}
+          ${renderEditorFooter()}
         </div>
       `;
     }
@@ -163,7 +161,7 @@ export class AdaptiveCoverDecisionCardEditor extends LitElement implements Lovel
           .computeHelper=${this._computeHelper}
           @value-changed=${this._valueChanged}
         ></ha-form>
-        ${renderEditorFooter(this.hass)}
+        ${renderEditorFooter()}
       </div>
     `;
   }

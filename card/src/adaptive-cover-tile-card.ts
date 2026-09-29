@@ -209,8 +209,8 @@ export class AdaptiveCoverTileCard extends LitElement {
         <div class="empty">
           <p class="dim">
             ${this._registryError
-              ? t('tile.registry_failed', this.hass, { error: this._registryError })
-              : t('tile.loading', this.hass)}
+              ? t('tile.registry_failed', { error: this._registryError })
+              : t('tile.loading')}
           </p>
         </div>
       </ha-card>`;
@@ -221,7 +221,7 @@ export class AdaptiveCoverTileCard extends LitElement {
       return html`<ha-card>
         <div class="empty">
           <p class="dim">
-            ${t('tile.entry_not_found', this.hass, {
+            ${t('tile.entry_not_found', {
               entry: this._config.entry_id,
             })}
           </p>
@@ -250,7 +250,7 @@ export class AdaptiveCoverTileCard extends LitElement {
   private _buildHandlerLabels(): Record<string, string> {
     const labels: Record<string, string> = {};
     for (const [key, dotted] of Object.entries(HANDLER_I18N_KEYS)) {
-      labels[key] = t(dotted, this.hass);
+      labels[key] = t(dotted);
     }
     return labels;
   }
@@ -350,7 +350,7 @@ export class AdaptiveCoverTileCard extends LitElement {
         : battery.level! <= BATTERY_SHOW_NUMBER_PCT
           ? `${Math.round(battery.level!)}%`
           : '';
-      batteryTpl = html`<span class=${`battery${cls}`} title=${t('tile.battery', this.hass)}
+      batteryTpl = html`<span class=${`battery${cls}`} title=${t('tile.battery')}
         ><ha-icon icon=${icon}></ha-icon>${text}</span
       >`;
     }
@@ -416,7 +416,7 @@ export class AdaptiveCoverTileCard extends LitElement {
               <button
                 class="up"
                 type="button"
-                aria-label=${t('tile.open', this.hass)}
+                aria-label=${t('tile.open')}
                 ?disabled=${covers.length === 0 || atOpen}
                 @click=${() => this._setCoversPosition(discovered, covers, 100)}
               >
@@ -425,7 +425,7 @@ export class AdaptiveCoverTileCard extends LitElement {
               <button
                 class="stop"
                 type="button"
-                aria-label=${t('tile.stop', this.hass)}
+                aria-label=${t('tile.stop')}
                 ?disabled=${covers.length === 0}
                 @click=${() => this._stopCovers(covers)}
               >
@@ -434,7 +434,7 @@ export class AdaptiveCoverTileCard extends LitElement {
               <button
                 class="down"
                 type="button"
-                aria-label=${t('tile.close', this.hass)}
+                aria-label=${t('tile.close')}
                 ?disabled=${covers.length === 0 || atClosed}
                 @click=${() => this._setCoversPosition(discovered, covers, 0)}
               >
@@ -513,10 +513,7 @@ export class AdaptiveCoverTileCard extends LitElement {
   private _resume(discovered: DiscoveredEntities): void {
     const btn = discovered.entities.reset_override_button;
     if (!btn) return;
-    if (
-      !confirmResume(this.hass, resumeTarget(this.hass, discovered.entities.target_position_sensor))
-    )
-      return;
+    if (!confirmResume(resumeTarget(this.hass, discovered.entities.target_position_sensor))) return;
     this.hass.callService('button', 'press', { entity_id: btn });
   }
 
