@@ -219,19 +219,19 @@
  },
  {
   "id": "M27",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "common_data",
+  "file": "custom_components/adaptive_cover/runtime/shade_config.py",
+  "function": "_sunrise_offset",
   "description": "sunrise-offset fallback falls back to 0 instead of sunset_offset",
   "patch": "M27_sunrise_fallback_zero.patch",
-  "deviation": "roadmap filed this under engine/geometry.py; the fallback actually lives in coordinator.common_data."
+  "deviation": "roadmap filed this under engine/geometry.py; the fallback actually lives in runtime/shade_config._sunrise_offset (moved there from coordinator.common_data in P3, ledger L0017)."
  },
  {
   "id": "M28",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "_apply_extended_config",
+  "file": "custom_components/adaptive_cover/runtime/shade_config.py",
+  "function": "CoverGeometry.from_options",
   "description": "'offset or DEFAULT' coercion so privacy_offset=0 becomes 30",
   "patch": "M28_privacy_offset_or_coercion.patch",
-  "deviation": "roadmap filed this under engine/geometry.py; the None-check actually lives in coordinator._apply_extended_config."
+  "deviation": "roadmap filed this under engine/geometry.py; the None-check actually lives in runtime/shade_config.CoverGeometry.from_options (moved there from coordinator._apply_extended_config in P3, ledger L0017)."
  },
  {
   "id": "M29",
@@ -398,5 +398,12 @@
   "function": "async_set_manual_position",
   "description": "a window whose cover entity no longer exists still commands it",
   "patch": "M58_missing_cover_commanded.patch"
+ },
+ {
+  "id": "M59",
+  "file": "custom_components/adaptive_cover/window_cover.py",
+  "function": "cover_problem",
+  "description": "a duplicate/second cover is accepted (the one-cover guard never objects)",
+  "patch": "M59_second_cover_accepted.patch"
  }
 ]

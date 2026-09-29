@@ -400,7 +400,8 @@ async def test_regression_reset_button_returns_at_once(hass, freezer):
     assert house.window(A).is_manual and house.window(B).is_manual
 
     pressed_at = house.now
-    await house.press()
+    for cover in (A, B):  # one window per cover: each has its button
+        await house.press(cover=cover)
     assert house.now == pressed_at, "the press waited for the covers to land"
     for cover in (A, B):
         assert house.auto_moves(cover, since="11:20"), f"{cover} not commanded"

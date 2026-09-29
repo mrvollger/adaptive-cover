@@ -395,3 +395,125 @@ The example below is inside an HTML comment. The checker ignores it.
   travel window, so the landing is never read as a manual move (the new
   scenario checks both covers after they land). Goldens, truth table and
   house replay unchanged: none of them presses the button.
+
+## L0017 · 2026-09-29 · ShadeConfig feeds the cover adapters (C3)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins `tests/test_cover_adapters.py::*`
+  (implementation tier: the adapter factory) and
+  `tests/runtime/test_option_reads.py::*` (one fallback per option)
+- **Mutations re-targeted:** M27 (sunrise-offset fallback) moved from
+  `coordinator.common_data` to `runtime/shade_config._sunrise_offset`;
+  M28 (privacy-offset None check) moved from
+  `coordinator._apply_extended_config` to
+  `runtime/shade_config.CoverGeometry.from_options`. Descriptions
+  unchanged. The other coordinator and calculation patches were
+  regenerated for line offsets only.
+- **Contract change:** C3
+- **Reason:** P3 replaces the positional adapter constructors (three
+  order-coupled lists of 18, 2-3 values each in the coordinator) with
+  `AdaptiveGeneralCover.from_config` / `calculation.build_cover` and
+  `ClimateCoverData.from_config`, fed by `ShadeConfig.geometry` and
+  `ShadeConfig.climate`. The adapters' fields are keyword-only. Every
+  option read now has one fallback (`runtime/shade_config.ABSENT`), which
+  config migration 1.3 writes into entries. No output changes: goldens,
+  truth table and house replay are byte-identical.
+
+## L0018 · 2026-09-29 · One cover per window on every settings surface (C4)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins `tests/test_one_cover_per_window.py::*`
+  (wizard, options form and add_entry refuse a second or duplicate cover,
+  write both cover keys, key a new entry by its cover's registry id)
+- **Mutations re-targeted:** added M59 in `window_cover.cover_problem` (a
+  duplicate/second cover is accepted), killed by the new pins. The plan
+  and ADR 0002 call this mutation M44; M44-M51 are reserved there for
+  P5-P7 and M58 was taken, so it is M59.
+- **Contract change:** C4
+- **Reason:** ADR 0002. The cover selector on the wizard's cover-type page
+  and the options form's first section is now `cover_entity_id` with
+  `multiple: false` (it was `group`, a multi-select). Every writer stores
+  the cover as `cover_entity_id` and as `group: [cover]` (older versions
+  read `group`; the runtime still reads `group` until P8, so a downgrade
+  that edits it is never out of sync). `add_entry` takes `cover`; `covers`
+  is still accepted with exactly one item, and more than one, none, both
+  forms, or a cover another enabled window drives is a
+  `ServiceValidationError` naming the problem. The wizard and the options
+  form show `cover_in_use` for such a cover; a registered cover's second
+  entry aborts `already_configured` (entry unique_id = the cover's
+  entity-registry id). `spec_parity.json` changes only in the cover
+  fields: `group` becomes `cover_entity_id` in the wizard's type pages
+  and the options form (`multiple: false`, no `[]` default), `add_entry`
+  gains `cover`, and `covers` is no longer required (schema and
+  services.yaml). The spec's `group` row is no longer on any form (kind
+  internal, still one-time window identity, default `[]`). Behavior-tier
+  test bodies changed without changing ids: `tests/test_config_flow.py`
+  step inputs pick a cover with `cover_entity_id` instead of `group: []`;
+  `tests/test_translations.py::test_flow_strings_cover_every_form` also
+  requires the new error and abort strings. Goldens, truth table and
+  house replay unchanged.
+
+## L0019 · 2026-09-29 · Config entry migration 1.3: fallbacks written, one cover, split repair (C4)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins `tests/test_migration_1_3.py::*` (the
+  15 live windows: no runtime read changes, exactly which keys are
+  written, cover and unique_id; multi-cover entries keep working with a
+  fixable split issue; the split fix; two windows on one cover)
+- **Mutations re-targeted:** none
+- **Contract change:** C4
+- **Reason:** plan P3 / ADR 0002. `CONFIG_ENTRY_MINOR_VERSION` is 3.
+  Migration 1.3 (`migration.py`) writes every option a window reads
+  through a code fallback (`runtime/shade_config.ABSENT`) into its
+  options before any default changes, writes `cover_entity_id` next to
+  `group: [cover]`, and sets the entry unique_id to the cover's registry
+  id when the cover is registered and no other entry holds it. The hub
+  only gets the version bump. On the live snapshot it writes 116 keys
+  (every one None, plus the cover) and changes none; `ShadeConfig` is
+  identical before and after for all 15 windows. Setup now keeps the
+  unique_id on the cover (the options form can change the cover) and
+  raises a fixable `split_window` repair issue for an entry with several
+  covers (`repairs.py` splits it: the entry keeps the first free cover,
+  each other free cover gets a copy of the settings as a new window named
+  after the cover, covers another window drives are dropped). The house
+  replay starts its entries at 1.1, so every golden now runs the migrated
+  options; `tests/replay/house_replay.py` asserts the entry reached 1.3.
+  Goldens, truth table and house replay unchanged. Behavior-tier test
+  bodies changed without changing ids: in `tests/test_entity_surface_v2.py`,
+  `TestMigration::test_migration_applies_surface_to_legacy_rows`,
+  `TestMigration::test_migration_is_idempotent` and
+  `test_live_house_upgrade` expect 1.3 instead of 1.2, and
+  `TestMigration::test_newer_minor_version_loads_unchanged` uses 1.4 as
+  the newer version (1.3 is now current);
+  `tests/test_one_page_options.py::test_regression_options_form_runs_every_cross_field_check`
+  takes its "before" options after setup (the migration adds keys).
+
+## L0020 · 2026-09-29 · SimHouse covers=[a, b] creates two windows (C4)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pin
+  `tests/simulation/test_harness_smoke.py::test_two_covers_make_two_windows`
+- **Mutations re-targeted:** none
+- **Contract change:** C4
+- **Reason:** plan P3 and ADR 0002 ("SimHouse `covers=[a, b]` creates two
+  windows"). A window drives one cover, so the harness builds one config
+  entry per cover ("Sim House", "Sim House 2", ...), sharing `options`
+  and `cover_type`. `house.entry` is the first window's entry; `eid`,
+  `entity`, `sensor_value`, `sensor_attr`, `toggle`, `press` and
+  `select_option` take `cover=` to pick a window (default: the first);
+  `restart` and `set_options` act on every window. The four multi-cover
+  scenarios now run as two windows with the same assertions:
+  `tests/simulation/test_regressions.py::test_regression_group_remote_latches_both_covers`,
+  `tests/simulation/test_device_failures.py::test_service_raise_non_fatal`
+  and `tests/simulation/test_harness_smoke.py::test_fail_next_command_raises_once_loop_survives`
+  pass unchanged; the body of
+  `tests/simulation/test_gates_and_windows.py::test_control_on_force_apply`
+  now restarts both windows with control off and switches both back on,
+  and `tests/simulation/test_regressions.py::test_regression_reset_button_returns_at_once`
+  (L0016) presses each window's Return to auto button (same ids and
+  assertions). A multi-cover entry from before P3 is no
+  longer a SimHouse shape; it is pinned at the entity-surface tier
+  (`tests/test_migration_1_3.py`, and
+  `tests/test_entity_surface_v2.py::TestPositionAttributes::test_multi_cover_entry_lists_every_cover`).
+  Goldens, truth table and house replay unchanged (the replay drives one
+  cover per window).

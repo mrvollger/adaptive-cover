@@ -55,6 +55,7 @@ from pytest_homeassistant_custom_component.common import (
 
 from custom_components.adaptive_cover.const import (
     CONF_ENTITIES,
+    CONFIG_ENTRY_MINOR_VERSION,
     CONF_SENSOR_TYPE,
     CONF_TEMP_ENTITY,
     CONF_WEATHER_ENTITY,
@@ -343,6 +344,14 @@ async def _create(hass, freezer, window: Window, date: str) -> ReplayHouse:
             # At 00:30 the shade sits where the evening left it.
             initial_position=int(window.options.get("sunset_position") or 0),
         )
+    # The entry starts at config version 1.1 (as the live house did before
+    # P1), so every replay runs the live options through migrations 1.2 and
+    # 1.3 (P3: fallbacks written, cover_entity_id) and the goldens pin the
+    # migrated windows.
+    assert (house.entry.version, house.entry.minor_version) == (
+        1,
+        CONFIG_ENTRY_MINOR_VERSION,
+    )
     house.sample()
     return house
 

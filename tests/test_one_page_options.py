@@ -180,8 +180,8 @@ async def test_regression_options_form_runs_every_cross_field_check(
     update and the window stops moving) and a blind spot whose right edge is
     left of its left edge. The wizard always rejected both. Ledger L0009.
     """
-    before = dict(vertical_config_entry.options)
     result = await _open_options(hass, vertical_config_entry)
+    before = dict(vertical_config_entry.options)  # as migrated at setup
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
         user_input={

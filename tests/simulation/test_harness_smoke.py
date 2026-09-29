@@ -45,6 +45,37 @@ async def test_eid_entity_sensor_accessors(hass, freezer):
     await house.teardown()
 
 
+async def test_two_covers_make_two_windows(hass, freezer):
+    """covers=[a, b] builds one window per cover (ADR 0002, plan P3).
+
+    Each window drives its own cover and has its own entities; ``cover=``
+    picks the window for the entity accessors (default: the first).
+    """
+    left, right = "cover.left", "cover.right"
+    house = await SimHouse.create(
+        hass, freezer, date="2026-03-20", covers=[left, right]
+    )
+    # Just after sunrise every 5-minute tick brings a new position.
+    await house.advance_to("07:40")
+
+    assert house.window(left).window_key != house.window(right).window_key
+    assert house.window(left).attributes["cover_entity"] == left
+    assert house.window(right).attributes["cover_entity"] == right
+    assert house.eid("sensor", "cover_position") == house.eid(
+        "sensor", "cover_position", cover=left
+    )
+    assert house.eid("sensor", "cover_position", cover=right) != house.eid(
+        "sensor", "cover_position", cover=left
+    )
+    # one window's control off leaves the other window tracking
+    await house.toggle("toggle_control", False, cover=left)
+    before = {cover: len(house.auto_moves(cover)) for cover in (left, right)}
+    await house.advance_to("08:30")
+    assert len(house.auto_moves(left)) == before[left]
+    assert len(house.auto_moves(right)) > before[right]
+    await house.teardown()
+
+
 # --------------------------------------------------- switch/select/button
 
 

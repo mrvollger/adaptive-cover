@@ -42,6 +42,13 @@ async def test_my_scenario(hass, freezer):
 
 - `date`, `location`, `step_minutes`, `covers`, `options`, `cover_type`,
   `initial_position`, `travel_seconds` — scenario shape.
+- `covers=[a, b]` creates **two windows**, one config entry per cover
+  (a window drives one cover: ADR 0002, plan P3). The windows share
+  `options` and `cover_type`; the first is "Sim House", the next
+  "Sim House 2", and so on. `house.entry` is the first window's entry,
+  `house.entries` all of them. A config entry that drives several covers
+  (from before P3) is not a SimHouse shape: its "split" repair and legacy
+  behavior are pinned in `tests/test_migration_1_3.py`.
 - `start_at="04:00"` — when the sim (and HA) starts. A daytime value
   (`"13:00"`) models HA starting mid-day with the sun already actionable,
   for startup/catch-up scenarios.
@@ -80,14 +87,16 @@ async def test_my_scenario(hass, freezer):
 ## Lifecycle
 
 - `await house.set_options(**changes)` — the user edits options in the UI:
-  merges into `entry.options`, waits for the reload, re-wins the fake cover
-  services, and keeps attributing commands to the rebuilt window. With no
-  changes it models saving the dialog unchanged (still a reload).
+  merges into every window's options, waits for the reloads, re-wins the
+  fake cover services, and keeps attributing commands to the rebuilt
+  windows. With no changes it models saving the dialog unchanged (still a
+  reload).
 - `await house.restart(at=None, restore=True, seed_states=None)` — HA
-  restart: optionally advance first, capture entity states, unload, seed
-  `mock_restore_cache` (or `seed_states={entity_id: "off"}` overrides;
-  `restore=False` skips capture so defaults apply), set up again on the
-  same entry. The timeline and shade states persist across the restart.
+  restart: optionally advance first, capture every window's entity states,
+  unload, seed `mock_restore_cache` (or `seed_states={entity_id: "off"}`
+  overrides; `restore=False` skips capture so defaults apply), set up
+  again on the same entries. The timeline and shade states persist across
+  the restart.
 
 ## Device faults
 
@@ -113,10 +122,13 @@ async def test_my_scenario(hass, freezer):
   (`adaptive_cover_moved` provenance), `commands`, and `teardowns`
   (entity unloads, i.e. reloads). Built before setup, so it also sees the
   startup command.
-- `house.eid(domain, key)` — resolve the entry's entities by unique-id
-  suffix via the entity registry (`"cover_position"`, `"toggle_control"`,
-  `"manual_override"`, `"climate_mode"`, `"reset_manual_override"`,
-  `"mode_select"`, `"sun_infront"`, ...).
+- `house.eid(domain, key, cover=None)` — resolve a window's entities by
+  unique-id suffix via the entity registry (`"cover_position"`,
+  `"toggle_control"`, `"manual_override"`, `"climate_mode"`,
+  `"reset_manual_override"`, `"mode_select"`, `"sun_infront"`, ...).
+  `cover` picks the window; the default is the first. The same `cover=`
+  keyword works on `entity`, `sensor_value`, `sensor_attr`, `toggle`,
+  `press` and `select_option`.
 - `house.entity(domain, key)` → `State | None`;
   `house.sensor_value(key="cover_position")` → state string;
   `house.sensor_attr(key, attr)` → one attribute (e.g.

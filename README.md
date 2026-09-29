@@ -87,7 +87,7 @@ series:
 - **Adaptive Control**
 
   - Turn control on/off
-  - Control multiple covers
+  - One window per cover; group control through Home Assistant areas and floors
   - Set start time to prevent opening blinds while you are asleep
   - Set minimum interval time between position changes
   - set minimum percentage change
@@ -208,7 +208,7 @@ This mode is split up in two types of strategies; [Presence](https://github.com/
 
 | Variables                     | Default | Range | Description                                                                                              |
 | ----------------------------- | ------- | ----- | -------------------------------------------------------------------------------------------------------- |
-| Entities                      | []      |       | Denotes entities controllable by the integration                                                         |
+| Cover                         |         |       | The one cover this window drives. A cover belongs to one window; add one window per cover                |
 | Window Azimuth                | 180     | 0-359 | The compass direction of the window, discoverable via [Open Street Map Compass](https://osmcompass.com/) |
 | Default Position              | 100     | 0-100 | Initial position of the cover in the absence of sunlight glare detection                                 |
 | Minimal Position              | 100     | 0-99  | Minimal opening position for the cover, suitable for partially closing certain cover types               |

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from typing import Any
+
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -26,6 +29,8 @@ from .const import (
     _LOGGER,
 )
 from .coordinator import AdaptiveDataUpdateCoordinator
+from .settings.normalize import normalize_cover
+from .window_cover import ERROR_ONE_COVER, cover_problem, window_using_cover
 
 PLATFORMS = [
     Platform.SENSOR,
@@ -76,6 +81,32 @@ def _resolve_entry(hass: HomeAssistant, reference: str) -> ConfigEntry:
         ):
             return candidate
     raise ServiceValidationError(f"No Adaptive Cover config entry '{reference}'")
+
+
+def _requested_covers(data: Mapping[str, Any]) -> list[str]:
+    """Return the add_entry call's covers: ``cover``, or the older ``covers``."""
+    if "cover" in data and "covers" in data:
+        raise ServiceValidationError(
+            "add_entry takes cover (one entity) or covers (a list), not both"
+        )
+    if "cover" in data:
+        return [data["cover"]]
+    covers = list(data.get("covers") or [])
+    if not covers:
+        raise ServiceValidationError("add_entry needs the window's cover (cover)")
+    return covers
+
+
+def _cover_problem_message(hass: HomeAssistant, problem: str, covers: list[str]) -> str:
+    """Explain why add_entry refused ``covers``."""
+    if problem == ERROR_ONE_COVER:
+        return (
+            f"A window drives exactly one cover; got {len(covers)} "
+            f"({', '.join(covers)}). Call add_entry once per cover."
+        )
+    owner = window_using_cover(hass, covers[0])
+    title = owner.title if owner is not None else "another window"
+    return f"{covers[0]} is already driven by the window '{title}'"
 
 
 def _async_register_services(hass: HomeAssistant) -> None:
@@ -143,11 +174,13 @@ def _async_register_services(hass: HomeAssistant) -> None:
         from homeassistant.config_entries import SOURCE_IMPORT
 
         name = call.data["name"]
-        covers = call.data["covers"]
+        covers = _requested_covers(call.data)
+        if problem := cover_problem(hass, covers):
+            raise ServiceValidationError(_cover_problem_message(hass, problem, covers))
         overrides = {
             key: value
             for key, value in call.data.items()
-            if key not in ("name", "covers", "copy_from", "sensor_type")
+            if key not in ("name", "cover", "covers", "copy_from", "sensor_type")
         }
         if copy_from := call.data.get("copy_from"):
             source = _resolve_entry(hass, copy_from)
@@ -160,6 +193,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
             sensor_type = call.data.get("sensor_type", "cover_blind")
         options.update(overrides)
         options[CONF_ENTITIES] = covers
+        options = normalize_cover(options)
 
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
@@ -198,6 +232,10 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     defaults) to the entry's existing registry rows; new rows get it from
     the entity classes. User choices are kept (see entity_surface).
 
+    1.2 -> 1.3 (P3): write the options' fallback values, the cover as
+    cover_entity_id, and the cover's registry id as unique_id (see
+    migration.py). The hub only gets the version bump.
+
     A newer MINOR version (after a downgrade) loads as is. A newer MAJOR
     version is refused.
     """
@@ -219,6 +257,14 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             "Migrated %s to 1.2: %s registry rows updated", entry.title, updated
         )
         hass.config_entries.async_update_entry(entry, minor_version=2)
+    if entry.minor_version < 3:
+        from .hub import is_hub_entry
+        from .migration import async_migrate_1_3
+
+        if is_hub_entry(entry):
+            hass.config_entries.async_update_entry(entry, minor_version=3)
+        else:
+            async_migrate_1_3(hass, entry)
     return True
 
 
@@ -231,6 +277,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if is_hub_entry(entry):
         await hass.config_entries.async_forward_entry_setups(entry, HUB_PLATFORMS)
         return True
+
+    # One cover per window (ADR 0002): the unique_id follows the cover, and
+    # an entry from before P3 with several covers gets a "split" issue.
+    from .migration import async_sync_unique_id
+    from .window_cover import async_check_split_issue
+
+    async_sync_unique_id(hass, entry)
+    async_check_split_issue(hass, entry)
 
     # Prime the timezone cache off-loop: the first construction reads a
     # zoneinfo file, and schedule math needs it inside the loop.
@@ -302,6 +356,15 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Drop a removed window's split issue, if it had one."""
+    from homeassistant.helpers import issue_registry as ir
+
+    from .window_cover import split_issue_id
+
+    ir.async_delete_issue(hass, DOMAIN, split_issue_id(entry.entry_id))
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:

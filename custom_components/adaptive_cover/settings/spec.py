@@ -39,6 +39,7 @@ from ..const import (
     CONF_BLIND_SPOT_LEFT,
     CONF_BLIND_SPOT_RIGHT,
     CONF_CLIMATE_MODE,
+    CONF_COVER_ENTITY,
     CONF_DEFAULT_HEIGHT,
     CONF_DELTA_POSITION,
     CONF_DELTA_TIME,
@@ -384,8 +385,10 @@ OPTS: Final[tuple[Opt, ...]] = (
         cover_types=AWNING_ONLY, default=0, min=0, max=45, step=1, unit="°",
         slider=True, wizard_required=True, service=_FLOAT_OPTIONAL,
         legacy=_ANY_NUMBER),
-    Opt(CONF_ENTITIES, Kind.ENTITY, Group.COVER, ONE, W,
-        default=[], domains=("cover",), multiple=True, cover_filter=True),
+    # One cover per window (ADR 0002); normalize.with_cover also writes it
+    # to CONF_ENTITIES (the internal row below).
+    Opt(CONF_COVER_ENTITY, Kind.ENTITY, Group.COVER, ONE, W,
+        domains=("cover",), cover_filter=True),
     Opt(CONF_HEIGHT_WIN, Kind.NUMBER, Group.COVER, ONE, W,
         cover_types=POSITION_COVER_TYPES, default=2.1, min=0.1, max=10,
         step=0.01, unit="m", slider=True, wizard_required=True, baseline=True,
@@ -567,6 +570,11 @@ OPTS: Final[tuple[Opt, ...]] = (
     # that shares the CONF_MODE key on the first page.
     Opt(CONF_MODE, Kind.INTERNAL, Group.NONE, Scope.INTERNAL, None,
         default=STRATEGY_MODE_BASIC, baseline=True),
+    # The cover again, as the list older versions read: written with
+    # cover_entity_id by settings/normalize.py until P8 (ADR 0002). Never on
+    # a form, but one-time window identity like the cover itself (the P5
+    # lift keeps it in the window's setup). [] is the runtime's fallback.
+    Opt(CONF_ENTITIES, Kind.INTERNAL, Group.NONE, ONE, W, default=[]),
 )
 # fmt: on
 

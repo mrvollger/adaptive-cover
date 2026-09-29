@@ -105,7 +105,7 @@ The truth table, the goldens and the house replay are review artifacts. If a cha
 The full harness API is in [`tests/simulation/README.md`](tests/simulation/README.md). The short version:
 
 1. Pick the file by topic, for example `test_manual_override_behavior.py`, `test_gates_and_windows.py` or `test_lifecycle.py`. The README's "File tour" helps.
-2. Build the house with `SimHouse.create(hass, freezer, date=..., covers=[...], options={...})`. Add `climate={...}` for climate mode and `start_at="13:00"` for a mid-day start.
+2. Build the house with `SimHouse.create(hass, freezer, date=..., covers=[...], options={...})`. Each cover gets its own window (one cover per window). Add `climate={...}` for climate mode and `start_at="13:00"` for a mid-day start.
 3. Drive time with `house.advance_to("HH:MM")`, and inputs with `house.user_moves(...)`, `house.set_temperature(...)`, `house.set_options(...)` or `house.restart(...)`.
 4. Assert on what a person would observe: `house.auto_moves(...)`, `house.moves(...)`, `house.position(...)` and entity states through `house.eid(...)` / `house.sensor_attr(...)`. Never hard-code entity_ids.
 5. End with `await house.teardown()`.

@@ -38,70 +38,32 @@ from .runtime.schedule import Schedule
 from .runtime.shade_config import ControlState, ControlToggle, ShadeConfig
 
 from .calculation import (
-    AdaptiveHorizontalCover,
-    AdaptiveTiltCover,
-    AdaptiveVerticalCover,
     ClimateCoverData,
     ClimateCoverState,
     NormalCoverState,
+    build_cover,
     build_day_forecast,
     get_state_reason,
 )
-from .engine.models import GlareModel, Overhang, PrivacyConfig
 from .sun import nearest_index
 from .const import (
     _LOGGER,
     ATTR_POSITION,
     ATTR_TILT_POSITION,
-    CONF_AWNING_ANGLE,
     CONF_AZIMUTH,
     CONF_BLIND_SPOT_ELEVATION,
-    CONF_BLIND_SPOT_LEFT,
-    CONF_BLIND_SPOT_RIGHT,
     CONF_CLIMATE_MODE,
     CONF_DEFAULT_HEIGHT,
-    CONF_DISTANCE,
-    CONF_ENABLE_BLIND_SPOT,
-    CONF_ENABLE_MAX_POSITION,
-    CONF_ENABLE_MIN_POSITION,
     CONF_FOV_LEFT,
     CONF_FOV_RIGHT,
-    CONF_HEIGHT_WIN,
     CONF_INTERP,
     CONF_INVERSE_STATE,
-    CONF_IRRADIANCE_ENTITY,
-    CONF_IRRADIANCE_THRESHOLD,
-    CONF_LENGTH_AWNING,
-    CONF_LUX_ENTITY,
-    CONF_LUX_THRESHOLD,
     CONF_MANUAL_IGNORE_INTERMEDIATE,
-    CONF_MAX_ELEVATION,
-    CONF_MAX_POSITION,
-    CONF_MIN_ELEVATION,
-    CONF_MIN_POSITION,
-    CONF_OCCUPIED_DISTANCE,
-    CONF_OVERHANG_DEPTH,
-    CONF_OVERHANG_HEIGHT,
-    CONF_EYE_HEIGHT,
-    CONF_PRIVACY_MODE,
-    CONF_PRIVACY_OFFSET,
-    CONF_PRIVACY_POSITION,
-    CONF_OUTSIDE_THRESHOLD,
-    CONF_OUTSIDETEMP_ENTITY,
-    CONF_PRESENCE_ENTITY,
     CONF_RETURN_SUNSET,
-    CONF_SUNRISE_OFFSET,
     CONF_SUNSET_OFFSET,
     CONF_SUNSET_POS,
-    CONF_TEMP_ENTITY,
     CONF_TEMP_HIGH,
     CONF_TEMP_LOW,
-    CONF_TILT_DEPTH,
-    CONF_TILT_DISTANCE,
-    CONF_TILT_MODE,
-    CONF_TRANSPARENT_BLIND,
-    CONF_WEATHER_ENTITY,
-    CONF_WEATHER_STATE,
     DOMAIN,
     LOGGER,
 )
@@ -579,7 +541,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self._update_options(options)
 
         # Get data for the blind
-        cover_data = self.get_blind_data(options=options)
+        cover_data = self.get_blind_data()
 
         # Update manager with covers
         self._update_manager_and_covers()
@@ -631,9 +593,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         climate_data_for_reason = None
         if self._climate_mode and self.controls.climate:
             try:
-                climate_data_for_reason = ClimateCoverData(
-                    *self.get_climate_data(options)
-                )
+                climate_data_for_reason = self._climate_data()
             except Exception:  # noqa: BLE001
                 climate_data_for_reason = None
 
@@ -1162,57 +1122,24 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             for entity in self.manager.manual_controlled:
                 self.manager.reset(entity)
 
-    def get_blind_data(self, options):
-        """Assign correct class for type of blind."""
-        if self._cover_type == "cover_blind":
-            cover_data = AdaptiveVerticalCover(
-                self.hass,
-                self.logger,
-                *self.pos_sun,
-                *self.common_data(options),
-                *self.vertical_data(options),
-            )
-        if self._cover_type == "cover_awning":
-            cover_data = AdaptiveHorizontalCover(
-                self.hass,
-                self.logger,
-                *self.pos_sun,
-                *self.common_data(options),
-                *self.vertical_data(options),
-                *self.horizontal_data(options),
-            )
-        if self._cover_type == "cover_tilt":
-            cover_data = AdaptiveTiltCover(
-                self.hass,
-                self.logger,
-                *self.pos_sun,
-                *self.common_data(options),
-                *self.tilt_data(options),
-            )
-        self._apply_extended_config(cover_data, options)
-        return cover_data
+    def get_blind_data(self, options=None):
+        """Build the cover adapter for this window's type.
 
-    def _apply_extended_config(self, cover_data, options) -> None:
-        """Attach overhang / glare / privacy config to the cover adapter."""
-        depth = options.get(CONF_OVERHANG_DEPTH)
-        height = options.get(CONF_OVERHANG_HEIGHT)
-        if depth and height and self._cover_type == "cover_blind":
-            cover_data.overhang = Overhang(depth=depth, height_above_sill=height)
-        eye_height = options.get(CONF_EYE_HEIGHT)
-        occupied = options.get(CONF_OCCUPIED_DISTANCE)
-        if eye_height and occupied and self._cover_type == "cover_blind":
-            cover_data.glare = GlareModel(
-                eye_height=eye_height, occupied_distance=occupied
-            )
-        if options.get(CONF_PRIVACY_MODE):
-            _privacy_offset = options.get(CONF_PRIVACY_OFFSET)
-            cover_data.privacy = PrivacyConfig(
-                enabled=True,
-                # explicit None check: an offset of 0 ("close right at
-                # sunset") must not be coerced to the 30-minute default
-                offset_min=30 if _privacy_offset is None else _privacy_offset,
-                position=options.get(CONF_PRIVACY_POSITION, 0) or 0,
-            )
+        From this refresh's options, or from ``options`` when given.
+        """
+        geometry = (
+            self.config.geometry
+            if options is None
+            else ShadeConfig.from_options(options).geometry
+        )
+        return build_cover(
+            self._cover_type,
+            self.hass,
+            self.logger,
+            geometry,
+            sun=self.pos_sun,
+            timezone=self.hass.config.time_zone,
+        )
 
     def _now_local(self) -> dt.datetime:
         """Naive wall time in HA's CONFIGURED timezone.
@@ -1263,56 +1190,19 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             get_safe_attr(self.hass, "sun.sun", "elevation"),
         ]
 
-    def common_data(self, options):
-        """Update shared parameters."""
-        return [
-            options.get(CONF_SUNSET_POS),
-            options.get(CONF_SUNSET_OFFSET),
-            options.get(CONF_SUNRISE_OFFSET, options.get(CONF_SUNSET_OFFSET)),
-            self.hass.config.time_zone,
-            options.get(CONF_FOV_LEFT),
-            options.get(CONF_FOV_RIGHT),
-            options.get(CONF_AZIMUTH),
-            options.get(CONF_DEFAULT_HEIGHT),
-            options.get(CONF_MAX_POSITION),
-            options.get(CONF_MIN_POSITION),
-            options.get(CONF_ENABLE_MAX_POSITION, False),
-            options.get(CONF_ENABLE_MIN_POSITION, False),
-            options.get(CONF_BLIND_SPOT_LEFT),
-            options.get(CONF_BLIND_SPOT_RIGHT),
-            options.get(CONF_BLIND_SPOT_ELEVATION),
-            options.get(CONF_ENABLE_BLIND_SPOT, False),
-            options.get(CONF_MIN_ELEVATION, None),
-            options.get(CONF_MAX_ELEVATION, None),
-        ]
-
-    def get_climate_data(self, options):
-        """Update climate data."""
-        return [
+    def _climate_data(self) -> ClimateCoverData:
+        """Build the climate adapter from the options and switch toggles."""
+        return ClimateCoverData.from_config(
             self.hass,
             self.logger,
-            options.get(CONF_TEMP_ENTITY),
-            options.get(CONF_TEMP_LOW),
-            options.get(CONF_TEMP_HIGH),
-            options.get(CONF_PRESENCE_ENTITY),
-            options.get(CONF_WEATHER_ENTITY),
-            options.get(CONF_WEATHER_STATE),
-            options.get(CONF_OUTSIDETEMP_ENTITY),
-            self.controls.outside_temp,
+            self.config.climate,
+            self.controls,
             self._cover_type,
-            options.get(CONF_TRANSPARENT_BLIND),
-            options.get(CONF_LUX_ENTITY),
-            options.get(CONF_IRRADIANCE_ENTITY),
-            options.get(CONF_LUX_THRESHOLD),
-            options.get(CONF_IRRADIANCE_THRESHOLD),
-            options.get(CONF_OUTSIDE_THRESHOLD),
-            self.controls.lux,
-            self.controls.irradiance,
-        ]
+        )
 
     def climate_mode_data(self, options, cover_data):
         """Update climate mode data and control method."""
-        climate = ClimateCoverData(*self.get_climate_data(options))
+        climate = self._climate_data()
         self._climate_decision = ClimateCoverState(cover_data, climate).get_decision()
         self.climate_state = round(self._climate_decision.position)
         climate_data = ClimateCoverState(cover_data, climate).climate_data
@@ -1327,28 +1217,6 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.logger.debug(
             "Climate mode control method was set to %s", self.control_method
         )
-
-    def vertical_data(self, options):
-        """Update data for vertical blinds."""
-        return [
-            options.get(CONF_DISTANCE),
-            options.get(CONF_HEIGHT_WIN),
-        ]
-
-    def horizontal_data(self, options):
-        """Update data for horizontal blinds."""
-        return [
-            options.get(CONF_LENGTH_AWNING),
-            options.get(CONF_AWNING_ANGLE),
-        ]
-
-    def tilt_data(self, options):
-        """Update data for tilted blinds."""
-        return [
-            options.get(CONF_TILT_DISTANCE),
-            options.get(CONF_TILT_DEPTH),
-            options.get(CONF_TILT_MODE),
-        ]
 
     @property
     def state(self) -> int:

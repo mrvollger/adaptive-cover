@@ -51,7 +51,7 @@
           "enable_max_position": "Only force the maximum position when the sun is in front of the window",
           "fov_left": "Field of view left",
           "fov_right": "Field of view right",
-          "group": "Cover Entities",
+          "cover_entity_id": "Cover",
           "inverse_state": "Inverse the state (needed for some covers that don't follow HA guidelines)",
           "sunset_position": "Sunset Position",
           "sunset_offset": "Sunset Offset",
@@ -75,7 +75,7 @@
           "max_position": "Maximum adjustable cover position as a percentage",
           "fov_left": "Field of view angle to the left of the window center",
           "fov_right": "Field of view angle to the right of the window center",
-          "group": "Select entities to control via integration",
+          "cover_entity_id": "The cover this window drives. A window drives one cover; a cover belongs to one window.",
           "sunset_position": "Position to switch to after sunset",
           "sunset_offset": "Offset (±) from sunset time in minutes",
           "sunrise_offset": "Offset (±) from sunrise time in minutes",
@@ -137,7 +137,7 @@
           "enable_max_position": "Only force the maximum position when the sun is in front of the window",
           "fov_left": "Field of view left",
           "fov_right": "Field of view right",
-          "group": "Cover Entities",
+          "cover_entity_id": "Cover",
           "inverse_state": "Inverse the state (needed for some covers that don't follow HA guidelines)",
           "sunset_position": "Sunset Position",
           "sunset_offset": "Sunset Offset",
@@ -163,7 +163,7 @@
           "max_position": "Maximum adjustable cover position as a percentage",
           "fov_left": "Field of view degrees to the left of the window center",
           "fov_right": "Field of view degrees to the right of the window center",
-          "group": "Select entities to control via integration",
+          "cover_entity_id": "The cover this window drives. A window drives one cover; a cover belongs to one window.",
           "sunset_position": "Position to switch to after sunset",
           "sunset_offset": "Offset (±) from sunset time in minutes",
           "sunrise_offset": "Offset (±) from sunrise time in minutes",
@@ -184,7 +184,7 @@
           "enable_max_position": "Only force the maximum position when the sun is in front of the window",
           "fov_left": "Field of view left",
           "fov_right": "Field of view right",
-          "group": "Cover Entities",
+          "cover_entity_id": "Cover",
           "inverse_state": "Inverse the state (needed for some covers that don't follow HA guidelines)",
           "sunset_position": "Sunset Position",
           "sunset_offset": "Sunset Offset",
@@ -205,7 +205,7 @@
           "max_position": "Maximum adjustable cover position as a percentage",
           "fov_left": "Degrees to consider from the left side of the window center",
           "fov_right": "Degrees to consider from the right side of the window center",
-          "group": "Select entities to control via integration",
+          "cover_entity_id": "The cover this window drives. A window drives one cover; a cover belongs to one window.",
           "sunset_position": "Position to transition to after sunset",
           "sunset_offset": "Offset (±) from sunset time in minutes",
           "sunrise_offset": "Offset (±) from sunrise time in minutes",
@@ -247,7 +247,11 @@
     "error": {
       "max_elevation_not_above_min": "The maximum elevation must be greater than the minimum elevation.",
       "blind_spot_right_not_above_left": "The blind spot's right edge must be greater than its left edge.",
-      "interp_lists_differ": "The custom interpolation list must have as many values as the interpolation list."
+      "interp_lists_differ": "The custom interpolation list must have as many values as the interpolation list.",
+      "cover_in_use": "Another window already drives this cover. A cover belongs to one window."
+    },
+    "abort": {
+      "already_configured": "A window for this cover already exists."
     }
   },
   "options": {
@@ -255,10 +259,10 @@
       "init": {
         "sections": {
           "covers_geometry": {
-            "name": "Covers & window geometry",
-            "description": "Cover entities, window height, shaded depth, overhang depth/height, eye height, seat distance.",
+            "name": "Cover & window geometry",
+            "description": "Cover entity, window height, shaded depth, overhang depth/height, eye height, seat distance.",
             "data": {
-              "group": "Cover Entities",
+              "cover_entity_id": "Cover",
               "window_height": "Window Height",
               "distance_shaded_area": "Glare Zone",
               "overhang_depth": "Overhang depth (balcony/eave above window)",
@@ -272,7 +276,7 @@
               "tilt_mode": "Type of movement"
             },
             "data_description": {
-              "group": "Select entities to control via integration",
+              "cover_entity_id": "The cover this window drives. A window drives one cover; a cover belongs to one window.",
               "window_height": "Specify window height in meters",
               "distance_shaded_area": "Objects within this distance from the cover receive direct sunlight. Distance measured horizontally from the bottom of the cover when the cover is fully extended.",
               "length_awning": "Total span length in meters",
@@ -400,7 +404,8 @@
     "error": {
       "max_elevation_not_above_min": "The maximum elevation must be greater than the minimum elevation.",
       "blind_spot_right_not_above_left": "The blind spot's right edge must be greater than its left edge.",
-      "interp_lists_differ": "The custom interpolation list must have as many values as the interpolation list."
+      "interp_lists_differ": "The custom interpolation list must have as many values as the interpolation list.",
+      "cover_in_use": "Another window already drives this cover. A cover belongs to one window."
     }
   },
   "selector": {
@@ -504,6 +509,22 @@
       },
       "temp_toggle": {
         "name": "Outside temperature"
+      }
+    }
+  },
+  "issues": {
+    "split_window": {
+      "title": "{window} drives several covers",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Split {window} into one window per cover",
+            "description": "A window drives one cover. {window} keeps {kept}. New windows with a copy of its settings: {new_windows}. Removed because another window drives them: {dropped}."
+          }
+        },
+        "abort": {
+          "entry_removed": "This window no longer exists."
+        }
       }
     }
   }

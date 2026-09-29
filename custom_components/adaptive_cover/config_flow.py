@@ -3,6 +3,10 @@
 The wizard pages and the options form come from the option spec
 (settings/spec.py, built by settings/schema.py); this module routes
 between pages and runs the cross-field checks (settings/validate.py).
+
+A window drives one cover (ADR 0002): the wizard and the options form
+refuse a cover another window drives (window_cover.cover_problem), and a
+new entry's unique_id is its cover's entity-registry id.
 """
 
 from __future__ import annotations
@@ -23,6 +27,7 @@ from homeassistant.helpers import selector
 from .const import (
     _LOGGER,
     CONF_CLIMATE_MODE,
+    CONF_COVER_ENTITY,
     CONF_ENABLE_BLIND_SPOT,
     CONF_FOV_LEFT,
     CONF_FOV_RIGHT,
@@ -46,6 +51,7 @@ from .settings.schema import (
     wizard_schema,
     wizard_type_schema,
 )
+from .settings.normalize import normalize_cover, window_cover, with_cover
 from .settings.spec import OPTS_BY_KEY
 from .settings.validate import (
     blind_spot_order,
@@ -53,6 +59,7 @@ from .settings.validate import (
     elevation_order,
     interp_lengths,
 )
+from .window_cover import cover_problem, cover_registry_id
 
 SENSOR_TYPE_MENU = [SensorType.BLIND, SensorType.AWNING, SensorType.TILT]
 
@@ -117,6 +124,8 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         from .hub import CONF_IS_HUB, HUB_ENTRY_NAME, HUB_UNIQUE_ID
 
         if import_data and import_data.get("name") and not import_data.get(CONF_IS_HUB):
+            options = normalize_cover(import_data.get("options", {}))
+            await self._async_set_cover_unique_id(window_cover(options))
             return self.async_create_entry(
                 title=import_data["name"],
                 data={
@@ -125,7 +134,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                         CONF_SENSOR_TYPE, SensorType.BLIND
                     ),
                 },
-                options=dict(import_data.get("options", {})),
+                options=options,
             )
 
         await self.async_set_unique_id(HUB_UNIQUE_ID)
@@ -135,6 +144,13 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             data={"name": HUB_ENTRY_NAME, CONF_IS_HUB: True},
             options={},
         )
+
+    async def _async_set_cover_unique_id(self, cover: str | None) -> None:
+        """Key the new entry by its cover's registry id; abort a duplicate."""
+        await self.async_set_unique_id(
+            cover_registry_id(self.hass, cover), raise_on_progress=False
+        )
+        self._abort_if_unique_id_configured()
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         """Handle the initial step."""
@@ -153,7 +169,11 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         step_id = TYPE_STEPS[cover_type]
         schema = wizard_type_schema(cover_type, _temperature_unit(self.hass))
         if user_input is not None:
-            if errors := elevation_order(user_input):
+            errors = elevation_order(user_input)
+            cover = user_input.get(CONF_COVER_ENTITY)
+            if problem := cover_problem(self.hass, [cover] if cover else []):
+                errors[CONF_COVER_ENTITY] = problem
+            if errors:
                 return self.async_show_form(
                     step_id=step_id, data_schema=schema, errors=errors
                 )
@@ -249,6 +269,9 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         # Defaults for keys whose collecting step may not have run.
         for key in _WIZARD_FILLED_DEFAULTS:
             options[key] = self.config.get(key, copy.deepcopy(OPTS_BY_KEY[key].default))
+        cover = self.config.get(CONF_COVER_ENTITY)
+        options = with_cover(options, cover)
+        await self._async_set_cover_unique_id(cover)
         return self.async_create_entry(
             title=self.config["name"],
             data={
@@ -268,6 +291,7 @@ class OptionsFlowHandler(OptionsFlow):
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         """Initialize options flow."""
+        self._entry_id = config_entry.entry_id
         self.current_config: dict = dict(config_entry.data)
         self.options = dict(config_entry.options)
         self.sensor_type: str = (
@@ -280,7 +304,9 @@ class OptionsFlowHandler(OptionsFlow):
         return options_section_fields(
             self.sensor_type,
             climate_on=bool(self.options.get(CONF_CLIMATE_MODE)),
-            options=self.options,
+            # The cover field shows the cover the window drives (none for
+            # an entry from before P3 with several: the split repair fixes it).
+            options={**self.options, CONF_COVER_ENTITY: window_cover(self.options)},
             temperature_unit=_temperature_unit(self.hass),
         )
 
@@ -303,8 +329,14 @@ class OptionsFlowHandler(OptionsFlow):
                 if key not in flat:
                     flat[key] = None
             # The wizard's cross-field checks, on the options as they would
-            # be saved.
-            if errors := cross_field_errors({**self.options, **flat}):
+            # be saved; and no cover another window drives.
+            errors = cross_field_errors({**self.options, **flat})
+            if cover := flat.get(CONF_COVER_ENTITY):
+                if problem := cover_problem(
+                    self.hass, [cover], exclude_entry_id=self._entry_id
+                ):
+                    errors[CONF_COVER_ENTITY] = problem
+            if errors:
                 return self.async_show_form(
                     step_id="init",
                     data_schema=self._build_schema(section_fields),
@@ -328,6 +360,8 @@ class OptionsFlowHandler(OptionsFlow):
                     cleared,
                 )
             self.options.update(flat)
+            if CONF_COVER_ENTITY in flat:
+                self.options = with_cover(self.options, flat[CONF_COVER_ENTITY])
             return await self._update_options()
 
         return self.async_show_form(

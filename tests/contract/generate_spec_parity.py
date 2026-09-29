@@ -381,7 +381,9 @@ async def _walk_services(obs: Observations) -> None:
         hass = _fake_hass(
             unit,
             services=services,
-            config_entries=SimpleNamespace(flow=flows),
+            config_entries=SimpleNamespace(
+                flow=flows, async_entries=lambda *_a, **_kw: []
+            ),
         )
         _async_register_services(hass)
         for name in ("change_settings", "add_entry"):
@@ -398,12 +400,12 @@ async def _walk_services(obs: Observations) -> None:
 
         # The baseline an entry gets from add_entry without copy_from.
         handler, _schema = services.registered["add_entry"]
-        await handler(
-            SimpleNamespace(data={"name": "Spec parity", "covers": ["cover.x"]})
-        )
+        await handler(SimpleNamespace(data={"name": "Spec parity", "cover": "cover.x"}))
         (created,) = flows.created
         baseline = dict(created["options"])
-        baseline.pop("group", None)  # the covers argument, not a default
+        # the cover argument (both keys), not a default
+        baseline.pop("group", None)
+        baseline.pop("cover_entity_id", None)
         for key, value in baseline.items():
             obs.add_field("add_entry.baseline", key, {"default": _num(value)}, ctx)
         obs.forms["add_entry.baseline"].update(

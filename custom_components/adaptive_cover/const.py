@@ -8,8 +8,11 @@ DOMAIN = "adaptive_cover"
 # code loads the entry as is); async_migrate_entry in __init__.py upgrades.
 #   1.2 (P1): entity categories and disabled defaults applied to existing
 #             registry rows.
+#   1.3 (P3): fallback values written into the options, the cover written
+#             as cover_entity_id (group kept), unique_id = the cover's
+#             entity-registry id (migration.py).
 CONFIG_ENTRY_VERSION = 1
-CONFIG_ENTRY_MINOR_VERSION = 2
+CONFIG_ENTRY_MINOR_VERSION = 3
 LOGGER = logging.getLogger(__package__)
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,6 +26,9 @@ CONF_DISTANCE = "distance_shaded_area"
 CONF_DEFAULT_HEIGHT = "default_percentage"
 CONF_FOV_LEFT = "fov_left"
 CONF_FOV_RIGHT = "fov_right"
+# The window's cover (one per window, ADR 0002). Until P8 every writer
+# also stores it as CONF_ENTITIES = [cover], which older versions read.
+CONF_COVER_ENTITY = "cover_entity_id"
 CONF_ENTITIES = "group"
 CONF_HEIGHT_AWNING = "height_awning"
 CONF_LENGTH_AWNING = "length_awning"

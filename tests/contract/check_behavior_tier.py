@@ -101,6 +101,11 @@ RULES: list[tuple[str, str]] = [
     ("tests/replay/test_house_snapshot.py::*", TOOLING),
     ("tests/test_translations.py::*", BEHAVIOR),
     ("tests/test_entity_surface_v2.py::*", BEHAVIOR),  # P1 entity surface (C1)
+    ("tests/test_one_cover_per_window.py::*", BEHAVIOR),  # P3 one cover (C4)
+    # P3 config migration 1.3 on the live snapshot. "No runtime read
+    # changes" is checked with ShadeConfig.from_options, P3's resolve();
+    # P5 re-targets it to settings/resolve.py.
+    ("tests/test_migration_1_3.py::*", BEHAVIOR),
     # P5 layered settings: `resolve` is a contract v2 seam (ADR 0004).
     # Precedence, provenance, the lift's rules and the P5 guarantee on the
     # live snapshot (resolve(w) == legacy_flat(w)) are behavior; the purity
@@ -116,6 +121,7 @@ RULES: list[tuple[str, str]] = [
     ("tests/settings/*", IMPLEMENTATION),
     ("tests/test_coordinator.py::*", IMPLEMENTATION),
     ("tests/test_calculation.py::*", IMPLEMENTATION),
+    ("tests/test_cover_adapters.py::*", IMPLEMENTATION),  # P3 adapter factory
     ("tests/test_button.py::*", IMPLEMENTATION),
     ("tests/test_helpers.py::*", IMPLEMENTATION),
     # P2 clock seam: injects through coordinator.default_clock, which P4

@@ -34,7 +34,7 @@ A Home Assistant custom integration that automatically positions window blinds, 
 custom_components/adaptive_cover/
 ├── __init__.py              # Entry point: platform setup, services, event listeners
 ├── coordinator.py           # Core: update loop, gates, cover service calls, manual override tracking
-├── calculation.py           # HA adapters: build engine inputs, delegate to engine/
+├── calculation.py           # HA adapters built from ShadeConfig (build_cover): engine inputs, delegate to engine/
 ├── engine/                  # Pure math and strategy (no HA imports, no clock reads; pyright strict)
 │   ├── models.py            # Typed inputs/outputs (CoverConfig, SunSnapshot, Decision, ...)
 │   ├── geometry.py          # Gamma/FOV/elevation, per-cover-type %, overhang, glare-safe height
@@ -42,7 +42,7 @@ custom_components/adaptive_cover/
 │   └── evaluate.py          # evaluate(config, sun, ctx, climate=None) -> Decision
 ├── runtime/                 # Runtime building blocks (P2: the clock; P4: the coordinator split; pyright strict)
 │   ├── clock.py             # Clock protocol + HassClock: the only module that reads "now"
-│   ├── shade_config.py      # ShadeConfig (typed per-refresh options), ControlState (switch toggles)
+│   ├── shade_config.py      # ShadeConfig (typed options incl. CoverGeometry/ClimateOptions, one fallback per key: ABSENT), ControlState
 │   ├── schedule.py          # Schedule: start/end time window (no hass; state reader + "now" passed in)
 │   ├── gates.py             # GatePolicy: delta/time/quiet/budget gates and their order (no hass)
 │   ├── command_tracker.py   # CommandTracker: commands in flight, travel latch, late delivery, arrival polls
@@ -55,7 +55,11 @@ custom_components/adaptive_cover/
 ├── settings/                # One option spec; every settings surface is built from it (P3)
 │   ├── spec.py              # OPTS: one row per option (kind, default, range, unit, one-time/recurring, surfaces, legacy drift)
 │   ├── schema.py            # Wizard pages, options sections, service schemas, number ranges
+│   ├── normalize.py         # The window's one cover: cover_entity_id + group: [cover] (both written until P8)
 │   └── validate.py          # Cross-field checks (elevation order, blind-spot order, interp lists)
+├── window_cover.py          # One cover per window (ADR 0002): cover_problem guard, registry-id unique_id, split issue
+├── migration.py             # Config entry 1.3: fallbacks written into options, cover_entity_id, unique_id
+├── repairs.py               # Fix flow of the "split" issue (multi-cover entry -> one window per cover)
 ├── const.py                 # All config keys, defaults, enums
 ├── hub.py                   # "Adaptive Cover All" hub device (all-shades cover, house mode select, reset-all button)
 ├── cover.py                 # Cover platform: only the hub's aggregate cover
@@ -89,8 +93,8 @@ tests/
 ├── simulation/              # SimHouse full-day replays (README.md = harness API)
 ├── replay/                  # House-replay goldens: real configs x 6 dates (added in P0)
 ├── contract/                # behavior_tier_ids.txt, ledger.md, check_behavior_tier.py (P0); spec_parity.json (P3)
-├── settings/                # Option spec: plan's one-time/recurring table, drift list, form->service round trip
-├── mutation_set/            # One patch per mutation (M01–M56), make_patches.py, run_mutations.py
+├── settings/                # Option spec: plan's one-time/recurring table, drift list, wizard<->options<->service<->normalize round trip
+├── mutation_set/            # One patch per mutation (manifest.json lists them), make_patches.py, run_mutations.py
 ├── refactor_roadmap.json    # Contract v1: behavior-tier seams, mutation table, acceptance bar
 └── test_*.py                # Entity-surface tier: config flow, services, entities, hub
 ```
@@ -183,6 +187,14 @@ schemas and the number entities comes from `settings/spec.py`;
 `tests/contract/spec_parity.json` pins what each surface shows
 (regenerate with `tests/contract/generate_spec_parity.py`, ledger the diff).
 
+One cover per window (ADR 0002, P3): the cover field is `cover_entity_id`
+(single select). Every writer also stores `group: [cover]`, which the
+runtime still reads (older versions write only `group`). The wizard, the
+options form and `add_entry` (`cover`, or the older `covers` with one item)
+refuse a cover another enabled window drives (`window_cover.cover_problem`).
+A new entry's unique_id is its cover's entity-registry id. An entry with
+several covers keeps working and gets a fixable `split_window` repair issue.
+
 ## Solar Algorithm Details
 
 ### Gamma (Relative Sun Angle)
@@ -231,8 +243,11 @@ friendly names read "<Device> <Role>". Unique_id suffixes (in parentheses)
 are frozen; categories and default visibility come from one table in
 `entity_surface.py` (refactor plan, "Entity surface"; P1). Config entry
 1.1 -> 1.2 (`async_migrate_entry`) applies the table to existing registry
-rows without overriding user choices. At setup the window device copies
-the physical cover's area if it has none.
+rows without overriding user choices. 1.2 -> 1.3 (P3, `migration.py`)
+writes every option the entry reads through a code fallback into its
+options, the cover as `cover_entity_id`, and the cover's registry id as
+unique_id. At setup the window device copies the physical cover's area if
+it has none.
 
 | Platform | Name (unique_id suffix) | Visibility | Purpose |
 |----------|-------------------------|------------|---------|
