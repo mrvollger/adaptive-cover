@@ -5,6 +5,7 @@ from __future__ import annotations
 from homeassistant import data_entry_flow
 import pytest
 
+from tests.window_handle import window_settings
 from custom_components.adaptive_cover.const import (
     CONF_CLIMATE_MODE,
     CONF_DISTANCE,
@@ -87,8 +88,10 @@ async def test_submit_flattens_sections_and_preserves_rest(
     options = vertical_config_entry.options
     # Flat keys, no section nesting
     assert options[CONF_HEIGHT_WIN] == 2.44
-    assert options[CONF_EYE_HEIGHT] == 1.2
     assert options[CONF_PRIVACY_MODE] is True
+    # A recurring setting is the window's own value (P5 flip: an override).
+    settings = await window_settings(hass, vertical_config_entry.entry_id)
+    assert settings[CONF_EYE_HEIGHT] == 1.2
     assert "covers_geometry" not in options
     # Untouched pre-existing option preserved
     assert options["set_azimuth"] == 180

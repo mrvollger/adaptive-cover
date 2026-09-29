@@ -40,6 +40,7 @@ from custom_components.adaptive_cover.settings.schema import add_entry_baseline
 
 from .conftest import COMMON_OPTIONS
 from .window_form import start_add
+from .window_handle import window_settings
 
 COVER = "cover.test_cover"
 TEMP = "sensor.room_temp"
@@ -283,7 +284,7 @@ async def test_regression_thresholds_unit_aware_everywhere(
         blocking=True,
     )
     await hass.async_block_till_done()
-    assert entry.options[CONF_TEMP_LOW] == inside
+    assert (await window_settings(hass, entry.entry_id))[CONF_TEMP_LOW] == inside
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
             DOMAIN,
@@ -291,4 +292,4 @@ async def test_regression_thresholds_unit_aware_everywhere(
             {"config_entry": entry.entry_id, CONF_TEMP_LOW: outside},
             blocking=True,
         )
-    assert entry.options[CONF_TEMP_LOW] == inside
+    assert (await window_settings(hass, entry.entry_id))[CONF_TEMP_LOW] == inside

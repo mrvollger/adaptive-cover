@@ -1,8 +1,9 @@
 """Number platform: live tunables that skip the options-flow wizard.
 
-Each number writes straight into the config entry's options; the entry
-reloads and the new value takes effect within seconds. The wizard shows
-the same values, so there is one source of truth.
+Each number shows the value the window acts on and writes the window's
+own value (P5 flip, ``layers.async_write_window``): a recurring setting
+becomes a window override (sparse), a one-time one (the overhang) goes to
+the options and reloads the window.
 
 Range, step, unit and unset-default come from the option spec
 (settings/spec.py); this module owns only each number's name, icon and
@@ -34,6 +35,7 @@ from .const import (
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info
 from .entity_surface import apply_surface, window_surface
+from .layers import async_write_window
 from .settings.schema import NumberShape, number_shape
 
 
@@ -96,7 +98,7 @@ async def async_setup_entry(
     """Set up number entities for one config entry."""
     coordinator: AdaptiveDataUpdateCoordinator = config_entry.runtime_data
     is_blind = config_entry.data.get(CONF_SENSOR_TYPE) == SensorType.BLIND
-    is_climate = bool(config_entry.options.get(CONF_CLIMATE_MODE))
+    is_climate = bool(coordinator.options.get(CONF_CLIMATE_MODE))
     # Climate thresholds are stored and compared in HA's temperature unit,
     # so their numbers show that unit with a range that fits it.
     temperature_unit = hass.config.units.temperature_unit
@@ -152,14 +154,11 @@ class AdaptiveCoverNumber(
         default (eye height, overhang) legitimately show empty until set -
         setting them is how the feature is enabled.
         """
-        value = self._config_entry.options.get(self._spec.key)
+        value = self.coordinator.options.get(self._spec.key)
         if value is None:
             return self._default
         return value
 
     async def async_set_native_value(self, value: float) -> None:
-        """Persist into entry options; the update listener reloads the entry."""
-        new_options = {**self._config_entry.options, self._spec.key: value}
-        self.hass.config_entries.async_update_entry(
-            self._config_entry, options=new_options
-        )
+        """Store the window's value; its update listener applies it."""
+        async_write_window(self.hass, self._config_entry, {self._spec.key: value})

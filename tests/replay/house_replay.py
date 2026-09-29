@@ -352,6 +352,10 @@ async def _create(hass, freezer, window: Window, date: str) -> ReplayHouse:
         1,
         CONFIG_ENTRY_MINOR_VERSION,
     )
+    # P5 flip: the hub lifted the window (a hub created at 1.4 or later
+    # lifts itself), so the goldens pin the window acting on its resolved
+    # layered settings; a window that is not lifted has no provenance.
+    assert house.windows[window.cover].attributes.get("provenance") is not None
     house.sample()
     return house
 

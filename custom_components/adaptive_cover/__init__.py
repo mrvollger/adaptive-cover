@@ -161,6 +161,8 @@ def _async_register_services(hass: HomeAssistant) -> None:
     temperature_unit = hass.config.units.temperature_unit
 
     async def handle_change_settings(call: ServiceCall) -> ServiceResponse:
+        from .layers import window_options_after
+
         entry = _resolve_entry(hass, call.data["config_entry"])
         changes = {k: v for k, v in call.data.items() if k != "config_entry"}
         if not changes:
@@ -174,7 +176,9 @@ def _async_register_services(hass: HomeAssistant) -> None:
             update_kwargs["data"] = {**entry.data, "name": new_name}
             update_kwargs["title"] = new_name
         if changes:
-            update_kwargs["options"] = {**entry.options, **changes}
+            # P5 flip: one-time settings go to the options, recurring ones
+            # to the window's overrides (sparse; layers.py).
+            update_kwargs["options"] = window_options_after(hass, entry, changes)
         hass.config_entries.async_update_entry(entry, **update_kwargs)
         if new_name and not changes:
             # Options updates reload via the update listener; a pure rename
@@ -204,14 +208,18 @@ def _async_register_services(hass: HomeAssistant) -> None:
             for key, value in call.data.items()
             if key not in ("name", "cover", "covers", "copy_from", "sensor_type")
         }
+        from .layers import copied_options, new_window_values
+
         if copy_from := call.data.get("copy_from"):
             source = _resolve_entry(hass, copy_from)
-            options = dict(source.options)
+            # What the source acts on (P5 flip: its resolved settings).
+            options = copied_options(hass, source)
             sensor_type = call.data.get(
                 "sensor_type", source.data.get("sensor_type", "cover_blind")
             )
         else:
-            options = add_entry_baseline()
+            # The house's settings over the baseline: a new window inherits.
+            options = {**add_entry_baseline(), **new_window_values(hass)}
             sensor_type = call.data.get("sensor_type", "cover_blind")
         options.update(overrides)
         options[CONF_ENTITIES] = covers
@@ -336,6 +344,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
 
     if is_hub_entry(entry):
+        # A house that was never lifted (a hub created at 1.4 or later)
+        # lifts itself; its windows act on the same values afterwards.
+        from .shadow import async_ensure_lifted
+
+        async_ensure_lifted(hass)
         await hass.config_entries.async_forward_entry_setups(entry, HUB_PLATFORMS)
         return True
 
@@ -353,12 +366,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.async_add_executor_job(cached_timezone, hass.config.time_zone)
 
+    # P5 flip: the window acts on its layered settings (layers.py). Record
+    # it, lift the house if it never was, adopt the window if it has no
+    # overrides of its own, then build the runtime on the resolved values.
+    from . import shadow
+
+    shadow.async_setup_window(hass, entry)
     coordinator = AdaptiveDataUpdateCoordinator(hass)
-    _temp_entity = entry.options.get(CONF_TEMP_ENTITY)
-    _presence_entity = entry.options.get(CONF_PRESENCE_ENTITY)
-    _weather_entity = entry.options.get(CONF_WEATHER_ENTITY)
+    settings = coordinator.options
+    _temp_entity = settings.get(CONF_TEMP_ENTITY)
+    _presence_entity = settings.get(CONF_PRESENCE_ENTITY)
+    _weather_entity = settings.get(CONF_WEATHER_ENTITY)
     _cover_entities = entry.options.get(CONF_ENTITIES, [])
-    _end_time_entity = entry.options.get(CONF_END_ENTITY)
+    _end_time_entity = settings.get(CONF_END_ENTITY)
     _entities = ["sun.sun"]
     for entity in [_temp_entity, _presence_entity, _weather_entity, _end_time_entity]:
         if entity is not None:
@@ -387,12 +407,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Index of the loaded windows' coordinators, for the hub and the Mode
     # select, which still look them up here (P4 moves them next).
     hass.data[DOMAIN][entry.entry_id] = coordinator
-    # P5 shadow: compare the layered settings with the legacy options (a
-    # repair issue when they differ; the Position sensor's provenance).
-    # Nothing the runtime reads changes.
-    from . import shadow
-
-    shadow.async_setup_window(hass, entry)
     _async_register_services(hass)
     hass.async_create_task(_async_bootstrap_hub(hass))
 
@@ -411,7 +425,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     from .entity_surface import async_copy_cover_area
 
     async_copy_cover_area(hass, entry)
-    entry.async_on_unload(shadow.async_track_toggles(hass, entry))
 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     return True
@@ -433,7 +446,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Drop a removed window's repair issues (split, settings differ)."""
+    """Drop a removed window's repair issues (split; the retired settings differ)."""
     from homeassistant.helpers import issue_registry as ir
 
     from .shadow import diff_issue_id
@@ -446,13 +459,15 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle options update.
 
-    An update that only wrote the window's ``overrides`` (P5 shadow: the
-    lift or an adoption) needs no reload, since the runtime does not read
-    them; the window compares its layered settings again instead.
+    An update that only wrote the window's ``overrides`` (the lift, an
+    adoption, a recurring edit) needs no reload: the window re-reads its
+    settings on every refresh, so it acts on them now. Anything else (a
+    one-time setting, the name) reloads the window.
     """
-    from .shadow import async_check_window, only_overrides_changed
+    from .layers import async_settings_changed
+    from .shadow import only_overrides_changed
 
     if only_overrides_changed(hass, entry):
-        async_check_window(hass, entry)
+        await async_settings_changed(hass, [entry.entry_id])
         return
     await hass.config_entries.async_reload(entry.entry_id)

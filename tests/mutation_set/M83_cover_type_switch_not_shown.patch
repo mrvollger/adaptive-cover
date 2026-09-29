@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/config_flow.py b/custom_components/adaptive_cover/config_flow.py
 --- a/custom_components/adaptive_cover/config_flow.py
 +++ b/custom_components/adaptive_cover/config_flow.py
-@@ -279,7 +279,7 @@
+@@ -294,7 +294,7 @@
          self.errors = {}
          # Earlier values stay underneath: a field the form does not show now
          # (another type's geometry) keeps its value for a later switch back.

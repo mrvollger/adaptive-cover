@@ -834,3 +834,103 @@ The example below is inside an HTML comment. The checker ignores it.
   everywhere. Only string aliases count now. The new pin fails without the
   fix (no row hidden) and checks that a row with a typed alias stays
   visible. Goldens, truth table and house replay unchanged.
+
+## L0028 · 2026-09-29 · The runtime acts on the layered settings; edits store sparsely (C6, P5 flip)
+- **Removed:**
+  - `tests/test_shadow_settings.py::test_hub_created_at_1_4_is_not_lifted`
+  - `tests/simulation/test_shadow_settings.py::test_legacy_option_change_raises_a_repair_issue`
+  - `tests/simulation/test_shadow_settings.py::test_dropped_switch_flip_raises_a_repair_issue`
+- **Renamed:** none
+- **Replacements:** `tests/test_shadow_settings.py::test_hub_created_at_1_4_lifts_itself`,
+  `tests/simulation/test_shadow_settings.py::test_recurring_change_is_a_window_override`
+  (a recurring change is the window's own sparse value, acted on without
+  a reload; changed back, the override goes away),
+  `tests/simulation/test_shadow_settings.py::test_dropped_switch_writes_through`
+  (the hidden detection switch writes the window's own value; detection
+  stops and starts), the new pin
+  `tests/test_shadow_settings.py::test_live_house_runs_on_the_same_settings`
+  (all 15 live windows, running on the layers, act on exactly their legacy
+  options and switch states: the diagnostics settings, `ShadeConfig` and
+  the toggles) and `tests/test_layered_settings.py::*` (the options form
+  and `change_settings` store sparse overrides and leave the legacy keys
+  alone, the form shows what the window acts on, a new window starts from
+  the house, a copy copies what the source acts on, invalid layers leave
+  the window on its options). The house replay now asserts that every
+  replayed window is lifted (a provenance), so the unchanged goldens pin
+  the window acting on its resolved settings.
+  Behavior-tier test bodies changed without changing ids (the storage
+  assertions read what the window acts on, via the diagnostics settings,
+  instead of the flat option key an edit no longer writes):
+  `tests/test_change_settings.py::test_lookup_by_title_and_name`,
+  `::test_rename_combines_with_option_changes`,
+  `::test_regression_change_settings_enables_climate_mode`;
+  `tests/test_live_tunables.py::TestNumberEntities::test_setting_number_persists_and_reloads`,
+  `::test_regression_threshold_numbers_follow_unit_system[*]`;
+  `tests/test_units_and_defaults.py::test_regression_thresholds_unit_aware_everywhere[*]`;
+  `tests/test_one_page_options.py::test_submit_flattens_sections_and_preserves_rest`;
+  `tests/simulation/test_lifecycle.py::test_end_time_rearm_via_settings_service`;
+  `tests/test_window_setup_form.py::test_window_from_only_a_cover_and_azimuth_resolves_to_house_defaults`
+  (the lifted window stores no override of its own);
+  `tests/test_shadow_settings.py::test_lift_does_not_reload_a_running_window`
+  (the window lifts the never-lifted house at its setup; enabling the hub
+  migrates it without a second lift);
+  `tests/simulation/test_harness_smoke.py::test_set_options_survives_reload`
+  (a recurring edit does not reload, a one-time edit does);
+  `tests/test_entity_surfaces.py::TestDiagnostics::test_diagnostics_shape`
+  (two new keys). Implementation tier: `tests/settings/test_round_trip.py`
+  (a copy has overrides of its own) and the spec-parity fakes.
+  SimHouse: `set_options(**changes)` calls `change_settings` per window.
+- **Mutations re-targeted:** added M90 (`layers.py` `effective_settings`:
+  the runtime ignores a window's own values; killed by the simulation and
+  entity tiers). M39 re-anchored from `__init__.handle_change_settings` to
+  `layers.window_options_after` (same description: the merge of a window's
+  edits into its options moved there). M13, M70 and M71 keep their
+  anchors. Run with `--mutations M90,M39,M70,M71,M13 --jobs 3`: 5/5 killed.
+- **Contract change:** C6 (the runtime acts on `resolve()`; plan P5
+  v1.18.1 flip, batch 2)
+- **Reason:** plan P5 flip. `layers.py` is the runtime side of the layered
+  settings.
+  - The runtime acts on `resolve()`: every refresh the coordinator reads
+    `layers.effective_settings` (house -> floor -> area -> window, plus the
+    lift's legacy values; one-time settings from the window's options) and
+    sets the switch-era toggles (`climate_on`, `use_*`, `manual_detection`)
+    from it. Values read only at setup (the listened-to entities, climate
+    mode, the lux / irradiance / outside-temperature entities) reload the
+    window when they change; everything else applies at the next refresh.
+    Before the house is lifted, or when a stored layer breaks the spec
+    (logged), a window acts on its legacy options and switch states as
+    before.
+  - A house that was never lifted lifts itself: at hub setup and at a
+    window's setup (a hub created at 1.4 or later, a new install).
+    Migration 1.4 no longer lifts a house that is already lifted: a second
+    lift would rebuild the layers from the legacy keys and lose every edit
+    since the flip. A window without its own overrides is adopted at its
+    setup, before its coordinator reads the layers.
+  - Edits: the options form (it shows the resolved values) and
+    `change_settings` store one-time settings in the window's options and
+    recurring ones in its `overrides`, sparsely: `values` where the spec
+    lets a window override the option, `legacy` otherwise (a per-window
+    exception, the lift's bucket for the same thing); a value equal to
+    what the window inherits, or a cleared field / `None`, removes the
+    override. An overrides-only update does not reload the window; it acts
+    on it at once. The legacy flat keys are left as they are: a downgrade
+    reads them, i.e. the settings as of the lift; edits made after the
+    flip do not reach a downgraded install. `change_settings` keeps its
+    schema and response.
+  - The hidden per-window toggle switches show the value the window acts
+    on and write through to the window's own value (a legacy value: the
+    spec lets no window override them), removed when it equals the
+    inherited one. Before the lift a switch is the setting, as before.
+  - A new window (the add form, `add_entry` without `copy_from`) starts
+    from the house's settings; "Copy from" / `copy_from` copy what the
+    source window acts on.
+  - The `settings_differ` repair issue (L0022) is retired: with the
+    runtime on the layers there is no second set of values to compare.
+    Setup deletes a leftover issue; its strings are gone. The pure
+    comparison stays (`settings.shadow.compare`): it checks that a lift or
+    an adoption is exact.
+  - The Position sensor's `provenance` now comes from the refresh
+    (`coordinator.provenance`); the diagnostics download gains `settings`
+    (what the window acts on) and `settings_provenance`.
+  - Goldens, truth table and house replay byte-identical, with every
+    replayed window running on its resolved settings.

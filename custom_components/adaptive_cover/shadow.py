@@ -1,10 +1,9 @@
-"""Shadow release of the layered settings (P5, v1.18.0; ADR 0003).
+"""The layered settings store: the lift, adoption and toggle reads (P5).
 
-v1.18.0 writes the layered model (house / floor / area profiles and
-sparse window overrides) next to the legacy flat options and checks, for
-every window, that it resolves to what the window acts on today. The
-runtime still acts on the legacy options and the per-window switches;
-nothing here moves a cover. The pure part is ``settings/shadow.py``.
+v1.18.0 (the shadow release) wrote the layered model (house / floor /
+area profiles and sparse window overrides) next to the legacy flat
+options. Since the flip (``layers.py``) the runtime acts on it; this module
+keeps the store complete. The pure part is ``settings/shadow.py``.
 
 **Migration 1.4 (the lift).** ``async_migrate_hub_1_4`` runs from
 ``async_migrate_entry`` for the hub entry. It lifts every enabled window
@@ -21,8 +20,13 @@ options. The legacy flat keys are not touched. The lift reads:
 
 The lift is deterministic (windows in entry_id order) and idempotent:
 running it again on the same house writes the same options. A house
-without windows is not lifted. A hub created at 1.4 (a new install) is
-not lifted either; the flip lifts it.
+without windows is not lifted.
+
+**A house that was never lifted lifts itself** (``async_ensure_lifted``):
+a hub created at 1.4 or later (a new install, or one made by v1.18.0 /
+v1.19.0) is lifted when it sets up, and when a window sets up while the
+hub is still not lifted. Nothing changes for the windows: the lift is
+exact, so they act on the same values.
 
 **Switch states at migration time.** When the hub migrates, the window
 switches are usually not set up yet (config entries set up concurrently,
@@ -44,50 +48,35 @@ per switch, the first of:
    (the switch's own rule);
 6. the initial state when nothing was stored.
 
-The same reader serves the comparison below, at any time: before a
-window's platforms are set up, after a reload (the removed switch left
-its last state in the cache) and while the switch is live.
+The same reader gives a window that is not lifted yet its toggles
+(``layers.effective_options``).
 
-**Comparison.** ``async_setup_window`` (window setup, before the
-platforms) records the window and compares; ``async_check_window``
-repeats it when the window's options change without a reload (only
-``overrides``), when one of its switches changes, and after the lift.
-Any option whose resolved value differs from the legacy one raises one
-``settings_differ`` repair issue per window, listing the keys; it is
-deleted when they agree again. A window without its own ``overrides``
-(created after the lift, or a copy of another window) is first adopted
-(``settings.shadow.adopt``). Until the hub is lifted nothing is compared.
+**Adoption.** ``async_setup_window`` (window setup, before its
+coordinator) records the window, lifts the house if needed, and adopts a
+window without ``overrides`` of its own (added after the lift, or a copy
+of another window; ``settings.shadow.adopt``): every value it does not
+inherit becomes a window override.
 
-**Provenance.** The Position sensor's ``provenance`` attribute is
-``settings.shadow.provenance_summary`` of the latest comparison: options
-from an area, a floor, a window override or a legacy value, mapped to
-that source. Options from the house or the spec default, and one-time
-window settings, are left out to keep the attribute small. None until
-the hub is lifted.
+**The settings_differ repair is retired** (P5 flip): with the runtime on
+the layers there is no second set of values to compare. Setup deletes an
+issue left over from v1.18.x / v1.19.x.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Final
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_OFF, STATE_ON, Platform
-from homeassistant.core import (
-    CALLBACK_TYPE,
-    Event,
-    EventStateChangedData,
-    HomeAssistant,
-    callback,
-)
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import floor_registry as fr
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers import restore_state
-from homeassistant.helpers.event import async_track_state_change_event
 
 from .const import _LOGGER, DOMAIN
 from .entity_surface import cover_area_id
@@ -100,7 +89,6 @@ from .settings.shadow import (
     TOGGLE_SWITCHES,
     ToggleSwitch,
     adopt,
-    compare,
     hub_options,
     is_lifted,
     legacy_values,
@@ -112,23 +100,22 @@ from .settings.shadow import (
 
 SHADOW_DATA: Final = f"{DOMAIN}_shadow"
 DIFF_ISSUE: Final = "settings_differ"
+"""The retired v1.18.x repair issue (deleted at setup)."""
 
 
 def diff_issue_id(entry_id: str) -> str:
-    """Return the ``settings_differ`` repair issue id of one window."""
+    """Return the retired ``settings_differ`` repair issue id of one window."""
     return f"{DIFF_ISSUE}_{entry_id}"
 
 
 @dataclass
 class _Window:
-    """What the shadow keeps for one set-up window."""
+    """What the store keeps for one set-up window."""
 
     options: dict[str, Any]
     """The options (with ``overrides``) the window's runtime was set up with."""
     data: dict[str, Any]
     title: str
-    provenance: dict[str, str] | None = None
-    differing: tuple[str, ...] = field(default_factory=tuple[str, ...])
 
 
 def _windows(hass: HomeAssistant) -> dict[str, _Window]:
@@ -282,146 +269,92 @@ def async_lift_house(hass: HomeAssistant, hub: ConfigEntry) -> Lifted | None:
         sum(1 for o in lifted.overrides.values() if o.values),
         sum(1 for o in lifted.overrides.values() if o.legacy),
     )
-    # Windows already set up compare now; the rest compare at their setup.
-    for entry_id in list(_windows(hass)):
-        if (entry := hass.config_entries.async_get_entry(entry_id)) is not None:
-            async_check_window(hass, entry)
     return lifted
+
+
+@callback
+def async_ensure_lifted(hass: HomeAssistant) -> None:
+    """Lift the house if its hub exists and was never lifted (a new install).
+
+    A lift that fails leaves the house un-lifted (logged); the windows keep
+    acting on their legacy options.
+    """
+    hub = _hub(hass)
+    if hub is None or is_lifted(hub.options):
+        return
+    try:
+        async_lift_house(hass, hub)
+    except (SettingsError, ValueError, TypeError):
+        _LOGGER.exception("Could not lift the windows into the layered settings")
 
 
 @callback
 def async_migrate_hub_1_4(hass: HomeAssistant, hub: ConfigEntry) -> None:
     """Migrate the hub to 1.4: store the lifted layers, then bump the version.
 
-    A lift that fails leaves the hub un-lifted (logged); the hub still
-    loads and the runtime is unaffected.
+    A house that is already lifted (a window lifted it while the hub was
+    disabled) is left alone: a second lift would rebuild the layers from
+    the legacy keys and lose every edit made since the flip. A lift that
+    fails leaves the hub un-lifted (logged); its windows keep acting on
+    their legacy options.
     """
-    try:
-        async_lift_house(hass, hub)
-    except (SettingsError, ValueError, TypeError):
-        _LOGGER.exception("Could not lift the windows into the layered settings")
+    async_ensure_lifted(hass)
     hass.config_entries.async_update_entry(hub, minor_version=4)
 
 
-# ------------------------------------------------------------ comparison
+# ------------------------------------------------------------ adoption
 
 
 @callback
 def async_setup_window(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Record a window at setup and compare it (before its platforms)."""
+    """Record a window at setup, before its coordinator reads the layers.
+
+    Lifts the house if it never was, adopts the window if it has no
+    overrides of its own, and deletes a retired ``settings_differ`` issue.
+    """
+    ir.async_delete_issue(hass, DOMAIN, diff_issue_id(entry.entry_id))
+    async_ensure_lifted(hass)
+    async_adopt_window(hass, entry)
     _windows(hass)[entry.entry_id] = _Window(
         options=dict(entry.options), data=dict(entry.data), title=entry.title
     )
-    async_check_window(hass, entry)
 
 
 @callback
-def async_check_window(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Compare one window's layered settings with its legacy values.
+def async_adopt_window(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Give a window without its own ``overrides`` the ones it needs.
 
-    Raises or clears its ``settings_differ`` repair issue and updates its
-    provenance. Adopts the window first if it has no overrides of its own.
+    Every value it does not inherit becomes a window override (or a legacy
+    value where no window may override it), so it acts as before.
     """
-    record = _windows(hass).get(entry.entry_id)
-    if record is None:
-        return
-    issue_id = diff_issue_id(entry.entry_id)
     hub = lifted_hub(hass)
-    if hub is None:
-        record.provenance = None
-        record.differing = ()
-        ir.async_delete_issue(hass, DOMAIN, issue_id)
+    if hub is None or stored_overrides(entry.entry_id, entry.options) is not None:
         return
-    legacy = _legacy(hass, entry)
-    placement = window_placement(hass, entry)
     try:
-        overrides = stored_overrides(entry.entry_id, entry.options)
-        if overrides is None:
-            overrides = adopt(entry.entry_id, legacy, hub.options, placement)
-            hass.config_entries.async_update_entry(
-                entry,
-                options={
-                    **entry.options,
-                    OVERRIDES: overrides_option(entry.entry_id, overrides),
-                },
-            )
-            record.options = dict(entry.options)
-            _LOGGER.info(
-                "%s joined the layered settings: overrides %s, legacy values %s",
-                entry.title,
-                sorted(overrides.values),
-                sorted(overrides.legacy),
-            )
-        check = compare(entry.entry_id, legacy, hub.options, overrides, placement)
+        overrides = adopt(
+            entry.entry_id,
+            _legacy(hass, entry),
+            hub.options,
+            window_placement(hass, entry),
+        )
     except (SettingsError, KeyError, TypeError) as err:
-        _LOGGER.warning("%s: cannot compare the layered settings: %s", entry.title, err)
+        _LOGGER.warning("%s: cannot join the layered settings: %s", entry.title, err)
         return
-
-    pushed = dict(check.provenance) != record.provenance
-    if check.differing != record.differing and check.differing:
-        _LOGGER.warning(
-            "%s: the layered settings differ from what the window acts on: %s",
-            entry.title,
-            "; ".join(
-                f"{key} is {legacy[key]!r}, layered {check.resolved[key]!r}"
-                for key in check.differing
-            ),
-        )
-    record.provenance = dict(check.provenance)
-    record.differing = check.differing
-    if check.differing:
-        ir.async_create_issue(
-            hass,
-            DOMAIN,
-            issue_id,
-            is_fixable=False,
-            is_persistent=False,
-            severity=ir.IssueSeverity.WARNING,
-            translation_key=DIFF_ISSUE,
-            translation_placeholders={
-                "window": entry.title,
-                "keys": ", ".join(check.differing),
-            },
-        )
-    else:
-        ir.async_delete_issue(hass, DOMAIN, issue_id)
-    if pushed:
-        _push_state(hass, entry.entry_id)
-
-
-def _push_state(hass: HomeAssistant, entry_id: str) -> None:
-    """Let the window's entities write their state (the new provenance)."""
-    coordinator = hass.data.get(DOMAIN, {}).get(entry_id)
-    if coordinator is not None and coordinator.data is not None:
-        coordinator.async_update_listeners()
-
-
-@callback
-def async_track_toggles(hass: HomeAssistant, entry: ConfigEntry) -> CALLBACK_TYPE:
-    """Compare the window again whenever one of its dropped switches changes."""
-    ent_reg = er.async_get(hass)
-    entity_ids = [
-        entity_id
-        for switch in TOGGLE_SWITCHES
-        if (
-            entity_id := ent_reg.async_get_entity_id(
-                Platform.SWITCH, DOMAIN, f"{entry.entry_id}_{switch.switch_name}"
-            )
-        )
-        is not None
-    ]
-
-    @callback
-    def _changed(event: Event[EventStateChangedData]) -> None:
-        new = event.data["new_state"]
-        old = event.data["old_state"]
-        if new is None or new.state not in (STATE_ON, STATE_OFF):
-            return
-        if old is not None and old.state == new.state:
-            return
-        async_check_window(hass, entry)
-
-    return async_track_state_change_event(hass, entity_ids, _changed)
+    hass.config_entries.async_update_entry(
+        entry,
+        options={
+            **entry.options,
+            OVERRIDES: overrides_option(entry.entry_id, overrides),
+        },
+    )
+    if (record := _windows(hass).get(entry.entry_id)) is not None:
+        record.options = dict(entry.options)
+    _LOGGER.info(
+        "%s joined the layered settings: overrides %s, legacy values %s",
+        entry.title,
+        sorted(overrides.values),
+        sorted(overrides.legacy),
+    )
 
 
 def only_overrides_changed(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -429,8 +362,9 @@ def only_overrides_changed(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     True when the window's data, title and options (``overrides`` aside)
     are the ones it was set up with: the update wrote only ``overrides``
-    (the lift or an adoption), which the runtime does not read, so it
-    needs no reload (the update listener compares again instead).
+    (the lift, an adoption or a recurring edit), which the runtime reads
+    on every refresh, so it needs no reload (the update listener refreshes
+    it instead).
     """
     record = _windows(hass).get(entry.entry_id)
     if record is None or dict(entry.data) != record.data or entry.title != record.title:
@@ -443,12 +377,5 @@ def only_overrides_changed(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 @callback
 def async_unload_window(hass: HomeAssistant, entry_id: str) -> None:
-    """Forget an unloaded window and drop its repair issue."""
+    """Forget an unloaded window."""
     _windows(hass).pop(entry_id, None)
-    ir.async_delete_issue(hass, DOMAIN, diff_issue_id(entry_id))
-
-
-def provenance(hass: HomeAssistant, entry_id: str) -> dict[str, str] | None:
-    """Return the window's provenance summary (None until the hub is lifted)."""
-    record = _windows(hass).get(entry_id)
-    return dict(record.provenance) if record and record.provenance is not None else None

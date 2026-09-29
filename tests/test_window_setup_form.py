@@ -42,6 +42,7 @@ from custom_components.adaptive_cover.const import (
     DOMAIN,
     SensorType,
 )
+from custom_components.adaptive_cover.settings.shadow import without_overrides
 from custom_components.adaptive_cover.settings.lift import legacy_flat
 from custom_components.adaptive_cover.settings.resolve import (
     HouseProfile,
@@ -198,8 +199,12 @@ async def test_window_from_only_a_cover_and_azimuth_resolves_to_house_defaults(h
         "unavailable",
     )
 
+    # P5 flip: the house lifted itself from this one window, which then
+    # stores no override of its own (everything else is inherited).
+    assert entry.options["overrides"]["values"] == {}
+    assert entry.options["overrides"]["legacy"] == {}
     unit = hass.config.units.temperature_unit
-    flat = legacy_flat(entry.options, temperature_unit=unit)
+    flat = legacy_flat(without_overrides(entry.options), temperature_unit=unit)
     setup = {opt.key: flat[opt.key] for opt in OPTS if opt.home is Level.WINDOW}
     profiles = Profiles(
         house=HouseProfile({}, temperature_unit=unit),

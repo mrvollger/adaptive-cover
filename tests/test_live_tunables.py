@@ -32,7 +32,7 @@ from custom_components.adaptive_cover.const import (
 )
 
 from .conftest import COMMON_OPTIONS
-from .window_handle import WindowHandle
+from .window_handle import WindowHandle, window_settings
 
 COVER = "cover.test_cover"
 
@@ -130,9 +130,9 @@ class TestNumberEntities:
         )
         await hass.async_block_till_done()
 
-        assert entry.options[CONF_EYE_HEIGHT] == 1.2
-        # Entry reloaded and running on those options (the window reads
-        # this entry's options, so they are what it now sees).
+        # The window's own value (P5 flip: a window override), and what
+        # it now acts on.
+        assert (await window_settings(hass, entry.entry_id))[CONF_EYE_HEIGHT] == 1.2
         assert entry.state is ConfigEntryState.LOADED
         assert window.available
         assert hass.states.get(eid).state == "1.2"
@@ -205,7 +205,7 @@ class TestNumberEntities:
             blocking=True,
         )
         await hass.async_block_till_done()
-        assert entry.options[CONF_TEMP_LOW] == new_low
+        assert (await window_settings(hass, entry.entry_id))[CONF_TEMP_LOW] == new_low
 
 
 class TestGateVisibility:

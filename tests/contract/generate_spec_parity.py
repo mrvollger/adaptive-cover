@@ -333,12 +333,14 @@ async def _walk_options(obs: Observations) -> None:
             for climate in CLIMATES:
                 entry = SimpleNamespace(
                     entry_id="spec-parity",
+                    title="Spec parity",
+                    domain="adaptive_cover",
                     data={"name": "Spec parity", "sensor_type": cover_type},
                     options={"climate_mode": climate == "on"},
                 )
                 flow = _prepare_flow(
                     ConfigFlowHandler.async_get_options_flow(entry),
-                    _fake_hass(unit),
+                    _fake_hass(unit, config_entries=_entries(entry)),
                     "options",
                 )
                 result = await flow.async_step_init()
@@ -444,7 +446,10 @@ async def _walk_numbers(obs: Observations) -> None:
                     title="Spec parity",
                     data={"name": "Spec parity", "sensor_type": cover_type},
                     options={"climate_mode": climate == "on"},
-                    runtime_data=SimpleNamespace(),  # the window's coordinator
+                    # the window's coordinator: what it acts on
+                    runtime_data=SimpleNamespace(
+                        options={"climate_mode": climate == "on"}
+                    ),
                 )
                 hass = _fake_hass(unit)
                 added: list[Any] = []

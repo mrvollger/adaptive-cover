@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/__init__.py b/custom_components/adaptive_cover/__init__.py
 --- a/custom_components/adaptive_cover/__init__.py
 +++ b/custom_components/adaptive_cover/__init__.py
-@@ -187,7 +187,7 @@
+@@ -191,7 +191,7 @@
          DOMAIN,
          SERVICE_CHANGE_SETTINGS,
          handle_change_settings,

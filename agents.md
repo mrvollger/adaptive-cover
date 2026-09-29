@@ -62,19 +62,20 @@ custom_components/adaptive_cover/
 │   ├── validate.py          # Cross-field checks (elevation order, blind-spot order, interp lists)
 │   ├── resolve.py           # P5: pure layered resolver (window > area > floor > house > default) + provenance
 │   ├── lift.py              # P5: pure lift of flat legacy options into house/floor/area/window layers
-│   └── shadow.py            # P5 shadow: dropped-switch settings, stored-layer (de)serialization, compare, adopt
+│   └── shadow.py            # P5 store: toggle settings, stored-layer (de)serialization, compare, adopt
 ├── window_cover.py          # One cover per window (ADR 0002): cover_problem guard, registry-id unique_id, split issue
 ├── migration.py             # Config entry 1.3: fallbacks written into options, cover_entity_id, unique_id
-├── shadow.py                # Config entry 1.4 (P5 shadow): lift into the hub, switch-state capture, settings_differ issue, provenance
+├── shadow.py                # Config entry 1.4 (P5): lift into the hub (also a never-lifted house at setup), switch-state capture, adoption
+├── layers.py                # P5 flip: what a window acts on (resolved every refresh), sparse window edits, profiles, propagation
 ├── repairs.py               # Fix flow of the "split" issue (multi-cover entry -> one window per cover)
 ├── const.py                 # All config keys, defaults, enums
 ├── hub.py                   # "Adaptive Cover All" hub device (all-shades cover, house Mode select auto/hold/off/mixed, reset-all button)
 ├── cover.py                 # Cover platform: only the hub's aggregate cover
 ├── sensor.py                # Position %, solar times, control method, next/last change
 ├── binary_sensor.py         # Sun in front, manual override active
-├── switch.py                # Hidden switch aliases (P5): Toggle Control writes the Mode; the others still set ControlState
+├── switch.py                # Hidden switch aliases (P5): Toggle Control writes the Mode; the others write the window's toggle value
 ├── select.py                # Mode select auto/hold/off (RestoreEntity, source of truth) + the hold entity service
-├── number.py                # Live tunables that skip the options wizard
+├── number.py                # Live tunables that skip the options wizard (write the window's own value)
 ├── button.py                # Return to auto button (Mode auto)
 ├── entity_shared.py         # Shared entity helpers (device info, Position window attributes)
 ├── entity_surface.py        # Entity surface table (category, visibility, name key) + 1.2/1.5 migrations + area copy
@@ -82,7 +83,7 @@ custom_components/adaptive_cover/
 ├── logbook.py               # Logbook text for adaptive_cover_moved events
 ├── helpers.py               # Utility functions (safe state access, datetime parsing)
 ├── config_context_adapter.py # Logger adapter that tags logs with config name
-├── diagnostics.py           # HA diagnostics export
+├── diagnostics.py           # HA diagnostics export (incl. the resolved settings a window acts on)
 ├── services.yaml            # get_forecast, hold (entity service on the Mode selects), change_settings, add_entry
 ├── manifest.json            # Integration metadata, version & requirements
 ├── strings.json             # English UI strings (source for translations/en.json)
@@ -258,11 +259,16 @@ options, the cover as `cover_entity_id`, and the cover's registry id as
 unique_id. 1.3 -> 1.4 (P5 shadow, `shadow.py`) lifts every window into
 house / floor / area profiles in the hub's options and a sparse
 `overrides` per window, recording the states of the switches P5 drops;
-the runtime still acts on the legacy keys, and each window raises a
-`settings_differ` repair issue when the two disagree. 1.4 -> 1.5 (P5
-flip) hides the six switches (hidden_by integration, still enabled): they
-are aliases of the Mode select and the house toggles for one release. At
-setup the window device copies the physical cover's area if it has none.
+since the P5 flip the runtime acts on them (`layers.py`: every refresh
+resolves window -> area -> floor -> house -> default; one-time settings
+come from the window's options), edits store sparsely in them (the
+options form, `change_settings`: recurring values as the window's
+`overrides`, one-time ones in its options) and the legacy flat keys are
+left for a downgrade. A house that was never lifted lifts itself at setup.
+1.4 -> 1.5 (P5 flip) hides the six switches (hidden_by integration, still
+enabled): they are aliases of the Mode select and the toggle settings for
+one release. At setup the window device copies the physical cover's area
+if it has none.
 
 | Platform | Name (unique_id suffix) | Visibility | Purpose |
 |----------|-------------------------|------------|---------|

@@ -532,19 +532,27 @@ class SimHouse:
         await self._setup_entry()
 
     async def set_options(self, **option_changes) -> None:
-        """The user edits every window's options in the UI: merge and reload.
+        """The user edits every window's settings: one service call each.
 
-        Merges ``option_changes`` into each window's options, waits for the
-        entry reloads to complete, re-registers the fake cover services (the
-        hub bootstrap steals them on setup) and remembers the rebuilt
-        coordinators for command attribution. Called with NO changes it
-        models saving the options dialog unchanged (still a reload).
+        Goes through ``adaptive_cover.change_settings``, which stores the
+        edits where the P5 flip keeps them: one-time settings in the
+        window's options (the window reloads), recurring ones as the
+        window's own values in the layered settings (no reload; the window
+        acts on them at once). Called with NO changes it models saving the
+        options dialog unchanged: a reload. Afterwards the fake cover
+        services are re-won and the rebuilt coordinators remembered for
+        command attribution.
         """
         for entry in self.entries:
-            changed = self.hass.config_entries.async_update_entry(
-                entry, options={**entry.options, **option_changes}
-            )
-            if not changed:
+            if option_changes:
+                await self.hass.services.async_call(
+                    DOMAIN,
+                    "change_settings",
+                    {"config_entry": entry.entry_id, **option_changes},
+                    blocking=True,
+                    context=Context(user_id=SIM_USER_ID),
+                )
+            else:
                 await self.hass.config_entries.async_reload(entry.entry_id)
             await self.hass.async_block_till_done()
         self._remember_coordinator()

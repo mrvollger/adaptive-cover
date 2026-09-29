@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -806,7 +806,7 @@
+@@ -865,7 +865,7 @@
          # raw state. "unknown" stays commandable - a shade that has not
          # reported since a restart must still get the end-of-day close.
          current = self.hass.states.get(entity)

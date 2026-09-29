@@ -1,17 +1,18 @@
-"""P5 shadow release (v1.18.0): the layered settings run beside the legacy ones.
+"""The layered settings drive the window (P5 flip; shadow release before).
 
 The hub starts at config 1.3, so migration 1.4 lifts the window into the
 hub's house profile and writes its ``overrides``. From then on:
 
 - the lift itself changes nothing the window does (no reload, no move);
-- a legacy option changed through the options form still drives the
-  window, and the difference from the layered settings raises one
-  ``settings_differ`` repair issue for the window, listing the key; the
-  issue goes away when the values agree again;
+- a recurring setting changed through the settings service becomes the
+  window's own value (a sparse override, no reload) and drives the
+  window at once; changed back, the override goes away;
 - a dropped switch (manual-override detection) flipped after the lift
-  differs from what the lift recorded, and raises the same issue.
+  writes through to the window's own value: detection stops and starts;
+- the retired ``settings_differ`` repair issue never appears.
 
-Observed only through the timeline, entity states and the issue registry.
+Observed only through the timeline, entity states, the diagnostics
+settings and the issue registry.
 """
 
 from homeassistant.helpers import issue_registry as ir
@@ -45,7 +46,7 @@ def _pre_p5_hub(hass) -> MockConfigEntry:
 
 
 def _differ_issues(hass) -> dict[str, dict[str, str]]:
-    """The settings_differ issues: issue_id -> translation placeholders."""
+    """The retired settings_differ issues: issue_id -> translation placeholders."""
     return {
         issue_id: dict(issue.translation_placeholders or {})
         for (domain, issue_id), issue in ir.async_get(hass).issues.items()
@@ -77,7 +78,7 @@ async def test_lift_changes_nothing_the_window_does(hass, freezer):
     await house.teardown()
 
 
-async def test_legacy_option_change_raises_a_repair_issue(hass, freezer):
+async def test_recurring_change_is_a_window_override(hass, freezer):
     house = await _house(hass, freezer)
     window = house.window()
     await house.advance_to("04:30")
@@ -85,30 +86,39 @@ async def test_legacy_option_change_raises_a_repair_issue(hass, freezer):
 
     await house.set_options(**{CONF_SUNSET_POS: 25})
 
-    # The runtime still acts on the legacy option ...
+    # The window's own value, stored sparsely, acted on without a reload.
+    assert house.entry.options["overrides"]["values"] == {CONF_SUNSET_POS: 25}
+    assert window.attributes["provenance"] == {CONF_SUNSET_POS: "window"}
+    assert window.teardowns == 0
     assert window.target == 25
     await house.advance_to("05:00")
     assert house.position(SHADE) == 25
-    # ... and the layered settings (lifted with 0) now differ: one issue.
-    issue_id = f"settings_differ_{house.entry.entry_id}"
-    assert _differ_issues(hass) == {
-        issue_id: {"window": house.entry.title, "keys": CONF_SUNSET_POS}
-    }
-
-    await house.set_options(**{CONF_SUNSET_POS: 0})
     assert _differ_issues(hass) == {}
+
+    # Back to the house's value: the override goes away.
+    await house.set_options(**{CONF_SUNSET_POS: 0})
+    assert house.entry.options["overrides"]["values"] == {}
+    assert window.attributes["provenance"] == {}
+    assert window.target == 0
     await house.teardown()
 
 
-async def test_dropped_switch_flip_raises_a_repair_issue(hass, freezer):
+async def test_dropped_switch_writes_through(hass, freezer):
     house = await _house(hass, freezer)
-    issue_id = f"settings_differ_{house.entry.entry_id}"
+    window = house.window()
+    await house.advance_to("10:00")
 
     await house.toggle("manual_override", False)
-    assert _differ_issues(hass) == {
-        issue_id: {"window": house.entry.title, "keys": CONF_MANUAL_DETECTION}
-    }
+    # Detection may not be set per window in the spec: a legacy value.
+    assert house.entry.options["overrides"]["legacy"] == {CONF_MANUAL_DETECTION: False}
+    assert window.attributes["provenance"] == {CONF_MANUAL_DETECTION: "legacy"}
+    assert house.entity("switch", "manual_override").state == "off"
+    await house.user_moves(SHADE, 100, via="remote")
+    await house.advance_to("10:30")
+    assert not window.manual_override, "detection is off for this window"
 
     await house.toggle("manual_override", True)
+    assert house.entry.options["overrides"]["legacy"] == {}
+    assert house.entity("switch", "manual_override").state == "on"
     assert _differ_issues(hass) == {}
     await house.teardown()

@@ -49,6 +49,7 @@ from custom_components.adaptive_cover.settings.normalize import (
     window_cover,
     with_cover,
 )
+from custom_components.adaptive_cover.settings.shadow import without_overrides
 from custom_components.adaptive_cover.settings.spec import (
     OPTS,
     Group,
@@ -281,4 +282,16 @@ async def test_real_flows_round_trip(hass, seed, cover_type):
     )
     await hass.async_block_till_done()
     copy = hass.config_entries.async_get_entry(response["entry_id"])
-    assert dict(copy.options) == with_cover(stored, "cover.round_trip_copy")
+    # The copy has overrides of its own (P5 flip: it joins the layered
+    # settings at its setup); everything else is the source's.
+    assert without_overrides(copy.options) == with_cover(
+        without_overrides(stored), "cover.round_trip_copy"
+    )
+    assert copy.options["overrides"]["window_key"] == copy.entry_id
+    assert {
+        key: value
+        for key, value in copy.options["overrides"].items()
+        if key != "window_key"
+    } == {
+        key: value for key, value in stored["overrides"].items() if key != "window_key"
+    }

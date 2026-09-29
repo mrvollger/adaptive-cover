@@ -293,6 +293,14 @@ class WindowHandle:
         """How many times the window's entities were unloaded (reloads)."""
         return self._teardowns
 
+    async def settings(self) -> dict[str, Any]:
+        """What the window acts on: its resolved settings (P5 flip).
+
+        Read through the integration's diagnostics, the public surface
+        that shows them.
+        """
+        return await window_settings(self.hass, self.window_key)
+
     # ------------------------------------------------------------ actions
 
     async def press(
@@ -331,6 +339,20 @@ class WindowHandle:
             context=context,
         )
         await self.hass.async_block_till_done()
+
+
+async def window_settings(hass: HomeAssistant, window_key: str) -> dict[str, Any]:
+    """A loaded window's resolved settings, from the diagnostics download."""
+    from custom_components.adaptive_cover.diagnostics import (
+        async_get_config_entry_diagnostics,
+    )
+
+    entry = hass.config_entries.async_get_entry(window_key)
+    assert entry is not None, window_key
+    diagnostics = await async_get_config_entry_diagnostics(hass, entry)
+    settings = diagnostics["settings"]
+    assert settings is not None, f"{entry.title} is not loaded"
+    return settings
 
 
 def internal_coordinator(hass: HomeAssistant, window_key: str):
