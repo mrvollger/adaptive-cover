@@ -1,0 +1,34 @@
+# house replay: Family south (01KWQEPHPX2QRC9BQ0NNZ9857Z) on 2026-12-21 (winter_solstice)
+# SLC (tests' lat/lon), tz=America/Denver, units=US customary, step=5min, travel=90s, 00:30 -> 00:30 next day
+# cover=cover.family_south_shades sensor_type=cover_blind options_sha256=368f58e44830
+# azimuth=190.0 fov=50.0/50.0 elevation=5..None window_h=2.0 distance=0.1 overhang=1.2/2.6 glare=1.2/2.0
+# default=99.0 sunset_pos=0.0 sunset_off=20.0 sunrise_off=-20.0 start=00:00:00 end=00:00:00 min=None (sun-only=False) max=None (sun-only=False) privacy=True
+# climate=True temp=sensor.downstairs_indoor_temperature (downstairs) low/high=72.0/75.0 sunny=sunny,partlycloudy,clear,windy,windy-variant override={'hours': 2, 'minutes': 0, 'seconds': 0} reset=False
+# restored switches: family_south_climate_mode=on, family_south_manual_override=on, family_south_outside_temperature=off, family_south_toggle_control=on
+# lines: cmd = outbound cover call; sensor = position sensor (intent), shown when it changes; input/human = scripted
+#
+12-21 00:30:00 MST  sensor 0 (privacy)
+12-21 07:30:00 MST  cmd    set_cover_position cover.family_south_shades 99
+12-21 07:30:00 MST  sensor 99 (default)
+12-21 08:00:00 MST  input  sensor.downstairs_indoor_temperature = 69.0 °F
+12-21 09:40:00 MST  cmd    set_cover_position cover.family_south_shades 100
+12-21 09:40:00 MST  sensor 100 (admit_no_glare)
+12-21 09:41:30 MST  cmd    set_cover_position cover.family_south_shades 100
+12-21 10:00:00 MST  input  sensor.downstairs_indoor_temperature = 71.0 °F
+12-21 11:00:00 MST  input  weather.forecast_home_2 = cloudy
+12-21 11:05:00 MST  sensor 100 (climate_open_heat)
+12-21 13:00:00 MST  input  weather.forecast_home_2 = sunny
+12-21 13:05:00 MST  sensor 100 (admit_no_glare)
+12-21 13:30:00 MST  human  cover.family_south_shades -> 37 (via remote)
+12-21 14:00:00 MST  input  sensor.downstairs_indoor_temperature = 73.5 °F
+12-21 14:05:00 MST  sensor 2 (calculated)
+12-21 15:25:00 MST  sensor 1 (calculated)
+12-21 15:35:00 MST  cmd    set_cover_position cover.family_south_shades 1
+12-21 16:30:00 MST  cmd    set_cover_position cover.family_south_shades 99
+12-21 16:30:00 MST  sensor 99 (default)
+12-21 17:25:00 MST  cmd    set_cover_position cover.family_south_shades 0
+12-21 17:25:00 MST  sensor 0 (sunset)
+12-21 17:35:00 MST  sensor 0 (privacy)
+12-21 18:00:00 MST  input  sensor.downstairs_indoor_temperature = 72.5 °F
+12-21 21:00:00 MST  input  sensor.downstairs_indoor_temperature = 70.0 °F
+12-22 00:30:00 MST  end    shade at 0

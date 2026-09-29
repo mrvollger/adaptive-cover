@@ -1,9 +1,7 @@
 """Shared fixtures for adaptive_cover tests."""
 
-from datetime import datetime, timedelta, UTC
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import pandas as pd
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -68,60 +66,32 @@ def auto_enable_custom_integrations(enable_custom_integrations):
 
 
 @pytest.fixture(autouse=True)
-def mock_sun_data():
-    """Mock SunData to avoid needing real astral location config."""
-    # The SunData import path is centralized in golden_lib.patch_sun_data
-    # (the single sanctioned test-side seam); import lazily so conftest
-    # collection stays light.
-    from tests.characterization.golden_lib import patch_sun_data
+def _restore_sun_data_factory():
+    """Guard: no test can leak a sun-data override into the next test.
 
-    # Use UTC-based dates to avoid local/UTC date mismatch with datetime.utcnow()
-    now_utc = datetime.now(UTC)
-    tomorrow = now_utc + timedelta(days=1)
-    yesterday = now_utc - timedelta(days=1)
+    (A simulation that fails before teardown never stops its override.)
+    """
+    from custom_components.adaptive_cover import calculation
 
-    class _LocalDaySunData(MagicMock):
-        """MagicMock whose solar table always spans TODAY in HA's local tz.
+    saved = calculation.sun_data_factory
+    yield
+    calculation.sun_data_factory = saved
 
-        The table was previously built once on the UTC date; between local
-        17:00 and midnight (with the US/Pacific default test timezone) that
-        date is already "tomorrow", so every coordinator refresh looked like
-        a new solar day and cleared manual overrides mid-test. Lazy
-        properties keep the table pinned to the same local date the
-        coordinator's day-rollover check compares against, at any wall-clock
-        hour and for any per-test timezone.
-        """
 
-        _N = 289  # 24h of 5-minute samples, inclusive
+@pytest.fixture(autouse=True)
+def mock_sun_data(_restore_sun_data_factory):
+    """Give every adapter the deterministic flat sun (no astral config needed).
 
-        @property
-        def times(self):
-            from homeassistant.util import dt as dt_util
+    Yields the FlatSunData instance; tests move the day's boundaries with
+    ``mock_sun_data.sunrise_at`` / ``mock_sun_data.sunset_at``.
+    """
+    # Sun-provider replacement is centralized in golden_lib (the single
+    # sanctioned test-side seam); import lazily so collection stays light.
+    from tests.characterization.golden_lib import FlatSunData, patch_sun_data
 
-            tz = dt_util.DEFAULT_TIME_ZONE
-            today_local = datetime.now(tz).date()
-            return pd.date_range(
-                start=today_local, periods=self._N, freq="5min", tz=str(tz)
-            )
-
-        @property
-        def solar_azimuth(self):
-            return [180.0] * self._N
-
-        @property
-        def solar_elevation(self):
-            return [45.0] * self._N
-
-    mock_instance = _LocalDaySunData()
-    mock_instance.sunset.return_value = datetime(
-        tomorrow.year, tomorrow.month, tomorrow.day, 23, 59, 59, tzinfo=UTC
-    )
-    mock_instance.sunrise.return_value = datetime(
-        yesterday.year, yesterday.month, yesterday.day, 0, 0, 1, tzinfo=UTC
-    )
-
-    with patch_sun_data(mock_instance):
-        yield mock_instance
+    sun = FlatSunData()
+    with patch_sun_data(sun):
+        yield sun
 
 
 @pytest.fixture

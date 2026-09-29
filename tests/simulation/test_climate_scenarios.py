@@ -118,11 +118,9 @@ async def test_intermediate_temp_equals_basic(hass, freezer):
     climate_cmds = [
         (ev.time, ev.position) for ev in climate_house.auto_moves(SHADE)
     ]
+    # teardown() disarms the service re-win guard, so the dead house
+    # cannot steal the cover services back from the basic house next.
     await climate_house.teardown()
-    # The harness's service re-win guard keeps its bus listener after
-    # teardown; disarm it so the dead house cannot steal the cover
-    # services back from the basic house created next.
-    climate_house._registering_services = True
 
     basic_house = await SimHouse.create(hass, freezer, date=DATE)
     await basic_house.advance_to("14:00")
@@ -233,7 +231,7 @@ async def test_sensor_garbage_resilience(hass, freezer):
     await house.set_weather("unknown")
     await house.set_lux("unavailable")
     await house.advance_to("13:30")
-    assert house.coordinator.last_update_success, (
+    assert house.window().available, (
         "garbage climate inputs killed the coordinator update loop"
     )
     assert house.auto_moves(SHADE, since="13:00"), (
@@ -246,7 +244,7 @@ async def test_sensor_garbage_resilience(hass, freezer):
         m for m in house.auto_moves(SHADE, since="19:30") if m.position == 0
     ]
     assert closes, "the sunset close never fired after garbage inputs"
-    assert house.coordinator.last_update_success
+    assert house.window().available
     await house.teardown()
 
 

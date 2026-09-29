@@ -33,6 +33,7 @@ from custom_components.adaptive_cover.const import (
 from custom_components.adaptive_cover.hub import HUB_UNIQUE_ID
 
 from .conftest import COMMON_OPTIONS
+from .window_handle import WindowHandle
 
 AGGREGATE_COVER = "cover.adaptive_cover_all"
 
@@ -177,15 +178,15 @@ async def test_aggregate_set_marks_manual_control_case(hass, mock_sun_entity):
 
     Proves the empty-calls assert above is not vacuous.
     """
-    e1, e2 = await _setup_two_entries(hass)
+    windows = {cover: WindowHandle(hass, cover) for cover in ("cover.a", "cover.b")}
+    await _setup_two_entries(hass)
 
     # The fixed startup refresh commanded both members at setup; land each
     # cover on its target so the travel windows clear and the elevation-50
     # tick below (~28%, differing from the landed positions) re-commands.
-    for entry, cover in ((e1, "cover.a"), (e2, "cover.b")):
-        coordinator = hass.data[DOMAIN][entry.entry_id]
+    for cover, window in windows.items():
         hass.states.async_set(
-            cover, "open", {"current_position": coordinator.target_call[cover]}
+            cover, "open", {"current_position": window.last_command}
         )
     await hass.async_block_till_done()
 

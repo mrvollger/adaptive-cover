@@ -18,7 +18,6 @@ import datetime as dt
 import json
 from pathlib import Path
 import re
-from unittest.mock import patch
 
 from freezegun import freeze_time
 from homeassistant.config_entries import ConfigEntryState
@@ -58,8 +57,14 @@ from custom_components.adaptive_cover.const import (
 )
 from custom_components.adaptive_cover.number import TUNABLES
 
-from .characterization.golden_lib import GOLDENS_DIR, SLC, FakeSunData
+from .characterization.golden_lib import (
+    GOLDENS_DIR,
+    SLC,
+    FakeSunData,
+    patch_sun_data,
+)
 from .conftest import COMMON_OPTIONS
+from .window_handle import WindowHandle
 
 COVER = "cover.test_cover"
 PKG = Path(__file__).resolve().parents[1] / "custom_components" / DOMAIN
@@ -572,23 +577,6 @@ class TestMigration:
 
 # ---------------------------------------------------- position attributes
 
-
-def _position_state(hass, entry):
-    registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id(
-        "sensor", DOMAIN, f"{entry.entry_id}_Cover Position"
-    )
-    return hass.states.get(entity_id)
-
-
-def _override_sensor_state(hass, entry):
-    registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id(
-        "binary_sensor", DOMAIN, f"{entry.entry_id}_Manual Override"
-    )
-    return hass.states.get(entity_id)
-
-
 _NEXT_EVENT_RE = re.compile(
     r"^now=(?P<now>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) -> "
     r"name='(?P<name>[^']+)' time=(?P<time>\S+) pos=(?P<pos>\d+)$"
@@ -613,8 +601,9 @@ class TestPositionAttributes:
         _set_world(hass)
         entry = _entry(hass)
         await _setup(hass, entry)
-        attrs = _position_state(hass, entry).attributes
-        assert attrs["window_key"] == entry.entry_id
+        window = WindowHandle(hass, COVER)
+        attrs = window.attributes
+        assert attrs["window_key"] == entry.entry_id == window.window_key
         assert attrs["cover_entity"] == COVER
         assert attrs["cover_type"] == "cover_blind"
         assert attrs["override_until"] is None
@@ -628,7 +617,7 @@ class TestPositionAttributes:
         hass.states.async_set("cover.second", "open", {"current_position": 60})
         entry = _entry(hass, covers=(COVER, "cover.second"))
         await _setup(hass, entry)
-        attrs = _position_state(hass, entry).attributes
+        attrs = WindowHandle(hass, "cover.second").attributes
         assert attrs["cover_entity"] == COVER
         assert attrs["cover_entities"] == [COVER, "cover.second"]
 
@@ -643,17 +632,11 @@ class TestPositionAttributes:
         await hass.config.async_set_time_zone(SLC["tz"])
         local_now = pd.Timestamp(now_str, tz=SLC["tz"]).to_pydatetime()
         sun = FakeSunData(SLC["lat"], SLC["lon"], SLC["tz"], pd.Timestamp("2026-03-20"))
-        with (
-            freeze_time(local_now),
-            patch(
-                "custom_components.adaptive_cover.calculation.SunData",
-                return_value=sun,
-            ),
-        ):
+        with freeze_time(local_now), patch_sun_data(sun):
             _set_world(hass)
             entry = _entry(hass, name=f"Next {now_str[-8:]}")
             await _setup(hass, entry)
-            next_move = _position_state(hass, entry).attributes["next_move"]
+            next_move = WindowHandle(hass, COVER).attributes["next_move"]
 
         assert set(next_move) == {"time", "position"}
         assert dt_util.parse_datetime(next_move["time"]) == dt_util.parse_datetime(
@@ -667,19 +650,19 @@ class TestPositionAttributes:
         _set_world(hass)
         entry = _entry(hass)  # override duration: 15 minutes
         await _setup(hass, entry)
+        window = WindowHandle(hass, COVER)
         # Our startup command lands, then a person moves the shade.
-        target = int(_position_state(hass, entry).state)
-        hass.states.async_set(COVER, "open", {"current_position": target})
+        hass.states.async_set(COVER, "open", {"current_position": window.target})
         await hass.async_block_till_done()
         hass.states.async_set(COVER, "open", {"current_position": 90})
         await hass.async_block_till_done()
 
+        assert window.is_manual
         latched_at = hass.states.get(COVER).last_updated
         expected = dt_util.as_local(latched_at + dt.timedelta(minutes=15))
-        until = _position_state(hass, entry).attributes["override_until"]
+        until = window.attributes["override_until"]
         assert dt_util.parse_datetime(until) == expected
-        assert _override_sensor_state(hass, entry).state == "on"
-        assert _override_sensor_state(hass, entry).attributes["until"] == until
+        assert window.state("manual_override").attributes["until"] == until
 
         # Past the expiry the next refresh clears it.
         freezer.tick(dt.timedelta(minutes=16))
@@ -687,6 +670,6 @@ class TestPositionAttributes:
             "sun.sun", "above_horizon", {"azimuth": 181.0, "elevation": 45.0}
         )
         await hass.async_block_till_done()
-        assert _override_sensor_state(hass, entry).state == "off"
-        assert _position_state(hass, entry).attributes["override_until"] is None
-        assert _override_sensor_state(hass, entry).attributes["until"] is None
+        assert not window.manual_override
+        assert window.attributes["override_until"] is None
+        assert window.state("manual_override").attributes["until"] is None

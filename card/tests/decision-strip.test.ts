@@ -29,11 +29,7 @@ const discovered: DiscoveredEntities = {
   managed_covers: [],
 };
 
-function makeHass(opts: {
-  state?: string;
-  intent?: string;
-  trace?: string[];
-}): HomeAssistant {
+function makeHass(opts: { state?: string; intent?: string; trace?: string[] }): HomeAssistant {
   return {
     states: {
       'sensor.x_cover_position': {
@@ -47,10 +43,7 @@ function makeHass(opts: {
   } as unknown as HomeAssistant;
 }
 
-async function mount(
-  hass: HomeAssistant,
-  setup?: (el: StripLike) => void,
-): Promise<StripLike> {
+async function mount(hass: HomeAssistant, setup?: (el: StripLike) => void): Promise<StripLike> {
   const el = document.createElement('acp-decision-strip') as StripLike;
   el.hass = hass;
   el.discovered = discovered;

@@ -1,0 +1,62 @@
+# house replay: Family east (01KWP1K4XH1C9J89HP8ME35CNZ) on 2026-12-21 (winter_solstice)
+# SLC (tests' lat/lon), tz=America/Denver, units=US customary, step=5min, travel=90s, 00:30 -> 00:30 next day
+# cover=cover.family_east_shades sensor_type=cover_blind options_sha256=7557d91eb9bf
+# azimuth=100.0 fov=90.0/44.0 elevation=5..50 window_h=2.0 distance=0.1 overhang=None/None glare=1.2/2.0
+# default=99.0 sunset_pos=0.0 sunset_off=20.0 sunrise_off=-20.0 start=00:00:00 end=00:00:00 min=0 (sun-only=False) max=100 (sun-only=False) privacy=None
+# climate=True temp=sensor.downstairs_indoor_temperature (downstairs) low/high=72.0/75.0 sunny=sunny,partlycloudy,clear,windy,windy-variant override={'hours': 2, 'minutes': 0, 'seconds': 0} reset=False
+# restored switches: family_east_climate_mode=on, family_east_manual_override=on, family_east_outside_temperature=off, family_east_toggle_control=on
+# lines: cmd = outbound cover call; sensor = position sensor (intent), shown when it changes; input/human = scripted
+#
+12-21 00:30:00 MST  sensor 0 (sunset)
+12-21 07:30:00 MST  cmd    set_cover_position cover.family_east_shades 99
+12-21 07:30:00 MST  sensor 99 (default)
+12-21 08:00:00 MST  input  sensor.downstairs_indoor_temperature = 69.0 °F
+12-21 08:30:00 MST  cmd    set_cover_position cover.family_east_shades 70
+12-21 08:30:00 MST  sensor 70 (admit_no_glare)
+12-21 08:35:00 MST  cmd    set_cover_position cover.family_east_shades 73
+12-21 08:35:00 MST  sensor 73 (admit_no_glare)
+12-21 08:40:00 MST  cmd    set_cover_position cover.family_east_shades 75
+12-21 08:40:00 MST  sensor 75 (admit_no_glare)
+12-21 08:45:00 MST  cmd    set_cover_position cover.family_east_shades 76
+12-21 08:45:00 MST  sensor 76 (admit_no_glare)
+12-21 08:50:00 MST  cmd    set_cover_position cover.family_east_shades 78
+12-21 08:50:00 MST  sensor 78 (admit_no_glare)
+12-21 08:55:00 MST  cmd    set_cover_position cover.family_east_shades 80
+12-21 08:55:00 MST  sensor 80 (admit_no_glare)
+12-21 09:00:00 MST  cmd    set_cover_position cover.family_east_shades 81
+12-21 09:00:00 MST  sensor 81 (admit_no_glare)
+12-21 09:05:00 MST  cmd    set_cover_position cover.family_east_shades 83
+12-21 09:05:00 MST  sensor 83 (admit_no_glare)
+12-21 09:10:00 MST  cmd    set_cover_position cover.family_east_shades 85
+12-21 09:10:00 MST  sensor 85 (admit_no_glare)
+12-21 09:15:00 MST  cmd    set_cover_position cover.family_east_shades 87
+12-21 09:15:00 MST  sensor 87 (admit_no_glare)
+12-21 09:20:00 MST  cmd    set_cover_position cover.family_east_shades 88
+12-21 09:20:00 MST  sensor 88 (admit_no_glare)
+12-21 09:25:00 MST  cmd    set_cover_position cover.family_east_shades 90
+12-21 09:25:00 MST  sensor 90 (admit_no_glare)
+12-21 09:30:00 MST  cmd    set_cover_position cover.family_east_shades 92
+12-21 09:30:00 MST  sensor 92 (admit_no_glare)
+12-21 09:35:00 MST  cmd    set_cover_position cover.family_east_shades 94
+12-21 09:35:00 MST  sensor 94 (admit_no_glare)
+12-21 09:40:00 MST  cmd    set_cover_position cover.family_east_shades 96
+12-21 09:40:00 MST  sensor 96 (admit_no_glare)
+12-21 09:45:00 MST  cmd    set_cover_position cover.family_east_shades 98
+12-21 09:45:00 MST  sensor 98 (admit_no_glare)
+12-21 09:50:00 MST  cmd    set_cover_position cover.family_east_shades 100
+12-21 09:50:00 MST  sensor 100 (admit_no_glare)
+12-21 09:55:00 MST  cmd    set_cover_position cover.family_east_shades 99
+12-21 09:55:00 MST  sensor 99 (default)
+12-21 10:00:00 MST  input  sensor.downstairs_indoor_temperature = 71.0 °F
+12-21 11:00:00 MST  input  weather.forecast_home_2 = cloudy
+12-21 11:05:00 MST  sensor 99 (climate_default)
+12-21 13:00:00 MST  input  weather.forecast_home_2 = sunny
+12-21 13:05:00 MST  sensor 99 (default)
+12-21 13:30:00 MST  human  cover.family_east_shades -> 37 (via remote)
+12-21 14:00:00 MST  input  sensor.downstairs_indoor_temperature = 73.5 °F
+12-21 15:35:00 MST  cmd    set_cover_position cover.family_east_shades 99
+12-21 17:25:00 MST  cmd    set_cover_position cover.family_east_shades 0
+12-21 17:25:00 MST  sensor 0 (sunset)
+12-21 18:00:00 MST  input  sensor.downstairs_indoor_temperature = 72.5 °F
+12-21 21:00:00 MST  input  sensor.downstairs_indoor_temperature = 70.0 °F
+12-22 00:30:00 MST  end    shade at 0

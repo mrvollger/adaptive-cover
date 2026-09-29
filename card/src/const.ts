@@ -49,9 +49,9 @@ export const HANDLER_LABELS: Record<HandlerName, string> = {
 };
 
 /**
- * i18n dotted keys for each intent. Callers with access to `hass` resolve
- * labels via `t(HANDLER_I18N_KEYS[intent], hass)`; callers without `hass`
- * fall back to `HANDLER_LABELS` for the EN string.
+ * i18n dotted keys for each intent; resolve labels via
+ * `t(HANDLER_I18N_KEYS[intent])`. `HANDLER_LABELS` holds the same strings for
+ * pure helpers (e.g. decision-summary) that take a plain label map.
  */
 export const HANDLER_I18N_KEYS: Record<HandlerName, string> = {
   privacy: 'handler.privacy',
@@ -123,7 +123,6 @@ export const BADGE_KINDS_BY_HANDLER: Partial<Record<HandlerName, BadgeKind>> = {
 };
 
 interface BadgeTokens {
-  label: string;
   bg: string;
   fg: string;
 }
@@ -134,22 +133,20 @@ interface BadgeTokens {
  * `var(--*)` so the badge reads the same regardless of theme.
  */
 export const BADGE_TOKENS: Record<BadgeKind, BadgeTokens> = {
-  auto: { label: 'Auto', bg: 'rgba(76, 175, 80, 0.18)', fg: '#2e7d32' },
-  manual: { label: 'Manual', bg: 'rgba(255, 152, 0, 0.22)', fg: '#e65100' },
-  climate: { label: 'Climate', bg: 'rgba(0, 150, 136, 0.22)', fg: '#00695c' },
-  glare_zone: { label: 'No glare', bg: 'rgba(244, 67, 54, 0.22)', fg: '#b71c1c' },
-  privacy: { label: 'Privacy', bg: 'rgba(103, 58, 183, 0.22)', fg: '#4527a0' },
-  sunset: { label: 'Sunset', bg: 'rgba(255, 112, 67, 0.22)', fg: '#bf360c' },
-  solar: { label: 'Solar tracking', bg: 'rgba(76, 175, 80, 0.22)', fg: '#1b5e20' },
-  off: { label: 'Off', bg: 'rgba(97, 97, 97, 0.28)', fg: '#212121' },
-  off_schedule: { label: 'Off-schedule', bg: 'rgba(96, 125, 139, 0.22)', fg: '#37474f' },
+  auto: { bg: 'rgba(76, 175, 80, 0.18)', fg: '#2e7d32' },
+  manual: { bg: 'rgba(255, 152, 0, 0.22)', fg: '#e65100' },
+  climate: { bg: 'rgba(0, 150, 136, 0.22)', fg: '#00695c' },
+  glare_zone: { bg: 'rgba(244, 67, 54, 0.22)', fg: '#b71c1c' },
+  privacy: { bg: 'rgba(103, 58, 183, 0.22)', fg: '#4527a0' },
+  sunset: { bg: 'rgba(255, 112, 67, 0.22)', fg: '#bf360c' },
+  solar: { bg: 'rgba(76, 175, 80, 0.22)', fg: '#1b5e20' },
+  off: { bg: 'rgba(97, 97, 97, 0.28)', fg: '#212121' },
+  off_schedule: { bg: 'rgba(96, 125, 139, 0.22)', fg: '#37474f' },
 };
 
 /**
- * i18n dotted keys for each badge kind. Callers with access to `hass`
- * resolve labels via `t(BADGE_I18N_KEYS[kind], hass)`; the EN values in
- * `BADGE_TOKENS[kind].label` are kept as a fallback when `hass` is missing
- * (e.g. unit tests, isolated component renders).
+ * i18n dotted keys for each badge kind; resolve labels via
+ * `t(BADGE_I18N_KEYS[kind])`.
  */
 export const BADGE_I18N_KEYS: Record<BadgeKind, string> = {
   auto: 'badge.auto',

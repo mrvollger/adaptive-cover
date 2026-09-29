@@ -1,0 +1,52 @@
+# house replay: Master trap (01KAA8FJRH4VKCWPDMFA1JSHBT) on 2026-09-22 (autumn_equinox)
+# SLC (tests' lat/lon), tz=America/Denver, units=US customary, step=5min, travel=90s, 00:30 -> 00:30 next day
+# cover=cover.master_trap_shades sensor_type=cover_blind options_sha256=911efde3c08c
+# azimuth=240.0 fov=90.0/90.0 elevation=None..None window_h=2.0 distance=0.1 overhang=None/None glare=1.2/2.0
+# default=99.0 sunset_pos=0.0 sunset_off=15.0 sunrise_off=0.0 start=00:00:00 end=00:00:00 min=None (sun-only=False) max=None (sun-only=False) privacy=None
+# climate=True temp=sensor.upstairs_indoor_temperature (upstairs) low/high=72.0/75.0 sunny=sunny,partlycloudy,clear,windy,windy-variant override={'hours': 2, 'minutes': 0, 'seconds': 0} reset=False
+# restored switches: master_trap_climate_mode_master_trap=on, master_trap_manual_override_master_trap=on, master_trap_outside_temperature_master_trap=off, master_trap_toggle_control_master_trap=on
+# lines: cmd = outbound cover call; sensor = position sensor (intent), shown when it changes; input/human = scripted
+#
+09-22 00:30:00 MDT  sensor 0 (sunset)
+09-22 07:20:00 MDT  cmd    set_cover_position cover.master_trap_shades 99
+09-22 07:20:00 MDT  sensor 99 (default)
+09-22 08:00:00 MDT  input  sensor.upstairs_indoor_temperature = 71.0 °F
+09-22 10:00:00 MDT  input  sensor.upstairs_indoor_temperature = 73.0 °F
+09-22 11:00:00 MDT  input  weather.forecast_home_2 = cloudy
+09-22 11:05:00 MDT  sensor 99 (climate_default)
+09-22 13:00:00 MDT  input  weather.forecast_home_2 = sunny
+09-22 13:05:00 MDT  cmd    set_cover_position cover.master_trap_shades 15
+09-22 13:05:00 MDT  sensor 15 (calculated)
+09-22 13:10:00 MDT  cmd    set_cover_position cover.master_trap_shades 13
+09-22 13:10:00 MDT  sensor 13 (calculated)
+09-22 13:15:00 MDT  cmd    set_cover_position cover.master_trap_shades 12
+09-22 13:15:00 MDT  sensor 12 (calculated)
+09-22 13:25:00 MDT  cmd    set_cover_position cover.master_trap_shades 11
+09-22 13:25:00 MDT  sensor 11 (calculated)
+09-22 13:30:00 MDT  cmd    set_cover_position cover.master_trap_shades 10
+09-22 13:30:00 MDT  sensor 10 (calculated)
+09-22 13:30:00 MDT  human  cover.master_trap_shades -> 37 (via remote)
+09-22 13:40:00 MDT  sensor 9 (calculated)
+09-22 13:55:00 MDT  sensor 8 (calculated)
+09-22 14:00:00 MDT  input  sensor.upstairs_indoor_temperature = 76.0 °F
+09-22 14:15:00 MDT  sensor 7 (calculated)
+09-22 14:35:00 MDT  sensor 6 (calculated)
+09-22 15:00:00 MDT  sensor 5 (calculated)
+09-22 15:30:00 MDT  sensor 4 (calculated)
+09-22 15:35:00 MDT  cmd    set_cover_position cover.master_trap_shades 4
+09-22 16:05:00 MDT  cmd    set_cover_position cover.master_trap_shades 3
+09-22 16:05:00 MDT  sensor 3 (calculated)
+09-22 17:00:00 MDT  cmd    set_cover_position cover.master_trap_shades 2
+09-22 17:00:00 MDT  sensor 2 (calculated)
+09-22 17:55:00 MDT  cmd    set_cover_position cover.master_trap_shades 1
+09-22 17:55:00 MDT  sensor 1 (calculated)
+09-22 18:00:00 MDT  input  sensor.upstairs_indoor_temperature = 74.0 °F
+09-22 19:05:00 MDT  cmd    set_cover_position cover.master_trap_shades 0
+09-22 19:05:00 MDT  sensor 0 (calculated)
+09-22 19:06:30 MDT  cmd    set_cover_position cover.master_trap_shades 0
+09-22 19:25:00 MDT  cmd    set_cover_position cover.master_trap_shades 99
+09-22 19:25:00 MDT  sensor 99 (default)
+09-22 19:40:00 MDT  cmd    set_cover_position cover.master_trap_shades 0
+09-22 19:40:00 MDT  sensor 0 (sunset)
+09-22 21:00:00 MDT  input  sensor.upstairs_indoor_temperature = 71.5 °F
+09-23 00:30:00 MDT  end    shade at 0

@@ -48,12 +48,12 @@ export class ClimatePanel extends LitElement {
 
     const modeOff = this.hass.states[modeId]?.state === 'off';
     if (modeOff || st.state === 'unknown' || st.state === '') {
-      const label = modeOff ? t('climate.mode_off', this.hass) : t('climate.standby', this.hass);
+      const label = modeOff ? t('climate.mode_off') : t('climate.standby');
       const icon = modeOff ? 'mdi:power-off' : 'mdi:thermostat';
       return html`
         <div class="wrap">
           <div class="head">
-            <span class="label">${t('climate.title', this.hass)}</span>
+            <span class="label">${t('climate.title')}</span>
           </div>
           <div class="strategy standby">
             <ha-icon icon=${icon}></ha-icon>
@@ -72,7 +72,7 @@ export class ClimatePanel extends LitElement {
     return html`
       <div class="wrap">
         <div class="head">
-          <span class="label">${t('climate.title', this.hass)}</span>
+          <span class="label">${t('climate.title')}</span>
         </div>
         <div class="strategy">
           <ha-icon icon=${icon}></ha-icon>

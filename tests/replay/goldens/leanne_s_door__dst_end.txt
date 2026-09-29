@@ -1,0 +1,37 @@
+# house replay: Leanne's door (01KSBFBK88WRN0NYVSHNR37QJX) on 2026-11-01 (dst_end)
+# SLC (tests' lat/lon), tz=America/Denver, units=US customary, step=5min, travel=90s, 00:30 -> 00:30 next day
+# cover=cover.sw_sw_shade sensor_type=cover_blind options_sha256=a196e3df8acc
+# azimuth=235.0 fov=60.0/60.0 elevation=None..50 window_h=2.1 distance=0.2 overhang=None/None glare=1.2/2.0
+# default=97.0 sunset_pos=5.0 sunset_off=-30.0 sunrise_off=0.0 start=06:00:00 end=00:00:00 min=None (sun-only=False) max=None (sun-only=False) privacy=None
+# climate=True temp=sensor.upstairs_indoor_temperature (upstairs) low/high=72.0/75.0 sunny=sunny,partlycloudy,clear,windy,windy-variant override={'hours': 2, 'minutes': 0, 'seconds': 0} reset=False
+# restored switches: leanne_s_door_climate_mode=on, leanne_s_door_outside_temperature=off, sw_door_shade_manual_override_sw_door_shades=on, sw_door_shade_toggle_control_sw_door_shades=on
+# lines: cmd = outbound cover call; sensor = position sensor (intent), shown when it changes; input/human = scripted
+#
+11-01 00:30:00 MDT  sensor 5 (sunset)
+11-01 07:00:00 MST  cmd    set_cover_position cover.sw_sw_shade 97
+11-01 07:00:00 MST  sensor 97 (default)
+11-01 08:00:00 MST  input  sensor.upstairs_indoor_temperature = 71.0 °F
+11-01 10:00:00 MST  input  sensor.upstairs_indoor_temperature = 73.0 °F
+11-01 11:00:00 MST  input  weather.forecast_home_2 = cloudy
+11-01 11:05:00 MST  sensor 97 (climate_default)
+11-01 13:00:00 MST  input  weather.forecast_home_2 = sunny
+11-01 13:05:00 MST  cmd    set_cover_position cover.sw_sw_shade 8
+11-01 13:05:00 MST  sensor 8 (calculated)
+11-01 13:20:00 MST  cmd    set_cover_position cover.sw_sw_shade 7
+11-01 13:20:00 MST  sensor 7 (calculated)
+11-01 13:30:00 MST  human  cover.sw_sw_shade -> 37 (via remote)
+11-01 13:45:00 MST  sensor 6 (calculated)
+11-01 14:00:00 MST  input  sensor.upstairs_indoor_temperature = 76.0 °F
+11-01 14:15:00 MST  sensor 5 (calculated)
+11-01 14:50:00 MST  sensor 4 (calculated)
+11-01 15:25:00 MST  sensor 3 (calculated)
+11-01 15:35:00 MST  cmd    set_cover_position cover.sw_sw_shade 3
+11-01 15:55:00 MST  cmd    set_cover_position cover.sw_sw_shade 2
+11-01 15:55:00 MST  sensor 2 (calculated)
+11-01 16:30:00 MST  cmd    set_cover_position cover.sw_sw_shade 1
+11-01 16:30:00 MST  sensor 1 (calculated)
+11-01 16:55:00 MST  cmd    set_cover_position cover.sw_sw_shade 5
+11-01 16:55:00 MST  sensor 5 (sunset)
+11-01 18:00:00 MST  input  sensor.upstairs_indoor_temperature = 74.0 °F
+11-01 21:00:00 MST  input  sensor.upstairs_indoor_temperature = 71.5 °F
+11-02 00:30:00 MST  end    shade at 5

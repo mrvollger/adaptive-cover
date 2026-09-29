@@ -178,13 +178,13 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
     return html`
       <div class="form">
         <div class="section">
-          <label class="field-label">${t('editor.common.entry_id', this.hass)}</label>
+          <label class="field-label">${t('editor.common.entry_id')}</label>
           ${this._renderEntryPicker()}
         </div>
 
         <div class="section">
-          <label class="field-label">${t('editor.main.sections', this.hass)}</label>
-          <div class="hint">${t('editor.main.sections_hint', this.hass)}</div>
+          <label class="field-label">${t('editor.main.sections')}</label>
+          <div class="hint">${t('editor.main.sections_hint')}</div>
           ${SECTION_ROWS.map(
             (row) => html`
               <label class="toggle-row">
@@ -195,8 +195,8 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
                     this._onSectionToggle(row.key, (e.target as HTMLInputElement).checked)}
                 />
                 <span class="toggle-text">
-                  <span class="toggle-label">${t(row.labelKey, this.hass)}</span>
-                  <span class="toggle-desc">${t(row.descKey, this.hass)}</span>
+                  <span class="toggle-label">${t(row.labelKey)}</span>
+                  <span class="toggle-desc">${t(row.descKey)}</span>
                 </span>
               </label>
             `,
@@ -204,8 +204,8 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
         </div>
 
         <div class="section">
-          <label class="field-label">${t('editor.main.controls', this.hass)}</label>
-          <div class="hint">${t('editor.main.controls_hint', this.hass)}</div>
+          <label class="field-label">${t('editor.main.controls')}</label>
+          <div class="hint">${t('editor.main.controls_hint')}</div>
           <label class="toggle-row">
             <input
               type="checkbox"
@@ -217,10 +217,8 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
                 )}
             />
             <span class="toggle-text">
-              <span class="toggle-label"
-                >${t('editor.main.integration_pill_label', this.hass)}</span
-              >
-              <span class="toggle-desc">${t('editor.main.integration_pill_desc', this.hass)}</span>
+              <span class="toggle-label">${t('editor.main.integration_pill_label')}</span>
+              <span class="toggle-desc">${t('editor.main.integration_pill_desc')}</span>
             </span>
           </label>
           <label class="toggle-row">
@@ -231,8 +229,8 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
                 this._onControlToggle('automatic_control', (e.target as HTMLInputElement).checked)}
             />
             <span class="toggle-text">
-              <span class="toggle-label">${t('editor.main.automatic_pill_label', this.hass)}</span>
-              <span class="toggle-desc">${t('editor.main.automatic_pill_desc', this.hass)}</span>
+              <span class="toggle-label">${t('editor.main.automatic_pill_label')}</span>
+              <span class="toggle-desc">${t('editor.main.automatic_pill_desc')}</span>
             </span>
           </label>
           <label class="toggle-row">
@@ -246,8 +244,8 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
                 )}
             />
             <span class="toggle-text">
-              <span class="toggle-label">${t('editor.main.reset_button_label', this.hass)}</span>
-              <span class="toggle-desc">${t('editor.main.reset_button_desc', this.hass)}</span>
+              <span class="toggle-label">${t('editor.main.reset_button_label')}</span>
+              <span class="toggle-desc">${t('editor.main.reset_button_desc')}</span>
             </span>
           </label>
         </div>
@@ -255,8 +253,8 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
         ${this._config.entry_id
           ? html`
               <div class="section">
-                <label class="field-label">${t('editor.compass.cover_colors', this.hass)}</label>
-                <div class="hint">${t('editor.compass.cover_colors_hint', this.hass)}</div>
+                <label class="field-label">${t('editor.compass.cover_colors')}</label>
+                <div class="hint">${t('editor.compass.cover_colors_hint')}</div>
                 ${(() => {
                   const override = this._config!.cover_colors?.[0] ?? null;
                   const resolved = override ?? colorForIndex(0);
@@ -270,9 +268,7 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
                       />
                       <span class="toggle-text">
                         <span class="toggle-desc"
-                          >${override
-                            ? override
-                            : t('editor.compass.default_color', this.hass)}</span
+                          >${override ? override : t('editor.compass.default_color')}</span
                         >
                       </span>
                       <button
@@ -281,7 +277,7 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
                         ?disabled=${!override}
                         @click=${() => this._onCoverColorReset()}
                       >
-                        ${t('editor.common.reset', this.hass)}
+                        ${t('editor.common.reset')}
                       </button>
                     </div>
                   `;
@@ -291,7 +287,7 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
           : nothing}
 
         <div class="section">
-          <label class="field-label">${t('editor.main.display', this.hass)}</label>
+          <label class="field-label">${t('editor.main.display')}</label>
           <label class="toggle-row">
             <input
               type="checkbox"
@@ -299,8 +295,8 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
               @change=${(e: Event) => this._onCompactToggle((e.target as HTMLInputElement).checked)}
             />
             <span class="toggle-text">
-              <span class="toggle-label">${t('editor.main.compact_label', this.hass)}</span>
-              <span class="toggle-desc">${t('editor.main.compact_desc', this.hass)}</span>
+              <span class="toggle-label">${t('editor.main.compact_label')}</span>
+              <span class="toggle-desc">${t('editor.main.compact_desc')}</span>
             </span>
           </label>
           <label class="toggle-row">
@@ -311,12 +307,8 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
                 this._onCompassStatsToggle((e.target as HTMLInputElement).checked)}
             />
             <span class="toggle-text">
-              <span class="toggle-label"
-                >${t('editor.main.show_compass_stats_label', this.hass)}</span
-              >
-              <span class="toggle-desc"
-                >${t('editor.main.show_compass_stats_desc', this.hass)}</span
-              >
+              <span class="toggle-label">${t('editor.main.show_compass_stats_label')}</span>
+              <span class="toggle-desc">${t('editor.main.show_compass_stats_desc')}</span>
             </span>
           </label>
           <label class="toggle-row">
@@ -327,12 +319,8 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
                 this._onCompassLegendToggle((e.target as HTMLInputElement).checked)}
             />
             <span class="toggle-text">
-              <span class="toggle-label"
-                >${t('editor.main.show_compass_legend_label', this.hass)}</span
-              >
-              <span class="toggle-desc"
-                >${t('editor.main.show_compass_legend_desc', this.hass)}</span
-              >
+              <span class="toggle-label">${t('editor.main.show_compass_legend_label')}</span>
+              <span class="toggle-desc">${t('editor.main.show_compass_legend_desc')}</span>
             </span>
           </label>
           <label class="toggle-row">
@@ -342,8 +330,8 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
               @change=${(e: Event) => this._onMoonToggle((e.target as HTMLInputElement).checked)}
             />
             <span class="toggle-text">
-              <span class="toggle-label">${t('editor.main.show_moon_label', this.hass)}</span>
-              <span class="toggle-desc">${t('editor.main.show_moon_desc', this.hass)}</span>
+              <span class="toggle-label">${t('editor.main.show_moon_label')}</span>
+              <span class="toggle-desc">${t('editor.main.show_moon_desc')}</span>
             </span>
           </label>
           <label class="toggle-row">
@@ -354,15 +342,15 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
                 this._onHideInactiveToggle((e.target as HTMLInputElement).checked)}
             />
             <span class="toggle-text">
-              <span class="toggle-label">${t('editor.main.hide_inactive_label', this.hass)}</span>
-              <span class="toggle-desc">${t('editor.main.hide_inactive_desc', this.hass)}</span>
+              <span class="toggle-label">${t('editor.main.hide_inactive_label')}</span>
+              <span class="toggle-desc">${t('editor.main.hide_inactive_desc')}</span>
             </span>
           </label>
         </div>
 
         <div class="section">
-          <label class="field-label">${t('editor.common.north_offset', this.hass)}</label>
-          <div class="hint">${t('editor.common.north_offset_hint', this.hass)}</div>
+          <label class="field-label">${t('editor.common.north_offset')}</label>
+          <div class="hint">${t('editor.common.north_offset_hint')}</div>
           <input
             type="number"
             class="text-input"
@@ -372,7 +360,7 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
             @change=${this._onNorthOffsetChange}
           />
         </div>
-        ${renderEditorFooter(this.hass)}
+        ${renderEditorFooter()}
       </div>
     `;
   }
@@ -380,29 +368,24 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
   private _renderEntryPicker(): TemplateResult {
     if (this._entriesError) {
       return html`
-        <div class="error">
-          ${t('editor.common.load_failed', this.hass, { error: this._entriesError })}
-        </div>
+        <div class="error">${t('editor.common.load_failed', { error: this._entriesError })}</div>
         <input
           type="text"
           .value=${this._config?.entry_id ?? ''}
-          placeholder=${t('editor.common.entry_id_manual_placeholder', this.hass)}
+          placeholder=${t('editor.common.entry_id_manual_placeholder')}
           @change=${this._onEntryChange}
           class="text-input"
         />
       `;
     }
     if (!this._entries) {
-      return html`<div class="hint">${t('editor.common.loading_entries', this.hass)}</div>`;
+      return html`<div class="hint">${t('editor.common.loading_entries')}</div>`;
     }
     if (this._entries.length === 0) {
       return html`
         <div class="error">
-          ${t('editor.common.no_entries', this.hass)}
-          <code>${t('editor.common.no_entries_path', this.hass)}</code>${t(
-            'editor.common.no_entries_then',
-            this.hass,
-          )}
+          ${t('editor.common.no_entries')}
+          <code>${t('editor.common.no_entries_path')}</code>${t('editor.common.no_entries_then')}
         </div>
       `;
     }
@@ -411,7 +394,7 @@ export class AdaptiveCoverCardEditor extends LitElement implements LovelaceCardE
         ${this._config?.entry_id &&
         !this._entries.some((e) => e.entry_id === this._config!.entry_id)
           ? html`<option value=${this._config.entry_id}>
-              ${t('editor.common.unknown_entry', this.hass, { entry: this._config.entry_id })}
+              ${t('editor.common.unknown_entry', { entry: this._config.entry_id })}
             </option>`
           : nothing}
         ${this._entries.map(

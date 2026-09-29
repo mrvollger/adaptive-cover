@@ -58,7 +58,9 @@ function makeDiscovered(
     cover_type: opts.coverType ?? 'cover_blind',
     entities: {
       target_position_sensor: `sensor.pos_${entryId}`,
-      ...(opts.withSunInfront ? { sun_infront_binary: `binary_sensor.sun_infront_${entryId}` } : {}),
+      ...(opts.withSunInfront
+        ? { sun_infront_binary: `binary_sensor.sun_infront_${entryId}` }
+        : {}),
       ...(opts.withOverrideBinary ? { manual_override_binary: `binary_sensor.mo_${entryId}` } : {}),
       ...(opts.withStartEnd
         ? { start_sensor: `sensor.start_${entryId}`, end_sensor: `sensor.end_${entryId}` }
@@ -766,18 +768,36 @@ describe('acp-sky-compass visual toggles', () => {
     expect(onRim.length).toBeLessThanOrEqual(4);
   });
 
+  // The arc is sampled for "today" at the fixture location (Seattle, 47.6°N),
+  // so its colours depend on the date: the ramp encodes elevation, and the
+  // noon sun there peaks at ~66° in June but only ~19° in December. Pin the
+  // clock so the gradient under test is deterministic across the year.
+  const gradientGoldness = async (isoNow: string): Promise<number[]> => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(isoNow));
+    try {
+      const el = await mountCompass([d()], hass(), { showSunriseSunset: true });
+      const lines = sunPathLines(el);
+      expect(lines.length).toBeGreaterThanOrEqual(1);
+      const idMatch = (lines[0].getAttribute('style') ?? '').match(/url\(#(sun-path-grad-\d+)\)/);
+      expect(idMatch).not.toBeNull();
+      const stops = Array.from(
+        el.shadowRoot!.querySelectorAll(`linearGradient#${idMatch![1]} stop`),
+      );
+      expect(stops.length).toBeGreaterThanOrEqual(3);
+      // "Goldness" = R − B: ~−13 for the horizon grey, ~221 for zenith gold.
+      return stops.map((s) => {
+        const m = stopRgb(s)!;
+        return Number(m[1]) - Number(m[3]);
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  };
+
   it('showSunriseSunset=true ramps the arc grey (horizon) → gold (zenith) by elevation', async () => {
-    const el = await mountCompass([d()], hass(), { showSunriseSunset: true });
-    const lines = sunPathLines(el);
-    expect(lines.length).toBeGreaterThanOrEqual(1);
-    const idMatch = (lines[0].getAttribute('style') ?? '').match(/url\(#(sun-path-grad-\d+)\)/);
-    expect(idMatch).not.toBeNull();
-    const stops = Array.from(el.shadowRoot!.querySelectorAll(`linearGradient#${idMatch![1]} stop`));
-    expect(stops.length).toBeGreaterThanOrEqual(3);
-    const goldness = stops.map((s) => {
-      const m = stopRgb(s)!;
-      return Number(m[1]) - Number(m[3]);
-    });
+    // Summer solstice, local afternoon in America/Los_Angeles.
+    const goldness = await gradientGoldness('2026-06-21T19:00:00Z');
     const maxGold = Math.max(...goldness);
     const maxIdx = goldness.indexOf(maxGold);
     expect(maxIdx).toBeGreaterThan(0);
@@ -787,6 +807,17 @@ describe('acp-sky-compass visual toggles', () => {
     expect(maxGold).toBeGreaterThan(150);
     expect(Math.abs(goldness[0])).toBeLessThan(80);
     expect(Math.abs(goldness[goldness.length - 1])).toBeLessThan(80);
+  });
+
+  it('showSunriseSunset=true: a low winter arc peaks less gold than a high summer arc', async () => {
+    // The colour tracks elevation only, so the December noon (~19°) must read
+    // warmer than its horizon ends yet clearly less gold than the June noon.
+    const winter = await gradientGoldness('2026-12-21T20:00:00Z');
+    const summer = await gradientGoldness('2026-06-21T19:00:00Z');
+    const winterPeak = Math.max(...winter);
+    expect(winterPeak).toBeGreaterThan(winter[0]);
+    expect(winterPeak).toBeGreaterThan(winter[winter.length - 1]);
+    expect(winterPeak).toBeLessThan(Math.max(...summer) - 50);
   });
 
   it('showSunriseSunset=false draws the arc in a single colour', async () => {

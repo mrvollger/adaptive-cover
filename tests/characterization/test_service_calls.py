@@ -5,18 +5,22 @@ plus regression tests for past bug-fix commits:
 
 - 179536b: unavailable/unknown cover transitions must not latch manual override
 - 1b2b668:  manual override must be visible in the same update cycle's data
-- bbca2e9:  _predict_position_at_time must index sun tables across timezones
+- bbca2e9:  the predicted sun-entry position must index the tz-aware sun table
 - 80f0fbf:  get_safe_attr replaces the removed HA state_attr helper
+
+Everything is observed through the window's public surface (WindowHandle):
+entity states, the call_service bus record, adaptive_cover_moved events.
 """
 
 from __future__ import annotations
 
 import logging
 from types import SimpleNamespace
-from unittest.mock import patch
 
 import pandas as pd
 import pytest
+from freezegun import freeze_time
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     async_mock_service,
@@ -27,18 +31,23 @@ from custom_components.adaptive_cover.config_context_adapter import (
     ConfigContextAdapter,
 )
 from custom_components.adaptive_cover.const import (
+    CONF_AZIMUTH,
     CONF_DELTA_TIME,
     CONF_DISTANCE,
     CONF_ENTITIES,
+    CONF_FOV_LEFT,
+    CONF_FOV_RIGHT,
     CONF_HEIGHT_WIN,
     CONF_SENSOR_TYPE,
     DOMAIN,
     SensorType,
 )
+from custom_components.adaptive_cover.engine import geometry as engine_geometry
 from custom_components.adaptive_cover.helpers import get_safe_attr
 
 from ..conftest import COMMON_OPTIONS
-from .golden_lib import SLC, FakeSunData
+from ..window_handle import WindowHandle, internal_coordinator
+from .golden_lib import SLC, FakeSunData, patch_sun_data
 
 COVER = "cover.test_cover"
 
@@ -66,20 +75,22 @@ def cover_calls(hass):
     return async_mock_service(hass, "cover", "set_cover_position")
 
 
-async def _setup(hass, entry):
+async def _setup(hass, entry) -> WindowHandle:
+    """Set the entry up; the handle records from before the startup move."""
+    window = WindowHandle(hass, COVER)
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
+    return window
 
 
-async def _land_startup_move(hass, entry):
+async def _land_startup_move(hass, window):
     """Complete the startup positioning the fixed first refresh performs.
 
     Setup now commands the cover (source='startup') as soon as the control
     switch restores; land the cover on that target so the in-flight travel
     window clears before the behavior under test begins.
     """
-    coordinator = hass.data[DOMAIN][entry.entry_id]
-    _set_cover(hass, coordinator.target_call[COVER])
+    _set_cover(hass, window.last_command)
     await hass.async_block_till_done()
 
 
@@ -104,30 +115,29 @@ async def test_fresh_setup_positions_covers(
     consumed the one-shot flag with the toggle still None — covers then
     sat at their stale position until the next sun change. The fix defers
     the flag, so the switch's restore-refresh performs the startup move.
-    (The command itself is measured via target_call because the hub
-    bootstrap replaces any pre-setup service mock during setup.)
+    (The command itself is measured from HA's call_service bus event
+    because the hub bootstrap replaces any pre-setup service mock during
+    setup.)
     """
     _set_cover(hass, 60)
-    await _setup(hass, cover_entry)
-    coordinator = hass.data[DOMAIN][cover_entry.entry_id]
-    assert COVER in coordinator.target_call, "no startup command was issued"
-    assert coordinator.target_call[COVER] == coordinator.data.states["state"]
-    assert coordinator.move_log[COVER][0]["source"] == "startup"
+    window = await _setup(hass, cover_entry)
+    assert window.commands, "no startup command was issued"
+    assert window.last_command == window.target
+    assert window.moves[0]["source"] == "startup"
 
 
 async def test_sun_change_triggers_position_call(
     hass, cover_entry, mock_sun_entity, cover_calls
 ):
     _set_cover(hass, 60)
-    await _setup(hass, cover_entry)
-    await _land_startup_move(hass, cover_entry)
+    window = await _setup(hass, cover_entry)
+    await _land_startup_move(hass, window)
     cover_calls = async_mock_service(hass, "cover", "set_cover_position")
 
     _nudge_sun(hass)
     await hass.async_block_till_done()
 
-    coordinator = hass.data[DOMAIN][cover_entry.entry_id]
-    expected = coordinator.data.states["state"]
+    expected = window.target
     assert len(cover_calls) == 1
     assert cover_calls[0].data == {"entity_id": COVER, "position": expected}
 
@@ -137,8 +147,7 @@ async def test_regression_179536b_unavailable_transition_no_override(
 ):
     """Cover going unavailable and coming back must not latch manual override."""
     _set_cover(hass, 60)
-    await _setup(hass, cover_entry)
-    coordinator = hass.data[DOMAIN][cover_entry.entry_id]
+    window = await _setup(hass, cover_entry)
 
     hass.states.async_set(COVER, "unavailable")
     await hass.async_block_till_done()
@@ -146,19 +155,19 @@ async def test_regression_179536b_unavailable_transition_no_override(
     _set_cover(hass, 90)
     await hass.async_block_till_done()
 
-    assert coordinator.manager.is_cover_manual(COVER) is False
-    assert coordinator.data.states["manual_override"] is False
+    assert window.is_manual is False
+    assert window.manual_override is False
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_regression_1b2b668_override_visible_same_cycle(
     hass, cover_entry, mock_sun_entity, cover_calls
 ):
     """A manual move must latch override AND show in the same cycle's data."""
     _set_cover(hass, 60)
-    await _setup(hass, cover_entry)
-    await _land_startup_move(hass, cover_entry)
+    window = await _setup(hass, cover_entry)
+    await _land_startup_move(hass, window)
     cover_calls = async_mock_service(hass, "cover", "set_cover_position")
-    coordinator = hass.data[DOMAIN][cover_entry.entry_id]
 
     # Integration moves the cover; simulate it reaching its target so the
     # wait-for-target latch clears.
@@ -172,10 +181,11 @@ async def test_regression_1b2b668_override_visible_same_cycle(
     _set_cover(hass, 90)
     await hass.async_block_till_done()
 
-    assert coordinator.manager.is_cover_manual(COVER) is True
-    assert coordinator.data.states["manual_override"] is True
-    assert coordinator.data.states["last_change_reason"] == "Manual override"
-    assert coordinator.data.states["last_change_new"] == 90
+    assert window.is_manual is True
+    assert window.manual_override is True
+    last_change = window.state("last_change").attributes
+    assert last_change["reason"] == "Manual override"
+    assert last_change["new_position"] == 90
 
 
 async def test_regression_foreign_landing_during_wait_latches_manual(
@@ -188,10 +198,9 @@ async def test_regression_foreign_landing_during_wait_latches_manual(
     reverted the human's position — the reported override-loss symptom.)
     """
     _set_cover(hass, 60)
-    await _setup(hass, cover_entry)
-    await _land_startup_move(hass, cover_entry)
+    window = await _setup(hass, cover_entry)
+    await _land_startup_move(hass, window)
     cover_calls = async_mock_service(hass, "cover", "set_cover_position")
-    coordinator = hass.data[DOMAIN][cover_entry.entry_id]
 
     _nudge_sun(hass)
     await hass.async_block_till_done()
@@ -201,32 +210,63 @@ async def test_regression_foreign_landing_during_wait_latches_manual(
     _set_cover(hass, 90)
     await hass.async_block_till_done()
 
-    assert coordinator.manager.is_cover_manual(COVER) is True
+    assert window.is_manual is True
+    # contract: internal (travel-window latch; no entity exposes an
+    # in-flight command)
+    coordinator = internal_coordinator(hass, cover_entry.entry_id)
     assert coordinator.wait_for_target[COVER] is False
 
 
-def test_regression_bbca2e9_predict_position_timezone():
-    """UTC target times must index a tz-aware sun table correctly."""
-    date = pd.Timestamp("2026-03-20")
-    sun_data = FakeSunData(SLC["lat"], SLC["lon"], SLC["tz"], date)
-    logger = ConfigContextAdapter(logging.getLogger("predict"))
-    logger.set_config_name("Predict")
-    with patch(
-        "custom_components.adaptive_cover.calculation.SunData",
-        return_value=sun_data,
-    ):
+# 2026-03-20 16:00 UTC == 10:00 MDT: after sunrise, hours before the sun
+# swings round to a west-facing window.
+@freeze_time("2026-03-20 16:00:00")
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
+async def test_regression_bbca2e9_predicted_entry_position(hass, cover_calls):
+    """The predicted 'Sun enters window' position comes from the right row.
+
+    Regression bbca2e9: the prediction looked its target time up in the
+    tz-aware sun table without converting it to the table's zone, missed,
+    and fell back to the default position. Observed at the entity
+    boundary: the Next State Change sensor's expected_position for the sun
+    entering the window must be the calculated position at that table row
+    (table-local time), not the default.
+    """
+    await hass.config.async_set_time_zone(SLC["tz"])
+    sun_data = FakeSunData(SLC["lat"], SLC["lon"], SLC["tz"], pd.Timestamp("2026-03-20"))
+    win_azi, fov = 250, 45
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={"name": "Predict", CONF_SENSOR_TYPE: SensorType.BLIND},
+        options={
+            **COMMON_OPTIONS,
+            CONF_HEIGHT_WIN: 2.1,
+            CONF_DISTANCE: 0.5,
+            CONF_AZIMUTH: win_azi,
+            CONF_FOV_LEFT: fov,
+            CONF_FOV_RIGHT: fov,
+            CONF_ENTITIES: [COVER],
+            CONF_DELTA_TIME: 0,
+        },
+    )
+    entry.add_to_hass(hass)
+    _nudge_sun(hass, elevation=45.0)
+    _set_cover(hass, 60)
+    with patch_sun_data(sun_data):
+        window = await _setup(hass, entry)
+        # The expected value, computed the way production predicts it: the
+        # first in-window table row, through the adapter's geometry.
         cover = AdaptiveVerticalCover(
             hass=SimpleNamespace(),
-            logger=logger,
+            logger=_predict_logger(),
             sol_azi=180.0,
             sol_elev=45.0,
             sunset_pos=0,
             sunset_off=0,
             sunrise_off=0,
             timezone=SLC["tz"],
-            fov_left=90,
-            fov_right=90,
-            win_azi=180,
+            fov_left=fov,
+            fov_right=fov,
+            win_azi=win_azi,
             h_def=60,
             max_pos=None,
             min_pos=None,
@@ -242,28 +282,34 @@ def test_regression_bbca2e9_predict_position_timezone():
             h_win=2.1,
         )
 
-    from custom_components.adaptive_cover.coordinator import (
-        AdaptiveDataUpdateCoordinator,
-    )
-
-    coord = object.__new__(AdaptiveDataUpdateCoordinator)
-    coord.logger = logger
-    coord._sun_table = None
-
-    # Local noon expressed in UTC: 2026-03-20 12:00 MDT == 18:00 UTC.
-    target_utc = pd.Timestamp("2026-03-20 18:00", tz="UTC").to_pydatetime()
-    predicted = coord._predict_position_at_time(cover, target_utc)
-
-    idx = sun_data.times.get_indexer(
-        [pd.Timestamp("2026-03-20 12:00", tz=SLC["tz"])], method="nearest"
-    )[0]
+    azi_min = (win_azi - fov + 360) % 360
+    entry_rows = [
+        i
+        for i in range(len(sun_data.times))
+        if (sun_data.solar_azimuth[i] - azi_min) % 360 <= (2 * fov) % 360
+        and engine_geometry.valid_elevation(sun_data.solar_elevation[i], None, None)
+    ]
+    idx = entry_rows[0]
     expected = cover.calculate_percentage_at(
         sun_data.solar_azimuth[idx], sun_data.solar_elevation[idx]
     )
-    assert predicted == expected
-    # Local noon in March has the sun ~47 deg high in front of a south
-    # window: the position must be the calculated one, not the default.
-    assert predicted != 60
+
+    state = window.state("next_change")
+    assert state.attributes["event"] == "Sun enters window"
+    assert (
+        dt_util.parse_datetime(state.attributes["expected_time"])
+        == sun_data.times[idx].to_pydatetime()
+    )
+    assert state.attributes["expected_position"] == expected
+    # Mid-afternoon sun ~46 deg high enters a west window: the prediction
+    # must be the calculated one, not the default.
+    assert expected != 60
+
+
+def _predict_logger() -> ConfigContextAdapter:
+    logger = ConfigContextAdapter(logging.getLogger("predict"))
+    logger.set_config_name("Predict")
+    return logger
 
 
 class TestGetSafeAttr:

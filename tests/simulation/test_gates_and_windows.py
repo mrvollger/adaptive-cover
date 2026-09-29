@@ -32,7 +32,6 @@ from custom_components.adaptive_cover.const import (
     CONF_START_ENTITY,
     CONF_START_TIME,
     CONF_SUNSET_POS,
-    DOMAIN,
 )
 
 from .harness import SimHouse
@@ -654,7 +653,7 @@ async def test_climate_switch_flips_live(hass, freezer):
         },
     )
     await house.advance_to("12:00")
-    coordinator_before = hass.data[DOMAIN][house.entry.entry_id]
+    teardowns_before = house.window().teardowns
     assert house.position(SHADE) == 100, (
         "climate mode on a cold cloudy day at home should open fully"
     )
@@ -673,7 +672,7 @@ async def test_climate_switch_flips_live(hass, freezer):
     assert house.position(SHADE) == 100, (
         "flipping climate mode back on should re-open fully"
     )
-    assert hass.data[DOMAIN][house.entry.entry_id] is coordinator_before, (
+    assert house.window().teardowns == teardowns_before, (
         "the mode flip must not reload the entry"
     )
     await house.teardown()

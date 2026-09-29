@@ -1,0 +1,237 @@
+{
+  "config": {
+    "views": [
+      {
+        "header": {
+          "badges_position": "bottom",
+          "badges_wrap": "wrap",
+          "layout": "responsive"
+        },
+        "max_columns": 3,
+        "path": "shades",
+        "sections": [
+          {
+            "cards": [
+              {
+                "heading": "Master",
+                "heading_style": "title",
+                "icon": "mdi:bed-king",
+                "type": "heading"
+              },
+              {
+                "cover": "cover.master_east_shades",
+                "entry_id": "01KWP1JY50D79YNJ6A6MG5RC15",
+                "type": "custom:adaptive-cover-tile-card"
+              },
+              {
+                "cover": "cover.master_door_shades",
+                "entry_id": "01KWP1KBER8D63ZW8C5326F7AC",
+                "type": "custom:adaptive-cover-tile-card"
+              },
+              {
+                "cover": "cover.master_south_shades",
+                "entry_id": "01KWQEPAFBRZQ463CW35SKE8GH",
+                "type": "custom:adaptive-cover-tile-card"
+              },
+              {
+                "cover": "cover.master_trap_shades",
+                "entry_id": "01KAA8FJRH4VKCWPDMFA1JSHBT",
+                "type": "custom:adaptive-cover-tile-card"
+              },
+              {
+                "entity": "cover.master_shades",
+                "name": "All master",
+                "show_buttons_control": false,
+                "show_position_control": true,
+                "type": "custom:mushroom-cover-card"
+              }
+            ],
+            "type": "grid"
+          },
+          {
+            "cards": [
+              {
+                "heading": "Office",
+                "heading_style": "title",
+                "icon": "mdi:desk",
+                "type": "heading"
+              },
+              {
+                "cover": "cover.office_north_shades",
+                "entry_id": "01KAD4XDDT8YPF97FN3095Y9C3",
+                "type": "custom:adaptive-cover-tile-card"
+              },
+              {
+                "cover": "cover.office_door_shades",
+                "entry_id": "01KGZNRGJ39Q0S8GH12BW15QY3",
+                "type": "custom:adaptive-cover-tile-card"
+              },
+              {
+                "cover": "cover.office_east_shades",
+                "entry_id": "01KAD50Y5394DV5VKX96T6R9JZ",
+                "type": "custom:adaptive-cover-tile-card"
+              },
+              {
+                "entity": "cover.office_shades",
+                "name": "All office",
+                "show_buttons_control": false,
+                "show_position_control": true,
+                "type": "custom:mushroom-cover-card"
+              }
+            ],
+            "type": "grid"
+          },
+          {
+            "cards": [
+              {
+                "heading": "Family room",
+                "heading_style": "title",
+                "icon": "mdi:sofa",
+                "type": "heading"
+              },
+              {
+                "cover": "cover.family_east_shades",
+                "entry_id": "01KWP1K4XH1C9J89HP8ME35CNZ",
+                "type": "custom:adaptive-cover-tile-card"
+              },
+              {
+                "cover": "cover.family_door_shades",
+                "entry_id": "01KWP2H31Q4F3BYTR9JP9W4K9C",
+                "type": "custom:adaptive-cover-tile-card"
+              },
+              {
+                "cover": "cover.family_south_shades",
+                "entry_id": "01KWQEPHPX2QRC9BQ0NNZ9857Z",
+                "type": "custom:adaptive-cover-tile-card"
+              },
+              {
+                "entity": "cover.family_shades",
+                "name": "All family",
+                "show_buttons_control": false,
+                "show_position_control": true,
+                "type": "custom:mushroom-cover-card"
+              }
+            ],
+            "type": "grid"
+          },
+          {
+            "cards": [
+              {
+                "heading": "Leanne's room",
+                "heading_style": "title",
+                "icon": "mdi:bed",
+                "type": "heading"
+              },
+              {
+                "cover": "cover.sw_south_shade",
+                "entry_id": "01KSBFGWN5RBTYPB2XNR700ZTD",
+                "type": "custom:adaptive-cover-tile-card"
+              },
+              {
+                "cover": "cover.sw_sw_shade",
+                "entry_id": "01KSBFBK88WRN0NYVSHNR37QJX",
+                "type": "custom:adaptive-cover-tile-card"
+              },
+              {
+                "entity": "cover.leannes_shades",
+                "name": "All Leanne's",
+                "show_buttons_control": false,
+                "show_position_control": true,
+                "type": "custom:mushroom-cover-card"
+              }
+            ],
+            "type": "grid"
+          },
+          {
+            "cards": [
+              {
+                "heading": "Den",
+                "heading_style": "title",
+                "icon": "mdi:sofa-single",
+                "type": "heading"
+              },
+              {
+                "cover": "cover.den_south_shades",
+                "entry_id": "01KWHKT5SWNSNC9QD4QC2SQMTR",
+                "type": "custom:adaptive-cover-tile-card"
+              },
+              {
+                "cover": "cover.sw_sw_1st_floor_bed",
+                "entry_id": "01KWHKTS0C0HTDDQTW75W04HKZ",
+                "type": "custom:adaptive-cover-tile-card"
+              },
+              {
+                "cover": "cover.den_west_shades",
+                "entry_id": "01KWHKV52MF7T5N16XVXRR11C1",
+                "type": "custom:adaptive-cover-tile-card"
+              },
+              {
+                "entity": "cover.den_shades",
+                "name": "All den",
+                "show_buttons_control": false,
+                "show_position_control": true,
+                "type": "custom:mushroom-cover-card"
+              }
+            ],
+            "type": "grid"
+          },
+          {
+            "cards": [
+              {
+                "heading": "Whole house",
+                "heading_style": "title",
+                "icon": "mdi:home",
+                "type": "heading"
+              },
+              {
+                "entry_ids": [
+                  "01KAD4XDDT8YPF97FN3095Y9C3",
+                  "01KGZNRGJ39Q0S8GH12BW15QY3",
+                  "01KWP1JY50D79YNJ6A6MG5RC15",
+                  "01KWP1K4XH1C9J89HP8ME35CNZ",
+                  "01KAD50Y5394DV5VKX96T6R9JZ",
+                  "01KWP1KBER8D63ZW8C5326F7AC",
+                  "01KWP2H31Q4F3BYTR9JP9W4K9C",
+                  "01KWQEPAFBRZQ463CW35SKE8GH",
+                  "01KWQEPHPX2QRC9BQ0NNZ9857Z",
+                  "01KSBFGWN5RBTYPB2XNR700ZTD",
+                  "01KSBFBK88WRN0NYVSHNR37QJX",
+                  "01KAA8FJRH4VKCWPDMFA1JSHBT",
+                  "01KWHKT5SWNSNC9QD4QC2SQMTR",
+                  "01KWHKTS0C0HTDDQTW75W04HKZ",
+                  "01KWHKV52MF7T5N16XVXRR11C1"
+                ],
+                "show_moon": true,
+                "type": "custom:adaptive-cover-sky-compass-card"
+              },
+              {
+                "entity": "cover.adaptive_cover_all",
+                "name": "All covers",
+                "show_buttons_control": false,
+                "show_position_control": true,
+                "type": "custom:mushroom-cover-card"
+              },
+              {
+                "entity": "select.adaptive_cover_all_cover_control_mode",
+                "icon": "mdi:home-automation",
+                "name": "Control mode",
+                "type": "custom:mushroom-select-card"
+              },
+              {
+                "entity": "button.adaptive_cover_all_reset_all_manual_overrides",
+                "icon": "mdi:restore",
+                "name": "Return all shades to auto",
+                "type": "tile"
+              }
+            ],
+            "type": "grid"
+          }
+        ],
+        "title": "Shades",
+        "type": "sections"
+      }
+    ]
+  },
+  "config_hash": "fe8b68210008ffb2",
+  "url_path": "dashboard-shades"
+}

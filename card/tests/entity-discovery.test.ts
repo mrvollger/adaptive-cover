@@ -83,9 +83,7 @@ describe('discoverEntities (unique_id based)', () => {
     expect(d!.entities.manual_override_binary).toBe(
       'binary_sensor.living_room_blinds_manual_override',
     );
-    expect(d!.entities.automatic_control_switch).toBe(
-      'switch.living_room_blinds_toggle_control',
-    );
+    expect(d!.entities.automatic_control_switch).toBe('switch.living_room_blinds_toggle_control');
     expect(d!.entities.manual_toggle_switch).toBe('switch.living_room_blinds_manual_override');
     expect(d!.entities.climate_mode_switch).toBe('switch.living_room_blinds_climate_mode');
     expect(d!.entities.reset_override_button).toBe(

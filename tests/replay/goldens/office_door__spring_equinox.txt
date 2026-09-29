@@ -1,0 +1,45 @@
+# house replay: Office door (01KGZNRGJ39Q0S8GH12BW15QY3) on 2026-03-20 (spring_equinox)
+# SLC (tests' lat/lon), tz=America/Denver, units=US customary, step=5min, travel=90s, 00:30 -> 00:30 next day
+# cover=cover.office_door_shades sensor_type=cover_blind options_sha256=5a8ea27432c3
+# azimuth=55.0 fov=60.0/60.0 elevation=5..45 window_h=2.1 distance=0.1 overhang=None/None glare=1.2/2.0
+# default=100.0 sunset_pos=0.0 sunset_off=0.0 sunrise_off=45.0 start=07:30:00 end=00:00:00 min=None (sun-only=False) max=None (sun-only=False) privacy=None
+# climate=True temp=sensor.upstairs_indoor_temperature (upstairs) low/high=72.0/75.0 sunny=sunny,partlycloudy,clear,windy,windy-variant override={'hours': 2, 'minutes': 0, 'seconds': 0} reset=False
+# restored switches: ne_door_shades_climate_mode_ne_door_shades=on, ne_door_shades_manual_override_ne_door_shades=on, ne_door_shades_outside_temperature_ne_door_shades=off, ne_door_shades_toggle_control_ne_door_shades=on
+# lines: cmd = outbound cover call; sensor = position sensor (intent), shown when it changes; input/human = scripted
+#
+03-20 00:30:00 MDT  sensor 0 (sunset)
+03-20 08:00:00 MDT  input  sensor.upstairs_indoor_temperature = 71.0 °F
+03-20 08:20:00 MDT  cmd    set_cover_position cover.office_door_shades 74
+03-20 08:20:00 MDT  sensor 74 (admit_no_glare)
+03-20 08:25:00 MDT  cmd    set_cover_position cover.office_door_shades 79
+03-20 08:25:00 MDT  sensor 79 (admit_no_glare)
+03-20 08:30:00 MDT  cmd    set_cover_position cover.office_door_shades 82
+03-20 08:30:00 MDT  sensor 82 (admit_no_glare)
+03-20 08:35:00 MDT  cmd    set_cover_position cover.office_door_shades 84
+03-20 08:35:00 MDT  sensor 84 (admit_no_glare)
+03-20 08:40:00 MDT  cmd    set_cover_position cover.office_door_shades 87
+03-20 08:40:00 MDT  sensor 87 (admit_no_glare)
+03-20 08:45:00 MDT  cmd    set_cover_position cover.office_door_shades 90
+03-20 08:45:00 MDT  sensor 90 (admit_no_glare)
+03-20 08:50:00 MDT  cmd    set_cover_position cover.office_door_shades 93
+03-20 08:50:00 MDT  sensor 93 (admit_no_glare)
+03-20 08:55:00 MDT  cmd    set_cover_position cover.office_door_shades 96
+03-20 08:55:00 MDT  sensor 96 (admit_no_glare)
+03-20 09:00:00 MDT  cmd    set_cover_position cover.office_door_shades 99
+03-20 09:00:00 MDT  sensor 99 (admit_no_glare)
+03-20 09:05:00 MDT  cmd    set_cover_position cover.office_door_shades 100
+03-20 09:05:00 MDT  sensor 100 (admit_no_glare)
+03-20 10:00:00 MDT  sensor 100 (default)
+03-20 10:00:00 MDT  input  sensor.upstairs_indoor_temperature = 73.0 °F
+03-20 11:00:00 MDT  input  weather.forecast_home_2 = cloudy
+03-20 11:05:00 MDT  sensor 100 (climate_default)
+03-20 13:00:00 MDT  input  weather.forecast_home_2 = sunny
+03-20 13:05:00 MDT  sensor 100 (default)
+03-20 13:30:00 MDT  human  cover.office_door_shades -> 37 (via remote)
+03-20 14:00:00 MDT  input  sensor.upstairs_indoor_temperature = 76.0 °F
+03-20 15:35:00 MDT  cmd    set_cover_position cover.office_door_shades 100
+03-20 18:00:00 MDT  input  sensor.upstairs_indoor_temperature = 74.0 °F
+03-20 19:40:00 MDT  cmd    set_cover_position cover.office_door_shades 0
+03-20 19:40:00 MDT  sensor 0 (sunset)
+03-20 21:00:00 MDT  input  sensor.upstairs_indoor_temperature = 71.5 °F
+03-21 00:30:00 MDT  end    shade at 0

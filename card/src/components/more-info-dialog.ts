@@ -85,7 +85,7 @@ export class MoreInfoDialog extends LitElement {
   private _buildHandlerLabels(): Record<string, string> {
     const labels: Record<string, string> = {};
     for (const [key, dotted] of Object.entries(HANDLER_I18N_KEYS)) {
-      labels[key] = t(dotted, this.hass);
+      labels[key] = t(dotted);
     }
     return labels;
   }
@@ -101,9 +101,9 @@ export class MoreInfoDialog extends LitElement {
     const showResume = this._shouldShowResume();
     const automaticControl = this._switchOn('automatic_control_switch');
     const badgeKinds = this._badgeKinds(winner, automaticControl);
-    const configureLabel = t('dialog.configure_integration', this.hass);
-    const deviceLabel = t('dialog.open_device_page', this.hass);
-    const closeLabel = t('dialog.close', this.hass);
+    const configureLabel = t('dialog.configure_integration');
+    const deviceLabel = t('dialog.open_device_page');
+    const closeLabel = t('dialog.close');
 
     return html`
       <div class="backdrop" data-open @click=${this._onBackdrop}>
@@ -153,7 +153,7 @@ export class MoreInfoDialog extends LitElement {
           ${summary ? html`<div class="summary">${summary}</div>` : nothing}
 
           <div class="position-block">
-            <div class="position-label">${t('dialog.target', this.hass)}</div>
+            <div class="position-label">${t('dialog.target')}</div>
             <div class="position-value">${formatPercent(target)}</div>
           </div>
 
@@ -163,15 +163,13 @@ export class MoreInfoDialog extends LitElement {
           ${showResume
             ? html`<div class="actions">
                 <button class="resume" type="button" @click=${this._onResume}>
-                  ${t('dialog.resume_auto', this.hass)}
+                  ${t('dialog.resume_auto')}
                 </button>
               </div>`
             : nothing}
 
           <button class="advanced-toggle" type="button" @click=${this._toggleAdvanced}>
-            ${this.advancedOpen
-              ? t('dialog.hide_advanced', this.hass)
-              : t('dialog.show_advanced', this.hass)}
+            ${this.advancedOpen ? t('dialog.hide_advanced') : t('dialog.show_advanced')}
           </button>
           ${this.advancedOpen
             ? html`<div class="advanced">
@@ -233,7 +231,7 @@ export class MoreInfoDialog extends LitElement {
   private _onResume = (): void => {
     const btn = this.discovered.entities.reset_override_button;
     if (!btn) return;
-    if (!confirmResume(this.hass, this._target())) return;
+    if (!confirmResume(this._target())) return;
     this.hass.callService('button', 'press', { entity_id: btn });
   };
 
@@ -258,14 +256,14 @@ export class MoreInfoDialog extends LitElement {
     type SwitchRole = 'automatic_control_switch' | 'climate_mode_switch' | 'manual_toggle_switch';
     const rows: Array<{ role: SwitchRole; label: string }> = (
       [
-        { role: 'automatic_control_switch', label: t('dialog.automatic', this.hass) },
-        { role: 'climate_mode_switch', label: t('dialog.climate', this.hass) },
-        { role: 'manual_toggle_switch', label: t('dialog.manual_detection', this.hass) },
+        { role: 'automatic_control_switch', label: t('dialog.automatic') },
+        { role: 'climate_mode_switch', label: t('dialog.climate') },
+        { role: 'manual_toggle_switch', label: t('dialog.manual_detection') },
       ] as const
     ).filter((r) => !!this.discovered.entities[r.role]);
     if (rows.length === 0) return nothing;
     return html`<div class="controls-block">
-      <div class="controls-label">${t('dialog.controls', this.hass)}</div>
+      <div class="controls-label">${t('dialog.controls')}</div>
       <div class="controls-row">${rows.map((r) => this._renderSwitchChip(r.role, r.label))}</div>
     </div>`;
   }
@@ -276,13 +274,13 @@ export class MoreInfoDialog extends LitElement {
   ): TemplateResult {
     const id = this.discovered.entities[role]!;
     const on = this.hass.states[id]?.state === 'on';
-    const state = on ? t('dialog.state_on', this.hass) : t('dialog.state_off', this.hass);
-    const onOff = on ? t('dialog.on', this.hass) : t('dialog.off', this.hass);
+    const state = on ? t('dialog.state_on') : t('dialog.state_off');
+    const onOff = on ? t('dialog.on') : t('dialog.off');
     return html`<button
       class="ctrl-toggle ${on ? 'on' : 'off'}"
       type="button"
       aria-pressed=${on}
-      aria-label=${t('dialog.toggle_hint', this.hass, { label, state })}
+      aria-label=${t('dialog.toggle_hint', { label, state })}
       @click=${() => this._toggleSwitch(id, on)}
     >
       <span class="ctrl-label">${label}</span>
@@ -298,14 +296,14 @@ export class MoreInfoDialog extends LitElement {
     const forecast = readForecast(this.hass, this.discovered);
     if (!forecast || forecast.forecast.length === 0) return nothing;
     return html`<div class="forecast-block">
-      <div class="forecast-label">${t('dialog.todays_forecast', this.hass)}</div>
+      <div class="forecast-label">${t('dialog.todays_forecast')}</div>
       <acp-forecast-strip
         .hass=${this.hass}
         .samples=${forecast.forecast}
         .events=${forecast.events}
         .now=${Date.now()}
       ></acp-forecast-strip>
-      <div class="forecast-note">${t('forecast.solar_only_note', this.hass)}</div>
+      <div class="forecast-note">${t('forecast.solar_only_note')}</div>
     </div>`;
   }
 
@@ -319,7 +317,7 @@ export class MoreInfoDialog extends LitElement {
     const friendly = (id: string): string =>
       (this.hass.states[id]?.attributes?.friendly_name as string | undefined) ?? id;
     return html`<div class="moves-section">
-      <div class="moves-label">${t('dialog.last_moves', this.hass)}</div>
+      <div class="moves-label">${t('dialog.last_moves')}</div>
       ${moves.map(
         ([id, line]) =>
           html`<div class="move-row">
@@ -331,7 +329,7 @@ export class MoreInfoDialog extends LitElement {
         ([id, gate]) =>
           html`<div class="move-row blocked">
             <span class="move-name" ${tooltip(id)}>${friendly(id)}</span>
-            <span class="move-line">${t('dialog.move_blocked', this.hass, { gate })}</span>
+            <span class="move-line">${t('dialog.move_blocked', { gate })}</span>
           </div>`,
       )}
     </div>`;

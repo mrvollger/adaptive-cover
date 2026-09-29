@@ -17,7 +17,6 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import re
-from unittest.mock import patch
 
 from freezegun import freeze_time
 from homeassistant.helpers import entity_registry as er
@@ -57,8 +56,14 @@ from custom_components.adaptive_cover.diagnostics import (
 )
 from custom_components.adaptive_cover.engine import geometry as engine_geometry
 
-from .characterization.golden_lib import GOLDENS_DIR, SLC, FakeSunData
+from .characterization.golden_lib import (
+    GOLDENS_DIR,
+    SLC,
+    FakeSunData,
+    patch_sun_data,
+)
 from .conftest import COMMON_OPTIONS
+from .window_handle import WindowHandle
 
 COVER = "cover.test_cover"
 
@@ -117,13 +122,9 @@ def cover_calls(hass):
 
 
 def _fake_solar_day(date="2026-03-20"):
-    """Patch SunData with a real astral day (overrides the autouse mock)."""
+    """A real astral day as the sun provider (overrides the autouse flat sun)."""
     sun = FakeSunData(SLC["lat"], SLC["lon"], SLC["tz"], pd.Timestamp(date))
-    patcher = patch(
-        "custom_components.adaptive_cover.calculation.SunData",
-        return_value=sun,
-    )
-    return sun, patcher
+    return sun, patch_sun_data(sun)
 
 
 class TestPositionSensor:
@@ -150,6 +151,7 @@ class TestPositionSensor:
         matches what is actually commanded (kills M40: raw pre-transform)."""
         _set_cover(hass, 60)
         entry = _entry(hass, **{CONF_INVERSE_STATE: True})
+        window = WindowHandle(hass, COVER)  # records the startup command
         await _setup(hass, entry)
         eid = _eid(hass, "sensor", entry, "Cover Position")
         assert hass.states.get(eid).state == str(100 - POS_AT_45)
@@ -157,8 +159,7 @@ class TestPositionSensor:
         # The fixed startup refresh already commanded the (inverse) startup
         # position; land the cover on it so the travel window clears and
         # the sun change below produces the command under test.
-        coordinator = hass.data[DOMAIN][entry.entry_id]
-        assert coordinator.target_call[COVER] == 100 - POS_AT_45
+        assert window.last_command == 100 - POS_AT_45
         _set_cover(hass, 100 - POS_AT_45)
         await hass.async_block_till_done()
 
@@ -347,8 +348,8 @@ class TestStateReason:
         self, hass, mock_sun_data, cover_calls
     ):
         now = dt.datetime.now(dt.UTC)
-        mock_sun_data.sunset.return_value = now - dt.timedelta(hours=2)
-        mock_sun_data.sunrise.return_value = now - dt.timedelta(hours=14)
+        mock_sun_data.sunset_at = now - dt.timedelta(hours=2)
+        mock_sun_data.sunrise_at = now - dt.timedelta(hours=14)
         _set_sun(hass, elevation=-9.0, azimuth=300.0)
         _set_cover(hass, 60)
         entry = _entry(hass)
