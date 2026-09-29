@@ -114,9 +114,9 @@ These defaults are the spec defaults for new installs. For the live house, a lif
 
 **House device.** The entity_ids stay the same.
 - Primary:
-  - `cover.adaptive_cover_all`
-  - `select.adaptive_cover_all_cover_control_mode`: Auto / Hold / Off, with a display-only Mixed. It changes each window's Mode directly.
-  - `button.adaptive_cover_all_reset_all_manual_overrides`
+  - `cover.shades_all`
+  - `select.shades_mode`: Auto / Hold / Off, with a display-only Mixed. It changes each window's Mode directly.
+  - `button.shades_return_to_auto`
   - Climate switch
 - CONFIG: detection switch; heating/cooling thresholds (unit-aware); eye height; seat distance; override duration; privacy delay; end / quiet start / quiet end (time entities).
 
@@ -479,13 +479,20 @@ services.py · diagnostics.py (per device) · frontend.py · <platform>.py
 ### Naming cleanup (decision 5, delivered in P1)
 
 - **Scheme:** `<domain>.<area>_<window>_<role>`, all lowercase, from the HA area and a short window name, for example `sensor.office_door_position`, `select.office_door_mode`, `button.office_door_return_to_auto`. The house device uses `<domain>.shades_<role>`.
-- **Scope:** every adaptive_cover entity and device name, and the physical cover entities (`cover.ne_door_shades`, `cover.sw_sw_shade`, `cover.sw_sw_1st_floor_bed`, …) renamed to the same scheme (`cover.office_door_shade`, …).
+- **Scope:** every adaptive_cover entity and device name, and the physical cover entities (`cover.ne_door_shades`, `cover.sw_sw_shade`, `cover.sw_sw_1st_floor_bed`, …) renamed to the same scheme (`cover.office_door_shades`, …).
 - **Leftovers removed:** the 3 disabled "SE" multi-cover entries (P0), orphaned registry rows, and entities that the new surface drops (P1/P5).
 - **Safety:**
   - A **dry run** first lists every old → new entity_id and every reference to it: automations, scripts, scenes, dashboards, groups, and the HomeKit bridge's entity filters. HA does not rewrite these references automatically.
   - The owner approves the list before anything is applied.
   - The rename updates every listed reference in the same step, and a backup is taken first.
   - Physical covers belong to other integrations (Zigbee/HomeKit bridge), so their renames are part of the same approved list and are applied with HA's entity registry, not by this integration's code.
+- **Applied 2026-09-29** (owner decisions D1–D5, backup `d1d4d51e`):
+  - D1: physical covers keep the plural `cover.<area>_<window>_shades` (3 renamed: `den_southwest`, `leannes_bedroom_door`, `leannes_bedroom_south`).
+  - D2: the SW bedroom slug is `leannes_bedroom`; its area's display name is "Leanne's bedroom" (area_id stays `sw_bedroom`); the 235° window is "door". The room group `cover.leannes_shades` keeps its id.
+  - D3: the hub is `cover.shades_all`, `select.shades_mode`, `button.shades_return_to_auto`, device "All shades".
+  - D4: the 40 ZHA companion entities follow their cover (`sensor.<area>_<window>_shades_battery`, …).
+  - D5: the adaptive switches and sensors are no longer exposed to Google Assistant.
+  - 219 window entities, 3 covers, 40 companions and 3 hub entities renamed; every reference (3 window entries' cover list, 2 group helpers, 6 dashboard cards, 1 automation) rewritten in the same step.
 
 ## Appendix: how the three designs scored
 
