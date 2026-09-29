@@ -147,6 +147,9 @@ class FakeShade:
     drop_next_landing: bool = False
     report_position: bool = True
     fail_next: Exception | None = None
+    # Delivery that raised yet reached the motor: (target, field, starts_at).
+    late_start: tuple[int, str, dt.datetime] | None = None
+    deliver_late_after: dt.timedelta | None = None
 
     def start_travel(
         self,
@@ -646,6 +649,15 @@ class SimHouse:
             # One-shot injected delivery failure, before any travel.
             exc = shade.fail_next
             shade.fail_next = None
+            if shade.deliver_late_after is not None:
+                # The call raised, but the motor got the command anyway
+                # and starts later (a lost Zigbee acknowledgement).
+                shade.late_start = (
+                    int(call.data[attr]),
+                    travel_field,
+                    self.now + shade.deliver_late_after,
+                )
+                shade.deliver_late_after = None
             raise exc
         target = int(call.data[attr])
         current = self.hass.states.get(entity_id)
@@ -706,11 +718,24 @@ class SimHouse:
         """While on, state writes omit current_position/current_tilt_position."""
         self.shades[entity_id].report_position = not on
 
-    def fail_next_command(self, entity_id: str, exc: Exception | None = None) -> None:
-        """The next cover command for this shade raises once (no travel)."""
-        self.shades[entity_id].fail_next = exc or HomeAssistantError(
+    def fail_next_command(
+        self,
+        entity_id: str,
+        exc: Exception | None = None,
+        *,
+        deliver_after: dt.timedelta | None = None,
+    ) -> None:
+        """The next cover command for this shade raises once.
+
+        By default nothing moves. With ``deliver_after`` the motor got the
+        command anyway (only the acknowledgement was lost) and starts
+        travelling that much later, reporting motion with a device context.
+        """
+        shade = self.shades[entity_id]
+        shade.fail_next = exc or HomeAssistantError(
             f"Simulated delivery failure for {entity_id}"
         )
+        shade.deliver_late_after = deliver_after
 
     async def shade_goes_unavailable(self, entity_id: str) -> None:
         """The device drops off the network: entity turns unavailable."""
@@ -766,6 +791,17 @@ class SimHouse:
             self.sun_data.regenerate_for(pd.Timestamp(self.now.date()))
         if not self._timers_held:
             async_fire_time_changed(self.hass, self.now)
+        await self.hass.async_block_till_done()
+        for shade in self.shades.values():
+            if shade.late_start is not None and self.now >= shade.late_start[2]:
+                target, field, _ = shade.late_start
+                shade.late_start = None
+                ctx = Context()
+                direction = shade.start_travel(
+                    target, ctx, self.now, travel_field=field
+                )
+                if direction is not None:
+                    self._write_shade_state(shade, direction, ctx, actor="device")
         await self.hass.async_block_till_done()
         for shade in self.shades.values():
             if shade.landed(self.now):
