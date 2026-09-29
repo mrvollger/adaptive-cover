@@ -97,6 +97,7 @@ RULES: list[tuple[str, str]] = [
     ("tests/replay/test_house_replay.py::*", BEHAVIOR),
     ("tests/replay/test_house_snapshot.py::*", TOOLING),
     ("tests/test_translations.py::*", BEHAVIOR),
+    ("tests/test_entity_surface_v2.py::*", BEHAVIOR),  # P1 entity surface (C1)
     # Implementation tier: a refactor may freely break these.
     ("tests/test_coordinator.py::*", IMPLEMENTATION),
     ("tests/test_calculation.py::*", IMPLEMENTATION),
