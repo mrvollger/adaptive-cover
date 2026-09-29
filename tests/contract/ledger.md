@@ -85,3 +85,20 @@ The example below is inside an HTML comment. The checker ignores it.
   "Rename Return to auto". The schedule sensors stay enabled because the card
   still reads them.
 
+## L0003 · 2026-09-29 · Replay-found defect fixes change the pinned timelines (C5)
+- **Removed:** none
+- **Replacements:** new `test_regression_*` tests for each fix
+- **Mutations re-targeted:** none
+- **Contract change:** C5
+- **Reason:** four defects found by the house replay are fixed, and the replay
+  and golden-day timelines change only where those defects showed:
+  (1) climate threshold numbers use HA's temperature unit (display only);
+  (2) Next State Change picks tomorrow by the local date, not UTC;
+  (3) an intermediate opening/closing report no longer counts as arrival, so
+  small snap moves are not re-sent (duplicate `cmd` lines removed; a follow-up
+  target can go out on the next update instead of at the landing sub-step);
+  (4) when the sun leaves the window within 30 minutes of the sunset position,
+  the sunset position starts right away instead of opening to the default and
+  closing minutes later (dusk open-then-close lines removed).
+  35 of 90 replay goldens changed (+14 / -66 lines), all in these categories.
+
