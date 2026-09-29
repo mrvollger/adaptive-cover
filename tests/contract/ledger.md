@@ -681,3 +681,26 @@ The example below is inside an HTML comment. The checker ignores it.
   with "01:00" for a 10:00 move in Salt Lake City. Position attributes keep
   their names; only this value changes. Goldens, truth table and house
   replay unchanged (none records this attribute).
+
+## L0025 · 2026-09-29 · Start/end time entities honor a timestamp's UTC offset (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins
+  `tests/simulation/test_regressions.py::test_regression_start_entity_timestamp_honors_its_offset`
+  and the unit pins in `tests/runtime/test_schedule.py`
+  (`test_regression_start_entity_timestamp_honors_its_offset[*]`,
+  `test_end_entity_timestamp_honors_its_offset`,
+  `test_a_midnight_timestamp_is_the_coming_midnight`)
+- **Mutations re-targeted:** none. Added M67 (a time entity's UTC offset is
+  dropped: the instant is read as local wall time).
+- **Contract change:** C5
+- **Reason:** defect fix. The start- and end-time entities were parsed with
+  `ignoretz=True`, so a timestamp sensor's "2026-03-20T16:00:00+00:00"
+  (10:00 in Salt Lake City) read as 16:00 local wall time: the window
+  opened, or the end close fired, off by the UTC offset. A state with an
+  offset is now that instant, converted to HA's configured zone
+  (`helpers.get_local_datetime_from_str`, fed the zone by the
+  coordinator); bare "HH:MM[:SS]" states and date-times without an offset
+  keep their meaning, and 00:00 today still means the coming midnight.
+  The fixed start/end options are unchanged. Goldens, truth table and
+  house replay unchanged: no pinned config uses a time entity.

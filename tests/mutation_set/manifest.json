@@ -70,6 +70,13 @@
   "patch": "M66_last_move_time_in_process_zone.patch"
  },
  {
+  "id": "M67",
+  "file": "custom_components/adaptive_cover/helpers.py",
+  "function": "get_local_datetime_from_str",
+  "description": "a time entity's UTC offset is dropped: the instant is read as local wall time",
+  "patch": "M67_time_entity_offset_ignored.patch"
+ },
+ {
   "id": "M60",
   "file": "custom_components/adaptive_cover/runtime/schedule.py",
   "function": "Schedule.after_start",

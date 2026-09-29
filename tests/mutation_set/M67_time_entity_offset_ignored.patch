@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/helpers.py b/custom_components/adaptive_cover/helpers.py
+--- a/custom_components/adaptive_cover/helpers.py
++++ b/custom_components/adaptive_cover/helpers.py
+@@ -73,7 +73,7 @@
+     default = dt.datetime.combine(default_date, dt.time())
+     parsed = parser.parse(string, default=default)
+     if parsed.tzinfo is not None:
+-        parsed = parsed.astimezone(tz).replace(tzinfo=None)
++        parsed = parsed.replace(tzinfo=None)
+     return parsed
+ 
+ 

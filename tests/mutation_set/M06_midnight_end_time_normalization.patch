@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/runtime/schedule.py b/custom_components/adaptive_cover/runtime/schedule.py
 --- a/custom_components/adaptive_cover/runtime/schedule.py
 +++ b/custom_components/adaptive_cover/runtime/schedule.py
-@@ -63,8 +63,6 @@
+@@ -71,8 +71,6 @@
              time = self._read_time(config.end_time_entity, today)
          elif config.end_time is not None:
              time = get_datetime_from_str(config.end_time, default_date=today)

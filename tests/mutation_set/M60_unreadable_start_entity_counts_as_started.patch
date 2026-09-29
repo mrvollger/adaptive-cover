@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/runtime/schedule.py b/custom_components/adaptive_cover/runtime/schedule.py
 --- a/custom_components/adaptive_cover/runtime/schedule.py
 +++ b/custom_components/adaptive_cover/runtime/schedule.py
-@@ -87,7 +87,7 @@
+@@ -95,7 +95,7 @@
                  self.logger.debug(
                      "Start entity %s unreadable: not started", config.start_time_entity
                  )

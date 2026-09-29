@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -189,3 +190,40 @@ def test_regression_unreadable_start_entity_alone_is_not_started(state):
 def test_unparseable_end_entity_means_no_end():
     cfg = config(**{CONF_END_TIME: "21:30:00", CONF_END_ENTITY: END_ENTITY})
     assert Schedule(FakeStates(shade_end="soon")).end_time(cfg, DAY) is None
+
+
+# ----------------------------------------------- timestamps with an offset
+
+DENVER = ZoneInfo("America/Denver")  # MDT, UTC-6, on DAY
+
+
+@pytest.mark.parametrize(
+    ("state", "local"),
+    [
+        ("2026-03-20T16:00:00+00:00", "10:00"),  # a timestamp sensor
+        ("2026-03-20T10:00:00-06:00", "10:00"),
+        ("10:00:00", "10:00"),  # a bare time keeps its meaning
+        ("10:00", "10:00"),
+        ("2026-03-20 10:00:00", "10:00"),  # no offset: a wall time
+    ],
+)
+def test_regression_start_entity_timestamp_honors_its_offset(state, local):
+    """A UTC timestamp is that instant in the local zone (ignoretz dropped it)."""
+    cfg = config(**{CONF_START_ENTITY: START_ENTITY})
+    schedule = Schedule(FakeStates(shade_start=state), local_zone=lambda: DENVER)
+    schedule.after_start(cfg, at("12:00"))
+    assert schedule.last_start == at(local)
+
+
+def test_end_entity_timestamp_honors_its_offset():
+    cfg = config(**{CONF_END_ENTITY: END_ENTITY})
+    states = FakeStates(shade_end="2026-03-21T03:30:00+00:00")  # 21:30 MDT
+    end = Schedule(states, local_zone=lambda: DENVER).end_time(cfg, DAY)
+    assert end == at("21:30")
+
+
+def test_a_midnight_timestamp_is_the_coming_midnight():
+    cfg = config(**{CONF_END_ENTITY: END_ENTITY})
+    states = FakeStates(shade_end="2026-03-20T06:00:00+00:00")  # 00:00 MDT today
+    end = Schedule(states, local_zone=lambda: DENVER).end_time(cfg, DAY)
+    assert end == dt.datetime.combine(DAY + dt.timedelta(days=1), dt.time())

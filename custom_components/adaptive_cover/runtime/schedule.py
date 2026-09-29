@@ -13,7 +13,7 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
-from ..helpers import get_datetime_from_str
+from ..helpers import get_datetime_from_str, get_local_datetime_from_str
 from .shade_config import ShadeConfig
 
 type StateReader = Callable[[str], str | None]
@@ -29,9 +29,16 @@ class Schedule:
         self,
         read_state: StateReader,
         logger: logging.Logger | logging.LoggerAdapter[Any] = _LOGGER,
+        *,
+        local_zone: Callable[[], dt.tzinfo] = lambda: dt.UTC,
     ) -> None:
-        """Read time entities through ``read_state``; log to ``logger``."""
+        """Read time entities through ``read_state``; log to ``logger``.
+
+        ``local_zone`` returns HA's configured time zone: a timestamp an
+        entity holds is converted to it.
+        """
         self._read_state = read_state
+        self._local_zone = local_zone
         self.logger = logger
         self.last_start: dt.datetime | None = None
         """The start time last read from the start entity (for the error log)."""
@@ -39,14 +46,15 @@ class Schedule:
     def _read_time(self, entity: str, today: dt.date) -> dt.datetime | None:
         """Return the time ``entity`` holds (dated today unless it says).
 
-        None when the entity is missing, unknown or unavailable, or when its
+        A timestamp with a UTC offset is converted to the local zone. None
+        when the entity is missing, unknown or unavailable, or when its
         state is not a time.
         """
         state = self._read_state(entity)
         if state is None:
             return None
         try:
-            return get_datetime_from_str(state, default_date=today)
+            return get_local_datetime_from_str(state, today, self._local_zone())
         except (ValueError, OverflowError):
             self.logger.debug("%s does not hold a time: %r", entity, state)
             return None

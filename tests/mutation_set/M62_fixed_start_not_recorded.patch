@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/runtime/schedule.py b/custom_components/adaptive_cover/runtime/schedule.py
 --- a/custom_components/adaptive_cover/runtime/schedule.py
 +++ b/custom_components/adaptive_cover/runtime/schedule.py
-@@ -94,7 +94,6 @@
+@@ -102,7 +102,6 @@
              self.logger.debug(
                  "Start time: %s, now: %s, now >= time: %s", time, now, now >= time
              )

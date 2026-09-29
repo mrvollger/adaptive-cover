@@ -55,6 +55,7 @@ END_OF_DAY = "custom_components/adaptive_cover/runtime/end_of_day.py"
 RESOLVE = "custom_components/adaptive_cover/settings/resolve.py"
 LIFT = "custom_components/adaptive_cover/settings/lift.py"
 DECIDER = "custom_components/adaptive_cover/runtime/decider.py"
+HELPERS = "custom_components/adaptive_cover/helpers.py"
 EXPLAINER = "custom_components/adaptive_cover/runtime/explainer.py"
 WINDOW_COVER = "custom_components/adaptive_cover/window_cover.py"
 SCHEMA = "custom_components/adaptive_cover/settings/schema.py"
@@ -228,6 +229,15 @@ MUTATIONS: list[Mutation] = [
         "the last-move HH:MM uses the process time zone instead of HA's",
         '        when = dt.datetime.fromisoformat(entry["time"]).astimezone(tz)',
         '        when = dt.datetime.fromisoformat(entry["time"]).astimezone()',
+    ),
+    Mutation(
+        "M67",
+        "time_entity_offset_ignored",
+        HELPERS,
+        "get_local_datetime_from_str",
+        "a time entity's UTC offset is dropped: the instant is read as local wall time",
+        "        parsed = parsed.astimezone(tz).replace(tzinfo=None)\n",
+        "        parsed = parsed.replace(tzinfo=None)\n",
     ),
     Mutation(
         "M60",

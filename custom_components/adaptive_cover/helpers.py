@@ -60,6 +60,23 @@ def get_datetime_from_str(
         return parser.parse(string, ignoretz=True)
 
 
+def get_local_datetime_from_str(
+    string: str, default_date: dt.date, tz: dt.tzinfo
+) -> dt.datetime:
+    """Parse a time or timestamp state into a naive wall time in ``tz``.
+
+    A bare time ("21:30", "21:30:00") or a date and time without an offset
+    is a wall time, dated ``default_date`` unless the string names a date.
+    A timestamp with a UTC offset ("2026-03-20T16:00:00+00:00", as timestamp
+    sensors report) is that instant, converted to ``tz``.
+    """
+    default = dt.datetime.combine(default_date, dt.time())
+    parsed = parser.parse(string, default=default)
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone(tz).replace(tzinfo=None)
+    return parsed
+
+
 def get_last_updated(entity_id: str, hass: HomeAssistant):
     """Get last updated attribute from entity."""
     if entity_id is not None:

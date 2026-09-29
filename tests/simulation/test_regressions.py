@@ -445,3 +445,21 @@ async def test_regression_last_move_time_is_house_time(hass, freezer, process_in
     assert line is not None
     assert line.startswith("10:00 -> "), line
     await house.teardown()
+
+
+async def test_regression_start_entity_timestamp_honors_its_offset(hass, freezer):
+    """A start-time entity holding a UTC timestamp starts at that instant.
+
+    Time entities were parsed with ignoretz=True, so a timestamp sensor's
+    "2026-03-20T16:00:00+00:00" (10:00 in Salt Lake City) read as 16:00
+    local wall time and the window opened six hours late.
+    """
+    hass.states.async_set(START_ENTITY, "2026-03-20T16:00:00+00:00")
+    house = await SimHouse.create(
+        hass, freezer, date="2026-03-20", options={CONF_START_ENTITY: START_ENTITY}
+    )
+    await house.advance_to("09:55")
+    assert house.auto_moves("cover.shade") == [], "moved before the start"
+    await house.advance_to("10:15")
+    assert house.auto_moves("cover.shade"), "no command after the 10:00 start"
+    await house.teardown()
