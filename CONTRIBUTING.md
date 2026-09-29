@@ -87,6 +87,7 @@ The truth table, the goldens and the house replay are review artifacts. If a cha
    - Truth table: `PYTHONPATH=. pixi run python tests/characterization/generate_truth_table.py`
    - Goldens: `UPDATE_GOLDENS=1 pixi run pytest tests/characterization/test_golden_days.py -q`
    - House replay: follow the update instructions in `tests/replay/`.
+   - Settings surfaces (`tests/contract/spec_parity.json`): `PYTHONPATH=. pixi run python tests/contract/generate_spec_parity.py`
 2. Read the diff. Every changed line must be one you intended.
 3. Commit the regenerated files with the code change, and add a ledger entry that explains the diff.
 

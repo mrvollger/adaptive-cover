@@ -53,6 +53,25 @@ cover calls, SunData's public API), else `IMPLEMENTATION`.
 that guard. Use it only to re-seed the record in bulk, for example after
 merging branches that predate the ledger.
 
+## Settings-surface parity
+
+`spec_parity.json` snapshots every settings surface: the setup wizard, the
+options form, the `change_settings` and `add_entry` service schemas (plus
+the options `add_entry` gives an entry without `copy_from`), the service
+fields in `services.yaml`, and the number entities. For each option key it
+records the kind, default, min, max, step and unit, and where the key
+appears (surface, form or section, cover type, climate mode, HA
+temperature unit). `generate_spec_parity.py` builds it by driving the code
+that serves each surface; `test_spec_parity.py` fails when the code and the
+snapshot disagree.
+
+```bash
+PYTHONPATH=. pixi run python tests/contract/generate_spec_parity.py
+```
+
+Regenerate only for an intended change. The JSON diff is the review
+artifact, and it needs a ledger entry.
+
 ## Mutation set
 
 `tests/mutation_set/make_patches.py` defines the mutations (M01 to M43).
