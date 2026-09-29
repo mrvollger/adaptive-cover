@@ -12,7 +12,8 @@ part of the key, so moving or reformatting code does not invalidate it.
 - Paths in ``ZERO_ERROR_PATHS`` get no baseline at all: any error there
   fails the run, and ``--write`` refuses to record one. They are the
   paths pyproject.toml lists under ``strict`` (P2: ``engine/``;
-  P4: ``runtime/``; P5: ``settings/resolve.py`` and ``settings/lift.py``).
+  P4: ``runtime/``; P5: ``settings/resolve.py``, ``settings/lift.py`` and
+  ``settings/shadow.py``).
 
 Pyright settings live in ``[tool.pyright]`` in pyproject.toml. Messages
 depend on the pyright version and on the installed Home Assistant, so
@@ -43,6 +44,7 @@ ZERO_ERROR_PATHS = (
     "custom_components/adaptive_cover/runtime/",
     "custom_components/adaptive_cover/settings/resolve.py",
     "custom_components/adaptive_cover/settings/lift.py",
+    "custom_components/adaptive_cover/settings/shadow.py",
 )
 
 Key = tuple[str, str, str]

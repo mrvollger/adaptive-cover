@@ -236,6 +236,11 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     cover_entity_id, and the cover's registry id as unique_id (see
     migration.py). The hub only gets the version bump.
 
+    1.3 -> 1.4 (P5 shadow): the hub lifts every enabled window into house,
+    floor and area profiles in its options and writes each window's sparse
+    ``overrides``, recording the states of the switches P5 drops (see
+    shadow.py). Windows only get the version bump; their legacy keys stay.
+
     A newer MINOR version (after a downgrade) loads as is. A newer MAJOR
     version is refused.
     """
@@ -265,6 +270,14 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.config_entries.async_update_entry(entry, minor_version=3)
         else:
             async_migrate_1_3(hass, entry)
+    if entry.minor_version < 4:
+        from .hub import is_hub_entry
+        from .shadow import async_migrate_hub_1_4
+
+        if is_hub_entry(entry):
+            async_migrate_hub_1_4(hass, entry)
+        else:
+            hass.config_entries.async_update_entry(entry, minor_version=4)
     return True
 
 
@@ -323,6 +336,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await coordinator.async_config_entry_first_refresh()
     hass.data[DOMAIN][entry.entry_id] = coordinator
+    # P5 shadow: compare the layered settings with the legacy options (a
+    # repair issue when they differ; the Position sensor's provenance).
+    # Nothing the runtime reads changes.
+    from . import shadow
+
+    shadow.async_setup_window(hass, entry)
     _async_register_services(hass)
     hass.async_create_task(_async_bootstrap_hub(hass))
 
@@ -341,6 +360,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     from .entity_surface import async_copy_cover_area
 
     async_copy_cover_area(hass, entry)
+    entry.async_on_unload(shadow.async_track_toggles(hass, entry))
 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     return True
@@ -354,19 +374,34 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return await hass.config_entries.async_unload_platforms(entry, HUB_PLATFORMS)
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hass.data[DOMAIN].pop(entry.entry_id)
+        from .shadow import async_unload_window
+
+        async_unload_window(hass, entry.entry_id)
 
     return unload_ok
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Drop a removed window's split issue, if it had one."""
+    """Drop a removed window's repair issues (split, settings differ)."""
     from homeassistant.helpers import issue_registry as ir
 
+    from .shadow import diff_issue_id
     from .window_cover import split_issue_id
 
     ir.async_delete_issue(hass, DOMAIN, split_issue_id(entry.entry_id))
+    ir.async_delete_issue(hass, DOMAIN, diff_issue_id(entry.entry_id))
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Handle options update."""
+    """Handle options update.
+
+    An update that only wrote the window's ``overrides`` (P5 shadow: the
+    lift or an adoption) needs no reload, since the runtime does not read
+    them; the window compares its layered settings again instead.
+    """
+    from .shadow import async_check_window, only_overrides_changed
+
+    if only_overrides_changed(hass, entry):
+        async_check_window(hass, entry)
+        return
     await hass.config_entries.async_reload(entry.entry_id)

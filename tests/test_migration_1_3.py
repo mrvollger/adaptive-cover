@@ -33,6 +33,7 @@ from custom_components.adaptive_cover.const import (
 from custom_components.adaptive_cover.migration import options_1_3
 from custom_components.adaptive_cover.repairs import async_create_fix_flow
 from custom_components.adaptive_cover.runtime.shade_config import ShadeConfig
+from custom_components.adaptive_cover.settings.shadow import without_overrides
 from custom_components.adaptive_cover.settings.spec import OPTS
 from custom_components.adaptive_cover.window_cover import split_issue_id
 
@@ -128,8 +129,11 @@ async def test_live_house_migrates_to_1_3(hass, cover_calls):
     for window in WINDOWS:
         entry = hass.config_entries.async_get_entry(window["entry_id"])
         assert entry.state is ConfigEntryState.LOADED, entry.title
-        assert (entry.version, entry.minor_version) == (1, 3), entry.title
-        assert dict(entry.options) == options_1_3(window["options"]), entry.title
+        assert (entry.version, entry.minor_version) == (1, 4), entry.title
+        # 1.4 only adds the window's lifted overrides (tests/test_shadow_settings.py)
+        assert without_overrides(entry.options) == options_1_3(window["options"]), (
+            entry.title
+        )
         (cover,) = window["options"][CONF_ENTITIES]
         # rollback: older versions still find the cover in group
         assert entry.options[CONF_ENTITIES] == [cover]
@@ -138,8 +142,16 @@ async def test_live_house_migrates_to_1_3(hass, cover_calls):
 
     (hub,) = (entry for entry in entries if entry["role"] == "hub")
     hub_entry = hass.config_entries.async_get_entry(hub["entry_id"])
-    assert hub_entry.minor_version == 3
-    assert dict(hub_entry.options) == hub["options"]  # the hub is not a window
+    assert hub_entry.minor_version == 4
+    # the hub is not a window: its leftover options stay as they were; 1.4
+    # adds only the lifted layers
+    assert {key: hub_entry.options[key] for key in hub["options"]} == hub["options"]
+    assert set(hub_entry.options) - set(hub["options"]) == {
+        "house",
+        "temperature_unit",
+        "floors",
+        "areas",
+    }
     # one cover per window already: nothing to split
     assert not [
         issue
@@ -185,7 +197,7 @@ async def test_multi_cover_entry_keeps_working_with_a_split_issue(hass, cover_ca
     await _setup(hass, entry)
 
     assert entry.state is ConfigEntryState.LOADED
-    assert entry.minor_version == 3
+    assert entry.minor_version == 4
     assert entry.options[CONF_ENTITIES] == [A, B]  # still drives both
     assert CONF_COVER_ENTITY not in entry.options
     assert entry.unique_id is None

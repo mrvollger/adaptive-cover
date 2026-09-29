@@ -526,6 +526,10 @@
           "entry_removed": "This window no longer exists."
         }
       }
+    },
+    "settings_differ": {
+      "title": "{window}: the house settings differ from its own settings",
+      "description": "{window} still runs on its own settings. The house, floor and room settings that will replace them in a later version give a different value for: {keys}. Nothing changes yet. Set these options back, or tell the maintainer, so the switch-over keeps the window as it is. This notice goes away when the values agree again."
     }
   }
 }

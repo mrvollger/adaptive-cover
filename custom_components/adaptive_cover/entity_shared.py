@@ -65,7 +65,14 @@ def window_attributes(
     - cover_type: cover_blind / cover_awning / cover_tilt.
     - override_until: local ISO time the manual override ends, or None.
     - next_move: {time, position} from the next-change computation, or None.
+    - provenance (P5 shadow): where the layered settings take each option
+      from, for the options that do not come from the house or the spec
+      default and are not one-time window settings ({option: "area" |
+      "floor" | "window" | "legacy"}); None until the house is lifted
+      (shadow.py).
     """
+    from .shadow import provenance
+
     covers = list(config_entry.options.get(CONF_ENTITIES) or [])
     states = coordinator.data.states
     next_time = states.get("next_change_time")
@@ -81,6 +88,7 @@ def window_attributes(
         }
         if next_time is not None
         else None,
+        "provenance": provenance(coordinator.hass, config_entry.entry_id),
     }
     if len(covers) > 1:
         attributes["cover_entities"] = covers
