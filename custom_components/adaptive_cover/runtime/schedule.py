@@ -54,16 +54,17 @@ class Schedule:
     def end_time(self, config: ShadeConfig, today: dt.date) -> dt.datetime | None:
         """Return today's end time, or None when there is none.
 
-        A fixed end time of 00:00 means the coming midnight (the end of
-        today), not the midnight that started it.
+        An end time of 00:00 today, fixed or from the end entity, means the
+        coming midnight (the end of today), not the midnight that started
+        it. An entity that names another day keeps its date.
         """
         time = None
         if config.end_time_entity is not None:
             time = self._read_time(config.end_time_entity, today)
         elif config.end_time is not None:
             time = get_datetime_from_str(config.end_time, default_date=today)
-            if time.time() == dt.time(0, 0):
-                time = time + dt.timedelta(days=1)
+        if time is not None and time.date() == today and time.time() == dt.time(0, 0):
+            time = time + dt.timedelta(days=1)
         return time
 
     def after_start(self, config: ShadeConfig, now: dt.datetime) -> bool:

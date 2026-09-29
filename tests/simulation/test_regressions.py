@@ -10,10 +10,13 @@ from custom_components.adaptive_cover.const import (
     CONF_AZIMUTH,
     CONF_DEFAULT_HEIGHT,
     CONF_DISTANCE,
+    CONF_END_ENTITY,
     CONF_FOV_LEFT,
     CONF_FOV_RIGHT,
     CONF_HEIGHT_WIN,
+    CONF_MANUAL_OVERRIDE_DURATION,
     CONF_MAX_ELEVATION,
+    CONF_RETURN_SUNSET,
     CONF_START_ENTITY,
     CONF_START_TIME,
     CONF_SUNSET_OFFSET,
@@ -244,4 +247,44 @@ async def test_regression_unreadable_start_entity_alone_waits(hass, freezer):
     assert house.auto_moves("cover.shade") == []
     await house.advance_to("11:15")
     assert house.auto_moves("cover.shade"), "no command after the entity start"
+    await house.teardown()
+
+
+END_ENTITY = "sensor.sim_end_time"
+
+
+async def test_regression_midnight_end_entity_means_coming_midnight(hass, freezer):
+    """An end-time ENTITY at 00:00 means the coming midnight, like the option.
+
+    Only the fixed end_time was normalized. An entity at 00:00 read as the
+    midnight that STARTED today: the window was shut all day, and the end
+    close armed a past time, so it fired as a catch-up close at startup.
+    """
+    hass.states.async_set(END_ENTITY, "00:00:00")
+    house = await SimHouse.create(
+        hass,
+        freezer,
+        date="2026-03-20",
+        options={
+            CONF_END_ENTITY: END_ENTITY,
+            CONF_RETURN_SUNSET: True,
+            CONF_SUNSET_POS: 0,
+            CONF_MANUAL_OVERRIDE_DURATION: {"hours": 8},
+        },
+    )
+    await house.advance_to("12:00")
+    assert house.auto_moves("cover.shade", since="07:00"), (
+        "no daytime tracking: the 00:00 end shut the window all day"
+    )
+    end_closes = [m for m in house.window().moves if m["source"] == "end_time"]
+    assert end_closes == [], f"a catch-up end close fired: {end_closes}"
+
+    await house.advance_to("22:30")
+    await house.user_moves("cover.shade", 100, via="remote")  # held override
+    await house.advance_to("00:30")  # crosses local midnight
+    closes = [
+        m for m in house.auto_moves("cover.shade", since="22:35") if m.position == 0
+    ]
+    assert closes, "no close at the coming midnight"
+    assert closes[0].time.day == 21, f"close fired on the wrong day: {closes}"
     await house.teardown()

@@ -195,12 +195,24 @@ MUTATIONS: list[Mutation] = [
         SCHEDULE,
         "Schedule.end_time",
         "drop the 00:00-means-next-midnight normalization",
-        "            time = get_datetime_from_str(config.end_time, default_date=today)\n"
-        "            if time.time() == dt.time(0, 0):\n"
-        "                time = time + dt.timedelta(days=1)\n"
+        "        if time is not None and time.date() == today and time.time() == dt.time(0, 0):\n"
+        "            time = time + dt.timedelta(days=1)\n"
         "        return time",
-        "            time = get_datetime_from_str(config.end_time, default_date=today)\n"
         "        return time",
+    ),
+    Mutation(
+        "M61",
+        "midnight_end_entity_not_normalized",
+        SCHEDULE,
+        "Schedule.end_time",
+        "an end-time entity at 00:00 means the start of today (only the fixed end_time is normalized)",
+        "        if time is not None and time.date() == today and time.time() == dt.time(0, 0):\n",
+        "        if (\n"
+        "            config.end_time_entity is None\n"
+        "            and time is not None\n"
+        "            and time.date() == today\n"
+        "            and time.time() == dt.time(0, 0)\n"
+        "        ):\n",
     ),
     Mutation(
         "M07",

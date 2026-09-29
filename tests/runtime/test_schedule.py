@@ -67,6 +67,20 @@ def test_end_entity_wins_over_the_fixed_end():
     assert states.reads == [END_ENTITY]
 
 
+def test_regression_midnight_end_entity_means_the_coming_midnight():
+    """An end ENTITY at 00:00 is normalized like the fixed end time."""
+    cfg = config(**{CONF_END_ENTITY: END_ENTITY})
+    end = Schedule(FakeStates(shade_end="00:00:00")).end_time(cfg, DAY)
+    assert end == dt.datetime.combine(DAY + dt.timedelta(days=1), dt.time())
+
+
+def test_a_dated_end_entity_keeps_its_date():
+    cfg = config(**{CONF_END_ENTITY: END_ENTITY})
+    states = FakeStates(shade_end="2026-03-22 00:00:00")
+    end = Schedule(states).end_time(cfg, DAY)
+    assert end == dt.datetime(2026, 3, 22)
+
+
 def test_unavailable_end_entity_means_no_end():
     cfg = config(**{CONF_END_TIME: "21:30:00", CONF_END_ENTITY: END_ENTITY})
     assert Schedule(FakeStates(shade_end=None)).end_time(cfg, DAY) is None

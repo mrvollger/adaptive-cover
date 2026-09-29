@@ -49,6 +49,13 @@
   "patch": "M06_midnight_end_time_normalization.patch"
  },
  {
+  "id": "M61",
+  "file": "custom_components/adaptive_cover/runtime/schedule.py",
+  "function": "Schedule.end_time",
+  "description": "an end-time entity at 00:00 means the start of today (only the fixed end_time is normalized)",
+  "patch": "M61_midnight_end_entity_not_normalized.patch"
+ },
+ {
   "id": "M07",
   "file": "custom_components/adaptive_cover/runtime/gates.py",
   "function": "GatePolicy.first_blocking_gate",

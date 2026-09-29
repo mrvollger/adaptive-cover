@@ -262,3 +262,26 @@ The example below is inside an HTML comment. The checker ignores it.
   that is not a time now means "no end time", as an unavailable one already
   did. Goldens, truth table and house replay unchanged: no pinned config
   uses a start or end entity.
+
+## L0011 · 2026-09-29 · An end-time entity at 00:00 means the coming midnight (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins
+  `tests/simulation/test_regressions.py::test_regression_midnight_end_entity_means_coming_midnight`
+  and the unit pins in `tests/runtime/test_schedule.py`
+  (`test_regression_midnight_end_entity_means_the_coming_midnight`,
+  `test_a_dated_end_entity_keeps_its_date`)
+- **Mutations re-targeted:** M06 re-anchored onto the shared normalization in
+  `Schedule.end_time` (description unchanged; it now drops the
+  normalization for both sources). Added M61 (an end-time entity at 00:00
+  is not normalized).
+- **Contract change:** C5
+- **Reason:** defect fix (P4 batch 3). Only the fixed `end_time` option
+  treated 00:00 as the coming midnight. An end-time entity at 00:00 read as
+  the midnight that started today: the window was shut all day, and
+  EndOfDay armed that past time, so the end close fired as a catch-up close
+  at startup. Both sources now normalize an end of 00:00 today to the
+  coming midnight, so EndOfDay arms the next midnight. An entity whose
+  state names another date keeps it. Goldens, truth table and house replay
+  unchanged: the house uses the fixed `end_time` 00:00, which behaves as
+  before.
