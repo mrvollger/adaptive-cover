@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/engine/evaluate.py b/custom_components/adaptive_cover/engine/evaluate.py
 --- a/custom_components/adaptive_cover/engine/evaluate.py
 +++ b/custom_components/adaptive_cover/engine/evaluate.py
-@@ -150,11 +150,11 @@
+@@ -153,11 +153,11 @@
          if valid and _not_sunny(climate):
              if climate.is_summer:
                  trace.append("tilt, summer, dim: 45 deg preset")

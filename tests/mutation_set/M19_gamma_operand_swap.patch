@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_components/adaptive_cover/engine/geometry.py
 --- a/custom_components/adaptive_cover/engine/geometry.py
 +++ b/custom_components/adaptive_cover/engine/geometry.py
-@@ -17,7 +17,7 @@
+@@ -22,7 +22,7 @@
  
  def gamma(window_azimuth: float, solar_azimuth: float) -> float:
      """Relative angle between window normal and sun (surface solar azimuth)."""

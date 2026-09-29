@@ -4,7 +4,7 @@ Each test names the fix it pins; see the matching commit for the incident
 details. All inputs are explicit — no HA, no wall clock.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import numpy as np
 import pytest
@@ -178,3 +178,116 @@ class TestRegressionAwningOverflow:
         assert geometry.awning_extension(config, sun) == pytest.approx(
             float(np.clip(expected, 0, config.awning_length))
         )
+
+
+class TestRegressionDuskOpenThenClose:
+    """The sun left the window shortly before the sunset position began, so
+    the cover opened to the default and closed again minutes later
+    (Leanne's door, summer: 97% at 20:15, 5% at 20:35; Master trap with a
+    +15 min offset: 99% at sunset, 0% at sunset+15). When the sun leaves
+    less than DUSK_LEAD before the sunset position begins, the sunset
+    position starts right away. A sun that left earlier keeps the
+    configured sunset time."""
+
+    # Naive UTC, a June evening in Denver: sunset 03:02Z (21:02 MDT).
+    SUNRISE = datetime(2026, 6, 21, 11, 57)
+    SUNSET = datetime(2026, 6, 22, 3, 2)
+    OUT_OF_WINDOW = SunSnapshot(azimuth=296.0, elevation=6.0)  # left the FOV
+    IN_WINDOW = SunSnapshot(azimuth=280.0, elevation=8.0)
+
+    def config(self, **kw):
+        base = dict(
+            window_azimuth=235,
+            fov_left=60,
+            fov_right=60,
+            default_position=97,
+            sunset_position=5,
+            sunset_offset_min=-30,  # sunset position from 02:32Z
+            max_elevation=50,
+        )
+        base.update(kw)
+        return vertical_config(**base)
+
+    def ctx(self, minutes_before, config, sun_at_lead):
+        start = self.SUNSET + timedelta(minutes=config.sunset_offset_min)
+        return TimeContext(
+            now_utc=start - timedelta(minutes=minutes_before),
+            sunrise_utc=self.SUNRISE,
+            sunset_utc=self.SUNSET,
+            sun_at_dusk_lead=sun_at_lead,
+        )
+
+    def test_regression_dusk_lead_is_thirty_minutes(self):
+        assert geometry.DUSK_LEAD.total_seconds() == 30 * 60
+
+    @pytest.mark.parametrize(
+        ("minutes", "position", "intent"),
+        [(29, 5, Intent.SUNSET), (31, 97, Intent.DEFAULT)],
+        ids=["29_min_before", "31_min_before"],
+    )
+    def test_regression_dusk_lead_boundary(self, minutes, position, intent):
+        """Sun in the window when the lead began, gone now."""
+        config = self.config()
+        ctx = self.ctx(minutes, config, sun_at_lead=self.IN_WINDOW)
+        decision = evaluate(config, self.OUT_OF_WINDOW, ctx)
+        assert (decision.position, decision.intent) == (position, intent)
+
+    @pytest.mark.parametrize(
+        ("minutes", "position"), [(29, 5), (31, 97)], ids=["29_min", "31_min"]
+    )
+    def test_regression_dusk_lead_boundary_climate_default(self, minutes, position):
+        """Climate branches that rest at the default follow the same lead."""
+        config = self.config()
+        away = ClimateInputs(presence=False, is_summer=False, is_winter=False)
+        ctx = self.ctx(minutes, config, sun_at_lead=self.IN_WINDOW)
+        decision = evaluate(config, self.OUT_OF_WINDOW, ctx, away)
+        assert decision.position == position
+
+    def test_regression_dusk_lead_master_trap_positive_offset(self):
+        """Master trap: the sun sets in the window; sunset position at +15."""
+        config = self.config(
+            window_azimuth=240,
+            fov_left=90,
+            fov_right=90,
+            default_position=99,
+            sunset_position=0,
+            sunset_offset_min=15,
+            max_elevation=None,
+        )
+        at_sunset = self.ctx(15, config, sun_at_lead=SunSnapshot(296.0, 2.5))
+        set_sun = SunSnapshot(azimuth=300.0, elevation=-0.8)
+        decision = evaluate(config, set_sun, at_sunset)
+        assert (decision.position, decision.intent) == (0, Intent.SUNSET)
+
+    def test_regression_dusk_lead_keeps_sunset_time_when_sun_left_early(self):
+        """An east window the sun left at noon keeps its configured close."""
+        config = self.config(window_azimuth=100, fov_left=90, fov_right=44)
+        gone_since_noon = SunSnapshot(azimuth=290.0, elevation=9.0)
+        ctx = self.ctx(10, config, sun_at_lead=gone_since_noon)
+        decision = evaluate(config, SunSnapshot(azimuth=296.0, elevation=6.0), ctx)
+        assert (decision.position, decision.intent) == (97, Intent.DEFAULT)
+
+    def test_regression_dusk_lead_unknown_sun_never_engages(self):
+        config = self.config()
+        ctx = self.ctx(10, config, sun_at_lead=None)
+        decision = evaluate(config, self.OUT_OF_WINDOW, ctx)
+        assert (decision.position, decision.intent) == (97, Intent.DEFAULT)
+
+    def test_regression_dusk_lead_keeps_tracking_sun_in_window(self):
+        """Daytime rule unchanged: sun still in the window keeps tracking."""
+        config = self.config()
+        ctx = self.ctx(10, config, sun_at_lead=self.IN_WINDOW)
+        decision = evaluate(config, self.IN_WINDOW, ctx)
+        assert decision.intent == Intent.CALCULATED
+
+    def test_regression_dusk_lead_leaves_morning_alone(self):
+        """Out of the window 10 min after the morning start: still default."""
+        config = self.config()
+        morning = TimeContext(
+            now_utc=self.SUNRISE + timedelta(minutes=10),
+            sunrise_utc=self.SUNRISE,
+            sunset_utc=self.SUNSET,
+            sun_at_dusk_lead=self.IN_WINDOW,
+        )
+        decision = evaluate(config, SunSnapshot(azimuth=60.0, elevation=2.0), morning)
+        assert (decision.position, decision.intent) == (97, Intent.DEFAULT)

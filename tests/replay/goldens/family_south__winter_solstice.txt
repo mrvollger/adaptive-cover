@@ -13,7 +13,6 @@
 12-21 08:00:00 MST  input  sensor.downstairs_indoor_temperature = 69.0 °F
 12-21 09:40:00 MST  cmd    set_cover_position cover.family_south_shades 100
 12-21 09:40:00 MST  sensor 100 (admit_no_glare)
-12-21 09:41:30 MST  cmd    set_cover_position cover.family_south_shades 100
 12-21 10:00:00 MST  input  sensor.downstairs_indoor_temperature = 71.0 °F
 12-21 11:00:00 MST  input  weather.forecast_home_2 = cloudy
 12-21 11:05:00 MST  sensor 100 (climate_open_heat)

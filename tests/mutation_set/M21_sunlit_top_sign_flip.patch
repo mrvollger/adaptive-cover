@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_components/adaptive_cover/engine/geometry.py
 --- a/custom_components/adaptive_cover/engine/geometry.py
 +++ b/custom_components/adaptive_cover/engine/geometry.py
-@@ -129,7 +129,7 @@
+@@ -134,7 +134,7 @@
          raise ValueError("sunlit_top requires window_height")
      if config.overhang is None:
          return config.window_height

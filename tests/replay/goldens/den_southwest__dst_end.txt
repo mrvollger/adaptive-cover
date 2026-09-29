@@ -16,7 +16,6 @@
 11-01 11:05:00 MST  sensor 97 (climate_default)
 11-01 12:00:00 MST  cmd    set_cover_position cover.sw_sw_1st_floor_bed 100
 11-01 12:00:00 MST  sensor 100 (climate_open_heat)
-11-01 12:01:30 MST  cmd    set_cover_position cover.sw_sw_1st_floor_bed 100
 11-01 13:00:00 MST  input  weather.forecast_home_2 = sunny
 11-01 13:05:00 MST  sensor 100 (admit_no_glare)
 11-01 13:30:00 MST  human  cover.sw_sw_1st_floor_bed -> 37 (via remote)

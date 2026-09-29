@@ -182,3 +182,20 @@ def entity_registry_enabled_by_default():
         return_value=True,
     ):
         yield
+
+
+@pytest.fixture(autouse=True)
+def fail_on_ha_deprecation_reports(caplog):
+    """Fail any test in which HA reports deprecated usage by this integration.
+
+    HA's frame helper logs "Detected that custom integration 'adaptive_cover'
+    calls ..." instead of raising a DeprecationWarning, so the pytest
+    filterwarnings error does not catch it (v1.15.0 shipped one this way).
+    """
+    yield
+    reports = [
+        record.getMessage()
+        for record in caplog.get_records("call")
+        if "Detected that custom integration 'adaptive_cover'" in record.getMessage()
+    ]
+    assert not reports, "HA reported deprecated usage:\n" + "\n".join(reports)

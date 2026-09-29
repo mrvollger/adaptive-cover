@@ -16,7 +16,6 @@
 03-20 11:05:00 MDT  sensor 99 (climate_default)
 03-20 11:50:00 MDT  cmd    set_cover_position cover.family_south_shades 100
 03-20 11:50:00 MDT  sensor 100 (climate_open_heat)
-03-20 11:51:30 MDT  cmd    set_cover_position cover.family_south_shades 100
 03-20 13:00:00 MDT  input  weather.forecast_home_2 = sunny
 03-20 13:05:00 MDT  sensor 100 (admit_no_glare)
 03-20 13:30:00 MDT  human  cover.family_south_shades -> 37 (via remote)

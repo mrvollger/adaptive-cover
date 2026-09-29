@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1695,7 +1695,7 @@
+@@ -1712,7 +1712,7 @@
              normal_range = list(map(int, self.normal_list))
              new_range = list(map(int, self.new_list))
          if new_range:

@@ -13,7 +13,6 @@
 11-01 08:00:00 MST  input  sensor.upstairs_indoor_temperature = 71.0 °F
 11-01 09:50:00 MST  cmd    set_cover_position cover.master_south_shades 100
 11-01 09:50:00 MST  sensor 100 (admit_no_glare)
-11-01 09:51:30 MST  cmd    set_cover_position cover.master_south_shades 100
 11-01 10:00:00 MST  input  sensor.upstairs_indoor_temperature = 73.0 °F
 11-01 10:05:00 MST  cmd    set_cover_position cover.master_south_shades 4
 11-01 10:05:00 MST  sensor 4 (calculated)

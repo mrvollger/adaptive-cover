@@ -27,7 +27,7 @@
 12-21 11:00:00 MST  cmd    set_cover_position cover.master_trap_shades 14
 12-21 11:00:00 MST  sensor 14 (calculated)
 12-21 11:00:00 MST  input  weather.forecast_home_2 = cloudy
-12-21 11:01:30 MST  cmd    set_cover_position cover.master_trap_shades 99
+12-21 11:05:00 MST  cmd    set_cover_position cover.master_trap_shades 99
 12-21 11:05:00 MST  sensor 99 (climate_default)
 12-21 13:00:00 MST  input  weather.forecast_home_2 = sunny
 12-21 13:05:00 MST  cmd    set_cover_position cover.master_trap_shades 4
@@ -41,10 +41,7 @@
 12-21 15:35:00 MST  cmd    set_cover_position cover.master_trap_shades 1
 12-21 16:25:00 MST  cmd    set_cover_position cover.master_trap_shades 0
 12-21 16:25:00 MST  sensor 0 (calculated)
-12-21 17:05:00 MST  cmd    set_cover_position cover.master_trap_shades 99
-12-21 17:05:00 MST  sensor 99 (default)
-12-21 17:20:00 MST  cmd    set_cover_position cover.master_trap_shades 0
-12-21 17:20:00 MST  sensor 0 (sunset)
+12-21 17:05:00 MST  sensor 0 (sunset)
 12-21 18:00:00 MST  input  sensor.upstairs_indoor_temperature = 74.0 °F
 12-21 21:00:00 MST  input  sensor.upstairs_indoor_temperature = 71.5 °F
 12-22 00:30:00 MST  end    shade at 0

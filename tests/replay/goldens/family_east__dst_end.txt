@@ -50,7 +50,6 @@
 11-01 10:00:00 MST  cmd    set_cover_position cover.family_east_shades 99
 11-01 10:00:00 MST  sensor 99 (default)
 11-01 10:00:00 MST  input  sensor.downstairs_indoor_temperature = 71.0 °F
-11-01 10:01:30 MST  cmd    set_cover_position cover.family_east_shades 99
 11-01 11:00:00 MST  input  weather.forecast_home_2 = cloudy
 11-01 11:05:00 MST  sensor 99 (climate_default)
 11-01 13:00:00 MST  input  weather.forecast_home_2 = sunny
