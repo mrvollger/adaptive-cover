@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 from homeassistant import data_entry_flow
+import pytest
 
 from custom_components.adaptive_cover.const import (
     CONF_CLIMATE_MODE,
     CONF_DISTANCE,
     CONF_EYE_HEIGHT,
+    CONF_BLIND_SPOT_LEFT,
+    CONF_BLIND_SPOT_RIGHT,
     CONF_HEIGHT_WIN,
+    CONF_INTERP_LIST,
+    CONF_INTERP_LIST_NEW,
     CONF_MAX_ELEVATION,
     CONF_PRIVACY_MODE,
     CONF_TEMP_ENTITY,
@@ -155,3 +160,37 @@ async def test_temp_low_editable_in_climate_section(
     )
     await hass.async_block_till_done()
     assert vertical_config_entry.options[CONF_TEMP_LOW] == 19
+
+
+@pytest.mark.parametrize(
+    "sun_behavior",
+    [
+        {CONF_INTERP_LIST: ["0", "100"], CONF_INTERP_LIST_NEW: ["0"]},
+        {CONF_BLIND_SPOT_LEFT: 40, CONF_BLIND_SPOT_RIGHT: 20},
+    ],
+    ids=["interp_lists_differ", "blind_spot_reversed"],
+)
+async def test_regression_options_form_runs_every_cross_field_check(
+    hass, vertical_config_entry, mock_sun_entity, sun_behavior
+):
+    """The options form rejects what the wizard rejects.
+
+    The one-page options form checked only the elevation order, so it saved
+    interpolation lists of different lengths (np.interp then raises on every
+    update and the window stops moving) and a blind spot whose right edge is
+    left of its left edge. The wizard always rejected both. Ledger L0009.
+    """
+    before = dict(vertical_config_entry.options)
+    result = await _open_options(hass, vertical_config_entry)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={
+            "covers_geometry": {},
+            "sun_behavior": sun_behavior,
+            "automation_timing": {},
+            "climate": {},
+        },
+    )
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
+    assert result["errors"]
+    assert dict(vertical_config_entry.options) == before

@@ -128,3 +128,111 @@ The example below is inside an HTML comment. The checker ignores it.
   `location` keep their names and values. Nearest-point lookups use `bisect`
   in UTC with pandas' tie rule. The goldens, the truth table and all 90
   house-replay goldens are byte-identical; no pinned output changed.
+
+## L0005 · 2026-09-29 · One option spec generates every settings surface (C3)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins in `tests/contract/test_spec_parity.py::*`
+  (every surface, against `tests/contract/spec_parity.json`) and
+  `tests/settings/test_spec.py::*` (the plan's one-time/recurring table,
+  the remaining drift list, form-to-service round trip)
+- **Mutations re-targeted:** none (M39's anchor in
+  `__init__.handle_change_settings` did not move)
+- **Contract change:** C3
+- **Reason:** P3 replaces the hand-written wizard, options, service and
+  number schemas with one table (`settings/spec.py`, built by
+  `settings/schema.py`). `spec_parity.json` is byte-identical before and
+  after: every key keeps its kind, default, range, unit and placement.
+  Drift between surfaces that existed before is now listed per row
+  (`legacy`) and pinned by `test_legacy_drift_is_exactly_the_listed_entries`;
+  the drift fixes that follow each remove entries with their own ledger
+  entry. `options_spec.py` is removed; the options flow's nine unreachable
+  per-page steps went in the commit before (a static step-graph walk from
+  `init` reaches none of them). Cross-field errors now use translation keys
+  (`config.error.*`, `options.error.*`) instead of English sentences as
+  keys; the fields they mark are unchanged. Five
+  `tests/test_units_and_defaults.py` default tests now read the wizard's
+  forms through a real flow instead of module-level schema constants (same
+  ids, same assertions). Goldens, truth table and house replay unchanged.
+
+## L0006 · 2026-09-29 · Window height and distance take up to 10 m everywhere (C3)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pin
+  `tests/test_config_flow.py::test_regression_height_distance_max_ten`
+- **Mutations re-targeted:** none
+- **Contract change:** C3
+- **Reason:** drift fix. The change_settings and add_entry services took
+  `window_height` and `distance_shaded_area` from 0.1 to 10 m, but the
+  wizard and the options form capped the height at 6 m and the distance at
+  2 m, so a value set by the service could not be saved from the options
+  form again. `spec_parity.json` changes in four lines: the form `max` of
+  both keys (wizard vertical/horizontal, options covers_geometry) is now 10.
+  Stored values are untouched (the range only widens). Goldens, truth table
+  and house replay unchanged.
+
+## L0007 · 2026-09-29 · delta_time accepts 0 on every surface (C3)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pin
+  `tests/test_config_flow.py::test_regression_delta_time_min_zero`
+- **Mutations re-targeted:** none
+- **Contract change:** C3
+- **Reason:** drift fix. The services accepted `delta_time` >= 0 (many
+  entries and tests run with 0, no time throttle), but the wizard and the
+  options form required at least 2 minutes, so such an entry could not be
+  saved from the options form without raising its throttle.
+  `spec_parity.json` changes in two lines: the form `min` (wizard
+  automation, options automation_timing) is now 0. This is the wider range,
+  so no stored value becomes invalid; the default stays 2. Goldens, truth
+  table and house replay unchanged.
+
+## L0008 · 2026-09-29 · Climate thresholds are unit-aware on every surface (C3)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins
+  `tests/test_units_and_defaults.py::test_regression_thresholds_unit_aware_everywhere[celsius]`
+  and `[fahrenheit]`
+- **Mutations re-targeted:** M39 patch regenerated: its anchor in
+  `__init__.handle_change_settings` moved down three lines (text and
+  description unchanged). Added M56 (change_settings validates the
+  thresholds in °C whatever HA's unit), killed by the new regression test.
+- **Contract change:** C3
+- **Reason:** drift fix. `temp_low` / `temp_high` are stored and compared in
+  HA's temperature unit (v1.13.5), and their number entities follow it
+  (v1.15.1, L0003), but the wizard and the options form still showed a
+  unit-less 0-86 / 0-90 slider in whole degrees, change_settings and
+  add_entry accepted any number (a °F house could store 21 and sit in
+  permanent winter), and the °C numbers showed 21 / 25 while unset instead
+  of the spec defaults 22 / 24. Now every surface uses the unit's shape:
+  °C 5-30 / 10-40, °F 40-90 / 50-100, step 0.5, a box, the unit shown; the
+  services reject a value outside that range (their schema is built with
+  HA's unit when they register). services.yaml can't follow the unit: its
+  selectors take the union (5-90 / 10-100) and the text names HA's unit
+  instead of "the sensor's unit" (which was wrong since v1.13.5).
+  `spec_parity.json` changes only in `temp_low` / `temp_high`; the °F
+  numbers are unchanged, so a °F house (this one) sees the same numbers.
+  One behavior-tier test body changed without changing its id or
+  assertions: `tests/test_change_settings.py::test_regression_change_settings_enables_climate_mode`
+  now runs in a °F house, because its 70 / 74 thresholds are °F values
+  that a °C house now rejects. A stored threshold outside the unit's range
+  (only possible with a wrong-unit value) now shows as invalid in the
+  options form until corrected. Goldens, truth table and house replay
+  unchanged.
+
+## L0009 · 2026-09-29 · The options form runs the wizard's cross-field checks (C3)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins
+  `tests/test_one_page_options.py::test_regression_options_form_runs_every_cross_field_check[interp_lists_differ]`
+  and `[blind_spot_reversed]`
+- **Mutations re-targeted:** none
+- **Contract change:** C3
+- **Reason:** defect fix found while merging the elevation checks into one
+  validator. The one-page options form checked only the elevation order,
+  so it saved interpolation lists of different lengths (np.interp then
+  raises on every update and the window stops moving) and a blind spot
+  whose right edge is left of its left edge; the wizard always rejected
+  both. The options form now runs every rule in `settings/validate.py` on
+  the options as they would be saved, and shows the error at form level.
+  `spec_parity.json`, goldens, truth table and house replay unchanged.

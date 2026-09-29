@@ -306,3 +306,75 @@ async def test_elevation_validation_error(hass):
     assert result["step_id"] == "vertical"
     assert result["errors"] is not None
     assert CONF_MAX_ELEVATION in result["errors"]
+
+
+async def _wizard_blind(hass, geometry: dict, automation: dict):
+    """Run the setup wizard for a blind; return the final flow result."""
+    flow = hass.config_entries.flow
+    result = await flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result = await flow.async_configure(
+        result["flow_id"], {"name": "Drift fix", CONF_MODE: SensorType.BLIND}
+    )
+    result = await flow.async_configure(
+        result["flow_id"], {**VERTICAL_STEP_INPUT, **geometry}
+    )
+    assert result["step_id"] == "automation", result
+    return await flow.async_configure(
+        result["flow_id"], {**AUTOMATION_STEP_INPUT, **automation}
+    )
+
+
+async def _options_submit(hass, entry, **sections: dict):
+    """Submit the one-page options form with only ``sections`` filled in."""
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    user_input = {
+        name: sections.get(name, {})
+        for name in ("covers_geometry", "sun_behavior", "automation_timing", "climate")
+    }
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input=user_input
+    )
+    await hass.async_block_till_done()
+    return result
+
+
+async def test_regression_height_distance_max_ten(hass):
+    """Window height and shaded-area distance take up to 10 m on every surface.
+
+    Before P3 the change_settings and add_entry services took 0.1-10 m, but
+    the wizard and the options form capped the height at 6 m and the
+    distance at 2 m. A tall window or a deep room set by the service could
+    not be saved from the options form again. Ledger L0006.
+    """
+    result = await _wizard_blind(hass, {CONF_HEIGHT_WIN: 8.5, CONF_DISTANCE: 3.0}, {})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    entry = result["result"]
+    assert (entry.options[CONF_HEIGHT_WIN], entry.options[CONF_DISTANCE]) == (8.5, 3.0)
+
+    result = await _options_submit(
+        hass, entry, covers_geometry={CONF_HEIGHT_WIN: 10, CONF_DISTANCE: 10}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert (entry.options[CONF_HEIGHT_WIN], entry.options[CONF_DISTANCE]) == (10, 10)
+
+
+async def test_regression_delta_time_min_zero(hass):
+    """A time delta of 0 (no throttle) is accepted on every surface.
+
+    Before P3 the services took delta_time >= 0 (and many entries run with
+    0), but the wizard and the options form required at least 2 minutes, so
+    such an entry could not be saved from the options form without raising
+    its throttle. Ledger L0007.
+    """
+    result = await _wizard_blind(hass, {}, {CONF_DELTA_TIME: 0})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    entry = result["result"]
+    assert entry.options[CONF_DELTA_TIME] == 0
+
+    result = await _options_submit(hass, entry, automation_timing={CONF_DELTA_TIME: 1})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    result = await _options_submit(hass, entry, automation_timing={CONF_DELTA_TIME: 0})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options[CONF_DELTA_TIME] == 0

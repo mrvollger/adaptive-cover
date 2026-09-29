@@ -43,8 +43,11 @@ custom_components/adaptive_cover/
 ├── runtime/                 # Runtime building blocks (P2: the clock; P4: the coordinator split)
 │   └── clock.py             # Clock protocol + HassClock: the only module that reads "now"
 ├── sun.py                   # Astral-based solar table (SolarDay, 5-minute points, stdlib only)
-├── config_flow.py           # Multi-step UI configuration (setup + options)
-├── options_spec.py          # Changeable options for the change_settings service
+├── config_flow.py           # Setup wizard + one-page options form (routing only)
+├── settings/                # One option spec; every settings surface is built from it (P3)
+│   ├── spec.py              # OPTS: one row per option (kind, default, range, unit, one-time/recurring, surfaces, legacy drift)
+│   ├── schema.py            # Wizard pages, options sections, service schemas, number ranges
+│   └── validate.py          # Cross-field checks (elevation order, blind-spot order, interp lists)
 ├── const.py                 # All config keys, defaults, enums
 ├── hub.py                   # "Adaptive Cover All" hub device (all-shades cover, house mode select, reset-all button)
 ├── cover.py                 # Cover platform: only the hub's aggregate cover
@@ -76,8 +79,9 @@ tests/
 ├── characterization/        # Climate truth table, golden days, outbound service calls
 ├── simulation/              # SimHouse full-day replays (README.md = harness API)
 ├── replay/                  # House-replay goldens: real configs x 6 dates (added in P0)
-├── contract/                # behavior_tier_ids.txt, ledger.md, check_behavior_tier.py (added in P0)
-├── mutation_set/            # One patch per mutation (M01–M43), make_patches.py, run_mutations.py
+├── contract/                # behavior_tier_ids.txt, ledger.md, check_behavior_tier.py (P0); spec_parity.json (P3)
+├── settings/                # Option spec: plan's one-time/recurring table, drift list, form->service round trip
+├── mutation_set/            # One patch per mutation (M01–M56), make_patches.py, run_mutations.py
 ├── refactor_roadmap.json    # Contract v1: behavior-tier seams, mutation table, acceptance bar
 └── test_*.py                # Entity-surface tier: config flow, services, entities, hub
 ```
@@ -157,7 +161,12 @@ Multi-step wizard:
 6. **Climate** (optional) → temp/presence/weather/lux/irradiance entities
 7. **Weather** (optional) → which weather conditions trigger control
 
-Both initial setup (`ConfigFlow`) and edit (`OptionsFlowHandler`) share the same step logic via `_SchemaCommonFlowHandler`.
+The options flow (`OptionsFlowHandler`) is one sectioned page, `init`:
+covers_geometry, sun_behavior, automation_timing and climate. Every field
+on the wizard, the options form, the `change_settings` / `add_entry`
+schemas and the number entities comes from `settings/spec.py`;
+`tests/contract/spec_parity.json` pins what each surface shows
+(regenerate with `tests/contract/generate_spec_parity.py`, ledger the diff).
 
 ## Solar Algorithm Details
 

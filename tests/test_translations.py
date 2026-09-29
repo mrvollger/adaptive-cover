@@ -29,7 +29,6 @@ from homeassistant.data_entry_flow import FlowResultType, section
 from homeassistant.helpers import selector
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adaptive_cover.config_flow import ConfigFlowHandler
 from custom_components.adaptive_cover.const import (
     CONF_AWNING_ANGLE,
     CONF_AZIMUTH,
@@ -61,6 +60,7 @@ from custom_components.adaptive_cover.const import (
     DOMAIN,
     SensorType,
 )
+from custom_components.adaptive_cover.settings.validate import ERROR_KEYS
 
 PACKAGE = Path(__file__).resolve().parents[1] / "custom_components" / "adaptive_cover"
 STRINGS_PATH = PACKAGE / "strings.json"
@@ -254,7 +254,6 @@ async def _config_flow_forms(hass) -> list[dict[str, Any]]:
 async def _options_flow_forms(hass) -> list[dict[str, Any]]:
     """Every options form, for each cover type with climate mode off and on."""
     forms: list[dict[str, Any]] = []
-    legacy_steps = sorted(_literal_step_ids("OptionsFlowHandler") - {"init"})
     for sensor_type, type_options in TYPE_OPTIONS.items():
         for climate in (False, True):
             entry = MockConfigEntry(
@@ -267,19 +266,23 @@ async def _options_flow_forms(hass) -> list[dict[str, Any]]:
             result = await hass.config_entries.options.async_init(entry.entry_id)
             forms.append(result)
             hass.config_entries.options.async_abort(result["flow_id"])
-
-            # The per-page options steps predate the one-page form and are no
-            # longer routed to, but while the methods exist their strings are
-            # referenced; call them directly. (Deleting them, planned for P3,
-            # makes their strings stale and this test will say so.)
-            flow = ConfigFlowHandler.async_get_options_flow(entry)
-            flow.hass = hass
-            flow.handler = entry.entry_id
-            flow.flow_id = f"i18n-{entry.entry_id}"
-            for step in legacy_steps:
-                result = await getattr(flow, f"async_step_{step}")()
-                forms.append(result)
     return forms
+
+
+def _step_methods(class_name: str) -> set[str]:
+    """Step ids of the ``async_step_*`` methods one flow class defines."""
+    tree = ast.parse((PACKAGE / "config_flow.py").read_text(encoding="utf-8"))
+    cls = next(
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ClassDef) and node.name == class_name
+    )
+    return {
+        node.name.removeprefix("async_step_")
+        for node in cls.body
+        if isinstance(node, ast.AsyncFunctionDef)
+        and node.name.startswith("async_step_")
+    }
 
 
 def _init_param_translation_keys(
@@ -434,13 +437,16 @@ async def test_flow_strings_cover_every_form(hass, strings: dict[str, Any]) -> N
     config_forms = await _config_flow_forms(hass)
     options_forms = await _options_flow_forms(hass)
 
-    # The walk must reach every step the code can show.
-    for flow, cls, forms in (
-        ("config", "ConfigFlowHandler", config_forms),
-        ("options", "OptionsFlowHandler", options_forms),
+    # The walk must reach every step the code can show, and every step
+    # method must be reachable (import and update show no form: import is
+    # programmatic, update creates the entry). The options flow lost nine
+    # unreachable per-page steps in P3; this keeps dead steps from returning.
+    for flow, cls, forms, formless in (
+        ("config", "ConfigFlowHandler", config_forms, {"import", "update"}),
+        ("options", "OptionsFlowHandler", options_forms, set()),
     ):
         shown = {result["step_id"] for result in forms}
-        unvisited = _literal_step_ids(cls) - shown
+        unvisited = (_literal_step_ids(cls) | _step_methods(cls)) - shown - formless
         assert not unvisited, (
             f"{flow} steps the walk never reached: {sorted(unvisited)}"
         )
@@ -450,6 +456,11 @@ async def test_flow_strings_cover_every_form(hass, strings: dict[str, Any]) -> N
         needs.add_form("config", result)
     for result in options_forms:
         needs.add_form("options", result)
+    # Cross-field errors (settings/validate.py): the wizard and the options
+    # form run every rule.
+    for key in ERROR_KEYS:
+        needs.need(f"config.error.{key}")
+        needs.need(f"options.error.{key}")
 
     have = {
         key

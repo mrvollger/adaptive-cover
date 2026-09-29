@@ -330,6 +330,13 @@
   "patch": "M55_override_until_without_duration.patch"
  },
  {
+  "id": "M56",
+  "file": "custom_components/adaptive_cover/__init__.py",
+  "function": "_async_register_services",
+  "description": "change_settings validates climate thresholds in \u00b0C whatever HA's unit",
+  "patch": "M56_threshold_service_ignores_unit.patch"
+ },
+ {
   "id": "M57",
   "file": "custom_components/adaptive_cover/coordinator.py",
   "function": "_adopt_late_delivery",

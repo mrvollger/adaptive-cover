@@ -98,11 +98,14 @@ def _async_register_services(hass: HomeAssistant) -> None:
         supports_response=SupportsResponse.ONLY,
     )
 
-    from .options_spec import (
-        DEFAULT_OPTIONS,
+    from .settings.schema import (
+        add_entry_baseline,
         add_entry_schema,
         change_settings_schema,
     )
+
+    # Climate thresholds are validated in HA's temperature unit.
+    temperature_unit = hass.config.units.temperature_unit
 
     async def handle_change_settings(call: ServiceCall) -> ServiceResponse:
         entry = _resolve_entry(hass, call.data["config_entry"])
@@ -131,7 +134,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
         DOMAIN,
         SERVICE_CHANGE_SETTINGS,
         handle_change_settings,
-        schema=change_settings_schema(),
+        schema=change_settings_schema(temperature_unit),
         supports_response=SupportsResponse.OPTIONAL,
     )
 
@@ -153,7 +156,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
                 "sensor_type", source.data.get("sensor_type", "cover_blind")
             )
         else:
-            options = dict(DEFAULT_OPTIONS)
+            options = add_entry_baseline()
             sensor_type = call.data.get("sensor_type", "cover_blind")
         options.update(overrides)
         options[CONF_ENTITIES] = covers
@@ -174,7 +177,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
         DOMAIN,
         "add_entry",
         handle_add_entry,
-        schema=add_entry_schema(),
+        schema=add_entry_schema(temperature_unit),
         supports_response=SupportsResponse.OPTIONAL,
     )
 
