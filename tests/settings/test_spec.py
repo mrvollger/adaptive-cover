@@ -144,24 +144,6 @@ EXPECTED_LEGACY: dict[str, dict] = {
         "options.unit": None,
         "options.slider": False,
     },
-    "temp_low": {
-        "form.min": 0,
-        "form.max": 86,
-        "form.step": 1,
-        "form.unit": "°",
-        "form.slider": True,
-        "service.bounded": False,
-        "number.default@°C": 21,
-    },
-    "temp_high": {
-        "form.min": 0,
-        "form.max": 90,
-        "form.step": 1,
-        "form.unit": "°",
-        "form.slider": True,
-        "service.bounded": False,
-        "number.default@°C": 25,
-    },
 }
 
 

@@ -78,7 +78,7 @@ tests/
 ├── replay/                  # House-replay goldens: real configs x 6 dates (added in P0)
 ├── contract/                # behavior_tier_ids.txt, ledger.md, check_behavior_tier.py (P0); spec_parity.json (P3)
 ├── settings/                # Option spec: plan's one-time/recurring table, drift list, form->service round trip
-├── mutation_set/            # One patch per mutation (M01–M43), make_patches.py, run_mutations.py
+├── mutation_set/            # One patch per mutation (M01–M56), make_patches.py, run_mutations.py
 ├── refactor_roadmap.json    # Contract v1: behavior-tier seams, mutation table, acceptance bar
 └── test_*.py                # Entity-surface tier: config flow, services, entities, hub
 ```

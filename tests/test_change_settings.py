@@ -191,7 +191,11 @@ async def test_regression_change_settings_enables_climate_mode(
     walking the whole options wizard per window.
     """
     from homeassistant.helpers import entity_registry as er
+    from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
 
+    # A °F house: the services validate thresholds in HA's unit (L0007),
+    # and 70 / 74 are °F values.
+    hass.config.units = US_CUSTOMARY_SYSTEM
     hass.states.async_set("sensor.room_temp", "68.0")
     hass.states.async_set("weather.home", "sunny")
     await _setup(hass, entry)

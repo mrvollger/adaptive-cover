@@ -74,7 +74,7 @@ artifact, and it needs a ledger entry.
 
 ## Mutation set
 
-`tests/mutation_set/make_patches.py` defines the mutations (M01 to M43).
+`tests/mutation_set/make_patches.py` defines the mutations (M01 to M56; M44 to M51 are reserved by the plan, M53 is retired).
 Each is an exact text replacement in production code. The script writes
 one `M##_slug.patch` per mutation plus `manifest.json`.
 

@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/__init__.py b/custom_components/adaptive_cover/__init__.py
+--- a/custom_components/adaptive_cover/__init__.py
++++ b/custom_components/adaptive_cover/__init__.py
+@@ -134,7 +134,7 @@
+         DOMAIN,
+         SERVICE_CHANGE_SETTINGS,
+         handle_change_settings,
+-        schema=change_settings_schema(temperature_unit),
++        schema=change_settings_schema(),
+         supports_response=SupportsResponse.OPTIONAL,
+     )
+ 

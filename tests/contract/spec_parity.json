@@ -2721,10 +2721,23 @@
   "temp_high": [
    {
     "where": [
-     "add_entry",
-     "change_settings"
+     "add_entry [units=°C]",
+     "change_settings [units=°C]"
     ],
     "kind": "float",
+    "min": 10,
+    "max": 40,
+    "nullable": true,
+    "required": false
+   },
+   {
+    "where": [
+     "add_entry [units=°F]",
+     "change_settings [units=°F]"
+    ],
+    "kind": "float",
+    "min": 50,
+    "max": 100,
     "nullable": true,
     "required": false
    },
@@ -2732,7 +2745,7 @@
     "where": [
      "number [climate=on; units=°C]"
     ],
-    "default": 25,
+    "default": 24,
     "kind": "number",
     "max": 40,
     "min": 10,
@@ -2754,14 +2767,27 @@
    },
    {
     "where": [
-     "options.init.climate [climate=on]"
+     "options.init.climate [climate=on; units=°C]"
     ],
     "kind": "number",
-    "max": 90,
-    "min": 0,
-    "mode": "slider",
-    "step": 1,
-    "unit": "°",
+    "max": 40,
+    "min": 10,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°C",
+    "required": false,
+    "suggested": true
+   },
+   {
+    "where": [
+     "options.init.climate [climate=on; units=°F]"
+    ],
+    "kind": "number",
+    "max": 100,
+    "min": 50,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°F",
     "required": false,
     "suggested": true
    },
@@ -2771,7 +2797,7 @@
     ],
     "kind": "number",
     "max": 100,
-    "min": 0,
+    "min": 10,
     "mode": "box",
     "step": 0.5,
     "required": false
@@ -2781,11 +2807,11 @@
      "wizard.climate [units=°C]"
     ],
     "kind": "number",
-    "max": 90,
-    "min": 0,
-    "mode": "slider",
-    "step": 1,
-    "unit": "°",
+    "max": 40,
+    "min": 10,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°C",
     "required": true,
     "default": 24
    },
@@ -2794,11 +2820,11 @@
      "wizard.climate [units=°F]"
     ],
     "kind": "number",
-    "max": 90,
-    "min": 0,
-    "mode": "slider",
-    "step": 1,
-    "unit": "°",
+    "max": 100,
+    "min": 50,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°F",
     "required": true,
     "default": 75
    }
@@ -2806,10 +2832,23 @@
   "temp_low": [
    {
     "where": [
-     "add_entry",
-     "change_settings"
+     "add_entry [units=°C]",
+     "change_settings [units=°C]"
     ],
     "kind": "float",
+    "min": 5,
+    "max": 30,
+    "nullable": true,
+    "required": false
+   },
+   {
+    "where": [
+     "add_entry [units=°F]",
+     "change_settings [units=°F]"
+    ],
+    "kind": "float",
+    "min": 40,
+    "max": 90,
     "nullable": true,
     "required": false
    },
@@ -2817,7 +2856,7 @@
     "where": [
      "number [climate=on; units=°C]"
     ],
-    "default": 21,
+    "default": 22,
     "kind": "number",
     "max": 30,
     "min": 5,
@@ -2839,14 +2878,27 @@
    },
    {
     "where": [
-     "options.init.climate [climate=on]"
+     "options.init.climate [climate=on; units=°C]"
     ],
     "kind": "number",
-    "max": 86,
-    "min": 0,
-    "mode": "slider",
-    "step": 1,
-    "unit": "°",
+    "max": 30,
+    "min": 5,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°C",
+    "required": false,
+    "suggested": true
+   },
+   {
+    "where": [
+     "options.init.climate [climate=on; units=°F]"
+    ],
+    "kind": "number",
+    "max": 90,
+    "min": 40,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°F",
     "required": false,
     "suggested": true
    },
@@ -2856,7 +2908,7 @@
     ],
     "kind": "number",
     "max": 90,
-    "min": 0,
+    "min": 5,
     "mode": "box",
     "step": 0.5,
     "required": false
@@ -2866,11 +2918,11 @@
      "wizard.climate [units=°C]"
     ],
     "kind": "number",
-    "max": 86,
-    "min": 0,
-    "mode": "slider",
-    "step": 1,
-    "unit": "°",
+    "max": 30,
+    "min": 5,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°C",
     "required": true,
     "default": 22
    },
@@ -2879,11 +2931,11 @@
      "wizard.climate [units=°F]"
     ],
     "kind": "number",
-    "max": 86,
-    "min": 0,
-    "mode": "slider",
-    "step": 1,
-    "unit": "°",
+    "max": 90,
+    "min": 40,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°F",
     "required": true,
     "default": 72
    }

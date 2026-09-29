@@ -104,6 +104,9 @@ def _async_register_services(hass: HomeAssistant) -> None:
         change_settings_schema,
     )
 
+    # Climate thresholds are validated in HA's temperature unit.
+    temperature_unit = hass.config.units.temperature_unit
+
     async def handle_change_settings(call: ServiceCall) -> ServiceResponse:
         entry = _resolve_entry(hass, call.data["config_entry"])
         changes = {k: v for k, v in call.data.items() if k != "config_entry"}
@@ -131,7 +134,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
         DOMAIN,
         SERVICE_CHANGE_SETTINGS,
         handle_change_settings,
-        schema=change_settings_schema(),
+        schema=change_settings_schema(temperature_unit),
         supports_response=SupportsResponse.OPTIONAL,
     )
 
@@ -174,7 +177,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
         DOMAIN,
         "add_entry",
         handle_add_entry,
-        schema=add_entry_schema(),
+        schema=add_entry_schema(temperature_unit),
         supports_response=SupportsResponse.OPTIONAL,
     )
 

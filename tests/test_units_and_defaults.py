@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 
 import pytest
+import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util.unit_system import METRIC_SYSTEM, US_CUSTOMARY_SYSTEM
@@ -214,3 +215,91 @@ async def test_glare_defaults_prefilled_for_vertical_covers(hass):
     schema = (await _wizard_forms(hass))["vertical"]
     assert _default_of(schema, CONF_EYE_HEIGHT) == 1.2
     assert _default_of(schema, CONF_OCCUPIED_DISTANCE) == 2.0
+
+
+# (min, max, default) of each threshold per HA temperature unit; step 0.5.
+THRESHOLD_SHAPES = {
+    "°C": {CONF_TEMP_LOW: (5, 30, 22), CONF_TEMP_HIGH: (10, 40, 24)},
+    "°F": {CONF_TEMP_LOW: (40, 90, 72), CONF_TEMP_HIGH: (50, 100, 75)},
+}
+
+
+def _selector_shape(schema, key):
+    """(min, max, step, unit) of the number selector for ``key``."""
+    for marker, validator in schema.schema.items():
+        if marker == key:
+            config = validator.config
+            return (
+                config.get("min"),
+                config.get("max"),
+                config.get("step"),
+                config.get("unit_of_measurement"),
+            )
+    raise KeyError(key)
+
+
+@pytest.mark.parametrize(
+    ("system", "unit", "inside", "outside"),
+    [(METRIC_SYSTEM, "°C", 21.5, 72), (US_CUSTOMARY_SYSTEM, "°F", 70.5, 21)],
+    ids=["celsius", "fahrenheit"],
+)
+@pytest.mark.usefixtures("stub_sun_integration")
+async def test_regression_thresholds_unit_aware_everywhere(
+    hass, system, unit, inside, outside
+):
+    """Heating/cooling thresholds use HA's temperature unit on every surface.
+
+    Thresholds are stored and compared in HA's unit (v1.13.5) and the
+    number entities followed it (v1.15.1), but the wizard and the options
+    form still showed a unit-less 0-86 / 0-90 slider in whole degrees, and
+    change_settings / add_entry accepted any number: a °F house could set
+    21 (a Celsius value) and sit in permanent winter. Now every surface
+    shows the unit with that unit's range and 0.5 steps, the services
+    reject a value outside it, and the °C numbers default to the spec's
+    22 / 24 (they showed 21 / 25). Ledger L0007.
+    """
+    hass.config.units = system
+    shapes = THRESHOLD_SHAPES[unit]
+
+    wizard = (await _wizard_forms(hass))["climate"]
+    for key, (low, high, default) in shapes.items():
+        assert _selector_shape(wizard, key) == (low, high, 0.5, unit)
+        assert _default_of(wizard, key) == default
+
+    entry = await _setup_climate_entry(
+        hass, low=None, high=None, reading=shapes[CONF_TEMP_LOW][2], unit=unit
+    )
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    climate = result["data_schema"].schema["climate"].schema
+    hass.config_entries.options.async_abort(result["flow_id"])
+    registry = er.async_get(hass)
+    for key, (low, high, default) in shapes.items():
+        assert _selector_shape(climate, key) == (low, high, 0.5, unit)
+        state = hass.states.get(
+            registry.async_get_entity_id(
+                "number", DOMAIN, f"{entry.entry_id}_number_{key}"
+            )
+        )
+        assert float(state.state) == default
+        assert (
+            state.attributes["min"],
+            state.attributes["max"],
+            state.attributes["unit_of_measurement"],
+        ) == (low, high, unit)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "change_settings",
+        {"config_entry": entry.entry_id, CONF_TEMP_LOW: inside},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+    assert entry.options[CONF_TEMP_LOW] == inside
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call(
+            DOMAIN,
+            "change_settings",
+            {"config_entry": entry.entry_id, CONF_TEMP_LOW: outside},
+            blocking=True,
+        )
+    assert entry.options[CONF_TEMP_LOW] == inside

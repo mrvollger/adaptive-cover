@@ -346,20 +346,8 @@ _ANY_NUMBER: Final = MappingProxyType({"service.bounded": False})
 _BLIND_SPOT_OPTIONS: Final = MappingProxyType(
     {"options.max": 90, "options.unit": None, "options.slider": False}
 )
-# Before P3 the wizard and options form showed both climate thresholds as a
-# unit-less 0-86 / 0-90 slider with step 1, the services accepted any
-# number, and the °C numbers defaulted to 21 / 25.
-_TEMP_LEGACY: Final = MappingProxyType(
-    {
-        "form.min": 0,
-        "form.step": 1,
-        "form.unit": "°",
-        "form.slider": True,
-        "service.bounded": False,
-    }
-)
-
 # Climate thresholds per HA temperature unit (stored and compared in it).
+# Every surface shows and validates them in that unit (ledger L0007).
 _TEMP_LOW: Final = MappingProxyType(
     {
         "°C": UnitShape(min=5, max=30, step=0.5, default=DEFAULT_TEMP_THRESHOLDS["°C"][0]),
@@ -546,12 +534,10 @@ OPTS: Final[tuple[Opt, ...]] = (
         service=_ENTITY_ID),
     Opt(CONF_TEMP_LOW, Kind.NUMBER, Group.CLIMATE, REC, H, (F, A),
         unit=TEMPERATURE, by_temperature_unit=_TEMP_LOW, wizard_required=True,
-        service=_FLOAT_OPTIONAL, number=LiveNumber(shows_default=True),
-        legacy={**_TEMP_LEGACY, "form.max": 86, "number.default@°C": 21}),
+        service=_FLOAT_OPTIONAL, number=LiveNumber(shows_default=True)),
     Opt(CONF_TEMP_HIGH, Kind.NUMBER, Group.CLIMATE, REC, H, (F, A),
         unit=TEMPERATURE, by_temperature_unit=_TEMP_HIGH, wizard_required=True,
-        service=_FLOAT_OPTIONAL, number=LiveNumber(shows_default=True),
-        legacy={**_TEMP_LEGACY, "form.max": 90, "number.default@°C": 25}),
+        service=_FLOAT_OPTIONAL, number=LiveNumber(shows_default=True)),
     Opt(CONF_OUTSIDETEMP_ENTITY, Kind.ENTITY, Group.CLIMATE, REC, H,
         domains=("sensor",), clearable=True, service=_ENTITY_ID),
     Opt(CONF_OUTSIDE_THRESHOLD, Kind.INT, Group.CLIMATE, REC, H,

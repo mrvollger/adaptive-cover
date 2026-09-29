@@ -626,6 +626,16 @@ MUTATIONS: list[Mutation] = [
         "        latched_at + manager.reset_duration\n",
         "        latched_at\n",
     ),
+    # ---- group I: settings surfaces (P3) --------------------------------
+    Mutation(
+        "M56",
+        "threshold_service_ignores_unit",
+        INIT,
+        "_async_register_services",
+        "change_settings validates climate thresholds in °C whatever HA's unit",
+        "        schema=change_settings_schema(temperature_unit),\n",
+        "        schema=change_settings_schema(),\n",
+    ),
 ]
 
 
