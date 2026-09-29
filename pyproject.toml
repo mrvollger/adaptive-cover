@@ -1,42 +1,6 @@
-[tool.poetry]
-authors = ["Mitchell R. Vollger"]
-classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Framework :: AsyncIO",
-  "Intended Audience :: Developers",
-  "Natural Language :: English",
-  "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: 3",
-]
-description = "Adaptive Cover"
-documentation = "https://github.com/mrvollger/adaptive-cover"
-homepage = "https://github.com/mrvollger/adaptive-cover"
-license = "Passive Aggressive License"
-maintainers = ["Mitchell R. Vollger"]
-name = "adaptive_cover"
-packages = []
-readme = "README.md"
-repository = "https://github.com/mrvollger/adaptive-cover"
-version = "0.0.0"
-
-[tool.poetry.dependencies]
-homeassistant = "2023.11.1"
-python = "^3.11"
-
-[tool.poetry.group.dev.dependencies]
-hass-nabucasa = "0.75.1"
-pre-commit = "4.0.1"
-pre-commit-hooks = "5.0.0"
-pylint = "3.3.1"
-ruff = "0.9.1"
-
-[tool.poetry.urls]
-"Bug Tracker" = "https://github.com/mrvollger/adaptive-cover/issues"
-Changelog = "https://github.com/mrvollger/adaptive-cover/releases"
-
-[build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core"]
+# Tool configuration only. The development environment lives in pixi.toml;
+# the integration's runtime requirements live in
+# custom_components/adaptive_cover/manifest.json. License: see LICENSE (MIT).
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -80,14 +44,3 @@ known-first-party = [
     "homeassistant",
 ]
 combine-as-imports = true
-
-[tool.pylint."MESSAGES CONTROL"]
-# Reasons disabled:
-# format - handled by ruff
-# duplicate-code - unavoidable
-# used-before-assignment - false positives with TYPE_CHECKING structures
-disable = [
-  "format",
-  "duplicate-code",
-  "used-before-assignment",
-]
