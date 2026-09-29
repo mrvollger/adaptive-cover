@@ -52,6 +52,7 @@ COMMANDS = "custom_components/adaptive_cover/runtime/command_tracker.py"
 DETECTOR = "custom_components/adaptive_cover/runtime/manual_detector.py"
 OVERRIDES = "custom_components/adaptive_cover/runtime/override_tracker.py"
 END_OF_DAY = "custom_components/adaptive_cover/runtime/end_of_day.py"
+DECIDER = "custom_components/adaptive_cover/runtime/decider.py"
 
 
 @dataclass
@@ -507,21 +508,21 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M35",
         "inverse_state_identity",
-        COORD,
+        DECIDER,
         "inverse_state",
         "100 - state -> state",
-        "def inverse_state(state: int) -> int:\n"
+        "def inverse_state(state: float) -> float:\n"
         '    """Inverse state."""\n'
         "    return 100 - state",
-        "def inverse_state(state: int) -> int:\n"
+        "def inverse_state(state: float) -> float:\n"
         '    """Inverse state."""\n'
         "    return state",
     ),
     Mutation(
         "M36",
         "interp_xp_fp_swap",
-        COORD,
-        "interpolate_states",
+        DECIDER,
+        "Decider.interpolate",
         "np.interp xp/fp argument swap",
         "            state = interp(state, normal_range, new_range)",
         "            state = interp(state, new_range, normal_range)",
@@ -531,8 +532,8 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M37",
         "interp_endpoint_snap_removed",
-        COORD,
-        "interpolate_states",
+        DECIDER,
+        "Decider.interpolate",
         "interpolation endpoint snap-to-0/100 removed",
         "            state = interp(state, normal_range, new_range)\n"
         "            if state == new_range[0]:\n"
@@ -548,11 +549,11 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M38",
         "inverse_applied_with_interp",
-        COORD,
-        "_transform_state",
+        DECIDER,
+        "Decider.transform",
         "inverse-skipped-when-interp rule inverted (apply both transforms)",
-        "        if self._inverse_state and not self._use_interpolation:",
-        "        if self._inverse_state:",
+        "        if self.inverse and not self.use_interpolation:",
+        "        if self.inverse:",
     ),
     Mutation(
         "M39",

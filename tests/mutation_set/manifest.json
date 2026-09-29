@@ -244,31 +244,31 @@
  },
  {
   "id": "M35",
-  "file": "custom_components/adaptive_cover/coordinator.py",
+  "file": "custom_components/adaptive_cover/runtime/decider.py",
   "function": "inverse_state",
   "description": "100 - state -> state",
   "patch": "M35_inverse_state_identity.patch"
  },
  {
   "id": "M36",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "interpolate_states",
+  "file": "custom_components/adaptive_cover/runtime/decider.py",
+  "function": "Decider.interpolate",
   "description": "np.interp xp/fp argument swap",
   "patch": "M36_interp_xp_fp_swap.patch",
   "deviation": "P2 replaced np.interp with engine.numeric.interp (same semantics); the swap is anchored on the helper call."
  },
  {
   "id": "M37",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "interpolate_states",
+  "file": "custom_components/adaptive_cover/runtime/decider.py",
+  "function": "Decider.interpolate",
   "description": "interpolation endpoint snap-to-0/100 removed",
   "patch": "M37_interp_endpoint_snap_removed.patch",
   "deviation": "P2 replaced np.interp with engine.numeric.interp (same semantics); re-anchored on the helper call."
  },
  {
   "id": "M38",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "_transform_state",
+  "file": "custom_components/adaptive_cover/runtime/decider.py",
+  "function": "Decider.transform",
   "description": "inverse-skipped-when-interp rule inverted (apply both transforms)",
   "patch": "M38_inverse_applied_with_interp.patch"
  },

@@ -29,6 +29,7 @@ from homeassistant.util import dt as dt_util
 from .config_context_adapter import ConfigContextAdapter
 from .runtime.clock import SYSTEM_CLOCK, Clock
 from .runtime.command_tracker import CommandTracker
+from .runtime.decider import Decider
 from .runtime.end_of_day import EndOfDay
 from .runtime.gates import CoverFacts, GatePolicy
 from .runtime.manual_detector import ManualDetector
@@ -47,7 +48,6 @@ from .calculation import (
     get_state_reason,
 )
 from .engine.models import GlareModel, Overhang, PrivacyConfig
-from .engine.numeric import interp
 from .sun import nearest_index
 from .const import (
     _LOGGER,
@@ -192,8 +192,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self._cover_type = self.config_entry.data.get("sensor_type")
         self._climate_mode = self.config_entry.options.get(CONF_CLIMATE_MODE, False)
         self.controls = ControlState(climate=True if self._climate_mode else False)
-        self._inverse_state = self.config_entry.options.get(CONF_INVERSE_STATE, False)
-        self._use_interpolation = self.config_entry.options.get(CONF_INTERP, False)
+        self.decider = Decider(
+            self.config_entry.options.get(CONF_INTERP, False),
+            self.config_entry.options.get(CONF_INVERSE_STATE, False),
+            self.logger,
+        )
         self._track_end_time = self.config_entry.options.get(CONF_RETURN_SUNSET)
         self._sun_end_time = None
         self._sun_start_time = None
@@ -1346,53 +1349,15 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     @property
     def state(self) -> int:
         """Handle the output of the state based on mode."""
-        self.logger.debug(
-            "Basic position: %s; Climate position: %s; Using climate position? %s",
-            self.default_state,
-            self.climate_state,
-            self.controls.climate,
+        # An interpolated position is a float, as it always was; callers
+        # treat it as int (tracked in the pyright baseline before P4).
+        return self.decider.position(  # pyright: ignore[reportReturnType]
+            self.default_state, self.climate_state, self.controls.climate, self.config
         )
-        if self.controls.climate:
-            state = self.climate_state
-        else:
-            state = self.default_state
-
-        state = self._transform_state(state)
-        self.logger.debug("Final position to use: %s", state)
-        return state
 
     def _transform_state(self, state):
         """Apply interpolation / inversion output transforms."""
-        if self._use_interpolation:
-            self.logger.debug("Interpolating position: %s", state)
-            state = self.interpolate_states(state)
-
-        if self._inverse_state and self._use_interpolation:
-            self.logger.info(
-                "Inverse state is not supported with interpolation, you can inverse the state by arranging the list from high to low"
-            )
-
-        if self._inverse_state and not self._use_interpolation:
-            state = inverse_state(state)
-            self.logger.debug("Inversed position: %s", state)
-        return state
-
-    def interpolate_states(self, state):
-        """Interpolate states."""
-        normal_range = [0, 100]
-        new_range = []
-        if self.config.interp_start and self.config.interp_end:
-            new_range = [self.config.interp_start, self.config.interp_end]
-        if self.config.interp_list and self.config.interp_list_new:
-            normal_range = list(map(int, self.config.interp_list))
-            new_range = list(map(int, self.config.interp_list_new))
-        if new_range:
-            state = interp(state, normal_range, new_range)
-            if state == new_range[0]:
-                state = 0
-            if state == new_range[-1]:
-                state = 100
-        return state
+        return self.decider.transform(state, self.config)
 
     # The switch platform sets these by name (setattr); the state lives in
     # self.controls.
@@ -1406,8 +1371,3 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     """Toggle manual-override detection."""
     lux_toggle = ControlToggle[bool | None]("lux")
     irradiance_toggle = ControlToggle[bool | None]("irradiance")
-
-
-def inverse_state(state: int) -> int:
-    """Inverse state."""
-    return 100 - state
