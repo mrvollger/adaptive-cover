@@ -107,7 +107,7 @@ def _nudge_sun(hass, elevation=44.0):
 
 
 async def test_fresh_setup_positions_covers(
-    hass, cover_entry, mock_sun_entity
+    hass, cover_entry, mock_sun_entity, cover_calls
 ):
     """A fresh setup positions the covers immediately (source='startup').
 

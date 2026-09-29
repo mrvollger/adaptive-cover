@@ -1,72 +1,59 @@
-[tool.poetry]
-authors = ["Mitchell R. Vollger"]
-classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Framework :: AsyncIO",
-  "Intended Audience :: Developers",
-  "Natural Language :: English",
-  "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: 3",
-]
-description = "Adaptive Cover"
-documentation = "https://github.com/mrvollger/adaptive-cover"
-homepage = "https://github.com/mrvollger/adaptive-cover"
-license = "Passive Aggressive License"
-maintainers = ["Mitchell R. Vollger"]
-name = "adaptive_cover"
-packages = []
-readme = "README.md"
-repository = "https://github.com/mrvollger/adaptive-cover"
-version = "0.0.0"
-
-[tool.poetry.dependencies]
-homeassistant = "2023.11.1"
-python = "^3.11"
-
-[tool.poetry.group.dev.dependencies]
-hass-nabucasa = "0.75.1"
-pre-commit = "4.0.1"
-pre-commit-hooks = "5.0.0"
-pylint = "3.3.1"
-ruff = "0.9.1"
-
-[tool.poetry.urls]
-"Bug Tracker" = "https://github.com/mrvollger/adaptive-cover/issues"
-Changelog = "https://github.com/mrvollger/adaptive-cover/releases"
-
-[build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core"]
+# Tool configuration only. The development environment lives in pixi.toml;
+# the integration's runtime requirements live in
+# custom_components/adaptive_cover/manifest.json. License: see LICENSE (MIT).
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-
-[tool.ruff]
-ignore = [
-  "ANN101", # Self... explanatory
-  "ANN401", # Opiniated warning on disallowing dynamically typed expressions
-  "D203", # Conflicts with other rules
-  "D213", # Conflicts with other rules
-  "TID252", # Relative imports
-  "RUF012", # Just broken
-
-  # Formatter conflicts
-  "COM812",
-  "COM819",
-  "D206",
-  "E501",
-  "ISC001",
-  "Q000",
-  "Q001",
-  "Q002",
-  "Q003",
-  "W191",
+filterwarnings = [
+  # Deprecations raised from our own package fail the run (P0 target: 0).
+  "error::DeprecationWarning:custom_components\\.adaptive_cover",
 ]
-select = ["ALL"]
-src = ["custom_components/adaptive_cover"]
 
-[tool.ruff.flake8-import-conventions.extend-aliases]
+# ---------------------------------------------------------------------------
+# Ruff: the single ruff configuration (was .ruff.toml). Rule set based on
+# https://github.com/home-assistant/core/blob/dev/pyproject.toml
+# ---------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+  "B007",    # Loop control variable {name} not used within loop body
+  "B014",    # Exception handler with duplicate exception
+  "C",       # complexity
+  "D",       # docstrings
+  "E",       # pycodestyle
+  "F",       # pyflakes/autoflake
+  "ICN001",  # import concentions; {name} should be imported as {asname}
+  "PGH004",  # Use specific rule codes when using noqa
+  "PLC0414", # Useless import alias. Import alias does not rename original package.
+  "SIM105",  # Use contextlib.suppress({exception}) instead of try-except-pass
+  "SIM117",  # Merge with-statements that use the same scope
+  "SIM118",  # Use {key} in {dict} instead of {key} in {dict}.keys()
+  "SIM201",  # Use {left} != {right} instead of not {left} == {right}
+  "SIM212",  # Use {a} if {a} else {b} instead of {b} if not {a} else {a}
+  "SIM300",  # Yoda conditions. Use 'age == 42' instead of '42 == age'.
+  "SIM401",  # Use get from dict with default instead of an if block
+  "T20",     # flake8-print
+  "TRY004",  # Prefer TypeError exception for invalid type
+  "RUF006",  # Store a reference to the return value of asyncio.create_task
+  "UP",      # pyupgrade
+  "W",       # pycodestyle
+]
+ignore = [
+  "D202", # No blank lines allowed after function docstring
+  "D203", # 1 blank line required before class docstring
+  "D213", # Multi-line docstring summary should start at the second line
+  "D404", # First word of the docstring should not be This
+  "D406", # Section name should end with a newline
+  "D407", # Section name underlining
+  "D411", # Missing blank line before section
+  "E501", # line too long
+  "E731", # do not assign a lambda expression, use a def
+]
+
+[tool.ruff.lint.flake8-import-conventions.extend-aliases]
 "homeassistant.helpers.area_registry" = "ar"
 "homeassistant.helpers.config_validation" = "cv"
 "homeassistant.helpers.device_registry" = "dr"
@@ -74,20 +61,27 @@ src = ["custom_components/adaptive_cover"]
 "homeassistant.helpers.issue_registry" = "ir"
 voluptuous = "vol"
 
-[tool.ruff.isort]
-force-sort-within-sections = true
-known-first-party = [
-    "homeassistant",
-]
-combine-as-imports = true
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
 
-[tool.pylint."MESSAGES CONTROL"]
-# Reasons disabled:
-# format - handled by ruff
-# duplicate-code - unavoidable
-# used-before-assignment - false positives with TYPE_CHECKING structures
-disable = [
-  "format",
-  "duplicate-code",
-  "used-before-assignment",
-]
+[tool.ruff.lint.pyupgrade]
+keep-runtime-typing = true
+
+[tool.ruff.lint.mccabe]
+max-complexity = 25
+
+[tool.ruff.lint.per-file-ignores]
+# Tests: docstring rules are not enforced (test names are the documentation).
+"tests/**" = ["D", "C408", "UP038", "T201"]
+# CI helper scripts are command-line tools; printing is their output.
+".github/**" = ["T201"]
+
+# ---------------------------------------------------------------------------
+# Pyright (basic). CI fails only on errors missing from the committed
+# baseline: `pixi run typecheck`; refresh with `pixi run typecheck-baseline`.
+# ---------------------------------------------------------------------------
+[tool.pyright]
+include = ["custom_components/adaptive_cover"]
+exclude = ["**/__pycache__", "custom_components/adaptive_cover/www"]
+pythonVersion = "3.14"
+typeCheckingMode = "basic"

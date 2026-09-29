@@ -1,3 +1,7 @@
-homeassistant>=2024.12.0
-pip>=24.1.1,<24.3
-pandas~=2.2
+# pip fallback for scripts/setup and the devcontainer. The primary dev/test
+# environment is pixi.toml (`pixi run test`). Keep the Home Assistant minimum
+# in sync with hacs.json and the pytest-homeassistant-custom-component pin.
+homeassistant>=2026.8.0
+pandas>=2.2
+# Imported by coordinator.py but not declared in manifest.json (removed in P2).
+pytz

@@ -8,7 +8,7 @@ delegate every calculation to engine functions. All math lives in
 
 from abc import ABC
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 
 import numpy as np
 import pandas as pd
@@ -216,7 +216,7 @@ class AdaptiveGeneralCover(ABC):
     def time_context(self) -> TimeContext:
         """Time inputs (naive UTC, matching historical arithmetic)."""
         return TimeContext(
-            now_utc=datetime.utcnow(),  # noqa: DTZ003
+            now_utc=datetime.now(UTC).replace(tzinfo=None),
             sunrise_utc=self.sun_data.sunrise().replace(tzinfo=None),
             sunset_utc=self.sun_data.sunset().replace(tzinfo=None),
         )

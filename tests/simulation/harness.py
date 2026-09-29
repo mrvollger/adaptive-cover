@@ -564,6 +564,10 @@ class SimHouse:
                         actor="device",
                     )
 
+        self._fake_cover_handlers = {
+            "set_cover_position": handle_set_position,
+            "set_cover_tilt_position": handle_set_tilt,
+        }
         self._registering_services = True
         try:
             self.hass.services.async_register(
@@ -592,6 +596,18 @@ class SimHouse:
                     return
                 if self._registering_services:
                     return  # our own registration event
+                # HA >= 2026.8 queues events fired during a dispatch, so our
+                # own registration events can arrive after the flag above is
+                # reset. Re-win only when a foreign handler holds the service;
+                # otherwise the guard re-registers itself in an endless loop.
+                service = self.hass.services.async_services_for_domain(
+                    "cover"
+                ).get(event.data.get("service"))
+                if (
+                    service is not None
+                    and service.job.target in self._fake_cover_handlers.values()
+                ):
+                    return
                 self._register_services()
 
             self._service_guard_unsub = self.hass.bus.async_listen(

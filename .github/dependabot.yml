@@ -11,5 +11,7 @@ updates:
     schedule:
       interval: "weekly"
     ignore:
-      # Dependabot should not update Home Assistant as that should match the homeassistant key in hacs.json
+      # The minimum Home Assistant is pinned on purpose and must match
+      # hacs.json and pixi.toml; bump all three together by hand.
       - dependency-name: "homeassistant"
+      - dependency-name: "pytest-homeassistant-custom-component"

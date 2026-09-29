@@ -1,0 +1,54 @@
+[workspace]
+name = "adaptive-cover"
+description = "Home Assistant custom integration that positions covers from solar geometry"
+authors = ["Mitchell R. Vollger"]
+license = "MIT"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64"]
+# Older pixi hands uv `requires-python ==3.14.*`, which cannot satisfy
+# homeassistant's `>=3.14.2`. Upgrade with `pixi self-update`.
+requires-pixi = ">=0.81.0"
+
+# ---------------------------------------------------------------------------
+# Shared toolchain (every environment)
+# ---------------------------------------------------------------------------
+[dependencies]
+# Home Assistant 2026.8 requires Python >= 3.14.2.
+python = ">=3.14.2,<3.15"
+ruff = "==0.16.9" # keep in sync with .pre-commit-config.yaml
+pyright = "==1.1.414"
+
+[pypi-dependencies]
+# Runtime requirements of the integration (manifest.json requirements)
+pandas = ">=2.2"
+# pytz is imported by coordinator.py but not declared in manifest.json;
+# pandas 3 no longer pulls it in. Removed together with pandas in P2.
+pytz = "*"
+
+# ---------------------------------------------------------------------------
+# Home Assistant versions under test
+# ---------------------------------------------------------------------------
+# Minimum supported HA (hacs.json "homeassistant"): phcc 0.13.354 pins
+# homeassistant==2026.8.0. Bump all of these together.
+[feature.min.pypi-dependencies]
+pytest-homeassistant-custom-component = "==0.13.354"
+
+# Newest HA at lock time. CI's nightly job re-resolves this environment
+# (`pixi update -e latest`) to catch new HA releases early.
+[feature.latest.pypi-dependencies]
+pytest-homeassistant-custom-component = ">=0.13.354"
+
+[environments]
+default = ["min"]
+latest = ["latest"]
+
+# ---------------------------------------------------------------------------
+# Tasks
+# ---------------------------------------------------------------------------
+[tasks]
+test = { cmd = "pytest -n auto", description = "Run the test suite in parallel" }
+lint = { cmd = "ruff check . && ruff format --check .", description = "Ruff lint + format check" }
+format = { cmd = "ruff format . && ruff check --fix .", description = "Apply ruff format and autofixes" }
+typecheck = { cmd = "python .github/pyright/check_baseline.py", description = "pyright (basic); fails only on errors not in the baseline" }
+typecheck-baseline = { cmd = "python .github/pyright/check_baseline.py --write", description = "Rewrite the pyright baseline (after fixing errors or reformatting)" }
+mutations = { cmd = "python tests/mutation_set/run_mutations.py --jobs 4", description = "Run the mutation kill matrix" }
