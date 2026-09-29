@@ -200,7 +200,9 @@ def async_copy_cover_area(hass: HomeAssistant, entry: ConfigEntry) -> str | None
     Returns the area_id that was set, or None.
     """
     dev_reg = dr.async_get(hass)
-    device = dev_reg.async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    device = dev_reg.async_get_device_by_identifier(
+        (DOMAIN, entry.entry_id), config_entry_id=entry.entry_id
+    )
     if device is None or device.area_id is not None:
         return None
     area_id = cover_area_id(hass, entry.options.get(CONF_ENTITIES) or [])
