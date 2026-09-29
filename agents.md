@@ -49,7 +49,9 @@ custom_components/adaptive_cover/
 │   ├── decider.py           # Decider: basic vs climate position, interpolation / inverse transforms
 │   ├── manual_detector.py   # ManualDetector: motion-start, redirect-in-travel and landing rules
 │   ├── override_tracker.py  # OverrideTracker: per-cover manual latch + override clock (hass.data store)
-│   └── end_of_day.py        # EndOfDay: end-time timer, catch-up close, retry of missed closes
+│   ├── end_of_day.py        # EndOfDay: end-time timer, catch-up close, retry of missed closes
+│   ├── events.py            # RefreshQueue: why the next refresh runs (entity, cover, startup, end time)
+│   └── explainer.py         # Explainer: next change, forecast, last change, move log, sensor attributes
 ├── sun.py                   # Astral-based solar table (SolarDay, 5-minute points, stdlib only)
 ├── config_flow.py           # Setup wizard + one-page options form (routing only)
 ├── settings/                # One option spec; every settings surface is built from it (P3)
@@ -168,6 +170,8 @@ cover state change ────┘         ▼
 **`CommandTracker`** / **`ManualDetector`** / **`OverrideTracker`** / **`EndOfDay`** (runtime/, P4 batch 2) — Also no `hass`. `self.commands` holds the commands in flight (`wait_for_target`, `target_call`, `target_call_time`, our context ids, failed sends that may still arrive) and classifies cover reports against them; the coordinator exposes `wait_for_target`, `target_call_time` and `TARGET_TIMEOUT` for the reset button. `self.detector` holds the manual-move rules and latches into `self.manager` (the `OverrideTracker`: latch, override clock, the `hass.data` store). `self.end_of_day` arms the end-time timer, runs the close and keeps undelivered closes for a retry. HA calls (services, timers) reach them as callables the coordinator passes in.
 
 **`Decider`** (runtime/decider.py, P4 batch 3) — Picks the basic or climate position and applies the output transforms (interpolation, or inversion; the min/max clamp stays in the engine). `coordinator.state` and `_transform_state` delegate to `self.decider`, so tracking moves, the forecast and the end-of-day close share one transform chain.
+
+**`Explainer`** / **`RefreshQueue`** (runtime/, P4 batch 4) — `self.explainer` builds what the entities explain (next change event, today's forecast, last change, the move log and the Position sensor's explanation attributes); `coordinator.forecast`, `move_log` and `record_move_provenance` forward to it. `self.events` replaces the four refresh flags: each `RefreshEvent` (ENTITY_CHANGED, COVER_CHANGED, STARTUP, END_TIME) stays pending until its handler marks it done, and cover reports queue in order. Each window entry's coordinator is `entry.runtime_data`; `hass.data[DOMAIN][entry_id]` remains only as an index for the hub and the Mode select until they move too.
 
 ### Config Flow (config_flow.py)
 
