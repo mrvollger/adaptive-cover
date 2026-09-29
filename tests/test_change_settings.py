@@ -181,3 +181,66 @@ async def test_rename_combines_with_option_changes(hass, entry, mock_sun_entity)
     await hass.async_block_till_done()
     assert entry.title == "Renamed"
     assert entry.options[CONF_EYE_HEIGHT] == 1.4
+
+
+async def test_regression_change_settings_enables_climate_mode(
+    hass, entry, mock_sun_entity
+):
+    """Climate mode + its sensors can be rolled out via the service.
+
+    Previously climate_mode / temp_entity / weather settings were not
+    changeable, so enabling winter behavior on an existing entry required
+    walking the whole options wizard per window.
+    """
+    from homeassistant.helpers import entity_registry as er
+
+    hass.states.async_set("sensor.room_temp", "68.0")
+    hass.states.async_set("weather.home", "sunny")
+    await _setup(hass, entry)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "change_settings",
+        {
+            "config_entry": entry.entry_id,
+            "climate_mode": True,
+            "temp_entity": "sensor.room_temp",
+            "weather_entity": "weather.home",
+            "weather_state": ["sunny", "clear"],
+            "temp_low": 70,
+            "temp_high": 74,
+        },
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    assert entry.options["climate_mode"] is True
+    assert entry.options["temp_entity"] == "sensor.room_temp"
+    assert entry.options["weather_state"] == ["sunny", "clear"]
+    # The reload created the climate-mode switch and the season resolves
+    # in the sensor's own unit: 68 °F < 70 → winter.
+    registry = er.async_get(hass)
+    unique_ids = {
+        e.unique_id
+        for e in er.async_entries_for_config_entry(registry, entry.entry_id)
+    }
+    assert any(uid.endswith("_Climate Mode") or "climate" in uid.lower()
+               for uid in unique_ids), unique_ids
+    method = next(
+        e.entity_id
+        for e in er.async_entries_for_config_entry(registry, entry.entry_id)
+        if "control_method" in e.entity_id
+    )
+    assert hass.states.get(method).state == "winter"
+
+
+async def test_change_settings_rejects_bad_entity_id(hass, entry, mock_sun_entity):
+    """Entity fields are validated as entity ids."""
+    await _setup(hass, entry)
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call(
+            DOMAIN,
+            "change_settings",
+            {"config_entry": entry.entry_id, "temp_entity": "not an entity"},
+            blocking=True,
+        )

@@ -17,6 +17,7 @@ import voluptuous as vol
 from .const import (
     CONF_AWNING_ANGLE,
     CONF_AZIMUTH,
+    CONF_CLIMATE_MODE,
     CONF_DEFAULT_HEIGHT,
     CONF_DELTA_POSITION,
     CONF_DELTA_TIME,
@@ -39,10 +40,12 @@ from .const import (
     CONF_MIN_POSITION,
     CONF_OCCUPIED_DISTANCE,
     CONF_OUTSIDE_THRESHOLD,
+    CONF_OUTSIDETEMP_ENTITY,
     CONF_OVERHANG_DEPTH,
     CONF_OVERHANG_HEIGHT,
     CONF_PRIVACY_MODE,
     CONF_PRIVACY_OFFSET,
+    CONF_PRESENCE_ENTITY,
     CONF_PRIVACY_POSITION,
     CONF_QUIET_END,
     CONF_QUIET_START,
@@ -50,16 +53,20 @@ from .const import (
     CONF_SUNRISE_OFFSET,
     CONF_SUNSET_OFFSET,
     CONF_SUNSET_POS,
+    CONF_TEMP_ENTITY,
     CONF_TEMP_HIGH,
     CONF_TEMP_LOW,
     CONF_TILT_DEPTH,
     CONF_TILT_DISTANCE,
     CONF_TILT_MODE,
+    CONF_WEATHER_ENTITY,
+    CONF_WEATHER_STATE,
 )
 
 _NULLABLE_NUMBER = vol.Any(None, vol.Coerce(float))
 _PERCENT = vol.All(vol.Coerce(float), vol.Range(min=0, max=100))
 _NULLABLE_PERCENT = vol.Any(None, _PERCENT)
+_NULLABLE_ENTITY = vol.Any(None, vol.Match(r"^[a-z_]+\.[a-z0-9_]+$"))
 
 CHANGEABLE_OPTIONS: dict[str, object] = {
     # window geometry
@@ -104,7 +111,15 @@ CHANGEABLE_OPTIONS: dict[str, object] = {
     CONF_MANUAL_OVERRIDE_DURATION: vol.Any(None, dict),
     CONF_MANUAL_OVERRIDE_RESET: vol.Boolean(),
     CONF_MANUAL_THRESHOLD: vol.Any(None, vol.All(vol.Coerce(int), vol.Range(min=0, max=99))),
-    # climate thresholds
+    # climate mode + its input entities (the entry reload re-wires the
+    # state listeners, so these are safe to change at runtime)
+    CONF_CLIMATE_MODE: vol.Boolean(),
+    CONF_TEMP_ENTITY: _NULLABLE_ENTITY,
+    CONF_PRESENCE_ENTITY: _NULLABLE_ENTITY,
+    CONF_WEATHER_ENTITY: _NULLABLE_ENTITY,
+    CONF_OUTSIDETEMP_ENTITY: _NULLABLE_ENTITY,
+    CONF_WEATHER_STATE: vol.All(vol.Coerce(list), [str]),
+    # climate thresholds (same unit as the temperature sensor, e.g. °F)
     CONF_TEMP_LOW: _NULLABLE_NUMBER,
     CONF_TEMP_HIGH: _NULLABLE_NUMBER,
     CONF_OUTSIDE_THRESHOLD: _NULLABLE_NUMBER,
