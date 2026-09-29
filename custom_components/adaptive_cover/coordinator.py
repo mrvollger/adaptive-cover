@@ -31,6 +31,7 @@ from .runtime.clock import SYSTEM_CLOCK, Clock
 from .runtime.command_tracker import CommandTracker
 from .runtime.decider import Decider
 from .runtime.end_of_day import EndOfDay
+from .runtime.explainer import Explainer
 from .runtime.gates import CoverFacts, GatePolicy
 from .runtime.manual_detector import ManualDetector
 from .runtime.override_tracker import OverrideTracker
@@ -45,22 +46,15 @@ from .calculation import (
     build_day_forecast,
     get_state_reason,
 )
-from .sun import nearest_index
 from .const import (
     _LOGGER,
     ATTR_POSITION,
     ATTR_TILT_POSITION,
-    CONF_AZIMUTH,
-    CONF_BLIND_SPOT_ELEVATION,
     CONF_CLIMATE_MODE,
-    CONF_DEFAULT_HEIGHT,
-    CONF_FOV_LEFT,
-    CONF_FOV_RIGHT,
     CONF_INTERP,
     CONF_INVERSE_STATE,
     CONF_MANUAL_IGNORE_INTERMEDIATE,
     CONF_RETURN_SUNSET,
-    CONF_SUNSET_OFFSET,
     CONF_SUNSET_POS,
     CONF_TEMP_HIGH,
     CONF_TEMP_LOW,
@@ -136,7 +130,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     """Adaptive cover data update coordinator."""
 
     config_entry: ConfigEntry
-    MOVE_LOG_LIMIT = 10
+    MOVE_LOG_LIMIT = Explainer.MOVE_LOG_LIMIT
     # The travel-time upper bound (the reset button waits at most this long).
     TARGET_TIMEOUT = CommandTracker.TARGET_TIMEOUT
 
@@ -208,19 +202,10 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         )
 
         self._cached_options = None
-        self._previous_state = None
         self._basic_decision = None
         self._climate_decision = None
-        self.forecast: list[dict] | None = None
-        self._forecast_key = "___unset___"
         self._gate_blocks: dict[str, str | None] = {}
-        self.move_log: dict[str, list[dict]] = {}
-        self._last_change_data = {
-            "old_position": None,
-            "new_position": None,
-            "time": None,
-            "reason": None,
-        }
+        self.explainer = Explainer(self.logger)
 
     async def async_config_entry_first_refresh(self) -> None:
         """Config entry first refresh."""
@@ -414,123 +399,43 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.end_of_day.shutdown()
         await super().async_shutdown()
 
-    def _predict_position_at_time(self, cover_data, target_time):
-        """Predict cover position at a specific future time using sun data."""
-        if self._sun_table is not None:
-            times, azimuths, elevations = self._sun_table
-        else:
-            sun_data = cover_data.sun_data
-            times = sun_data.times
-            azimuths = sun_data.solar_azimuth
-            elevations = sun_data.solar_elevation
-        # Nearest table point to the tz-aware target, compared as instants
-        # (the table is in local time, the target usually UTC).
-        idx = nearest_index(times, target_time)
-        if idx < 0 or idx >= len(times):
-            return int(cover_data.h_def)
-        return cover_data.calculate_percentage_at(azimuths[idx], elevations[idx])
+    @property
+    def forecast(self) -> list[dict] | None:
+        """Today's forecast (the get_forecast service reads it)."""
+        return self.explainer.forecast
 
-    def _make_utc(self, time):
-        """Ensure a datetime is UTC-aware."""
-        if time is None:
-            return None
-        if time.tzinfo is None:
-            return time.replace(tzinfo=dt.UTC)
-        return time
+    @property
+    def move_log(self) -> dict[str, list[dict]]:
+        """The per-cover move log."""
+        return self.explainer.move_log
 
     def _compute_next_event(self, cover_data, start, end):
-        """Find the next significant cover state change event.
-
-        Today's sunrise/sunset come from the sun data (configured local
-        date); once passed, tomorrow's are asked for by the LOCAL date too.
-        The UTC date rolls over mid-evening in western timezones (18:00 in
-        Denver), which named the sunrise two local days out.
-        """
-        now = self.clock.utcnow()
-        tomorrow = self._now_local().date() + dt.timedelta(days=1)
-        location = cover_data.sun_data.location
-        events = []
-
-        # Sun enters FOV
-        if start is not None:
-            start_utc = self._make_utc(start)
-            if start_utc > now:
-                predicted_pos = self._predict_position_at_time(cover_data, start_utc)
-                events.append(("Sun enters window", start_utc, predicted_pos))
-
-        # Sun leaves FOV
-        if end is not None:
-            end_utc = self._make_utc(end)
-            if end_utc > now:
-                events.append(("Sun leaves window", end_utc, int(cover_data.h_def)))
-
-        # Sunset + offset (today, then tomorrow if past)
-        try:
-            sunset_raw = cover_data.sun_data.sunset()
-            sunset_utc = self._make_utc(sunset_raw)
-            sunset_time = sunset_utc + dt.timedelta(minutes=cover_data.sunset_off)
-            if sunset_time <= now:
-                sunset_raw = location.sunset(tomorrow, local=False)
-                sunset_utc = self._make_utc(sunset_raw)
-                sunset_time = sunset_utc + dt.timedelta(minutes=cover_data.sunset_off)
-            if sunset_time > now:
-                events.append(
-                    ("Sunset + offset", sunset_time, int(cover_data.sunset_pos))
-                )
-        except Exception:  # noqa: BLE001
-            self.logger.debug("Could not compute sunset event", exc_info=True)
-
-        # Sunrise + offset (today, then tomorrow if past)
-        try:
-            sunrise_raw = cover_data.sun_data.sunrise()
-            sunrise_utc = self._make_utc(sunrise_raw)
-            sunrise_time = sunrise_utc + dt.timedelta(minutes=cover_data.sunrise_off)
-            if sunrise_time <= now:
-                sunrise_raw = location.sunrise(tomorrow, local=False)
-                sunrise_utc = self._make_utc(sunrise_raw)
-                sunrise_time = sunrise_utc + dt.timedelta(
-                    minutes=cover_data.sunrise_off
-                )
-            if sunrise_time > now:
-                events.append(("Sunrise + offset", sunrise_time, int(cover_data.h_def)))
-        except Exception:  # noqa: BLE001
-            self.logger.debug("Could not compute sunrise event", exc_info=True)
-
+        """Find the next significant cover state change event."""
+        configured_end = None
         # Configured end time (_end_time is naive local time from config)
         if self._end_time is not None and self._track_end_time:
-            end_t = self._end_time
-            if end_t.tzinfo is None:
+            configured_end = self._end_time
+            if configured_end.tzinfo is None:
                 local_tz = cached_timezone(self.hass.config.time_zone)
-                end_t = localize_standard(end_t, local_tz)
-            if end_t > now:
-                events.append(
-                    (
-                        "Configured end time",
-                        end_t,
-                        self.config_entry.options.get(
-                            CONF_SUNSET_POS, cover_data.sunset_pos
-                        ),
-                    )
-                )
-
-        # Manual override expires
-        if self.manager.binary_cover_manual:
-            for override_time in self.manager.manual_control_time.values():
-                expire_time = override_time + self.manager.reset_duration
-                if expire_time > now:
-                    events.append(
-                        (
-                            "Manual override expires",
-                            expire_time,
-                            None,  # position will be the current computed state
-                        )
-                    )
-
-        if not events:
-            return None
-
-        events.sort(key=lambda e: e[1])
-        return events[0]
+                configured_end = localize_standard(configured_end, local_tz)
+        return self.explainer.next_event(
+            cover_data,
+            now=self.clock.utcnow(),
+            tomorrow=self._now_local().date() + dt.timedelta(days=1),
+            start=start,
+            end=end,
+            sun_table=self._sun_table,
+            configured_end=configured_end,
+            end_position=self.config_entry.options.get(
+                CONF_SUNSET_POS, cover_data.sunset_pos
+            ),
+            override_expiries=[
+                override_time + self.manager.reset_duration
+                for override_time in self.manager.manual_control_time.values()
+            ]
+            if self.manager.binary_cover_manual
+            else [],
+        )
 
     async def _async_update_data(self) -> AdaptiveCoverData:
         self.logger.debug("Updating data")
@@ -640,26 +545,15 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
         # Rebuild the day forecast when the solar day rolls over or the
         # climate snapshot changes (it is baked into the schedule).
-        forecast_key = None
-        if climate_data_for_reason is not None:
-            try:
-                forecast_key = repr(climate_data_for_reason.to_inputs())
-            except Exception:  # noqa: BLE001
-                forecast_key = None
-        if solar_day_stale or forecast_key != self._forecast_key:
-            loop = asyncio.get_event_loop()
-            try:
-                raw_forecast = await loop.run_in_executor(
-                    None, build_day_forecast, cover_data, climate_data_for_reason
-                )
-                self.forecast = [
-                    {**entry, "position": int(self._transform_state(entry["position"]))}
-                    for entry in raw_forecast
-                ]
-            except Exception:  # noqa: BLE001
-                self.logger.debug("Forecast build failed", exc_info=True)
-                self.forecast = None
-            self._forecast_key = forecast_key
+        loop = asyncio.get_event_loop()
+        await self.explainer.refresh_forecast(
+            solar_day_stale,
+            climate_data_for_reason,
+            lambda: loop.run_in_executor(
+                None, build_day_forecast, cover_data, climate_data_for_reason
+            ),
+            self._transform_state,
+        )
 
         # Compute state reason
         reason = get_state_reason(cover_data, climate_data_for_reason)
@@ -681,14 +575,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             next_event_pos = state
 
         # Track last state change (computed position changes)
-        if self._previous_state is not None and self._previous_state != state:
-            self._last_change_data = {
-                "old_position": self._previous_state,
-                "new_position": state,
-                "time": self.clock.utcnow(),
-                "reason": reason,
-            }
-        self._previous_state = state
+        self.explainer.note_state(state, reason, self.clock.utcnow())
 
         # Track cover state changes (manual or integration-initiated)
         if had_cover_state_change and self.state_change_data:
@@ -699,25 +586,17 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     if self._cover_type == "cover_tilt"
                     else "current_position"
                 )
-                new_pos = event.new_state.attributes.get(pos_attr)
-                old_pos = (
+                self.explainer.note_cover_report(
+                    event.new_state.attributes.get(pos_attr),
                     event.old_state.attributes.get(pos_attr)
                     if event.old_state
-                    else None
+                    else None,
+                    state,
+                    "Manual override" if self.manager.binary_cover_manual else reason,
+                    self.clock.utcnow(),
                 )
-                if new_pos is not None:
-                    change_reason = (
-                        "Manual override"
-                        if self.manager.binary_cover_manual
-                        else reason
-                    )
-                    self._last_change_data = {
-                        "old_position": old_pos if old_pos is not None else state,
-                        "new_position": new_pos,
-                        "time": self.clock.utcnow(),
-                        "reason": change_reason,
-                    }
 
+        last_change = self.explainer.last_change
         return AdaptiveCoverData(
             climate_mode_toggle=self.switch_mode,
             states={
@@ -732,35 +611,17 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 "next_change_event": next_event_name,
                 "next_change_time": next_event_time,
                 "next_change_position": next_event_pos,
-                "last_change_old": self._last_change_data["old_position"],
-                "last_change_new": self._last_change_data["new_position"],
-                "last_change_time": self._last_change_data["time"],
-                "last_change_reason": self._last_change_data["reason"],
+                "last_change_old": last_change["old_position"],
+                "last_change_new": last_change["new_position"],
+                "last_change_time": last_change["time"],
+                "last_change_reason": last_change["reason"],
             },
-            attributes={
-                "default": options.get(CONF_DEFAULT_HEIGHT),
-                "sunset_default": options.get(CONF_SUNSET_POS),
-                "sunset_offset": options.get(CONF_SUNSET_OFFSET),
-                "azimuth_window": options.get(CONF_AZIMUTH),
-                "field_of_view": [
-                    options.get(CONF_FOV_LEFT),
-                    options.get(CONF_FOV_RIGHT),
-                ],
-                "blind_spot": options.get(CONF_BLIND_SPOT_ELEVATION),
-                "intent": str(active_decision.intent) if active_decision else None,
-                "decision_trace": list(active_decision.trace)
-                if active_decision
-                else None,
-                "forecast_today": self.forecast,
-                "move_blocked_by": {
-                    entity: gate for entity, gate in self._gate_blocks.items() if gate
-                },
-                "last_moves": {
-                    entity: line
-                    for entity in self.entities
-                    if (line := self._format_last_move(entity)) is not None
-                },
-                "sun": {
+            attributes=self.explainer.attributes(
+                options,
+                active_decision,
+                self._gate_blocks,
+                self.entities,
+                {
                     "azimuth": cover_data.sol_azi,
                     "elevation": cover_data.sol_elev,
                     "gamma": cover_data.gamma,
@@ -771,7 +632,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     "min_elevation": cover_data.min_elevation,
                     "max_elevation": cover_data.max_elevation,
                 },
-            },
+            ),
         )
 
     async def async_handle_state_change(self, state: int):
@@ -1038,15 +899,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         startup / end_time / control_enabled / all_covers / manual, with
         the driving intent as reason where known.
         """
-        entry = {
-            "time": self.clock.utcnow().isoformat(timespec="seconds"),
-            "position": position,
-            "source": source,
-            "reason": reason,
-        }
-        log = self.move_log.setdefault(entity, [])
-        log.append(entry)
-        del log[: -self.MOVE_LOG_LIMIT]
+        entry = self.explainer.record(
+            entity, position, source, reason, self.clock.utcnow()
+        )
         bus = getattr(self.hass, "bus", None)
         if bus is not None:  # bare test harnesses have no event bus
             bus.async_fire("adaptive_cover_moved", {"entity_id": entity, **entry})
@@ -1057,18 +912,6 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self._climate_decision if self.controls.climate else self._basic_decision
         )
         return str(decision.intent) if decision else None
-
-    def _format_last_move(self, entity) -> str | None:
-        """Compact 'HH:MM -> 37% (source: reason)' line for attributes."""
-        log = self.move_log.get(entity)
-        if not log:
-            return None
-        entry = log[-1]
-        when = dt.datetime.fromisoformat(entry["time"]).astimezone()
-        line = f"{when.strftime('%H:%M')} -> {entry['position']}% ({entry['source']}"
-        if entry.get("reason"):
-            line += f": {entry['reason']}"
-        return line + ")"
 
     def _update_options(self, options):
         """Re-read the options this refresh uses."""

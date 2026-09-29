@@ -1,6 +1,6 @@
 {
   "pyright": "1.1.414",
-  "total": 37,
+  "total": 31,
   "errors": [
     {
       "file": "custom_components/adaptive_cover/__init__.py",
@@ -67,18 +67,6 @@
       "rule": "reportOptionalMemberAccess",
       "message": "\"state\" is not a known attribute of \"None\"",
       "count": 7
-    },
-    {
-      "file": "custom_components/adaptive_cover/coordinator.py",
-      "rule": "reportOptionalOperand",
-      "message": "Operator \"+\" not supported for \"None\"",
-      "count": 4
-    },
-    {
-      "file": "custom_components/adaptive_cover/coordinator.py",
-      "rule": "reportOptionalOperand",
-      "message": "Operator \">\" not supported for \"None\"",
-      "count": 2
     },
     {
       "file": "custom_components/adaptive_cover/frontend.py",
