@@ -1783,6 +1783,7 @@ tests/test_config_flow.py::test_elevation_validation_error
 tests/test_config_flow.py::test_full_horizontal_flow
 tests/test_config_flow.py::test_full_tilt_flow
 tests/test_config_flow.py::test_full_vertical_flow
+tests/test_config_flow.py::test_regression_delta_time_min_zero
 tests/test_config_flow.py::test_regression_height_distance_max_ten
 tests/test_config_flow.py::test_regression_wizard_drops_automation_keys
 tests/test_config_flow.py::test_user_step_shows_form

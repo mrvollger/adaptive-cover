@@ -116,7 +116,6 @@ PLAN_TABLE: dict[str, tuple[Scope, Level | None, set[Level]]] = {
 # Drift the spec still carries (see spec.py "legacy"). Removing an entry is
 # a ledgered drift fix; adding one needs a reason in the same change.
 EXPECTED_LEGACY: dict[str, dict] = {
-    "delta_time": {"form.min": 2},
     "length_awning": {"service.bounded": False},
     "angle": {"service.bounded": False},
     "overhang_depth": {"service.bounded": False, "number.min": 0, "number.step": 0.05},

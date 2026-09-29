@@ -144,3 +144,19 @@ The example below is inside an HTML comment. The checker ignores it.
   both keys (wizard vertical/horizontal, options covers_geometry) is now 10.
   Stored values are untouched (the range only widens). Goldens, truth table
   and house replay unchanged.
+
+## L0006 · 2026-09-29 · delta_time accepts 0 on every surface (C3)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pin
+  `tests/test_config_flow.py::test_regression_delta_time_min_zero`
+- **Mutations re-targeted:** none
+- **Contract change:** C3
+- **Reason:** drift fix. The services accepted `delta_time` >= 0 (many
+  entries and tests run with 0, no time throttle), but the wizard and the
+  options form required at least 2 minutes, so such an entry could not be
+  saved from the options form without raising its throttle.
+  `spec_parity.json` changes in two lines: the form `min` (wizard
+  automation, options automation_timing) is now 0. This is the wider range,
+  so no stored value becomes invalid; the default stays 2. Goldens, truth
+  table and house replay unchanged.

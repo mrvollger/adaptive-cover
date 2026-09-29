@@ -504,7 +504,7 @@ OPTS: Final[tuple[Opt, ...]] = (
         service=Service(coerce=Coerce.INT)),
     Opt(CONF_DELTA_TIME, Kind.NUMBER, Group.AUTOMATION, REC, H,
         default=2, min=0, step=1, unit="minutes", baseline=True,
-        service=Service(coerce=Coerce.INT), legacy={"form.min": 2}),
+        service=Service(coerce=Coerce.INT)),
     Opt(CONF_START_TIME, Kind.TIME, Group.AUTOMATION, REC, H, (A,),
         default="00:00:00", baseline=True, service=_TIME),
     Opt(CONF_START_ENTITY, Kind.ENTITY, Group.AUTOMATION, REC, H, (A,),

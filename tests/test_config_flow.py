@@ -358,3 +358,23 @@ async def test_regression_height_distance_max_ten(hass):
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert (entry.options[CONF_HEIGHT_WIN], entry.options[CONF_DISTANCE]) == (10, 10)
+
+
+async def test_regression_delta_time_min_zero(hass):
+    """A time delta of 0 (no throttle) is accepted on every surface.
+
+    Before P3 the services took delta_time >= 0 (and many entries run with
+    0), but the wizard and the options form required at least 2 minutes, so
+    such an entry could not be saved from the options form without raising
+    its throttle. Ledger L0006.
+    """
+    result = await _wizard_blind(hass, {}, {CONF_DELTA_TIME: 0})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    entry = result["result"]
+    assert entry.options[CONF_DELTA_TIME] == 0
+
+    result = await _options_submit(hass, entry, automation_timing={CONF_DELTA_TIME: 1})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    result = await _options_submit(hass, entry, automation_timing={CONF_DELTA_TIME: 0})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options[CONF_DELTA_TIME] == 0

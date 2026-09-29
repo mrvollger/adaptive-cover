@@ -741,7 +741,7 @@
      "options.init.automation_timing"
     ],
     "kind": "number",
-    "min": 2,
+    "min": 0,
     "mode": "box",
     "step": 1,
     "unit": "minutes",
@@ -753,7 +753,7 @@
      "wizard.automation"
     ],
     "kind": "number",
-    "min": 2,
+    "min": 0,
     "mode": "box",
     "step": 1,
     "unit": "minutes",
