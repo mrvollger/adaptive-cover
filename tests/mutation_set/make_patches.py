@@ -49,6 +49,8 @@ SHADE_CONFIG = "custom_components/adaptive_cover/runtime/shade_config.py"
 SCHEDULE = "custom_components/adaptive_cover/runtime/schedule.py"
 GATES = "custom_components/adaptive_cover/runtime/gates.py"
 COMMANDS = "custom_components/adaptive_cover/runtime/command_tracker.py"
+DETECTOR = "custom_components/adaptive_cover/runtime/manual_detector.py"
+OVERRIDES = "custom_components/adaptive_cover/runtime/override_tracker.py"
 
 
 @dataclass
@@ -205,8 +207,8 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M08",
         "manual_detection_inverted",
-        COORD,
-        "AdaptiveCoverManager.handle_state_change",
+        DETECTOR,
+        "ManualDetector.check_landing",
         "new_position != our_state -> == (manual detection inverted)",
         "        if new_position != our_state:",
         "        if new_position == our_state:",
@@ -232,8 +234,8 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M11",
         "manual_threshold_zero",
-        COORD,
-        "AdaptiveCoverManager.handle_state_change",
+        DETECTOR,
+        "ManualDetector.check_landing",
         "threshold check neutered: any nonzero diff latches",
         "                and abs(our_state - new_position) < manual_threshold",
         "                and abs(our_state - new_position) < 0",
@@ -241,11 +243,11 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M12",
         "override_duration_minutes_to_hours",
-        COORD,
-        "_update_manager_and_covers",
+        OVERRIDES,
+        "OverrideTracker.set_duration",
         "override duration unit blown up 60x (minutes behave like hours)",
-        "        self.manager.reset_duration = dt.timedelta(**self.config.manual_duration)",
-        "        self.manager.reset_duration = dt.timedelta(**self.config.manual_duration) * 60",
+        "        self.reset_duration = dt.timedelta(**duration)\n",
+        "        self.reset_duration = dt.timedelta(**duration) * 60\n",
     ),
     Mutation(
         "M13",

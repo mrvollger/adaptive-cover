@@ -50,8 +50,8 @@
  },
  {
   "id": "M08",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "AdaptiveCoverManager.handle_state_change",
+  "file": "custom_components/adaptive_cover/runtime/manual_detector.py",
+  "function": "ManualDetector.check_landing",
   "description": "new_position != our_state -> == (manual detection inverted)",
   "patch": "M08_manual_detection_inverted.patch"
  },
@@ -71,15 +71,15 @@
  },
  {
   "id": "M11",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "AdaptiveCoverManager.handle_state_change",
+  "file": "custom_components/adaptive_cover/runtime/manual_detector.py",
+  "function": "ManualDetector.check_landing",
   "description": "threshold check neutered: any nonzero diff latches",
   "patch": "M11_manual_threshold_zero.patch"
  },
  {
   "id": "M12",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "_update_manager_and_covers",
+  "file": "custom_components/adaptive_cover/runtime/override_tracker.py",
+  "function": "OverrideTracker.set_duration",
   "description": "override duration unit blown up 60x (minutes behave like hours)",
   "patch": "M12_override_duration_minutes_to_hours.patch"
  },

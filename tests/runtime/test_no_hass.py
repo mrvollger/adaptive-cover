@@ -20,6 +20,8 @@ RUNTIME_DIR = (
 PURE_MODULES = [
     "command_tracker.py",
     "gates.py",
+    "manual_detector.py",
+    "override_tracker.py",
     "schedule.py",
     "shade_config.py",
 ]

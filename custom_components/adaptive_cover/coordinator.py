@@ -31,6 +31,8 @@ from .config_context_adapter import ConfigContextAdapter
 from .runtime.clock import SYSTEM_CLOCK, Clock
 from .runtime.command_tracker import CommandTracker
 from .runtime.gates import CoverFacts, GatePolicy
+from .runtime.manual_detector import ManualDetector
+from .runtime.override_tracker import OverrideTracker
 from .runtime.schedule import Schedule
 from .runtime.shade_config import ControlState, ControlToggle, ShadeConfig
 
@@ -214,7 +216,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # Override bookkeeping lives in hass.data so options reloads (which
         # rebuild the coordinator) do not silently wipe active overrides.
         _manual_store = self.hass.data.setdefault(f"{DOMAIN}_manual_state", {})
-        self.manager = AdaptiveCoverManager(
+        self.manager = OverrideTracker(
             self.config.manual_duration,
             self.logger,
             persisted_state=_manual_store.setdefault(self.config_entry.entry_id, {}),
@@ -226,6 +228,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self._force_poll,
             self.logger,
         )
+        self.detector = ManualDetector(self.manager, self.commands, self.logger)
         self._sun_table = None
         self._missing_warned: set[str] = set()
         self.ignore_intermediate_states = self.config_entry.options.get(
@@ -374,7 +377,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # only at journey end, so waiting for the landing report leaves a
         # 1-3 minute window where the cover reads as auto-controlled while a
         # person is actively moving it.
-        new_state = self.state_change_data.new_state
+        new_state = data["new_state"]  # the same State; checked not None above
         if new_state.state in ("opening", "closing") and not self.wait_for_target.get(
             entity_id
         ):
@@ -391,24 +394,13 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 else "current_position"
             ),
         )
-        if (
-            new_state.state in ("opening", "closing")
-            and not self.ignore_intermediate_states
-            and not self.wait_for_target.get(entity_id)
-            and self.manual_toggle
-            and self.control_toggle
-            and entity_id in self.manager.covers
-            and not self.manager.is_cover_manual(entity_id)
+        if self.detector.motion_started(
+            entity_id,
+            new_state,
+            self.controls,
+            self.config,
+            self.ignore_intermediate_states,
         ):
-            self.logger.debug(
-                "Foreign %s movement started for %s: latching manual immediately",
-                new_state.state,
-                entity_id,
-            )
-            self.manager.mark_manual_control(entity_id)
-            self.manager.set_last_updated(
-                entity_id, new_state, self.config.manual_reset
-            )
             self.record_move_provenance(
                 entity_id,
                 new_state.attributes.get(
@@ -423,20 +415,10 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # cover is still mid-travel this is a device position echo: skip
         # the full refresh so bursts don't queue-storm the pipeline.
         status = self.process_entity_state_change()
-        if (
-            status == "foreign_landing"
-            and self.manual_toggle
-            and self.control_toggle
-            and entity_id in self.manager.covers
-            and not self.manager.is_cover_manual(entity_id)
+        # Someone stopped or redirected the cover mid-travel.
+        if self.detector.redirected(
+            entity_id, status, new_state, self.controls, self.config
         ):
-            # Someone stopped or redirected the cover mid-travel; without
-            # this latch the move was swallowed as a motor echo and the
-            # next sun tick reverted it.
-            self.manager.mark_manual_control(entity_id)
-            self.manager.set_last_updated(
-                entity_id, new_state, self.config.manual_reset
-            )
             self.record_move_provenance(
                 entity_id,
                 new_state.attributes.get(
@@ -900,54 +882,31 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.state_change = False
         self.logger.debug("State change handled")
 
-    def _is_own_landing(self, event) -> bool:
-        """Return True when this state change is the cover arriving at OUR command."""
-        if event is None or event.new_state is None:
-            return False
-        pos_attr = (
-            "current_tilt_position"
-            if self._cover_type == "cover_tilt"
-            else "current_position"
-        )
-        return self.commands.is_own_landing(
-            event.entity_id, event.new_state.attributes.get(pos_attr)
-        )
-
     async def async_handle_cover_state_change(self, state: int):
         """Handle state change from assigned covers."""
         event = self.state_change_data
-        was_manual = self.manager.is_cover_manual(event.entity_id) if event else False
-        if self.manual_toggle and self.control_toggle:
-            if self._is_own_landing(event):
-                self.logger.debug(
-                    "State change for %s matches our commanded target; not manual",
-                    event.entity_id,
-                )
-            else:
-                self.manager.handle_state_change(
-                    self.state_change_data,
-                    state,
-                    self._cover_type,
-                    self.config.manual_reset,
-                    self.commands.wait_for_target,
-                    self.config.manual_threshold,
-                )
-        # A human just took over: record it with provenance
-        if event and not was_manual and self.manager.is_cover_manual(event.entity_id):
+        if event is not None and event.new_state is not None:
             pos_attr = (
                 "current_tilt_position"
                 if self._cover_type == "cover_tilt"
                 else "current_position"
             )
-            new_position = (
-                event.new_state.attributes.get(pos_attr) if event.new_state else None
-            )
-            self.record_move_provenance(
+            new_position = event.new_state.attributes.get(pos_attr)
+            # A human just took over: record it with provenance
+            if self.detector.landed(
                 event.entity_id,
+                event.new_state,
                 new_position,
-                "manual",
-                "manual change detected",
-            )
+                state,
+                self.controls,
+                self.config,
+            ):
+                self.record_move_provenance(
+                    event.entity_id,
+                    new_position,
+                    "manual",
+                    "manual change detected",
+                )
         self.cover_state_change = False
         self.logger.debug("Cover state change handled")
 
@@ -1257,12 +1216,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             )
 
     def _update_manager_and_covers(self):
-        self.manager.reset_duration = dt.timedelta(**self.config.manual_duration)
-        self.logger.debug(
-            "Manual override duration from config: %s → timedelta: %s",
-            self.config.manual_duration,
-            self.manager.reset_duration,
-        )
+        self.manager.set_duration(self.config.manual_duration)
         self.manager.add_covers(self.entities)
         # Only an EXPLICIT off clears overrides. During startup/reload the
         # toggle is still None (switches restore after the first refresh),
@@ -1519,167 +1473,6 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     """Toggle manual-override detection."""
     lux_toggle = ControlToggle[bool | None]("lux")
     irradiance_toggle = ControlToggle[bool | None]("irradiance")
-
-
-class AdaptiveCoverManager:
-    """Track position changes."""
-
-    def __init__(
-        self,
-        reset_duration: dict[str:int],
-        logger,
-        persisted_state: dict | None = None,
-        clock: Clock = SYSTEM_CLOCK,
-    ) -> None:
-        """Initialize the AdaptiveCoverManager.
-
-        persisted_state lets override bookkeeping survive an entry reload
-        (options edits reload the entry and rebuild the coordinator): pass a
-        dict owned by hass.data and the manager mutates it in place. clock
-        is the coordinator's (runtime/clock.py).
-        """
-        self.clock = clock
-        self.covers: set[str] = set()
-
-        state = persisted_state if persisted_state is not None else {}
-        self.manual_control: dict[str, bool] = state.setdefault("control", {})
-        self.manual_control_time: dict[str, dt.datetime] = state.setdefault("time", {})
-        # Per-cover record of the allow_reset flag at latch time
-        # (bookkeeping only; expiry itself is unconditional).
-        self.reset_allowed: dict[str, bool] = state.setdefault("reset_allowed", {})
-        self.reset_duration = dt.timedelta(**reset_duration)
-        self.logger = logger
-
-    def add_covers(self, entity):
-        """Update set with entities."""
-        self.covers.update(entity)
-
-    def handle_state_change(
-        self,
-        states_data,
-        our_state,
-        blind_type,
-        allow_reset,
-        wait_target_call,
-        manual_threshold,
-    ):
-        """Process state change event."""
-        event = states_data
-        if event is None:
-            return
-        entity_id = event.entity_id
-        if entity_id not in self.covers:
-            return
-        if wait_target_call.get(entity_id):
-            return
-
-        new_state = event.new_state
-
-        if blind_type == "cover_tilt":
-            new_position = new_state.attributes.get("current_tilt_position")
-        else:
-            new_position = new_state.attributes.get("current_position")
-
-        if new_position is None:
-            # A report with no position (device glitch, mid-transition echo)
-            # is not evidence of a human move; latching on it produced
-            # nonsense override records in the field.
-            self.logger.debug(
-                "State change for %s carries no position; not latching manual",
-                entity_id,
-            )
-            return
-        if new_position != our_state:
-            if (
-                manual_threshold is not None
-                and abs(our_state - new_position) < manual_threshold
-            ):
-                self.logger.debug(
-                    "Position change is less than threshold %s for %s",
-                    manual_threshold,
-                    entity_id,
-                )
-                return
-            self.logger.debug(
-                "Manual change detected for %s. Our state: %s, new state: %s",
-                entity_id,
-                our_state,
-                new_position,
-            )
-            self.logger.debug(
-                "Set manual control for %s, for at least %s seconds, reset_allowed: %s",
-                entity_id,
-                self.reset_duration.total_seconds(),
-                allow_reset,
-            )
-            self.mark_manual_control(entity_id)
-            self.set_last_updated(entity_id, new_state, allow_reset)
-
-    def set_last_updated(self, entity_id, new_state, allow_reset):
-        """Set last updated time for manual control."""
-        self.reset_allowed[entity_id] = bool(allow_reset)
-        if entity_id not in self.manual_control_time or allow_reset:
-            last_updated = new_state.last_updated
-            self.manual_control_time[entity_id] = last_updated
-            self.logger.debug(
-                "Updating last updated for manual control to %s for %s. Allow reset:%s",
-                last_updated,
-                entity_id,
-                allow_reset,
-            )
-        elif not allow_reset:
-            self.logger.debug(
-                "Already manual control time specified for %s, reset is not allowed by user setting:%s",
-                entity_id,
-                allow_reset,
-            )
-
-    def mark_manual_control(self, cover: str) -> None:
-        """Mark cover as under manual control."""
-        self.manual_control[cover] = True
-
-    async def reset_if_needed(self):
-        """Expire manual overrides whose duration elapsed.
-
-        Every override expires after reset_duration; the reset toggle only
-        controls whether later manual moves RESTART the clock (see
-        set_last_updated), never whether expiry happens at all.
-        """
-        current_time = self.clock.utcnow()
-        manual_control_time_copy = dict(self.manual_control_time)
-        for entity_id, last_updated in manual_control_time_copy.items():
-            if current_time - last_updated > self.reset_duration:
-                self.logger.debug(
-                    "Resetting manual override for %s, because duration has elapsed",
-                    entity_id,
-                )
-                self.reset(entity_id)
-
-    def reset(self, entity_id):
-        """Reset manual control for a cover."""
-        self.manual_control[entity_id] = False
-        self.manual_control_time.pop(entity_id, None)
-        self.reset_allowed.pop(entity_id, None)
-        self.logger.debug("Reset manual override for %s", entity_id)
-
-    def reset_all(self) -> None:
-        """Clear every manual override (new day / deliberate resume)."""
-        for entity_id in list(self.manual_control):
-            self.reset(entity_id)
-
-    def is_cover_manual(self, entity_id):
-        """Check if a cover is under manual control."""
-        return self.manual_control.get(entity_id, False)
-
-    @property
-    def binary_cover_manual(self):
-        """Check if any cover is under manual control."""
-        return any(value for value in self.manual_control.values())
-
-    @property
-    def manual_controlled(self):
-        """Get the list of covers under manual control."""
-        return [k for k, v in self.manual_control.items() if v]
 
 
 def inverse_state(state: int) -> int:

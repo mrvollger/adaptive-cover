@@ -1,6 +1,6 @@
 {
   "pyright": "1.1.414",
-  "total": 119,
+  "total": 110,
   "errors": [
     {
       "file": "custom_components/adaptive_cover/__init__.py",
@@ -214,27 +214,15 @@
     },
     {
       "file": "custom_components/adaptive_cover/coordinator.py",
-      "rule": "reportGeneralTypeIssues",
-      "message": "Expected class but received \"slice[type[str], type[int], None]\"",
-      "count": 1
-    },
-    {
-      "file": "custom_components/adaptive_cover/coordinator.py",
-      "rule": "reportInvalidTypeArguments",
-      "message": "Too few type arguments provided for \"dict\"; expected 2 but received 1",
-      "count": 1
-    },
-    {
-      "file": "custom_components/adaptive_cover/coordinator.py",
       "rule": "reportOptionalMemberAccess",
       "message": "\"attributes\" is not a known attribute of \"None\"",
-      "count": 5
+      "count": 3
     },
     {
       "file": "custom_components/adaptive_cover/coordinator.py",
       "rule": "reportOptionalMemberAccess",
       "message": "\"entity_id\" is not a known attribute of \"None\"",
-      "count": 2
+      "count": 1
     },
     {
       "file": "custom_components/adaptive_cover/coordinator.py",
@@ -252,7 +240,7 @@
       "file": "custom_components/adaptive_cover/coordinator.py",
       "rule": "reportOptionalMemberAccess",
       "message": "\"state\" is not a known attribute of \"None\"",
-      "count": 11
+      "count": 7
     },
     {
       "file": "custom_components/adaptive_cover/coordinator.py",

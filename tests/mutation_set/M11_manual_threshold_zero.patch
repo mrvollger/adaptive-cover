@@ -1,7 +1,7 @@
-diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
---- a/custom_components/adaptive_cover/coordinator.py
-+++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1592,7 +1592,7 @@
+diff --git a/custom_components/adaptive_cover/runtime/manual_detector.py b/custom_components/adaptive_cover/runtime/manual_detector.py
+--- a/custom_components/adaptive_cover/runtime/manual_detector.py
++++ b/custom_components/adaptive_cover/runtime/manual_detector.py
+@@ -175,7 +175,7 @@
          if new_position != our_state:
              if (
                  manual_threshold is not None

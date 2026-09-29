@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1320,7 +1320,7 @@
+@@ -1274,7 +1274,7 @@
                  enabled=True,
                  # explicit None check: an offset of 0 ("close right at
                  # sunset") must not be coerced to the 30-minute default

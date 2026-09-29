@@ -1,12 +1,12 @@
-diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
---- a/custom_components/adaptive_cover/coordinator.py
-+++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1257,7 +1257,7 @@
-             )
+diff --git a/custom_components/adaptive_cover/runtime/override_tracker.py b/custom_components/adaptive_cover/runtime/override_tracker.py
+--- a/custom_components/adaptive_cover/runtime/override_tracker.py
++++ b/custom_components/adaptive_cover/runtime/override_tracker.py
+@@ -57,7 +57,7 @@
  
-     def _update_manager_and_covers(self):
--        self.manager.reset_duration = dt.timedelta(**self.config.manual_duration)
-+        self.manager.reset_duration = dt.timedelta(**self.config.manual_duration) * 60
+     def set_duration(self, duration: Mapping[str, float]) -> None:
+         """Set the override duration (``timedelta`` keyword arguments)."""
+-        self.reset_duration = dt.timedelta(**duration)
++        self.reset_duration = dt.timedelta(**duration) * 60
          self.logger.debug(
              "Manual override duration from config: %s → timedelta: %s",
-             self.config.manual_duration,
+             duration,
