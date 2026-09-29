@@ -101,6 +101,14 @@ RULES: list[tuple[str, str]] = [
     ("tests/replay/test_house_snapshot.py::*", TOOLING),
     ("tests/test_translations.py::*", BEHAVIOR),
     ("tests/test_entity_surface_v2.py::*", BEHAVIOR),  # P1 entity surface (C1)
+    # P5 layered settings: `resolve` is a contract v2 seam (ADR 0004).
+    # Precedence, provenance, the lift's rules and the P5 guarantee on the
+    # live snapshot (resolve(w) == legacy_flat(w)) are behavior; the purity
+    # guard is a structural check like test_purity.
+    ("tests/settings/test_settings_purity.py::*", TOOLING),
+    ("tests/settings/test_resolve.py::*", BEHAVIOR),
+    ("tests/settings/test_lift.py::*", BEHAVIOR),
+    ("tests/settings/test_house_lift.py::*", BEHAVIOR),
     # Implementation tier: a refactor may freely break these.
     # P3: the option spec's own tests (its table shape changes in P5); the
     # surfaces it generates are pinned by the behavior tier and by

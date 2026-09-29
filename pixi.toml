@@ -43,6 +43,6 @@ latest = ["latest"]
 test = { cmd = "pytest -n auto", description = "Run the test suite in parallel" }
 lint = { cmd = "ruff check . && ruff format --check .", description = "Ruff lint + format check" }
 format = { cmd = "ruff format . && ruff check --fix .", description = "Apply ruff format and autofixes" }
-typecheck = { cmd = "python .github/pyright/check_baseline.py", description = "pyright (basic; strict with zero errors on engine/ and runtime/); fails on errors not in the baseline" }
+typecheck = { cmd = "python .github/pyright/check_baseline.py", description = "pyright (basic; strict with zero errors on engine/, runtime/ and settings/resolve.py, lift.py); fails on errors not in the baseline" }
 typecheck-baseline = { cmd = "python .github/pyright/check_baseline.py --write", description = "Rewrite the pyright baseline (after fixing errors or reformatting)" }
 mutations = { cmd = "python tests/mutation_set/run_mutations.py --jobs 4", description = "Run the mutation kill matrix" }

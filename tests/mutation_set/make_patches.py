@@ -52,6 +52,8 @@ COMMANDS = "custom_components/adaptive_cover/runtime/command_tracker.py"
 DETECTOR = "custom_components/adaptive_cover/runtime/manual_detector.py"
 OVERRIDES = "custom_components/adaptive_cover/runtime/override_tracker.py"
 END_OF_DAY = "custom_components/adaptive_cover/runtime/end_of_day.py"
+RESOLVE = "custom_components/adaptive_cover/settings/resolve.py"
+LIFT = "custom_components/adaptive_cover/settings/lift.py"
 
 
 @dataclass
@@ -613,7 +615,27 @@ MUTATIONS: list[Mutation] = [
         "                service = SERVICE_SET_COVER_TILT_POSITION",
         "                service = SERVICE_SET_COVER_POSITION",
     ),
-    # ---- group H: P1 entity surface (M44-M51 are reserved by the plan) ----
+    # ---- group J: layered settings (P5; M44, M47-M51 reserved by the plan) --
+    Mutation(
+        "M45",
+        "area_floor_precedence_swapped",
+        RESOLVE,
+        "resolve_with_provenance",
+        "area and floor precedence swapped: a floor value beats the area's",
+        "        (Source.AREA, area.values),\n        (Source.FLOOR, floor.values),\n",
+        "        (Source.FLOOR, floor.values),\n        (Source.AREA, area.values),\n",
+    ),
+    Mutation(
+        "M46",
+        "lift_drops_outlier",
+        LIFT,
+        "_OptionLift._windows",
+        "the lift drops a window's outlier: it resolves to the inherited value",
+        "            elif Level.WINDOW in self.allowed:\n"
+        "                placed.overrides[win.key] = win.value\n",
+        "            elif Level.WINDOW in self.allowed:\n                continue\n",
+    ),
+    # ---- group H: P1 entity surface ----------------------------------------
     Mutation(
         "M52",
         "card_sensor_disabled_by_default",

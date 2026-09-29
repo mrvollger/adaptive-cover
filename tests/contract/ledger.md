@@ -236,3 +236,30 @@ The example below is inside an HTML comment. The checker ignores it.
   both. The options form now runs every rule in `settings/validate.py` on
   the options as they would be saved, and shows the error at form level.
   `spec_parity.json`, goldens, truth table and house replay unchanged.
+
+## L0010 · 2026-09-29 · Layered settings resolver and legacy lift, pure core (C6, P5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins
+  `tests/settings/test_resolve.py::*` (ADR 0003 precedence, provenance,
+  forbidden levels), `tests/settings/test_lift.py::*` (the lift's rules,
+  tie-breaks, and two seeded property tests: any options -> lift ->
+  resolve round-trips exactly; options the allowed levels can express
+  lift without legacy values) and `tests/settings/test_house_lift.py::*`
+  (`resolve(w) == legacy_flat(w)` for all 15 snapshot windows, plus the
+  lifted house, floor, area, window and legacy values).
+- **Mutations re-targeted:** added M45 (area and floor precedence swapped
+  in `settings/resolve.py`) and M46 (the lift drops a window's outlier in
+  `settings/lift.py`), both killed by the new pins. M39 is not re-anchored
+  yet: the runtime still merges the legacy options.
+- **Contract change:** C6 (first half: the pure resolver and lift; no
+  runtime code reads them yet)
+- **Reason:** P5 needs the layered model and the migration into it before
+  the shadow release can compare them with the legacy options. Nothing in
+  the runtime changed, so goldens, truth table and house replay are
+  unchanged. The real house cannot be expressed exactly with the levels
+  the spec allows (Master trap's sunrise and sunset offsets differ from
+  the rest of its room, and five windows store `None` for three
+  house-only thresholds), so the lift keeps those values as explicit
+  window `legacy` values with provenance `legacy`, instead of breaking
+  the round trip or the spec's `overridable_at`.

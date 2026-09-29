@@ -309,6 +309,20 @@
   "patch": "M43_tilt_routed_to_position.patch"
  },
  {
+  "id": "M45",
+  "file": "custom_components/adaptive_cover/settings/resolve.py",
+  "function": "resolve_with_provenance",
+  "description": "area and floor precedence swapped: a floor value beats the area's",
+  "patch": "M45_area_floor_precedence_swapped.patch"
+ },
+ {
+  "id": "M46",
+  "file": "custom_components/adaptive_cover/settings/lift.py",
+  "function": "_OptionLift._windows",
+  "description": "the lift drops a window's outlier: it resolves to the inherited value",
+  "patch": "M46_lift_drops_outlier.patch"
+ },
+ {
   "id": "M52",
   "file": "custom_components/adaptive_cover/entity_surface.py",
   "function": "WINDOW_SURFACE",
