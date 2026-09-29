@@ -24,6 +24,7 @@ interface ChartLike extends HTMLElement {
 }
 
 const discovered: DiscoveredEntities = {
+  window_key: 'entry1',
   entry_id: 'entry1',
   entry_title: 'Test',
   cover_type: 'cover_blind',
@@ -174,6 +175,7 @@ describe('acp-elevation-chart: single-window (legacy, unchanged)', () => {
 });
 
 const discoveredSouth: DiscoveredEntities = {
+  window_key: 'south',
   entry_id: 'south',
   entry_title: 'Living Room',
   cover_type: 'cover_blind',
@@ -181,6 +183,7 @@ const discoveredSouth: DiscoveredEntities = {
   managed_covers: [],
 };
 const discoveredWest: DiscoveredEntities = {
+  window_key: 'west',
   entry_id: 'west',
   entry_title: 'Office',
   cover_type: 'cover_blind',
@@ -188,6 +191,7 @@ const discoveredWest: DiscoveredEntities = {
   managed_covers: [],
 };
 const discoveredEast: DiscoveredEntities = {
+  window_key: 'east',
   entry_id: 'east',
   entry_title: 'Bedroom',
   cover_type: 'cover_blind',
@@ -384,6 +388,7 @@ describe('acp-elevation-chart: multi-window ribbon', () => {
 // coverage below locks that in.
 describe('acp-elevation-chart: schedule overlay (never rendered by this integration)', () => {
   const discoveredWithControl: DiscoveredEntities = {
+    window_key: 'entry1',
     entry_id: 'entry1',
     entry_title: 'Test',
     cover_type: 'cover_blind',

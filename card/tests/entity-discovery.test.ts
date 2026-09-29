@@ -6,6 +6,7 @@ import {
 } from '../src/lib/entity-discovery';
 import type { HomeAssistant } from 'custom-card-helpers';
 import type { EntityRegistryEntry } from '../src/lib/entity-registry';
+import type { WindowRef } from '../src/lib/window-binding';
 
 const ENTRY_ID = 'entry1';
 
@@ -143,7 +144,7 @@ describe('discoverEntities (unique_id based)', () => {
     expect(d!.cover_type).toBe('cover_blind');
   });
 
-  it('ignores non-adaptive_cover entities even if they share the config_entry_id', () => {
+  it('ignores non-adaptive_cover entities even if their unique_id looks like ours', () => {
     const reg = makeRegistry();
     reg.push({
       entity_id: 'sensor.random_other',
@@ -156,7 +157,7 @@ describe('discoverEntities (unique_id based)', () => {
     expect(d!.entities.target_position_sensor).toBe('sensor.living_room_blinds_cover_position');
   });
 
-  it('returns null when no adaptive_cover entity has the given config_entry_id', () => {
+  it('returns null when no adaptive_cover entity carries the key as its unique_id prefix', () => {
     expect(
       discoverEntities(
         makeHass(),
@@ -284,27 +285,27 @@ describe('createDiscoveryMemo', () => {
 });
 
 describe('createDiscoveryListMemo', () => {
-  const TYPE = 'custom:adaptive-cover-sky-compass-card';
+  const entry = (key: string): WindowRef => ({ kind: 'entry', key });
 
-  it('resolves configured entries and reports unknown ones as missing', () => {
+  it('resolves configured windows and reports unknown ones as missing', () => {
     const memo = createDiscoveryListMemo();
-    const result = memo(makeHass(), [ENTRY_ID, 'nope'], makeRegistry(), TYPE);
+    const result = memo(makeHass(), [entry(ENTRY_ID), entry('nope')], makeRegistry());
     expect(result.list).toHaveLength(1);
     expect(result.list[0].entry_id).toBe(ENTRY_ID);
-    expect(result.missing).toEqual(['nope']);
+    expect(result.missing).toEqual([entry('nope')]);
   });
 
   it('returns the SAME result object (and list array) across a new hass that shares the relevant state refs', () => {
     const memo = createDiscoveryListMemo();
     const registry = makeRegistry();
     const hass1 = makeHass() as unknown as { devices: unknown; states: Record<string, unknown> };
-    const first = memo(hass1 as unknown as HomeAssistant, [ENTRY_ID], registry, TYPE);
+    const first = memo(hass1 as unknown as HomeAssistant, [entry(ENTRY_ID)], registry);
 
     const hass2 = {
       devices: hass1.devices,
       states: { ...hass1.states, 'light.kitchen': { state: 'on', attributes: {} } },
     } as unknown as HomeAssistant;
-    const second = memo(hass2, [ENTRY_ID], registry, TYPE);
+    const second = memo(hass2, [entry(ENTRY_ID)], registry);
     expect(second).toBe(first);
     expect(second.list).toBe(first.list); // stable array reference → no child churn
   });
@@ -313,7 +314,7 @@ describe('createDiscoveryListMemo', () => {
     const memo = createDiscoveryListMemo();
     const registry = makeRegistry();
     const hass1 = makeHass() as unknown as { devices: unknown; states: Record<string, unknown> };
-    const first = memo(hass1 as unknown as HomeAssistant, [ENTRY_ID], registry, TYPE);
+    const first = memo(hass1 as unknown as HomeAssistant, [entry(ENTRY_ID)], registry);
 
     const hass2 = {
       devices: hass1.devices,
@@ -325,18 +326,29 @@ describe('createDiscoveryListMemo', () => {
         },
       },
     } as unknown as HomeAssistant;
-    const second = memo(hass2, [ENTRY_ID], registry, TYPE);
+    const second = memo(hass2, [entry(ENTRY_ID)], registry);
     expect(second).not.toBe(first);
     expect(second.list[0].managed_covers).toEqual(['cover.solo']);
   });
 
-  it('recomputes when the entry_ids list changes', () => {
+  it('recomputes when the ref list changes', () => {
     const memo = createDiscoveryListMemo();
     const hass = makeHass();
     const registry = makeRegistry();
-    const first = memo(hass, [ENTRY_ID], registry, TYPE);
-    const second = memo(hass, [ENTRY_ID, 'nope'], registry, TYPE);
+    const first = memo(hass, [entry(ENTRY_ID)], registry);
+    const second = memo(hass, [entry(ENTRY_ID), entry('nope')], registry);
     expect(second).not.toBe(first);
-    expect(second.missing).toEqual(['nope']);
+    expect(second.missing).toEqual([entry('nope')]);
+  });
+
+  it('draws one overlay when a window key and a legacy entry_id name the same window', () => {
+    const memo = createDiscoveryListMemo();
+    const result = memo(
+      makeHass(),
+      [{ kind: 'window', key: ENTRY_ID }, entry(ENTRY_ID)],
+      makeRegistry(),
+    );
+    expect(result.list).toHaveLength(1);
+    expect(result.missing).toEqual([]);
   });
 });

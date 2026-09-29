@@ -129,6 +129,11 @@ describe('adaptive-cover-decision-card render states', () => {
     expect(el.shadowRoot!.querySelector('.empty')).toBeTruthy();
   });
 
+  it('renders the strip for a `window:` config', async () => {
+    const el = await mountWithRegistry({ type: TYPE, window: ENTRY });
+    expect(el.shadowRoot!.querySelectorAll('acp-decision-strip').length).toBe(1);
+  });
+
   it('renders exactly one acp-decision-strip when the entry matches', async () => {
     const el = await mountWithRegistry({ type: TYPE, entry_id: ENTRY });
     const strips = el.shadowRoot!.querySelectorAll('acp-decision-strip');
