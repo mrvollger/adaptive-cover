@@ -1750,6 +1750,7 @@ tests/simulation/test_regressions.py::test_regression_override_clears_on_new_day
 tests/simulation/test_regressions.py::test_regression_overrides_survive_entry_reload
 tests/simulation/test_regressions.py::test_regression_small_snap_move_sent_once[1_to_0]
 tests/simulation/test_regressions.py::test_regression_small_snap_move_sent_once[99_to_100]
+tests/simulation/test_regressions.py::test_regression_unload_cancels_arrival_poll
 tests/simulation/test_symptoms.py::test_dashboard_override_respected_for_duration
 tests/simulation/test_symptoms.py::test_end_time_close_fires
 tests/simulation/test_symptoms.py::test_end_time_close_fires_despite_manual_override

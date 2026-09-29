@@ -173,3 +173,23 @@ async def test_regression_dusk_no_open_then_close(hass, freezer):
     assert evening[-1] == 5
     assert house.window().target == 5
     await house.teardown()
+
+
+async def test_regression_unload_cancels_arrival_poll(hass, freezer):
+    """Unloading an entry cancels its arrival poll.
+
+    Every command arms a 125 s poll. Unload never cancelled it, so a
+    removed or reloading entry still polled the cover two minutes later
+    (and HA 2026.8's test harness reported ~105 lingering timers).
+    """
+    house = await SimHouse.create(
+        hass, freezer, date="2026-03-20", start_at="10:00", initial_position=100
+    )
+    assert house.auto_moves("cover.shade"), "no startup command, no poll armed"
+    await hass.config_entries.async_unload(house.entry.entry_id)
+    await hass.async_block_till_done()
+
+    await house.advance_to("10:10")  # past the 125 s poll
+    polls = [ev for ev in house.timeline if ev.kind == "poll"]
+    assert polls == []
+    await house.teardown()

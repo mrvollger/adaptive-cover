@@ -1,6 +1,6 @@
 {
   "pyright": "1.1.414",
-  "total": 164,
+  "total": 163,
   "errors": [
     {
       "file": "custom_components/adaptive_cover/__init__.py",
@@ -277,12 +277,6 @@
       "rule": "reportArgumentType",
       "message": "Argument of type \"str | None\" cannot be assigned to parameter \"string\" of type \"str\" in function \"get_datetime_from_str\"",
       "count": 2
-    },
-    {
-      "file": "custom_components/adaptive_cover/coordinator.py",
-      "rule": "reportCallIssue",
-      "message": "Object of type \"object\" is not callable",
-      "count": 1
     },
     {
       "file": "custom_components/adaptive_cover/coordinator.py",
