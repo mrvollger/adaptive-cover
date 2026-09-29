@@ -1,0 +1,2271 @@
+{
+  "captured_at": "2026-09-28T21:11:36.603244-06:00",
+  "notes": [
+    "Stand-in for core.restore_state (not readable over MCP), captured from live ha_get_state; timezone America/Denver.",
+    "sensor.*cover_position*: only intent/control_method/move_blocked_by/manual_override/sun_in_front kept (only intent and move_blocked_by exist live).",
+    "Other entities: friendly_name/icon dropped; switch/number/select/sun_infront/start/end/control_method attributes were fetched with an attribute_keys allow-list (device_class,min,max,step,mode,unit_of_measurement,options,note,state_class); manual_override binary_sensors and next/last_state_change sensors were fetched with full attributes."
+  ],
+  "states": {
+    "binary_sensor.den_south_manual_override": {
+      "attributes": {
+        "device_class": "running",
+        "manual_controlled": []
+      },
+      "state": "off"
+    },
+    "binary_sensor.den_south_sun_infront": {
+      "attributes": {
+        "device_class": "motion"
+      },
+      "state": "off"
+    },
+    "binary_sensor.den_southwest_manual_override": {
+      "attributes": {
+        "device_class": "running",
+        "manual_controlled": []
+      },
+      "state": "off"
+    },
+    "binary_sensor.den_southwest_sun_infront": {
+      "attributes": {
+        "device_class": "motion"
+      },
+      "state": "off"
+    },
+    "binary_sensor.den_west_manual_override": {
+      "attributes": {
+        "device_class": "running",
+        "manual_controlled": []
+      },
+      "state": "off"
+    },
+    "binary_sensor.den_west_sun_infront": {
+      "attributes": {
+        "device_class": "motion"
+      },
+      "state": "off"
+    },
+    "binary_sensor.family_door_manual_override": {
+      "attributes": {
+        "device_class": "running",
+        "manual_controlled": []
+      },
+      "state": "off"
+    },
+    "binary_sensor.family_door_sun_infront": {
+      "attributes": {
+        "device_class": "motion"
+      },
+      "state": "off"
+    },
+    "binary_sensor.family_east_manual_override": {
+      "attributes": {
+        "device_class": "running",
+        "manual_controlled": []
+      },
+      "state": "off"
+    },
+    "binary_sensor.family_east_sun_infront": {
+      "attributes": {
+        "device_class": "motion"
+      },
+      "state": "off"
+    },
+    "binary_sensor.family_south_manual_override": {
+      "attributes": {
+        "device_class": "running",
+        "manual_controlled": []
+      },
+      "state": "off"
+    },
+    "binary_sensor.family_south_sun_infront": {
+      "attributes": {
+        "device_class": "motion"
+      },
+      "state": "off"
+    },
+    "binary_sensor.master_door_manual_override": {
+      "attributes": {
+        "device_class": "running",
+        "manual_controlled": []
+      },
+      "state": "off"
+    },
+    "binary_sensor.master_door_sun_infront": {
+      "attributes": {
+        "device_class": "motion"
+      },
+      "state": "off"
+    },
+    "binary_sensor.master_east_manual_override": {
+      "attributes": {
+        "device_class": "running",
+        "manual_controlled": []
+      },
+      "state": "off"
+    },
+    "binary_sensor.master_east_sun_infront": {
+      "attributes": {
+        "device_class": "motion"
+      },
+      "state": "off"
+    },
+    "binary_sensor.master_south_manual_override": {
+      "attributes": {
+        "device_class": "running",
+        "manual_controlled": []
+      },
+      "state": "off"
+    },
+    "binary_sensor.master_south_sun_infront": {
+      "attributes": {
+        "device_class": "motion"
+      },
+      "state": "off"
+    },
+    "binary_sensor.master_trap_manual_override_master_trap": {
+      "attributes": {
+        "device_class": "running",
+        "manual_controlled": []
+      },
+      "state": "off"
+    },
+    "binary_sensor.master_trap_sun_infront_master_trap": {
+      "attributes": {
+        "device_class": "motion"
+      },
+      "state": "off"
+    },
+    "binary_sensor.ne_door_shades_manual_override_ne_door_shades": {
+      "attributes": {
+        "device_class": "running",
+        "manual_controlled": []
+      },
+      "state": "off"
+    },
+    "binary_sensor.ne_door_shades_sun_infront_ne_door_shades": {
+      "attributes": {
+        "device_class": "motion"
+      },
+      "state": "off"
+    },
+    "binary_sensor.office_east_shade_manual_override_office_east_shade": {
+      "attributes": {
+        "device_class": "running",
+        "manual_controlled": []
+      },
+      "state": "off"
+    },
+    "binary_sensor.office_east_shade_sun_infront_office_east_shade": {
+      "attributes": {
+        "device_class": "motion"
+      },
+      "state": "off"
+    },
+    "binary_sensor.office_north_shades_manual_override_office_north_shade": {
+      "attributes": {
+        "device_class": "running",
+        "manual_controlled": []
+      },
+      "state": "off"
+    },
+    "binary_sensor.office_north_shades_sun_infront_office_north_shade": {
+      "attributes": {
+        "device_class": "motion"
+      },
+      "state": "off"
+    },
+    "binary_sensor.sw_door_shade_manual_override_sw_door_shades": {
+      "attributes": {
+        "device_class": "running",
+        "manual_controlled": []
+      },
+      "state": "off"
+    },
+    "binary_sensor.sw_door_shade_sun_infront_sw_door_shades": {
+      "attributes": {
+        "device_class": "motion"
+      },
+      "state": "off"
+    },
+    "binary_sensor.sw_south_shade_manual_override_sw_south_shade": {
+      "attributes": {
+        "device_class": "running",
+        "manual_controlled": []
+      },
+      "state": "off"
+    },
+    "binary_sensor.sw_south_shade_sun_infront_sw_south_shade": {
+      "attributes": {
+        "device_class": "motion"
+      },
+      "state": "off"
+    },
+    "number.den_south_cooling_threshold": {
+      "attributes": {
+        "max": 40,
+        "min": 10,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "75.0"
+    },
+    "number.den_south_eye_height": {
+      "attributes": {
+        "max": 3,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.den_south_heating_threshold": {
+      "attributes": {
+        "max": 30,
+        "min": 5,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "72.0"
+    },
+    "number.den_south_overhang_depth": {
+      "attributes": {
+        "max": 5,
+        "min": 0,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.den_south_overhang_height_above_sill": {
+      "attributes": {
+        "max": 10,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.den_south_privacy_delay_after_sunset": {
+      "attributes": {
+        "max": 180,
+        "min": 0,
+        "mode": "box",
+        "step": 5,
+        "unit_of_measurement": "min"
+      },
+      "state": "30"
+    },
+    "number.den_south_seat_distance_from_window": {
+      "attributes": {
+        "max": 10,
+        "min": 0.1,
+        "mode": "box",
+        "step": 0.1,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.0"
+    },
+    "number.den_southwest_cooling_threshold": {
+      "attributes": {
+        "max": 40,
+        "min": 10,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "75.0"
+    },
+    "number.den_southwest_eye_height": {
+      "attributes": {
+        "max": 3,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.den_southwest_heating_threshold": {
+      "attributes": {
+        "max": 30,
+        "min": 5,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "72.0"
+    },
+    "number.den_southwest_overhang_depth": {
+      "attributes": {
+        "max": 5,
+        "min": 0,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.den_southwest_overhang_height_above_sill": {
+      "attributes": {
+        "max": 10,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.den_southwest_privacy_delay_after_sunset": {
+      "attributes": {
+        "max": 180,
+        "min": 0,
+        "mode": "box",
+        "step": 5,
+        "unit_of_measurement": "min"
+      },
+      "state": "30"
+    },
+    "number.den_southwest_seat_distance_from_window": {
+      "attributes": {
+        "max": 10,
+        "min": 0.1,
+        "mode": "box",
+        "step": 0.1,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.0"
+    },
+    "number.den_west_cooling_threshold": {
+      "attributes": {
+        "max": 40,
+        "min": 10,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "75.0"
+    },
+    "number.den_west_eye_height": {
+      "attributes": {
+        "max": 3,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.den_west_heating_threshold": {
+      "attributes": {
+        "max": 30,
+        "min": 5,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "72.0"
+    },
+    "number.den_west_overhang_depth": {
+      "attributes": {
+        "max": 5,
+        "min": 0,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.den_west_overhang_height_above_sill": {
+      "attributes": {
+        "max": 10,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.den_west_privacy_delay_after_sunset": {
+      "attributes": {
+        "max": 180,
+        "min": 0,
+        "mode": "box",
+        "step": 5,
+        "unit_of_measurement": "min"
+      },
+      "state": "30"
+    },
+    "number.den_west_seat_distance_from_window": {
+      "attributes": {
+        "max": 10,
+        "min": 0.1,
+        "mode": "box",
+        "step": 0.1,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.0"
+    },
+    "number.family_door_cooling_threshold": {
+      "attributes": {
+        "max": 40,
+        "min": 10,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "75.0"
+    },
+    "number.family_door_eye_height": {
+      "attributes": {
+        "max": 3,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.family_door_heating_threshold": {
+      "attributes": {
+        "max": 30,
+        "min": 5,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "72.0"
+    },
+    "number.family_door_overhang_depth": {
+      "attributes": {
+        "max": 5,
+        "min": 0,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.family_door_overhang_height_above_sill": {
+      "attributes": {
+        "max": 10,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.3"
+    },
+    "number.family_door_privacy_delay_after_sunset": {
+      "attributes": {
+        "max": 180,
+        "min": 0,
+        "mode": "box",
+        "step": 5,
+        "unit_of_measurement": "min"
+      },
+      "state": "30"
+    },
+    "number.family_door_seat_distance_from_window": {
+      "attributes": {
+        "max": 10,
+        "min": 0.1,
+        "mode": "box",
+        "step": 0.1,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.0"
+    },
+    "number.family_east_cooling_threshold": {
+      "attributes": {
+        "max": 40,
+        "min": 10,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "75.0"
+    },
+    "number.family_east_eye_height": {
+      "attributes": {
+        "max": 3,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.family_east_heating_threshold": {
+      "attributes": {
+        "max": 30,
+        "min": 5,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "72.0"
+    },
+    "number.family_east_overhang_depth": {
+      "attributes": {
+        "max": 5,
+        "min": 0,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.family_east_overhang_height_above_sill": {
+      "attributes": {
+        "max": 10,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.family_east_privacy_delay_after_sunset": {
+      "attributes": {
+        "max": 180,
+        "min": 0,
+        "mode": "box",
+        "step": 5,
+        "unit_of_measurement": "min"
+      },
+      "state": "30"
+    },
+    "number.family_east_seat_distance_from_window": {
+      "attributes": {
+        "max": 10,
+        "min": 0.1,
+        "mode": "box",
+        "step": 0.1,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.0"
+    },
+    "number.family_south_cooling_threshold": {
+      "attributes": {
+        "max": 40,
+        "min": 10,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "75.0"
+    },
+    "number.family_south_eye_height": {
+      "attributes": {
+        "max": 3,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.family_south_heating_threshold": {
+      "attributes": {
+        "max": 30,
+        "min": 5,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "72.0"
+    },
+    "number.family_south_overhang_depth": {
+      "attributes": {
+        "max": 5,
+        "min": 0,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.family_south_overhang_height_above_sill": {
+      "attributes": {
+        "max": 10,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.6"
+    },
+    "number.family_south_privacy_delay_after_sunset": {
+      "attributes": {
+        "max": 180,
+        "min": 0,
+        "mode": "box",
+        "step": 5,
+        "unit_of_measurement": "min"
+      },
+      "state": "30.0"
+    },
+    "number.family_south_seat_distance_from_window": {
+      "attributes": {
+        "max": 10,
+        "min": 0.1,
+        "mode": "box",
+        "step": 0.1,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.0"
+    },
+    "number.leanne_s_door_cooling_threshold": {
+      "attributes": {
+        "max": 40,
+        "min": 10,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "75.0"
+    },
+    "number.leanne_s_door_heating_threshold": {
+      "attributes": {
+        "max": 30,
+        "min": 5,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "72.0"
+    },
+    "number.leanne_s_south_cooling_threshold": {
+      "attributes": {
+        "max": 40,
+        "min": 10,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "75.0"
+    },
+    "number.leanne_s_south_heating_threshold": {
+      "attributes": {
+        "max": 30,
+        "min": 5,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "72.0"
+    },
+    "number.master_door_cooling_threshold": {
+      "attributes": {
+        "max": 40,
+        "min": 10,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "75.0"
+    },
+    "number.master_door_eye_height": {
+      "attributes": {
+        "max": 3,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.master_door_heating_threshold": {
+      "attributes": {
+        "max": 30,
+        "min": 5,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "72.0"
+    },
+    "number.master_door_overhang_depth": {
+      "attributes": {
+        "max": 5,
+        "min": 0,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.master_door_overhang_height_above_sill": {
+      "attributes": {
+        "max": 10,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.3"
+    },
+    "number.master_door_privacy_delay_after_sunset": {
+      "attributes": {
+        "max": 180,
+        "min": 0,
+        "mode": "box",
+        "step": 5,
+        "unit_of_measurement": "min"
+      },
+      "state": "30"
+    },
+    "number.master_door_seat_distance_from_window": {
+      "attributes": {
+        "max": 10,
+        "min": 0.1,
+        "mode": "box",
+        "step": 0.1,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.0"
+    },
+    "number.master_east_cooling_threshold": {
+      "attributes": {
+        "max": 40,
+        "min": 10,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "75.0"
+    },
+    "number.master_east_eye_height": {
+      "attributes": {
+        "max": 3,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.master_east_heating_threshold": {
+      "attributes": {
+        "max": 30,
+        "min": 5,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "72.0"
+    },
+    "number.master_east_overhang_depth": {
+      "attributes": {
+        "max": 5,
+        "min": 0,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.master_east_overhang_height_above_sill": {
+      "attributes": {
+        "max": 10,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.master_east_privacy_delay_after_sunset": {
+      "attributes": {
+        "max": 180,
+        "min": 0,
+        "mode": "box",
+        "step": 5,
+        "unit_of_measurement": "min"
+      },
+      "state": "30"
+    },
+    "number.master_east_seat_distance_from_window": {
+      "attributes": {
+        "max": 10,
+        "min": 0.1,
+        "mode": "box",
+        "step": 0.1,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.0"
+    },
+    "number.master_master_trap_shade_cooling_threshold_master_trap": {
+      "attributes": {
+        "max": 40,
+        "min": 10,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "75.0"
+    },
+    "number.master_master_trap_shade_eye_height_master_trap": {
+      "attributes": {
+        "max": 3,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.master_master_trap_shade_heating_threshold_master_trap": {
+      "attributes": {
+        "max": 30,
+        "min": 5,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "72.0"
+    },
+    "number.master_master_trap_shade_overhang_depth_master_trap": {
+      "attributes": {
+        "max": 5,
+        "min": 0,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.master_master_trap_shade_overhang_height_above_sill_master_trap": {
+      "attributes": {
+        "max": 10,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.master_master_trap_shade_privacy_delay_after_sunset_master_trap": {
+      "attributes": {
+        "max": 180,
+        "min": 0,
+        "mode": "box",
+        "step": 5,
+        "unit_of_measurement": "min"
+      },
+      "state": "30"
+    },
+    "number.master_master_trap_shade_seat_distance_from_window_master_trap": {
+      "attributes": {
+        "max": 10,
+        "min": 0.1,
+        "mode": "box",
+        "step": 0.1,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.0"
+    },
+    "number.master_south_cooling_threshold": {
+      "attributes": {
+        "max": 40,
+        "min": 10,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "75.0"
+    },
+    "number.master_south_eye_height": {
+      "attributes": {
+        "max": 3,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.master_south_heating_threshold": {
+      "attributes": {
+        "max": 30,
+        "min": 5,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "72.0"
+    },
+    "number.master_south_overhang_depth": {
+      "attributes": {
+        "max": 5,
+        "min": 0,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.master_south_overhang_height_above_sill": {
+      "attributes": {
+        "max": 10,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.6"
+    },
+    "number.master_south_privacy_delay_after_sunset": {
+      "attributes": {
+        "max": 180,
+        "min": 0,
+        "mode": "box",
+        "step": 5,
+        "unit_of_measurement": "min"
+      },
+      "state": "30.0"
+    },
+    "number.master_south_seat_distance_from_window": {
+      "attributes": {
+        "max": 10,
+        "min": 0.1,
+        "mode": "box",
+        "step": 0.1,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.0"
+    },
+    "number.ne_door_shades_cooling_threshold_ne_door_shades": {
+      "attributes": {
+        "max": 40,
+        "min": 10,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "75.0"
+    },
+    "number.ne_door_shades_eye_height_ne_door_shades": {
+      "attributes": {
+        "max": 3,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.ne_door_shades_heating_threshold_ne_door_shades": {
+      "attributes": {
+        "max": 30,
+        "min": 5,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "72.0"
+    },
+    "number.ne_door_shades_overhang_depth_ne_door_shades": {
+      "attributes": {
+        "max": 5,
+        "min": 0,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.ne_door_shades_overhang_height_above_sill_ne_door_shades": {
+      "attributes": {
+        "max": 10,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.ne_door_shades_privacy_delay_after_sunset_ne_door_shades": {
+      "attributes": {
+        "max": 180,
+        "min": 0,
+        "mode": "box",
+        "step": 5,
+        "unit_of_measurement": "min"
+      },
+      "state": "30"
+    },
+    "number.ne_door_shades_seat_distance_from_window_ne_door_shades": {
+      "attributes": {
+        "max": 10,
+        "min": 0.1,
+        "mode": "box",
+        "step": 0.1,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.0"
+    },
+    "number.office_office_east_shade_cooling_threshold_office_east_shade": {
+      "attributes": {
+        "max": 40,
+        "min": 10,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "75.0"
+    },
+    "number.office_office_east_shade_eye_height_office_east_shade": {
+      "attributes": {
+        "max": 3,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.office_office_east_shade_heating_threshold_office_east_shade": {
+      "attributes": {
+        "max": 30,
+        "min": 5,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "72.0"
+    },
+    "number.office_office_east_shade_overhang_depth_office_east_shade": {
+      "attributes": {
+        "max": 5,
+        "min": 0,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.office_office_east_shade_overhang_height_above_sill_office_east_shade": {
+      "attributes": {
+        "max": 10,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.office_office_east_shade_privacy_delay_after_sunset_office_east_shade": {
+      "attributes": {
+        "max": 180,
+        "min": 0,
+        "mode": "box",
+        "step": 5,
+        "unit_of_measurement": "min"
+      },
+      "state": "30"
+    },
+    "number.office_office_east_shade_seat_distance_from_window_office_east_shade": {
+      "attributes": {
+        "max": 10,
+        "min": 0.1,
+        "mode": "box",
+        "step": 0.1,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.0"
+    },
+    "number.office_office_north_shade_cooling_threshold_office_north_shade": {
+      "attributes": {
+        "max": 40,
+        "min": 10,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "75.0"
+    },
+    "number.office_office_north_shade_eye_height_office_north_shade": {
+      "attributes": {
+        "max": 3,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.office_office_north_shade_heating_threshold_office_north_shade": {
+      "attributes": {
+        "max": 30,
+        "min": 5,
+        "mode": "box",
+        "step": 0.5,
+        "unit_of_measurement": "°C"
+      },
+      "state": "72.0"
+    },
+    "number.office_office_north_shade_overhang_depth_office_north_shade": {
+      "attributes": {
+        "max": 5,
+        "min": 0,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.office_office_north_shade_overhang_height_above_sill_office_north_shade": {
+      "attributes": {
+        "max": 10,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.office_office_north_shade_privacy_delay_after_sunset_office_north_shade": {
+      "attributes": {
+        "max": 180,
+        "min": 0,
+        "mode": "box",
+        "step": 5,
+        "unit_of_measurement": "min"
+      },
+      "state": "30"
+    },
+    "number.office_office_north_shade_seat_distance_from_window_office_north_shade": {
+      "attributes": {
+        "max": 10,
+        "min": 0.1,
+        "mode": "box",
+        "step": 0.1,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.0"
+    },
+    "number.sw_door_shade_eye_height_sw_door_shades": {
+      "attributes": {
+        "max": 3,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.sw_door_shade_overhang_depth_sw_door_shades": {
+      "attributes": {
+        "max": 5,
+        "min": 0,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.sw_door_shade_overhang_height_above_sill_sw_door_shades": {
+      "attributes": {
+        "max": 10,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.sw_door_shade_privacy_delay_after_sunset_sw_door_shades": {
+      "attributes": {
+        "max": 180,
+        "min": 0,
+        "mode": "box",
+        "step": 5,
+        "unit_of_measurement": "min"
+      },
+      "state": "30"
+    },
+    "number.sw_door_shade_seat_distance_from_window_sw_door_shades": {
+      "attributes": {
+        "max": 10,
+        "min": 0.1,
+        "mode": "box",
+        "step": 0.1,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.0"
+    },
+    "number.sw_south_shade_eye_height_sw_south_shade": {
+      "attributes": {
+        "max": 3,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "1.2"
+    },
+    "number.sw_south_shade_overhang_depth_sw_south_shade": {
+      "attributes": {
+        "max": 5,
+        "min": 0,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.sw_south_shade_overhang_height_above_sill_sw_south_shade": {
+      "attributes": {
+        "max": 10,
+        "min": 0.5,
+        "mode": "box",
+        "step": 0.05,
+        "unit_of_measurement": "m"
+      },
+      "state": "unknown"
+    },
+    "number.sw_south_shade_privacy_delay_after_sunset_sw_south_shade": {
+      "attributes": {
+        "max": 180,
+        "min": 0,
+        "mode": "box",
+        "step": 5,
+        "unit_of_measurement": "min"
+      },
+      "state": "30"
+    },
+    "number.sw_south_shade_seat_distance_from_window_sw_south_shade": {
+      "attributes": {
+        "max": 10,
+        "min": 0.1,
+        "mode": "box",
+        "step": 0.1,
+        "unit_of_measurement": "m"
+      },
+      "state": "2.0"
+    },
+    "select.adaptive_cover_all_cover_control_mode": {
+      "attributes": {
+        "note": "Adaptive resumes control only for covers without an active manual override",
+        "options": [
+          "Manual",
+          "Adaptive",
+          "Mixed"
+        ]
+      },
+      "state": "Adaptive"
+    },
+    "select.den_south_mode": {
+      "attributes": {
+        "options": [
+          "Manual",
+          "Sun tracking",
+          "Sun + climate"
+        ]
+      },
+      "state": "Sun + climate"
+    },
+    "select.den_southwest_mode": {
+      "attributes": {
+        "options": [
+          "Manual",
+          "Sun tracking",
+          "Sun + climate"
+        ]
+      },
+      "state": "Sun + climate"
+    },
+    "select.den_west_mode": {
+      "attributes": {
+        "options": [
+          "Manual",
+          "Sun tracking",
+          "Sun + climate"
+        ]
+      },
+      "state": "Sun + climate"
+    },
+    "select.family_door_mode": {
+      "attributes": {
+        "options": [
+          "Manual",
+          "Sun tracking",
+          "Sun + climate"
+        ]
+      },
+      "state": "Sun + climate"
+    },
+    "select.family_east_mode": {
+      "attributes": {
+        "options": [
+          "Manual",
+          "Sun tracking",
+          "Sun + climate"
+        ]
+      },
+      "state": "Sun + climate"
+    },
+    "select.family_south_mode": {
+      "attributes": {
+        "options": [
+          "Manual",
+          "Sun tracking",
+          "Sun + climate"
+        ]
+      },
+      "state": "Sun + climate"
+    },
+    "select.master_door_mode": {
+      "attributes": {
+        "options": [
+          "Manual",
+          "Sun tracking",
+          "Sun + climate"
+        ]
+      },
+      "state": "Sun + climate"
+    },
+    "select.master_east_mode": {
+      "attributes": {
+        "options": [
+          "Manual",
+          "Sun tracking",
+          "Sun + climate"
+        ]
+      },
+      "state": "Sun + climate"
+    },
+    "select.master_master_trap_shade_mode_master_trap": {
+      "attributes": {
+        "options": [
+          "Manual",
+          "Sun tracking",
+          "Sun + climate"
+        ]
+      },
+      "state": "Sun + climate"
+    },
+    "select.master_south_mode": {
+      "attributes": {
+        "options": [
+          "Manual",
+          "Sun tracking",
+          "Sun + climate"
+        ]
+      },
+      "state": "Sun + climate"
+    },
+    "select.ne_door_shades_mode_ne_door_shades": {
+      "attributes": {
+        "options": [
+          "Manual",
+          "Sun tracking",
+          "Sun + climate"
+        ]
+      },
+      "state": "Sun + climate"
+    },
+    "select.office_office_east_shade_mode_office_east_shade": {
+      "attributes": {
+        "options": [
+          "Manual",
+          "Sun tracking",
+          "Sun + climate"
+        ]
+      },
+      "state": "Sun + climate"
+    },
+    "select.office_office_north_shade_mode_office_north_shade": {
+      "attributes": {
+        "options": [
+          "Manual",
+          "Sun tracking",
+          "Sun + climate"
+        ]
+      },
+      "state": "Sun + climate"
+    },
+    "select.sw_door_shade_mode_sw_door_shades": {
+      "attributes": {
+        "options": [
+          "Manual",
+          "Sun tracking",
+          "Sun + climate"
+        ]
+      },
+      "state": "Sun + climate"
+    },
+    "select.sw_south_shade_mode_sw_south_shade": {
+      "attributes": {
+        "options": [
+          "Manual",
+          "Sun tracking",
+          "Sun + climate"
+        ]
+      },
+      "state": "Sun + climate"
+    },
+    "sensor.den_south_control_method": {
+      "attributes": {},
+      "state": "intermediate"
+    },
+    "sensor.den_south_cover_position": {
+      "attributes": {
+        "intent": "climate_default",
+        "move_blocked_by": {}
+      },
+      "state": "0"
+    },
+    "sensor.den_south_end_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T23:30:00+00:00"
+    },
+    "sensor.den_south_last_state_change": {
+      "attributes": {
+        "changed_at": null,
+        "new_position": null,
+        "old_position": null,
+        "reason": null
+      },
+      "state": "No changes recorded"
+    },
+    "sensor.den_south_next_state_change": {
+      "attributes": {
+        "current_reason": "Not sunny weather: using default",
+        "event": "Sunrise + offset",
+        "expected_position": 97,
+        "expected_time": "2026-09-30T07:23:20.598710-06:00"
+      },
+      "state": "Sunrise + offset at 07:23 → 97%"
+    },
+    "sensor.den_south_start_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T16:45:00+00:00"
+    },
+    "sensor.den_southwest_control_method": {
+      "attributes": {},
+      "state": "intermediate"
+    },
+    "sensor.den_southwest_cover_position": {
+      "attributes": {
+        "intent": "climate_default",
+        "move_blocked_by": {}
+      },
+      "state": "5"
+    },
+    "sensor.den_southwest_end_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-29T01:10:00+00:00"
+    },
+    "sensor.den_southwest_last_state_change": {
+      "attributes": {
+        "changed_at": null,
+        "new_position": null,
+        "old_position": null,
+        "reason": null
+      },
+      "state": "No changes recorded"
+    },
+    "sensor.den_southwest_next_state_change": {
+      "attributes": {
+        "current_reason": "Not sunny weather: using default",
+        "event": "Sunrise + offset",
+        "expected_position": 97,
+        "expected_time": "2026-09-30T07:23:20.598710-06:00"
+      },
+      "state": "Sunrise + offset at 07:23 → 97%"
+    },
+    "sensor.den_southwest_start_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T19:05:00+00:00"
+    },
+    "sensor.den_west_control_method": {
+      "attributes": {},
+      "state": "intermediate"
+    },
+    "sensor.den_west_cover_position": {
+      "attributes": {
+        "intent": "climate_default",
+        "move_blocked_by": {}
+      },
+      "state": "5"
+    },
+    "sensor.den_west_end_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-29T01:10:00+00:00"
+    },
+    "sensor.den_west_last_state_change": {
+      "attributes": {
+        "changed_at": null,
+        "new_position": null,
+        "old_position": null,
+        "reason": null
+      },
+      "state": "No changes recorded"
+    },
+    "sensor.den_west_next_state_change": {
+      "attributes": {
+        "current_reason": "Not sunny weather: using default",
+        "event": "Sunrise + offset",
+        "expected_position": 97,
+        "expected_time": "2026-09-30T07:23:20.598710-06:00"
+      },
+      "state": "Sunrise + offset at 07:23 → 97%"
+    },
+    "sensor.den_west_start_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T21:20:00+00:00"
+    },
+    "sensor.family_door_control_method": {
+      "attributes": {},
+      "state": "intermediate"
+    },
+    "sensor.family_door_cover_position": {
+      "attributes": {
+        "intent": "climate_default",
+        "move_blocked_by": {}
+      },
+      "state": "3"
+    },
+    "sensor.family_door_end_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T17:25:00+00:00"
+    },
+    "sensor.family_door_last_state_change": {
+      "attributes": {
+        "changed_at": null,
+        "new_position": null,
+        "old_position": null,
+        "reason": null
+      },
+      "state": "No changes recorded"
+    },
+    "sensor.family_door_next_state_change": {
+      "attributes": {
+        "current_reason": "Not sunny weather: using default",
+        "event": "Sunrise + offset",
+        "expected_position": 100,
+        "expected_time": "2026-09-30T07:03:20.598710-06:00"
+      },
+      "state": "Sunrise + offset at 07:03 → 100%"
+    },
+    "sensor.family_door_start_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T14:40:00+00:00"
+    },
+    "sensor.family_east_control_method": {
+      "attributes": {},
+      "state": "intermediate"
+    },
+    "sensor.family_east_cover_position": {
+      "attributes": {
+        "intent": "climate_default",
+        "move_blocked_by": {}
+      },
+      "state": "0"
+    },
+    "sensor.family_east_end_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T17:30:00+00:00"
+    },
+    "sensor.family_east_last_state_change": {
+      "attributes": {
+        "changed_at": null,
+        "new_position": null,
+        "old_position": null,
+        "reason": null
+      },
+      "state": "No changes recorded"
+    },
+    "sensor.family_east_next_state_change": {
+      "attributes": {
+        "current_reason": "Not sunny weather: using default",
+        "event": "Sunrise + offset",
+        "expected_position": 99,
+        "expected_time": "2026-09-30T07:03:20.598710-06:00"
+      },
+      "state": "Sunrise + offset at 07:03 → 99%"
+    },
+    "sensor.family_east_start_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T13:55:00+00:00"
+    },
+    "sensor.family_south_control_method": {
+      "attributes": {},
+      "state": "intermediate"
+    },
+    "sensor.family_south_cover_position": {
+      "attributes": {
+        "intent": "privacy",
+        "move_blocked_by": {}
+      },
+      "state": "0"
+    },
+    "sensor.family_south_end_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T22:40:00+00:00"
+    },
+    "sensor.family_south_last_state_change": {
+      "attributes": {
+        "changed_at": null,
+        "new_position": null,
+        "old_position": null,
+        "reason": null
+      },
+      "state": "No changes recorded"
+    },
+    "sensor.family_south_next_state_change": {
+      "attributes": {
+        "current_reason": "Not sunny weather: using default",
+        "event": "Sunrise + offset",
+        "expected_position": 99,
+        "expected_time": "2026-09-30T07:03:20.598710-06:00"
+      },
+      "state": "Sunrise + offset at 07:03 → 99%"
+    },
+    "sensor.family_south_start_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T17:20:00+00:00"
+    },
+    "sensor.master_door_control_method": {
+      "attributes": {},
+      "state": "winter"
+    },
+    "sensor.master_door_cover_position": {
+      "attributes": {
+        "intent": "climate_default",
+        "move_blocked_by": {}
+      },
+      "state": "3"
+    },
+    "sensor.master_door_end_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T17:25:00+00:00"
+    },
+    "sensor.master_door_last_state_change": {
+      "attributes": {
+        "changed_at": null,
+        "new_position": null,
+        "old_position": null,
+        "reason": null
+      },
+      "state": "No changes recorded"
+    },
+    "sensor.master_door_next_state_change": {
+      "attributes": {
+        "current_reason": "Not sunny weather: using default",
+        "event": "Sunrise + offset",
+        "expected_position": 100,
+        "expected_time": "2026-09-30T07:03:20.598710-06:00"
+      },
+      "state": "Sunrise + offset at 07:03 → 100%"
+    },
+    "sensor.master_door_start_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T14:40:00+00:00"
+    },
+    "sensor.master_east_control_method": {
+      "attributes": {},
+      "state": "winter"
+    },
+    "sensor.master_east_cover_position": {
+      "attributes": {
+        "intent": "climate_default",
+        "move_blocked_by": {}
+      },
+      "state": "0"
+    },
+    "sensor.master_east_end_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T17:30:00+00:00"
+    },
+    "sensor.master_east_last_state_change": {
+      "attributes": {
+        "changed_at": null,
+        "new_position": null,
+        "old_position": null,
+        "reason": null
+      },
+      "state": "No changes recorded"
+    },
+    "sensor.master_east_next_state_change": {
+      "attributes": {
+        "current_reason": "Not sunny weather: using default",
+        "event": "Sunrise + offset",
+        "expected_position": 99,
+        "expected_time": "2026-09-30T07:03:20.598710-06:00"
+      },
+      "state": "Sunrise + offset at 07:03 → 99%"
+    },
+    "sensor.master_east_start_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T13:55:00+00:00"
+    },
+    "sensor.master_south_control_method": {
+      "attributes": {},
+      "state": "winter"
+    },
+    "sensor.master_south_cover_position": {
+      "attributes": {
+        "intent": "privacy",
+        "move_blocked_by": {}
+      },
+      "state": "0"
+    },
+    "sensor.master_south_end_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T22:40:00+00:00"
+    },
+    "sensor.master_south_last_state_change": {
+      "attributes": {
+        "changed_at": null,
+        "new_position": null,
+        "old_position": null,
+        "reason": null
+      },
+      "state": "No changes recorded"
+    },
+    "sensor.master_south_next_state_change": {
+      "attributes": {
+        "current_reason": "Not sunny weather: using default",
+        "event": "Sunrise + offset",
+        "expected_position": 99,
+        "expected_time": "2026-09-30T07:03:20.598710-06:00"
+      },
+      "state": "Sunrise + offset at 07:03 → 99%"
+    },
+    "sensor.master_south_start_sun": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T17:20:00+00:00"
+    },
+    "sensor.master_trap_control_method_master_trap": {
+      "attributes": {},
+      "state": "winter"
+    },
+    "sensor.master_trap_cover_position_master_trap": {
+      "attributes": {
+        "intent": "climate_default",
+        "move_blocked_by": {}
+      },
+      "state": "0"
+    },
+    "sensor.master_trap_end_sun_master_trap": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-29T01:10:00+00:00"
+    },
+    "sensor.master_trap_shade_last_state_change_master_trap": {
+      "attributes": {
+        "changed_at": null,
+        "new_position": null,
+        "old_position": null,
+        "reason": null
+      },
+      "state": "No changes recorded"
+    },
+    "sensor.master_trap_shade_next_state_change_master_trap": {
+      "attributes": {
+        "current_reason": "Not sunny weather: using default",
+        "event": "Sunrise + offset",
+        "expected_position": 99,
+        "expected_time": "2026-09-30T07:23:20.598710-06:00"
+      },
+      "state": "Sunrise + offset at 07:23 → 99%"
+    },
+    "sensor.master_trap_start_sun_master_trap": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T17:55:00+00:00"
+    },
+    "sensor.ne_door_shades_control_method_ne_door_shades": {
+      "attributes": {},
+      "state": "winter"
+    },
+    "sensor.ne_door_shades_cover_position_ne_door_shades": {
+      "attributes": {
+        "intent": "climate_default",
+        "move_blocked_by": {}
+      },
+      "state": "0"
+    },
+    "sensor.ne_door_shades_end_sun_ne_door_shades": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T15:30:00+00:00"
+    },
+    "sensor.ne_door_shades_last_state_change_ne_door_shades": {
+      "attributes": {
+        "changed_at": null,
+        "new_position": null,
+        "old_position": null,
+        "reason": null
+      },
+      "state": "No changes recorded"
+    },
+    "sensor.ne_door_shades_next_state_change_ne_door_shades": {
+      "attributes": {
+        "current_reason": "Not sunny weather: using default",
+        "event": "Sunrise + offset",
+        "expected_position": 100,
+        "expected_time": "2026-09-30T08:08:20.598710-06:00"
+      },
+      "state": "Sunrise + offset at 08:08 → 100%"
+    },
+    "sensor.ne_door_shades_start_sun_ne_door_shades": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T13:55:00+00:00"
+    },
+    "sensor.office_east_shade_control_method_office_east_shade": {
+      "attributes": {},
+      "state": "winter"
+    },
+    "sensor.office_east_shade_cover_position_office_east_shade": {
+      "attributes": {
+        "intent": "climate_default",
+        "move_blocked_by": {}
+      },
+      "state": "0"
+    },
+    "sensor.office_east_shade_end_sun_office_east_shade": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T18:20:00+00:00"
+    },
+    "sensor.office_east_shade_last_state_change_office_east_shade": {
+      "attributes": {
+        "changed_at": null,
+        "new_position": null,
+        "old_position": null,
+        "reason": null
+      },
+      "state": "No changes recorded"
+    },
+    "sensor.office_east_shade_next_state_change_office_east_shade": {
+      "attributes": {
+        "current_reason": "Not sunny weather: using default",
+        "event": "Sunrise + offset",
+        "expected_position": 100,
+        "expected_time": "2026-09-30T08:08:20.598710-06:00"
+      },
+      "state": "Sunrise + offset at 08:08 → 100%"
+    },
+    "sensor.office_east_shade_start_sun_office_east_shade": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T13:25:00+00:00"
+    },
+    "sensor.office_north_shade_last_state_change_office_north_shade": {
+      "attributes": {
+        "changed_at": null,
+        "new_position": null,
+        "old_position": null,
+        "reason": null
+      },
+      "state": "No changes recorded"
+    },
+    "sensor.office_north_shade_next_state_change_office_north_shade": {
+      "attributes": {
+        "current_reason": "Not sunny weather: using default",
+        "event": "Sunrise + offset",
+        "expected_position": 100,
+        "expected_time": "2026-09-30T08:08:20.598710-06:00"
+      },
+      "state": "Sunrise + offset at 08:08 → 100%"
+    },
+    "sensor.office_north_shades_control_method_office_north_shade": {
+      "attributes": {},
+      "state": "winter"
+    },
+    "sensor.office_north_shades_cover_position_office_north_shade": {
+      "attributes": {
+        "intent": "climate_default",
+        "move_blocked_by": {}
+      },
+      "state": "0"
+    },
+    "sensor.office_north_shades_end_sun_office_north_shade": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "unknown"
+    },
+    "sensor.office_north_shades_start_sun_office_north_shade": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "unknown"
+    },
+    "sensor.sw_door_shade_control_method_sw_door_shades": {
+      "attributes": {},
+      "state": "winter"
+    },
+    "sensor.sw_door_shade_cover_position_sw_door_shades": {
+      "attributes": {
+        "intent": "climate_default",
+        "move_blocked_by": {}
+      },
+      "state": "5"
+    },
+    "sensor.sw_door_shade_end_sun_sw_door_shades": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-29T01:10:00+00:00"
+    },
+    "sensor.sw_door_shade_last_state_change_sw_door_shades": {
+      "attributes": {
+        "changed_at": null,
+        "new_position": null,
+        "old_position": null,
+        "reason": null
+      },
+      "state": "No changes recorded"
+    },
+    "sensor.sw_door_shade_next_state_change_sw_door_shades": {
+      "attributes": {
+        "current_reason": "Not sunny weather: using default",
+        "event": "Sunrise + offset",
+        "expected_position": 97,
+        "expected_time": "2026-09-30T07:23:20.598710-06:00"
+      },
+      "state": "Sunrise + offset at 07:23 → 97%"
+    },
+    "sensor.sw_door_shade_start_sun_sw_door_shades": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T19:05:00+00:00"
+    },
+    "sensor.sw_south_shade_control_method_sw_south_shade": {
+      "attributes": {},
+      "state": "winter"
+    },
+    "sensor.sw_south_shade_cover_position_sw_south_shade": {
+      "attributes": {
+        "intent": "climate_default",
+        "move_blocked_by": {}
+      },
+      "state": "0"
+    },
+    "sensor.sw_south_shade_end_sun_sw_south_shade": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T23:30:00+00:00"
+    },
+    "sensor.sw_south_shade_last_state_change_sw_south_shade": {
+      "attributes": {
+        "changed_at": null,
+        "new_position": null,
+        "old_position": null,
+        "reason": null
+      },
+      "state": "No changes recorded"
+    },
+    "sensor.sw_south_shade_next_state_change_sw_south_shade": {
+      "attributes": {
+        "current_reason": "Not sunny weather: using default",
+        "event": "Sunrise + offset",
+        "expected_position": 97,
+        "expected_time": "2026-09-30T07:23:20.598710-06:00"
+      },
+      "state": "Sunrise + offset at 07:23 → 97%"
+    },
+    "sensor.sw_south_shade_start_sun_sw_south_shade": {
+      "attributes": {
+        "device_class": "timestamp"
+      },
+      "state": "2026-09-28T16:45:00+00:00"
+    },
+    "switch.den_south_climate_mode": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.den_south_manual_override": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.den_south_outside_temperature": {
+      "attributes": {},
+      "state": "off"
+    },
+    "switch.den_south_toggle_control": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.den_southwest_climate_mode": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.den_southwest_manual_override": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.den_southwest_outside_temperature": {
+      "attributes": {},
+      "state": "off"
+    },
+    "switch.den_southwest_toggle_control": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.den_west_climate_mode": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.den_west_manual_override": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.den_west_outside_temperature": {
+      "attributes": {},
+      "state": "off"
+    },
+    "switch.den_west_toggle_control": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.family_door_climate_mode": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.family_door_manual_override": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.family_door_outside_temperature": {
+      "attributes": {},
+      "state": "off"
+    },
+    "switch.family_door_toggle_control": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.family_east_climate_mode": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.family_east_manual_override": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.family_east_outside_temperature": {
+      "attributes": {},
+      "state": "off"
+    },
+    "switch.family_east_toggle_control": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.family_south_climate_mode": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.family_south_manual_override": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.family_south_outside_temperature": {
+      "attributes": {},
+      "state": "off"
+    },
+    "switch.family_south_toggle_control": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.leanne_s_door_climate_mode": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.leanne_s_door_outside_temperature": {
+      "attributes": {},
+      "state": "off"
+    },
+    "switch.leanne_s_south_climate_mode": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.leanne_s_south_outside_temperature": {
+      "attributes": {},
+      "state": "off"
+    },
+    "switch.master_door_climate_mode": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.master_door_manual_override": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.master_door_outside_temperature": {
+      "attributes": {},
+      "state": "off"
+    },
+    "switch.master_door_toggle_control": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.master_east_climate_mode": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.master_east_manual_override": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.master_east_outside_temperature": {
+      "attributes": {},
+      "state": "off"
+    },
+    "switch.master_east_toggle_control": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.master_south_climate_mode": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.master_south_manual_override": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.master_south_outside_temperature": {
+      "attributes": {},
+      "state": "off"
+    },
+    "switch.master_south_toggle_control": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.master_trap_climate_mode_master_trap": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.master_trap_manual_override_master_trap": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.master_trap_outside_temperature_master_trap": {
+      "attributes": {},
+      "state": "off"
+    },
+    "switch.master_trap_toggle_control_master_trap": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.ne_door_shades_climate_mode_ne_door_shades": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.ne_door_shades_manual_override_ne_door_shades": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.ne_door_shades_outside_temperature_ne_door_shades": {
+      "attributes": {},
+      "state": "off"
+    },
+    "switch.ne_door_shades_toggle_control_ne_door_shades": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.office_east_shade_climate_mode_office_east_shade": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.office_east_shade_manual_override_office_east_shade": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.office_east_shade_outside_temperature_office_east_shade": {
+      "attributes": {},
+      "state": "off"
+    },
+    "switch.office_east_shade_toggle_control_office_east_shade": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.office_north_shade_climate_mode_office_north_shade": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.office_north_shade_outside_temperature_office_north_shade": {
+      "attributes": {},
+      "state": "off"
+    },
+    "switch.office_north_shades_manual_override_office_north_shade": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.office_north_shades_toggle_control_office_north_shade": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.sw_door_shade_manual_override_sw_door_shades": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.sw_door_shade_toggle_control_sw_door_shades": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.sw_south_shade_manual_override_sw_south_shade": {
+      "attributes": {},
+      "state": "on"
+    },
+    "switch.sw_south_shade_toggle_control_sw_south_shade": {
+      "attributes": {},
+      "state": "on"
+    }
+  }
+}

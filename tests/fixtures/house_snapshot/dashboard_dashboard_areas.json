@@ -1,0 +1,12 @@
+{
+  "config": {
+    "strategy": {
+      "type": "areas"
+    }
+  },
+  "config_hash": "449f8b80a3581bcc",
+  "notes": [
+    "Strategy dashboard: no explicit adaptive_cover references; views are generated at runtime from areas, so adaptive_cover entities appear here via their device area (master_bedroom / office)."
+  ],
+  "url_path": "dashboard-areas"
+}

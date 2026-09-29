@@ -1,0 +1,53 @@
+# house replay: Master trap (01KAA8FJRH4VKCWPDMFA1JSHBT) on 2026-11-01 (dst_end)
+# SLC (tests' lat/lon), tz=America/Denver, units=US customary, step=5min, travel=90s, 00:30 -> 00:30 next day
+# cover=cover.master_trap_shades sensor_type=cover_blind options_sha256=911efde3c08c
+# azimuth=240.0 fov=90.0/90.0 elevation=None..None window_h=2.0 distance=0.1 overhang=None/None glare=1.2/2.0
+# default=99.0 sunset_pos=0.0 sunset_off=15.0 sunrise_off=0.0 start=00:00:00 end=00:00:00 min=None (sun-only=False) max=None (sun-only=False) privacy=None
+# climate=True temp=sensor.upstairs_indoor_temperature (upstairs) low/high=72.0/75.0 sunny=sunny,partlycloudy,clear,windy,windy-variant override={'hours': 2, 'minutes': 0, 'seconds': 0} reset=False
+# restored switches: master_trap_climate_mode_master_trap=on, master_trap_manual_override_master_trap=on, master_trap_outside_temperature_master_trap=off, master_trap_toggle_control_master_trap=on
+# lines: cmd = outbound cover call; sensor = position sensor (intent), shown when it changes; input/human = scripted
+#
+11-01 00:30:00 MDT  sensor 0 (sunset)
+11-01 07:00:00 MST  cmd    set_cover_position cover.master_trap_shades 99
+11-01 07:00:00 MST  sensor 99 (default)
+11-01 08:00:00 MST  input  sensor.upstairs_indoor_temperature = 71.0 °F
+11-01 10:00:00 MST  input  sensor.upstairs_indoor_temperature = 73.0 °F
+11-01 10:30:00 MST  cmd    set_cover_position cover.master_trap_shades 100
+11-01 10:30:00 MST  sensor 100 (calculated)
+11-01 10:31:30 MST  cmd    set_cover_position cover.master_trap_shades 100
+11-01 10:35:00 MST  cmd    set_cover_position cover.master_trap_shades 59
+11-01 10:35:00 MST  sensor 59 (calculated)
+11-01 10:40:00 MST  cmd    set_cover_position cover.master_trap_shades 41
+11-01 10:40:00 MST  sensor 41 (calculated)
+11-01 10:45:00 MST  cmd    set_cover_position cover.master_trap_shades 32
+11-01 10:45:00 MST  sensor 32 (calculated)
+11-01 10:50:00 MST  cmd    set_cover_position cover.master_trap_shades 26
+11-01 10:50:00 MST  sensor 26 (calculated)
+11-01 10:55:00 MST  cmd    set_cover_position cover.master_trap_shades 22
+11-01 10:55:00 MST  sensor 22 (calculated)
+11-01 11:00:00 MST  cmd    set_cover_position cover.master_trap_shades 19
+11-01 11:00:00 MST  sensor 19 (calculated)
+11-01 11:00:00 MST  input  weather.forecast_home_2 = cloudy
+11-01 11:01:30 MST  cmd    set_cover_position cover.master_trap_shades 99
+11-01 11:05:00 MST  sensor 99 (climate_default)
+11-01 13:00:00 MST  input  weather.forecast_home_2 = sunny
+11-01 13:05:00 MST  cmd    set_cover_position cover.master_trap_shades 5
+11-01 13:05:00 MST  sensor 5 (calculated)
+11-01 13:10:00 MST  cmd    set_cover_position cover.master_trap_shades 4
+11-01 13:10:00 MST  sensor 4 (calculated)
+11-01 13:30:00 MST  human  cover.master_trap_shades -> 37 (via remote)
+11-01 13:50:00 MST  sensor 3 (calculated)
+11-01 14:00:00 MST  input  sensor.upstairs_indoor_temperature = 76.0 °F
+11-01 14:45:00 MST  sensor 2 (calculated)
+11-01 15:35:00 MST  cmd    set_cover_position cover.master_trap_shades 2
+11-01 15:40:00 MST  cmd    set_cover_position cover.master_trap_shades 1
+11-01 15:40:00 MST  sensor 1 (calculated)
+11-01 16:50:00 MST  cmd    set_cover_position cover.master_trap_shades 0
+11-01 16:50:00 MST  sensor 0 (calculated)
+11-01 17:25:00 MST  cmd    set_cover_position cover.master_trap_shades 99
+11-01 17:25:00 MST  sensor 99 (default)
+11-01 17:40:00 MST  cmd    set_cover_position cover.master_trap_shades 0
+11-01 17:40:00 MST  sensor 0 (sunset)
+11-01 18:00:00 MST  input  sensor.upstairs_indoor_temperature = 74.0 °F
+11-01 21:00:00 MST  input  sensor.upstairs_indoor_temperature = 71.5 °F
+11-02 00:30:00 MST  end    shade at 0

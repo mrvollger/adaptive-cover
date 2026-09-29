@@ -1,0 +1,51 @@
+# house replay: Den west (01KWHKV52MF7T5N16XVXRR11C1) on 2026-06-21 (summer_solstice)
+# SLC (tests' lat/lon), tz=America/Denver, units=US customary, step=5min, travel=90s, 00:30 -> 00:30 next day
+# cover=cover.den_west_shades sensor_type=cover_blind options_sha256=bea3422f6b07
+# azimuth=280.0 fov=60.0/60.0 elevation=None..50 window_h=2.1 distance=0.2 overhang=None/None glare=1.2/2.0
+# default=97.0 sunset_pos=5.0 sunset_off=-30.0 sunrise_off=0.0 start=06:00:00 end=00:00:00 min=None (sun-only=False) max=None (sun-only=False) privacy=None
+# climate=True temp=sensor.downstairs_indoor_temperature (downstairs) low/high=72.0/75.0 sunny=sunny,partlycloudy,clear,windy,windy-variant override={'hours': 2, 'minutes': 0, 'seconds': 0} reset=False
+# restored switches: den_west_climate_mode=on, den_west_manual_override=on, den_west_outside_temperature=off, den_west_toggle_control=on
+# lines: cmd = outbound cover call; sensor = position sensor (intent), shown when it changes; input/human = scripted
+#
+06-21 00:30:00 MDT  sensor 5 (sunset)
+06-21 06:00:00 MDT  cmd    set_cover_position cover.den_west_shades 97
+06-21 06:00:00 MDT  sensor 97 (default)
+06-21 08:00:00 MDT  input  sensor.downstairs_indoor_temperature = 69.0 °F
+06-21 10:00:00 MDT  input  sensor.downstairs_indoor_temperature = 71.0 °F
+06-21 11:00:00 MDT  input  weather.forecast_home_2 = cloudy
+06-21 11:05:00 MDT  sensor 97 (climate_default)
+06-21 13:00:00 MDT  input  weather.forecast_home_2 = sunny
+06-21 13:05:00 MDT  sensor 97 (default)
+06-21 13:30:00 MDT  human  cover.den_west_shades -> 37 (via remote)
+06-21 14:00:00 MDT  input  sensor.downstairs_indoor_temperature = 73.5 °F
+06-21 15:35:00 MDT  cmd    set_cover_position cover.den_west_shades 97
+06-21 16:25:00 MDT  cmd    set_cover_position cover.den_west_shades 12
+06-21 16:25:00 MDT  sensor 12 (calculated)
+06-21 16:35:00 MDT  cmd    set_cover_position cover.den_west_shades 11
+06-21 16:35:00 MDT  sensor 11 (calculated)
+06-21 16:45:00 MDT  cmd    set_cover_position cover.den_west_shades 10
+06-21 16:45:00 MDT  sensor 10 (calculated)
+06-21 17:00:00 MDT  cmd    set_cover_position cover.den_west_shades 9
+06-21 17:00:00 MDT  sensor 9 (calculated)
+06-21 17:15:00 MDT  cmd    set_cover_position cover.den_west_shades 8
+06-21 17:15:00 MDT  sensor 8 (calculated)
+06-21 17:30:00 MDT  cmd    set_cover_position cover.den_west_shades 7
+06-21 17:30:00 MDT  sensor 7 (calculated)
+06-21 17:50:00 MDT  cmd    set_cover_position cover.den_west_shades 6
+06-21 17:50:00 MDT  sensor 6 (calculated)
+06-21 18:00:00 MDT  input  sensor.downstairs_indoor_temperature = 72.5 °F
+06-21 18:15:00 MDT  cmd    set_cover_position cover.den_west_shades 5
+06-21 18:15:00 MDT  sensor 5 (calculated)
+06-21 18:16:30 MDT  cmd    set_cover_position cover.den_west_shades 5
+06-21 18:35:00 MDT  cmd    set_cover_position cover.den_west_shades 4
+06-21 18:35:00 MDT  sensor 4 (calculated)
+06-21 19:05:00 MDT  cmd    set_cover_position cover.den_west_shades 3
+06-21 19:05:00 MDT  sensor 3 (calculated)
+06-21 19:35:00 MDT  cmd    set_cover_position cover.den_west_shades 2
+06-21 19:35:00 MDT  sensor 2 (calculated)
+06-21 20:10:00 MDT  cmd    set_cover_position cover.den_west_shades 1
+06-21 20:10:00 MDT  sensor 1 (calculated)
+06-21 20:35:00 MDT  cmd    set_cover_position cover.den_west_shades 5
+06-21 20:35:00 MDT  sensor 5 (sunset)
+06-21 21:00:00 MDT  input  sensor.downstairs_indoor_temperature = 70.0 °F
+06-22 00:30:00 MDT  end    shade at 5
