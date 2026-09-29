@@ -491,13 +491,15 @@ async def test_control_on_force_apply(hass, freezer):
     move; the switch-on force-apply must command the healthy cover
     immediately anyway — and skip the cover whose manual override
     survived the restart (restored with the switch off, so nothing
-    cleared it).
+    cleared it). One window per cover (ADR 0002): both windows restart
+    with control off and are switched back on.
     """
+    covers = ["cover.left", "cover.right"]
     house = await SimHouse.create(
         hass,
         freezer,
         date="2026-03-20",
-        covers=["cover.left", "cover.right"],
+        covers=covers,
         options={
             CONF_DELTA_POSITION: 90,
             CONF_DELTA_TIME: 600,
@@ -511,9 +513,13 @@ async def test_control_on_force_apply(hass, freezer):
 
     await house.restart(
         at="11:10",
-        seed_states={house.eid("switch", "toggle_control"): "off"},
+        seed_states={
+            house.eid("switch", "toggle_control", cover=cover): "off"
+            for cover in covers
+        },
     )
-    assert house.entity("switch", "toggle_control").state == "off"
+    for cover in covers:
+        assert house.entity("switch", "toggle_control", cover=cover).state == "off"
     assert house.entity("binary_sensor", "manual_override").state == "on", (
         "the manual override was lost across the restart"
     )
@@ -521,9 +527,11 @@ async def test_control_on_force_apply(hass, freezer):
     await house.advance_to("12:00")
     assert house.auto_moves("cover.right", since="11:10") == []
 
-    await house.toggle("toggle_control", True)
+    for cover in covers:
+        await house.toggle("toggle_control", True, cover=cover)
     applied = house.auto_moves("cover.right", since="11:55")
-    assert applied and applied[-1].position == int(house.sensor_value()), (
+    target = int(house.sensor_value(cover="cover.right"))
+    assert applied and applied[-1].position == target, (
         "switch-on must force-apply the computed position despite "
         f"delta/throttle gates; moves: {applied}"
     )

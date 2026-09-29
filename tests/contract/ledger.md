@@ -327,3 +327,31 @@ The example below is inside an HTML comment. The checker ignores it.
   the newer version (1.3 is now current);
   `tests/test_one_page_options.py::test_regression_options_form_runs_every_cross_field_check`
   takes its "before" options after setup (the migration adds keys).
+
+## L0013 · 2026-09-29 · SimHouse covers=[a, b] creates two windows (C4)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pin
+  `tests/simulation/test_harness_smoke.py::test_two_covers_make_two_windows`
+- **Mutations re-targeted:** none
+- **Contract change:** C4
+- **Reason:** plan P3 and ADR 0002 ("SimHouse `covers=[a, b]` creates two
+  windows"). A window drives one cover, so the harness builds one config
+  entry per cover ("Sim House", "Sim House 2", ...), sharing `options`
+  and `cover_type`. `house.entry` is the first window's entry; `eid`,
+  `entity`, `sensor_value`, `sensor_attr`, `toggle`, `press` and
+  `select_option` take `cover=` to pick a window (default: the first);
+  `restart` and `set_options` act on every window. The four multi-cover
+  scenarios now run as two windows with the same assertions:
+  `tests/simulation/test_regressions.py::test_regression_group_remote_latches_both_covers`,
+  `tests/simulation/test_device_failures.py::test_service_raise_non_fatal`
+  and `tests/simulation/test_harness_smoke.py::test_fail_next_command_raises_once_loop_survives`
+  pass unchanged; the body of
+  `tests/simulation/test_gates_and_windows.py::test_control_on_force_apply`
+  now restarts both windows with control off and switches both back on
+  (same id and assertions). A multi-cover entry from before P3 is no
+  longer a SimHouse shape; it is pinned at the entity-surface tier
+  (`tests/test_migration_1_3.py`, and
+  `tests/test_entity_surface_v2.py::TestPositionAttributes::test_multi_cover_entry_lists_every_cover`).
+  Goldens, truth table and house replay unchanged (the replay drives one
+  cover per window).

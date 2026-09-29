@@ -28,6 +28,7 @@ from dataclasses import dataclass
 from zoneinfo import ZoneInfo
 
 from astral import sun as astral_sun
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import Context, ServiceCall, State, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
@@ -256,16 +257,29 @@ class SimHouse:
         self.step = dt.timedelta(minutes=step_minutes)
         self.shades: dict[str, FakeShade] = {}
         self.timeline: list[TimelineEvent] = []
-        self.entry: MockConfigEntry | None = None
+        # One window (config entry) per cover, in the order of `covers`.
+        self.entries: list[MockConfigEntry] = []
+        self._entry_by_cover: dict[str, MockConfigEntry] = {}
         self.windows: dict[str, WindowHandle] = {}
-        # Last coordinator seen, for command attribution only (see
+        # Last coordinators seen, for command attribution only (see
         # _actor_for); tests observe the house through self.windows.
-        self._coordinator = None
+        self._coordinators: list = []
         self.sun_data: SimSunData | None = None
         self._patch = None
         self.now: dt.datetime | None = None  # tz-aware local sim time
         self._timers_held = False
         self.presence_entity = self.PRESENCE_SENSOR
+
+    @property
+    def entry(self) -> MockConfigEntry | None:
+        """The first window's config entry (the only one with one cover)."""
+        return self.entries[0] if self.entries else None
+
+    def _entry_for(self, cover: str | None) -> MockConfigEntry:
+        """The config entry of the window driving ``cover`` (default: first)."""
+        if cover is None:
+            return self.entries[0]
+        return self._entry_by_cover[cover]
 
     # ------------------------------------------------------------------ setup
 
@@ -287,6 +301,11 @@ class SimHouse:
         climate: dict | None = None,
     ) -> SimHouse:
         """Build the house, freeze the clock, and set up the integration.
+
+        covers: one window (config entry) per cover, as a window drives one
+        cover (ADR 0002). The windows share ``options`` and ``cover_type``;
+        the first is named "Sim House", the others "Sim House 2", ... An
+        empty list makes one window without a cover.
 
         start_at: the local time the simulation (and HA) starts. The default
         pre-dawn 04:00 gives a clean full-day replay; a DAYTIME value (e.g.
@@ -390,32 +409,40 @@ class SimHouse:
                 if "outside_threshold" in climate:
                     climate_opts[CONF_OUTSIDE_THRESHOLD] = climate["outside_threshold"]
 
-        opts = {
-            **COMMON_OPTIONS,
-            CONF_HEIGHT_WIN: 2.1,
-            CONF_DISTANCE: 0.5,
-            CONF_ENTITIES: list(covers),
-            **climate_opts,
-            **(options or {}),
-        }
-        self.entry = MockConfigEntry(
-            domain=DOMAIN,
-            data={"name": "Sim House", CONF_SENSOR_TYPE: cover_type},
-            options=opts,
-        )
-        self.entry.add_to_hass(hass)
+        for index, cover in enumerate(list(covers) or [None]):
+            opts = {
+                **COMMON_OPTIONS,
+                CONF_HEIGHT_WIN: 2.1,
+                CONF_DISTANCE: 0.5,
+                CONF_ENTITIES: [cover] if cover else [],
+                **climate_opts,
+                **(options or {}),
+            }
+            name = "Sim House" if index == 0 else f"Sim House {index + 1}"
+            entry = MockConfigEntry(
+                domain=DOMAIN,
+                data={"name": name, CONF_SENSOR_TYPE: cover_type},
+                options=opts,
+            )
+            entry.add_to_hass(hass)
+            self.entries.append(entry)
+            if cover:
+                self._entry_by_cover[cover] = entry
         await self._setup_entry()
         return self
 
     async def _setup_entry(self) -> None:
-        """Set the entry up and win the cover services back from the hub.
+        """Set the windows up and win the cover services back from the hub.
 
         The hub bootstrap loads the real cover component (for its aggregate
         cover), whose entity services override our fakes. Re-register so
         simulated shades win. Shared by create(), restart(), set_options().
+        (The first setup of the integration sets up every window entry.)
         """
-        assert await self.hass.config_entries.async_setup(self.entry.entry_id)
-        await self.hass.async_block_till_done()
+        for entry in self.entries:
+            if entry.state is ConfigEntryState.NOT_LOADED:
+                assert await self.hass.config_entries.async_setup(entry.entry_id)
+                await self.hass.async_block_till_done()
         self._remember_coordinator()
         self._register_services()
         await self.hass.async_block_till_done()
@@ -428,8 +455,8 @@ class SimHouse:
             unsub()
             self._service_guard_unsub = None
         self._registering_services = True  # belt: guard body no-ops too
-        if self.entry is not None:
-            await self.hass.config_entries.async_unload(self.entry.entry_id)
+        for entry in self.entries:
+            await self.hass.config_entries.async_unload(entry.entry_id)
             await self.hass.async_block_till_done()
         if self._patch is not None:
             self._patch.stop()
@@ -446,68 +473,73 @@ class SimHouse:
         restore: bool = True,
         seed_states: dict[str, str] | None = None,
     ) -> None:
-        """Simulate an HA restart of this entry, preserving the timeline.
+        """Simulate an HA restart of every window, preserving the timeline.
 
         Optionally advance to ``at`` first. Captures the current states of
-        the entry's entities, unloads the entry, seeds the restore cache
+        the windows' entities, unloads the entries, seeds the restore cache
         with them (``seed_states`` maps entity_id -> state string and
         overrides/extends the capture; ``restore=False`` skips capturing so
-        RestoreEntity defaults apply), then re-runs setup on the SAME entry
-        and re-wins the fake cover services. Shade states persist in
-        hass.states across the restart, as in real HA.
+        RestoreEntity defaults apply), then re-runs setup on the SAME
+        entries and re-wins the fake cover services. Shade states persist
+        in hass.states across the restart, as in real HA.
         """
         if at is not None:
             await self.advance_to(at)
         registry = er.async_get(self.hass)
-        reg_entries = er.async_entries_for_config_entry(registry, self.entry.entry_id)
         seeded: dict[str, State] = {}
         if restore:
-            for reg_entry in reg_entries:
-                state = self.hass.states.get(reg_entry.entity_id)
-                if state is not None:
-                    seeded[reg_entry.entity_id] = state
+            for entry in self.entries:
+                for reg_entry in er.async_entries_for_config_entry(
+                    registry, entry.entry_id
+                ):
+                    state = self.hass.states.get(reg_entry.entity_id)
+                    if state is not None:
+                        seeded[reg_entry.entity_id] = state
         for entity_id, state_str in (seed_states or {}).items():
             seeded[entity_id] = State(entity_id, state_str)
-        await self.hass.config_entries.async_unload(self.entry.entry_id)
+        for entry in self.entries:
+            await self.hass.config_entries.async_unload(entry.entry_id)
         await self.hass.async_block_till_done()
         if seeded:
             mock_restore_cache(self.hass, list(seeded.values()))
         await self._setup_entry()
 
     async def set_options(self, **option_changes) -> None:
-        """The user edits this entry's options in the UI: merge and reload.
+        """The user edits every window's options in the UI: merge and reload.
 
-        Merges ``option_changes`` into entry.options, waits for the entry
-        reload to complete, re-registers the fake cover services (the hub
-        bootstrap steals them on setup) and remembers the rebuilt
-        coordinator for command attribution. Called with NO changes it
+        Merges ``option_changes`` into each window's options, waits for the
+        entry reloads to complete, re-registers the fake cover services (the
+        hub bootstrap steals them on setup) and remembers the rebuilt
+        coordinators for command attribution. Called with NO changes it
         models saving the options dialog unchanged (still a reload).
         """
-        changed = self.hass.config_entries.async_update_entry(
-            self.entry, options={**self.entry.options, **option_changes}
-        )
-        if not changed:
-            await self.hass.config_entries.async_reload(self.entry.entry_id)
-        await self.hass.async_block_till_done()
+        for entry in self.entries:
+            changed = self.hass.config_entries.async_update_entry(
+                entry, options={**entry.options, **option_changes}
+            )
+            if not changed:
+                await self.hass.config_entries.async_reload(entry.entry_id)
+            await self.hass.async_block_till_done()
         self._remember_coordinator()
         self._register_services()
         await self.hass.async_block_till_done()
 
     # ------------------------------------------------------- internal helpers
 
-    def _live_coordinator(self):
-        """The entry's running coordinator, if any.
+    def _live_coordinators(self) -> list:
+        """The windows' running coordinators.
 
         contract: internal (the own-context seam, is_own_context, lives on
         the coordinator; refactor P4 moves it to the CoverActuator). Used
         ONLY to attribute cover commands to the integration.
         """
-        if self.entry is None:
-            return None
-        return internal_coordinator(self.hass, self.entry.entry_id)
+        live = (
+            internal_coordinator(self.hass, entry.entry_id) for entry in self.entries
+        )
+        return [coordinator for coordinator in live if coordinator is not None]
 
     def _remember_coordinator(self) -> None:
-        self._coordinator = self._live_coordinator()
+        self._coordinators = self._live_coordinators()
 
     def _localize(self, naive: dt.datetime) -> dt.datetime:
         """Localize, handling DST folds and spring-forward gaps (LocalZone)."""
@@ -540,8 +572,8 @@ class SimHouse:
         # catch-up close) before the remembered coordinator is (re)assigned
         # — and after a reload it briefly points at the STALE object. Check
         # the live coordinator as well.
-        for coordinator in (self._live_coordinator(), self._coordinator):
-            if coordinator is not None and is_integration_context(coordinator, ctx):
+        for coordinator in (*self._live_coordinators(), *self._coordinators):
+            if is_integration_context(coordinator, ctx):
                 return "integration"
         return "device"
 
@@ -916,71 +948,79 @@ class SimHouse:
         """
         return self.windows[cover or next(iter(self.shades))]
 
-    def eid(self, domain: str, key: str) -> str:
-        """Resolve one of the entry's entities by unique-id suffix.
+    def eid(self, domain: str, key: str, *, cover: str | None = None) -> str:
+        """Resolve one of a window's entities by unique-id suffix.
 
         key is the normalized suffix: "cover_position", "toggle_control",
         "manual_override", "climate_mode", "reset_manual_override",
-        "mode_select", "sun_infront", "control_method", ... Never hard-code
+        "mode_select", "sun_infront", "control_method", ... ``cover``
+        picks the window (default: the first). Never hard-code
         sim_house_-slugged entity_ids in tests.
         """
+        entry = self._entry_for(cover)
         registry = er.async_get(self.hass)
         target = key.lower()
-        for reg_entry in er.async_entries_for_config_entry(
-            registry, self.entry.entry_id
-        ):
+        for reg_entry in er.async_entries_for_config_entry(registry, entry.entry_id):
             if reg_entry.domain != domain:
                 continue
-            suffix = reg_entry.unique_id.removeprefix(f"{self.entry.entry_id}_")
+            suffix = reg_entry.unique_id.removeprefix(f"{entry.entry_id}_")
             if suffix.lower().replace(" ", "_") == target:
                 return reg_entry.entity_id
         raise KeyError(f"No {domain} entity with unique-id suffix '{key}'")
 
-    def entity(self, domain: str, key: str) -> State | None:
-        """The current State of one of the entry's entities."""
-        return self.hass.states.get(self.eid(domain, key))
+    def entity(
+        self, domain: str, key: str, *, cover: str | None = None
+    ) -> State | None:
+        """The current State of one of a window's entities."""
+        return self.hass.states.get(self.eid(domain, key, cover=cover))
 
-    def sensor_value(self, key: str = "cover_position") -> str:
-        """State string of one of the entry's sensors."""
-        return self.entity("sensor", key).state
+    def sensor_value(
+        self, key: str = "cover_position", *, cover: str | None = None
+    ) -> str:
+        """State string of one of a window's sensors."""
+        return self.entity("sensor", key, cover=cover).state
 
-    def sensor_attr(self, key: str, attr: str):
-        """One attribute of one of the entry's sensors."""
-        return self.entity("sensor", key).attributes.get(attr)
+    def sensor_attr(self, key: str, attr: str, *, cover: str | None = None):
+        """One attribute of one of a window's sensors."""
+        return self.entity("sensor", key, cover=cover).attributes.get(attr)
 
     # ------------------------------------------------- entity-level controls
 
-    async def toggle(self, key: str, on: bool) -> None:
-        """Flip one of the entry's switches through a REAL HA service call."""
+    async def toggle(self, key: str, on: bool, *, cover: str | None = None) -> None:
+        """Flip one of a window's switches through a REAL HA service call."""
         await self.hass.services.async_call(
             "switch",
             "turn_on" if on else "turn_off",
-            {"entity_id": self.eid("switch", key)},
+            {"entity_id": self.eid("switch", key, cover=cover)},
             blocking=True,
             context=Context(user_id=SIM_USER_ID),
         )
         await self.hass.async_block_till_done()
 
-    async def select_option(self, key: str, option: str) -> None:
-        """Set one of the entry's selects through a REAL HA service call."""
+    async def select_option(
+        self, key: str, option: str, *, cover: str | None = None
+    ) -> None:
+        """Set one of a window's selects through a REAL HA service call."""
         await self.hass.services.async_call(
             "select",
             "select_option",
-            {"entity_id": self.eid("select", key), "option": option},
+            {"entity_id": self.eid("select", key, cover=cover), "option": option},
             blocking=True,
             context=Context(user_id=SIM_USER_ID),
         )
         await self.hass.async_block_till_done()
 
-    async def press(self, key: str = "reset_manual_override") -> None:
-        """Press one of the entry's buttons through a REAL HA service call.
+    async def press(
+        self, key: str = "reset_manual_override", *, cover: str | None = None
+    ) -> None:
+        """Press one of a window's buttons through a REAL HA service call.
 
         The reset button waits (real-time polls) for covers to land; those
         polls only progress when the frozen clock moves, so this drives
         30-second sub-steps (landing shades as they arrive) until the press
         completes. Sim time may advance by up to a few minutes.
         """
-        entity_id = self.eid("button", key)
+        entity_id = self.eid("button", key, cover=cover)
         task = self.hass.loop.create_task(
             self.hass.services.async_call(
                 "button",

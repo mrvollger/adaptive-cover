@@ -1718,6 +1718,7 @@ tests/simulation/test_harness_smoke.py::test_shade_unavailable_and_returns
 tests/simulation/test_harness_smoke.py::test_strip_position_attr_omits_position
 tests/simulation/test_harness_smoke.py::test_tilt_house_uses_tilt_field_and_service
 tests/simulation/test_harness_smoke.py::test_toggle_flips_real_switch_entity
+tests/simulation/test_harness_smoke.py::test_two_covers_make_two_windows
 tests/simulation/test_lifecycle.py::test_catchup_close_on_late_setup
 tests/simulation/test_lifecycle.py::test_catchup_close_when_end_moved_past
 tests/simulation/test_lifecycle.py::test_catchup_skips_overridden_cover
