@@ -36,21 +36,7 @@ All cover actions use standard Home Assistant services (`cover.set_cover_positio
 
 ## Install
 
-**HACS:**
-
-1. Add `https://github.com/mrvollger/adaptive-cover-card` as a custom repository (category: **Dashboard**).
-2. Install **Adaptive Cover Card** and refresh.
-3. The cards appear in the card picker under "Adaptive Cover".
-
-**Manual:**
-
-1. Build or download `adaptive-cover-card.js`.
-2. Copy it to `config/www/adaptive-cover-card.js`.
-3. Add a dashboard resource:
-   ```yaml
-   url: /local/adaptive-cover-card.js
-   type: module
-   ```
+The bundle ships inside the integration (`custom_components/adaptive_cover/www/`). On setup the integration serves it and registers it as a Lovelace resource, so installing or updating Adaptive Cover through HACS and restarting Home Assistant is all that is needed. The cards then appear in the card picker under "Adaptive Cover".
 
 ## Configuration
 
@@ -105,13 +91,16 @@ entry_id: YOUR_CONFIG_ENTRY_ID
 ## For developers
 
 ```bash
-npm install
-npm run build      # → dist/adaptive-cover-card.js
-npm run dev        # rollup -c -w, rebuilds dist/ on save
-npm test           # vitest
-npm run typecheck
-npm run lint
+npm ci
+npm run build          # → ../custom_components/adaptive_cover/www/adaptive-cover-card.js (commit it)
+npm run dev            # rollup -c -w, rebuilds dist/ (with sourcemaps) on save
+npm test               # vitest
+npm run typecheck      # tsc --noEmit
+npm run lint           # eslint + prettier --check
+npm run check-bundle   # fails if the committed www/ bundle differs from a fresh build
 ```
+
+The integration serves the bundle from `custom_components/adaptive_cover/www/`, so any change under `src/` needs `npm run build` and the rebuilt bundle in the same commit; CI runs `check-bundle` to enforce that.
 
 The upstream dev harness (a browser playground that simulated the Pro integration's 11-handler pipeline) was removed in this fork; the vitest suite covers the components against the `adaptive_cover` schema.
 
