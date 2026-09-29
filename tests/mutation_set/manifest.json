@@ -349,5 +349,12 @@
   "function": "async_set_manual_position",
   "description": "a window whose cover entity no longer exists still commands it",
   "patch": "M58_missing_cover_commanded.patch"
+ },
+ {
+  "id": "M59",
+  "file": "custom_components/adaptive_cover/window_cover.py",
+  "function": "cover_problem",
+  "description": "a duplicate/second cover is accepted (the one-cover guard never objects)",
+  "patch": "M59_second_cover_accepted.patch"
  }
 ]

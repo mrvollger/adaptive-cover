@@ -259,3 +259,36 @@ The example below is inside an HTML comment. The checker ignores it.
   option read now has one fallback (`runtime/shade_config.ABSENT`), which
   config migration 1.3 writes into entries. No output changes: goldens,
   truth table and house replay are byte-identical.
+
+## L0011 · 2026-09-29 · One cover per window on every settings surface (C4)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins `tests/test_one_cover_per_window.py::*`
+  (wizard, options form and add_entry refuse a second or duplicate cover,
+  write both cover keys, key a new entry by its cover's registry id)
+- **Mutations re-targeted:** added M59 in `window_cover.cover_problem` (a
+  duplicate/second cover is accepted), killed by the new pins. The plan
+  and ADR 0002 call this mutation M44; M44-M51 are reserved there for
+  P5-P7 and M58 was taken, so it is M59.
+- **Contract change:** C4
+- **Reason:** ADR 0002. The cover selector on the wizard's cover-type page
+  and the options form's first section is now `cover_entity_id` with
+  `multiple: false` (it was `group`, a multi-select). Every writer stores
+  the cover as `cover_entity_id` and as `group: [cover]` (older versions
+  read `group`; the runtime still reads `group` until P8, so a downgrade
+  that edits it is never out of sync). `add_entry` takes `cover`; `covers`
+  is still accepted with exactly one item, and more than one, none, both
+  forms, or a cover another enabled window drives is a
+  `ServiceValidationError` naming the problem. The wizard and the options
+  form show `cover_in_use` for such a cover; a registered cover's second
+  entry aborts `already_configured` (entry unique_id = the cover's
+  entity-registry id). `spec_parity.json` changes only in the cover
+  fields: `group` becomes `cover_entity_id` in the wizard's type pages
+  and the options form (`multiple: false`, no `[]` default), `add_entry`
+  gains `cover`, and `covers` is no longer required (schema and
+  services.yaml). The spec's `group` row becomes internal. Behavior-tier
+  test bodies changed without changing ids: `tests/test_config_flow.py`
+  step inputs pick a cover with `cover_entity_id` instead of `group: []`;
+  `tests/test_translations.py::test_flow_strings_cover_every_form` also
+  requires the new error and abort strings. Goldens, truth table and
+  house replay unchanged.

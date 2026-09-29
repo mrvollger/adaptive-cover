@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from typing import Any
+
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -26,6 +29,8 @@ from .const import (
     _LOGGER,
 )
 from .coordinator import AdaptiveDataUpdateCoordinator
+from .settings.normalize import normalize_cover
+from .window_cover import ERROR_ONE_COVER, cover_problem, window_using_cover
 
 PLATFORMS = [
     Platform.SENSOR,
@@ -76,6 +81,32 @@ def _resolve_entry(hass: HomeAssistant, reference: str) -> ConfigEntry:
         ):
             return candidate
     raise ServiceValidationError(f"No Adaptive Cover config entry '{reference}'")
+
+
+def _requested_covers(data: Mapping[str, Any]) -> list[str]:
+    """Return the add_entry call's covers: ``cover``, or the older ``covers``."""
+    if "cover" in data and "covers" in data:
+        raise ServiceValidationError(
+            "add_entry takes cover (one entity) or covers (a list), not both"
+        )
+    if "cover" in data:
+        return [data["cover"]]
+    covers = list(data.get("covers") or [])
+    if not covers:
+        raise ServiceValidationError("add_entry needs the window's cover (cover)")
+    return covers
+
+
+def _cover_problem_message(hass: HomeAssistant, problem: str, covers: list[str]) -> str:
+    """Explain why add_entry refused ``covers``."""
+    if problem == ERROR_ONE_COVER:
+        return (
+            f"A window drives exactly one cover; got {len(covers)} "
+            f"({', '.join(covers)}). Call add_entry once per cover."
+        )
+    owner = window_using_cover(hass, covers[0])
+    title = owner.title if owner is not None else "another window"
+    return f"{covers[0]} is already driven by the window '{title}'"
 
 
 def _async_register_services(hass: HomeAssistant) -> None:
@@ -143,11 +174,13 @@ def _async_register_services(hass: HomeAssistant) -> None:
         from homeassistant.config_entries import SOURCE_IMPORT
 
         name = call.data["name"]
-        covers = call.data["covers"]
+        covers = _requested_covers(call.data)
+        if problem := cover_problem(hass, covers):
+            raise ServiceValidationError(_cover_problem_message(hass, problem, covers))
         overrides = {
             key: value
             for key, value in call.data.items()
-            if key not in ("name", "covers", "copy_from", "sensor_type")
+            if key not in ("name", "cover", "covers", "copy_from", "sensor_type")
         }
         if copy_from := call.data.get("copy_from"):
             source = _resolve_entry(hass, copy_from)
@@ -160,6 +193,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
             sensor_type = call.data.get("sensor_type", "cover_blind")
         options.update(overrides)
         options[CONF_ENTITIES] = covers
+        options = normalize_cover(options)
 
         result = await hass.config_entries.flow.async_init(
             DOMAIN,

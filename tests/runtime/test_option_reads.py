@@ -16,6 +16,7 @@ import pytest
 from custom_components.adaptive_cover.const import (
     CONF_AZIMUTH,
     CONF_CLIMATE_MODE,
+    CONF_COVER_ENTITY,
     CONF_DELTA_POSITION,
     CONF_ENTITIES,
     CONF_MANUAL_OVERRIDE_DURATION,
@@ -39,8 +40,10 @@ from custom_components.adaptive_cover.runtime.shade_config import (
 )
 from custom_components.adaptive_cover.settings.spec import OPTS
 
-# Spec keys the runtime never reads: the migration has nothing to freeze.
-NOT_READ = {CONF_MODE, CONF_ENTITIES, CONF_SUNRISE_OFFSET}
+# Spec keys without an ABSENT fallback: the control strategy (never read),
+# the cover (written with both keys by settings/normalize.py) and the
+# sunrise offset (falls back to the sunset offset).
+NOT_READ = {CONF_MODE, CONF_ENTITIES, CONF_COVER_ENTITY, CONF_SUNRISE_OFFSET}
 
 
 def test_every_spec_option_has_a_runtime_fallback():

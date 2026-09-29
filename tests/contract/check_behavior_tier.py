@@ -101,6 +101,7 @@ RULES: list[tuple[str, str]] = [
     ("tests/replay/test_house_snapshot.py::*", TOOLING),
     ("tests/test_translations.py::*", BEHAVIOR),
     ("tests/test_entity_surface_v2.py::*", BEHAVIOR),  # P1 entity surface (C1)
+    ("tests/test_one_cover_per_window.py::*", BEHAVIOR),  # P3 one cover (C4)
     # Implementation tier: a refactor may freely break these.
     # P3: the option spec's own tests (its table shape changes in P5); the
     # surfaces it generates are pinned by the behavior tier and by

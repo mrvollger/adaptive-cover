@@ -5,6 +5,7 @@
    "angle",
    "climate_mode",
    "copy_from",
+   "cover",
    "covers",
    "default_percentage",
    "delta_position",
@@ -200,7 +201,7 @@
   "options.init.covers_geometry [types=cover_awning]": [
    "length_awning",
    "angle",
-   "group",
+   "cover_entity_id",
    "window_height",
    "distance_shaded_area",
    "overhang_depth",
@@ -209,7 +210,7 @@
    "occupied_distance"
   ],
   "options.init.covers_geometry [types=cover_blind]": [
-   "group",
+   "cover_entity_id",
    "window_height",
    "distance_shaded_area",
    "overhang_depth",
@@ -218,7 +219,7 @@
    "occupied_distance"
   ],
   "options.init.covers_geometry [types=cover_tilt]": [
-   "group",
+   "cover_entity_id",
    "slat_depth",
    "slat_distance",
    "tilt_mode"
@@ -250,6 +251,7 @@
   ],
   "services_yaml.add_entry": [
    "name",
+   "cover",
    "covers",
    "copy_from",
    "set_azimuth"
@@ -313,7 +315,7 @@
    "climate_mode",
    "length_awning",
    "angle",
-   "group",
+   "cover_entity_id",
    "window_height",
    "distance_shaded_area",
    "overhang_depth",
@@ -345,7 +347,7 @@
   ],
   "wizard.tilt [types=cover_tilt]": [
    "climate_mode",
-   "group",
+   "cover_entity_id",
    "slat_depth",
    "slat_distance",
    "tilt_mode",
@@ -372,7 +374,7 @@
   ],
   "wizard.vertical [types=cover_blind]": [
    "climate_mode",
-   "group",
+   "cover_entity_id",
    "window_height",
    "distance_shaded_area",
    "overhang_depth",
@@ -608,6 +610,109 @@
     "required": false
    }
   ],
+  "cover": [
+   {
+    "where": [
+     "add_entry"
+    ],
+    "kind": "string",
+    "pattern": "^[a-z_]+\\.[a-z0-9_]+$",
+    "required": false
+   },
+   {
+    "where": [
+     "services_yaml.add_entry"
+    ],
+    "kind": "entity",
+    "domain": [
+     "cover"
+    ],
+    "multiple": false,
+    "reorder": false,
+    "required": false
+   }
+  ],
+  "cover_entity_id": [
+   {
+    "where": [
+     "options.init.covers_geometry [types=cover_awning|cover_blind]"
+    ],
+    "kind": "entity",
+    "filter": [
+     {
+      "domain": [
+       "cover"
+      ],
+      "supported_features": [
+       4
+      ]
+     }
+    ],
+    "multiple": false,
+    "reorder": false,
+    "required": false,
+    "suggested": true
+   },
+   {
+    "where": [
+     "options.init.covers_geometry [types=cover_tilt]"
+    ],
+    "kind": "entity",
+    "filter": [
+     {
+      "domain": [
+       "cover"
+      ],
+      "supported_features": [
+       128
+      ]
+     }
+    ],
+    "multiple": false,
+    "reorder": false,
+    "required": false,
+    "suggested": true
+   },
+   {
+    "where": [
+     "wizard.horizontal [types=cover_awning]",
+     "wizard.vertical [types=cover_blind]"
+    ],
+    "kind": "entity",
+    "filter": [
+     {
+      "domain": [
+       "cover"
+      ],
+      "supported_features": [
+       4
+      ]
+     }
+    ],
+    "multiple": false,
+    "reorder": false,
+    "required": false
+   },
+   {
+    "where": [
+     "wizard.tilt [types=cover_tilt]"
+    ],
+    "kind": "entity",
+    "filter": [
+     {
+      "domain": [
+       "cover"
+      ],
+      "supported_features": [
+       128
+      ]
+     }
+    ],
+    "multiple": false,
+    "reorder": false,
+    "required": false
+   }
+  ],
   "covers": [
    {
     "where": [
@@ -615,7 +720,7 @@
     ],
     "kind": "list",
     "items": "string",
-    "required": true
+    "required": false
    },
    {
     "where": [
@@ -627,7 +732,7 @@
     ],
     "multiple": true,
     "reorder": false,
-    "required": true
+    "required": false
    }
   ],
   "default_percentage": [
@@ -1070,89 +1175,6 @@
     "unit": "°",
     "required": true,
     "default": 90
-   }
-  ],
-  "group": [
-   {
-    "where": [
-     "options.init.covers_geometry [types=cover_awning|cover_blind]"
-    ],
-    "kind": "entity",
-    "filter": [
-     {
-      "domain": [
-       "cover"
-      ],
-      "supported_features": [
-       4
-      ]
-     }
-    ],
-    "multiple": true,
-    "reorder": false,
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
-     "options.init.covers_geometry [types=cover_tilt]"
-    ],
-    "kind": "entity",
-    "filter": [
-     {
-      "domain": [
-       "cover"
-      ],
-      "supported_features": [
-       128
-      ]
-     }
-    ],
-    "multiple": true,
-    "reorder": false,
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
-     "wizard.horizontal [types=cover_awning]",
-     "wizard.vertical [types=cover_blind]"
-    ],
-    "kind": "entity",
-    "filter": [
-     {
-      "domain": [
-       "cover"
-      ],
-      "supported_features": [
-       4
-      ]
-     }
-    ],
-    "multiple": true,
-    "reorder": false,
-    "required": false,
-    "default": []
-   },
-   {
-    "where": [
-     "wizard.tilt [types=cover_tilt]"
-    ],
-    "kind": "entity",
-    "filter": [
-     {
-      "domain": [
-       "cover"
-      ],
-      "supported_features": [
-       128
-      ]
-     }
-    ],
-    "multiple": true,
-    "reorder": false,
-    "required": false,
-    "default": []
    }
   ],
   "interp": [

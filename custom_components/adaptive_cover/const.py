@@ -23,6 +23,9 @@ CONF_DISTANCE = "distance_shaded_area"
 CONF_DEFAULT_HEIGHT = "default_percentage"
 CONF_FOV_LEFT = "fov_left"
 CONF_FOV_RIGHT = "fov_right"
+# The window's cover (one per window, ADR 0002). Until P8 every writer
+# also stores it as CONF_ENTITIES = [cover], which older versions read.
+CONF_COVER_ENTITY = "cover_entity_id"
 CONF_ENTITIES = "group"
 CONF_HEIGHT_AWNING = "height_awning"
 CONF_LENGTH_AWNING = "length_awning"

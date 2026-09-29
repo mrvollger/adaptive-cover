@@ -92,9 +92,18 @@ add_entry:
       required: true
       example: "Den south"
       selector: { text: }
+    cover:
+      name: Cover entity
+      description: >-
+        The cover this window drives. A window drives exactly one cover, and
+        a cover belongs to one window.
+      example: "cover.den_south_shades"
+      selector: { entity: { domain: cover } }
     covers:
-      name: Cover entities
-      required: true
+      name: Cover entities (older form)
+      description: >-
+        Still accepted for older scripts: a list with exactly one cover.
+        Use cover instead.
       example: "[cover.den_south_shades]"
       selector: { entity: { multiple: true, domain: cover } }
     copy_from:

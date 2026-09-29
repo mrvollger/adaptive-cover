@@ -61,6 +61,7 @@ from custom_components.adaptive_cover.const import (
     SensorType,
 )
 from custom_components.adaptive_cover.settings.validate import ERROR_KEYS
+from custom_components.adaptive_cover.window_cover import ERROR_COVER_IN_USE
 
 PACKAGE = Path(__file__).resolve().parents[1] / "custom_components" / "adaptive_cover"
 STRINGS_PATH = PACKAGE / "strings.json"
@@ -461,6 +462,12 @@ async def test_flow_strings_cover_every_form(hass, strings: dict[str, Any]) -> N
     for key in ERROR_KEYS:
         needs.need(f"config.error.{key}")
         needs.need(f"options.error.{key}")
+    # One cover per window (window_cover.py): both forms refuse a cover
+    # another window drives, and the wizard aborts a second entry for a
+    # registered cover (its unique_id).
+    needs.need(f"config.error.{ERROR_COVER_IN_USE}")
+    needs.need(f"options.error.{ERROR_COVER_IN_USE}")
+    needs.need("config.abort.already_configured")
 
     have = {
         key

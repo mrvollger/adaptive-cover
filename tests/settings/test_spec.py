@@ -42,7 +42,7 @@ H, F, A, W = Level.HOUSE, Level.FLOOR, Level.AREA, Level.WINDOW
 # key: (scope, home, narrower override levels). Independent of the spec.
 PLAN_TABLE: dict[str, tuple[Scope, Level | None, set[Level]]] = {
     # one-time, window setup
-    "group": (Scope.ONE_TIME, W, set()),
+    "cover_entity_id": (Scope.ONE_TIME, W, set()),
     "set_azimuth": (Scope.ONE_TIME, W, set()),
     "fov_left": (Scope.ONE_TIME, W, set()),
     "fov_right": (Scope.ONE_TIME, W, set()),
@@ -111,6 +111,8 @@ PLAN_TABLE: dict[str, tuple[Scope, Level | None, set[Level]]] = {
     "delta_time": (Scope.RECURRING, H, set()),
     # internal: the control strategy ("basic"), never shown
     "mode": (Scope.INTERNAL, None, set()),
+    # internal: the cover again as a list, for older versions (ADR 0002)
+    "group": (Scope.INTERNAL, None, set()),
 }
 
 # Drift the spec still carries (see spec.py "legacy"). Removing an entry is

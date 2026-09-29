@@ -52,6 +52,7 @@ COMMANDS = "custom_components/adaptive_cover/runtime/command_tracker.py"
 DETECTOR = "custom_components/adaptive_cover/runtime/manual_detector.py"
 OVERRIDES = "custom_components/adaptive_cover/runtime/override_tracker.py"
 END_OF_DAY = "custom_components/adaptive_cover/runtime/end_of_day.py"
+WINDOW_COVER = "custom_components/adaptive_cover/window_cover.py"
 
 
 @dataclass
@@ -673,6 +674,15 @@ MUTATIONS: list[Mutation] = [
         "a window whose cover entity no longer exists still commands it",
         "        if current is None:\n            if entity not in self._missing_warned:\n",
         "        if False:\n            if entity not in self._missing_warned:\n",
+    ),
+    Mutation(
+        "M59",
+        "second_cover_accepted",
+        WINDOW_COVER,
+        "cover_problem",
+        "a duplicate/second cover is accepted (the one-cover guard never objects)",
+        "        problem = ERROR_COVER_IN_USE\n    return problem\n",
+        "        problem = ERROR_COVER_IN_USE\n    return None\n",
     ),
 ]
 

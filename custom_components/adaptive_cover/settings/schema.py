@@ -279,10 +279,16 @@ def changeable_options(temperature_unit: str | None = None) -> dict[str, Any]:
 
 
 def add_entry_schema(temperature_unit: str | None = None) -> vol.Schema:
-    """Build the add_entry service schema: identity + any changeable option."""
+    """Build the add_entry service schema: identity + any changeable option.
+
+    The window's cover is ``cover``. ``covers`` (a list) is still accepted
+    for scripts written before P3; the service takes exactly one of them,
+    with exactly one cover (ADR 0002).
+    """
     schema: dict[vol.Marker, Any] = {
         vol.Required("name"): str,
-        vol.Required("covers"): [str],
+        vol.Optional("cover"): vol.Match(ENTITY_ID_PATTERN),
+        vol.Optional("covers"): [str],
         vol.Optional("copy_from"): str,
         vol.Optional("sensor_type"): vol.In(
             [SensorType.BLIND, SensorType.AWNING, SensorType.TILT]

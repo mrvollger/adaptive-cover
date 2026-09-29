@@ -8,6 +8,7 @@ from custom_components.adaptive_cover.const import (
     CONF_AWNING_ANGLE,
     CONF_AZIMUTH,
     CONF_CLIMATE_MODE,
+    CONF_COVER_ENTITY,
     CONF_DEFAULT_HEIGHT,
     CONF_DELTA_POSITION,
     CONF_DELTA_TIME,
@@ -15,7 +16,6 @@ from custom_components.adaptive_cover.const import (
     CONF_ENABLE_BLIND_SPOT,
     CONF_END_ENTITY,
     CONF_END_TIME,
-    CONF_ENTITIES,
     CONF_EYE_HEIGHT,
     CONF_FOV_LEFT,
     CONF_FOV_RIGHT,
@@ -55,7 +55,7 @@ from custom_components.adaptive_cover.const import (
 
 VERTICAL_STEP_INPUT = {
     CONF_CLIMATE_MODE: False,
-    CONF_ENTITIES: [],
+    CONF_COVER_ENTITY: "cover.test_window",
     CONF_HEIGHT_WIN: 2.1,
     CONF_DISTANCE: 0.5,
     CONF_AZIMUTH: 180,
@@ -78,7 +78,7 @@ HORIZONTAL_STEP_INPUT = {
 
 TILT_STEP_INPUT = {
     CONF_CLIMATE_MODE: False,
-    CONF_ENTITIES: [],
+    CONF_COVER_ENTITY: "cover.test_window",
     CONF_TILT_DEPTH: 3,
     CONF_TILT_DISTANCE: 2,
     CONF_TILT_MODE: "mode2",
