@@ -251,6 +251,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self._our_context_ids: deque[str] = deque(maxlen=64)
         self._sun_table = None
         self._poll_cancels: dict[str, CALLBACK_TYPE] = {}
+        # Sends that raised but may still have reached the motor:
+        # entity -> (target, sent_at, source, reason). See _adopt_late_delivery.
+        self._unconfirmed_sends: dict[
+            str, tuple[int, dt.datetime, str, str | None]
+        ] = {}
         self.ignore_intermediate_states = self.config_entry.options.get(
             CONF_MANUAL_IGNORE_INTERMEDIATE, False
         )
@@ -389,6 +394,10 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # 1-3 minute window where the cover reads as auto-controlled while a
         # person is actively moving it.
         new_state = self.state_change_data.new_state
+        if new_state.state in ("opening", "closing") and not self.wait_for_target.get(
+            entity_id
+        ):
+            self._adopt_late_delivery(entity_id)
         # A cover starting to move AGAINST our in-flight command is a human
         # act even inside the travel window: our motor cannot reverse on its
         # own. Clear the travel latch so the motion-start latch below fires.
@@ -1290,10 +1299,72 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     entity,
                 )
                 self.wait_for_target[entity] = False
+                # Zigbee often delivers a command whose acknowledgement is
+                # lost, so the call raises while the motor still moves -
+                # sometimes 30 s later. Remember the target so that late
+                # start is not read as a human (house, 2026-09-29).
+                self._unconfirmed_sends[entity] = (
+                    state,
+                    self.clock.utcnow(),
+                    source,
+                    reason,
+                )
                 return False
+            self._unconfirmed_sends.pop(entity, None)
             self._record_move(entity)
             self.record_move_provenance(entity, state, source, reason)
             self._schedule_arrival_poll(entity)
+        return True
+
+    def _adopt_late_delivery(self, entity_id: str) -> bool:
+        """Adopt motion toward a send that raised as our own travel.
+
+        A failed send leaves no command in flight, so the motor starting
+        toward that target looked like a foreign move and latched a manual
+        override. Within TARGET_TIMEOUT of the failed send, motion in the
+        direction of its target restores the in-flight state instead.
+        Returns True when the motion was adopted.
+        """
+        sent = self._unconfirmed_sends.get(entity_id)
+        if sent is None:
+            return False
+        target, sent_at, source, reason = sent
+        if self.clock.utcnow() - sent_at > self.TARGET_TIMEOUT:
+            self._unconfirmed_sends.pop(entity_id, None)
+            return False
+        old_pos = self.state_change_data.old_state.attributes.get(
+            "current_tilt_position"
+            if self._cover_type == "cover_tilt"
+            else "current_position"
+        )
+        if old_pos is None or old_pos == target:
+            return False
+        expected = "opening" if target > old_pos else "closing"
+        # Belt and braces: motion AGAINST our target is also caught right
+        # after this by the against-direction check (so no test can tell
+        # this guard apart; no mutation pins it). Skipping here keeps a
+        # human move from being logged as a late delivery.
+        if self.state_change_data.new_state.state != expected:
+            return False
+        self._unconfirmed_sends.pop(entity_id, None)
+        self.wait_for_target[entity_id] = True
+        self.target_call[entity_id] = target
+        self.target_call_time[entity_id] = sent_at
+        self.logger.debug(
+            "%s started %s toward %s after a failed send: late delivery, "
+            "not a manual move",
+            entity_id,
+            expected,
+            target,
+        )
+        self._record_move(entity_id)
+        self.record_move_provenance(
+            entity_id,
+            target,
+            source,
+            f"{reason} (delivered late)" if reason else "delivered late",
+        )
+        self._schedule_arrival_poll(entity_id)
         return True
 
     def _schedule_arrival_poll(self, entity) -> None:

@@ -21,6 +21,8 @@ Every scenario drives the real integration only through public seams:
 config entry options, state events, service calls, and entity states.
 """
 
+import datetime as dt
+
 import pytest
 
 from custom_components.adaptive_cover.const import (
@@ -93,6 +95,63 @@ async def test_service_raise_non_fatal(hass, freezer, caplog):
     )
     assert house.entity("binary_sensor", "manual_override").state == "off", (
         "a delivery failure must not latch a manual override"
+    )
+    await house.teardown()
+
+
+async def test_regression_late_delivery_not_manual(hass, freezer):
+    """A send that raises but still reaches the motor is our move, not a human's.
+
+    House, 2026-09-29 07:23: at sunrise the command to Leanne's door raised
+    (Zigbee congestion, lost acknowledgement), the motor started toward the
+    commanded 97% 30 s later, and that motion latched a 2 h manual override
+    on the integration's own move.
+    """
+    house = await SimHouse.create(hass, freezer, date="2026-03-20", step_minutes=1)
+    # After sunrise the target keeps changing, so a command arrives soon.
+    await house.advance_to("07:40")
+    await settle_idle(house)
+    house.fail_next_command(SHADE, deliver_after=dt.timedelta(minutes=1))
+    for _ in range(120):
+        await house.tick()
+        if house.shades[SHADE].fail_next is None:
+            break
+    assert house.shades[SHADE].fail_next is None, "no command was attempted"
+    # The motor starts a minute later on its own (device context) and lands.
+    for _ in range(5):
+        await house.tick()
+
+    assert house.entity("binary_sensor", "manual_override").state == "off", (
+        "the late start of our own failed-but-delivered command was "
+        "latched as a manual override"
+    )
+    await house.teardown()
+
+
+async def test_late_delivery_window_still_sees_humans(hass, freezer):
+    """After a failed send, a human moving the other way is still manual.
+
+    Late-delivery adoption only covers motion TOWARD the failed target;
+    it must not swallow a person grabbing the remote in that window.
+    """
+    house = await SimHouse.create(hass, freezer, date="2026-03-20", step_minutes=1)
+    await house.advance_to("07:40")
+    await settle_idle(house)
+    house.fail_next_command(SHADE)
+    for _ in range(120):
+        await house.tick()
+        if house.shades[SHADE].fail_next is None:
+            break
+    assert house.shades[SHADE].fail_next is None, "no command was attempted"
+    target = int(float(house.entity("sensor", "cover_position").state))
+    here = house.position(SHADE)
+    assert target != here, "the failed command was a no-op"
+    away = 0 if target > here else 100
+    await house.user_moves(SHADE, away, via="remote")
+    await house.tick()
+
+    assert house.entity("binary_sensor", "manual_override").state == "on", (
+        "a human move against the failed target was adopted as ours"
     )
     await house.teardown()
 

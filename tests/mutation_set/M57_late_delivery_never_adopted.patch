@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -1325,7 +1325,7 @@
+         direction of its target restores the in-flight state instead.
+         Returns True when the motion was adopted.
+         """
+-        sent = self._unconfirmed_sends.get(entity_id)
++        sent = None
+         if sent is None:
+             return False
+         target, sent_at, source, reason = sent
