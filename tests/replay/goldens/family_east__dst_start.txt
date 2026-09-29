@@ -1,0 +1,63 @@
+# house replay: Family east (01KWP1K4XH1C9J89HP8ME35CNZ) on 2026-03-08 (dst_start)
+# SLC (tests' lat/lon), tz=America/Denver, units=US customary, step=5min, travel=90s, 00:30 -> 00:30 next day
+# cover=cover.family_east_shades sensor_type=cover_blind options_sha256=7557d91eb9bf
+# azimuth=100.0 fov=90.0/44.0 elevation=5..50 window_h=2.0 distance=0.1 overhang=None/None glare=1.2/2.0
+# default=99.0 sunset_pos=0.0 sunset_off=20.0 sunrise_off=-20.0 start=00:00:00 end=00:00:00 min=0 (sun-only=False) max=100 (sun-only=False) privacy=None
+# climate=True temp=sensor.downstairs_indoor_temperature (downstairs) low/high=72.0/75.0 sunny=sunny,partlycloudy,clear,windy,windy-variant override={'hours': 2, 'minutes': 0, 'seconds': 0} reset=False
+# restored switches: family_east_climate_mode=on, family_east_manual_override=on, family_east_outside_temperature=off, family_east_toggle_control=on
+# lines: cmd = outbound cover call; sensor = position sensor (intent), shown when it changes; input/human = scripted
+#
+03-08 00:30:00 MST  sensor 0 (sunset)
+03-08 07:35:00 MDT  cmd    set_cover_position cover.family_east_shades 99
+03-08 07:35:00 MDT  sensor 99 (default)
+03-08 08:00:00 MDT  input  sensor.downstairs_indoor_temperature = 69.0 °F
+03-08 08:30:00 MDT  cmd    set_cover_position cover.family_east_shades 70
+03-08 08:30:00 MDT  sensor 70 (admit_no_glare)
+03-08 08:35:00 MDT  cmd    set_cover_position cover.family_east_shades 73
+03-08 08:35:00 MDT  sensor 73 (admit_no_glare)
+03-08 08:40:00 MDT  cmd    set_cover_position cover.family_east_shades 75
+03-08 08:40:00 MDT  sensor 75 (admit_no_glare)
+03-08 08:45:00 MDT  cmd    set_cover_position cover.family_east_shades 77
+03-08 08:45:00 MDT  sensor 77 (admit_no_glare)
+03-08 08:50:00 MDT  cmd    set_cover_position cover.family_east_shades 78
+03-08 08:50:00 MDT  sensor 78 (admit_no_glare)
+03-08 08:55:00 MDT  cmd    set_cover_position cover.family_east_shades 80
+03-08 08:55:00 MDT  sensor 80 (admit_no_glare)
+03-08 09:00:00 MDT  cmd    set_cover_position cover.family_east_shades 82
+03-08 09:00:00 MDT  sensor 82 (admit_no_glare)
+03-08 09:05:00 MDT  cmd    set_cover_position cover.family_east_shades 83
+03-08 09:05:00 MDT  sensor 83 (admit_no_glare)
+03-08 09:10:00 MDT  cmd    set_cover_position cover.family_east_shades 85
+03-08 09:10:00 MDT  sensor 85 (admit_no_glare)
+03-08 09:15:00 MDT  cmd    set_cover_position cover.family_east_shades 87
+03-08 09:15:00 MDT  sensor 87 (admit_no_glare)
+03-08 09:20:00 MDT  cmd    set_cover_position cover.family_east_shades 89
+03-08 09:20:00 MDT  sensor 89 (admit_no_glare)
+03-08 09:25:00 MDT  cmd    set_cover_position cover.family_east_shades 91
+03-08 09:25:00 MDT  sensor 91 (admit_no_glare)
+03-08 09:30:00 MDT  cmd    set_cover_position cover.family_east_shades 92
+03-08 09:30:00 MDT  sensor 92 (admit_no_glare)
+03-08 09:35:00 MDT  cmd    set_cover_position cover.family_east_shades 94
+03-08 09:35:00 MDT  sensor 94 (admit_no_glare)
+03-08 09:40:00 MDT  cmd    set_cover_position cover.family_east_shades 96
+03-08 09:40:00 MDT  sensor 96 (admit_no_glare)
+03-08 09:45:00 MDT  cmd    set_cover_position cover.family_east_shades 98
+03-08 09:45:00 MDT  sensor 98 (admit_no_glare)
+03-08 09:50:00 MDT  cmd    set_cover_position cover.family_east_shades 100
+03-08 09:50:00 MDT  sensor 100 (admit_no_glare)
+03-08 10:00:00 MDT  input  sensor.downstairs_indoor_temperature = 71.0 °F
+03-08 11:00:00 MDT  input  weather.forecast_home_2 = cloudy
+03-08 11:05:00 MDT  sensor 100 (climate_open_heat)
+03-08 11:55:00 MDT  cmd    set_cover_position cover.family_east_shades 99
+03-08 11:55:00 MDT  sensor 99 (climate_default)
+03-08 11:56:30 MDT  cmd    set_cover_position cover.family_east_shades 99
+03-08 13:00:00 MDT  input  weather.forecast_home_2 = sunny
+03-08 13:05:00 MDT  sensor 99 (default)
+03-08 13:30:00 MDT  human  cover.family_east_shades -> 37 (via remote)
+03-08 14:00:00 MDT  input  sensor.downstairs_indoor_temperature = 73.5 °F
+03-08 15:35:00 MDT  cmd    set_cover_position cover.family_east_shades 99
+03-08 18:00:00 MDT  input  sensor.downstairs_indoor_temperature = 72.5 °F
+03-08 19:50:00 MDT  cmd    set_cover_position cover.family_east_shades 0
+03-08 19:50:00 MDT  sensor 0 (sunset)
+03-08 21:00:00 MDT  input  sensor.downstairs_indoor_temperature = 70.0 °F
+03-09 00:30:00 MDT  end    shade at 0

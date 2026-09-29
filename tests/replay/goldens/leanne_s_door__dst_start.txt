@@ -1,0 +1,52 @@
+# house replay: Leanne's door (01KSBFBK88WRN0NYVSHNR37QJX) on 2026-03-08 (dst_start)
+# SLC (tests' lat/lon), tz=America/Denver, units=US customary, step=5min, travel=90s, 00:30 -> 00:30 next day
+# cover=cover.sw_sw_shade sensor_type=cover_blind options_sha256=a196e3df8acc
+# azimuth=235.0 fov=60.0/60.0 elevation=None..50 window_h=2.1 distance=0.2 overhang=None/None glare=1.2/2.0
+# default=97.0 sunset_pos=5.0 sunset_off=-30.0 sunrise_off=0.0 start=06:00:00 end=00:00:00 min=None (sun-only=False) max=None (sun-only=False) privacy=None
+# climate=True temp=sensor.upstairs_indoor_temperature (upstairs) low/high=72.0/75.0 sunny=sunny,partlycloudy,clear,windy,windy-variant override={'hours': 2, 'minutes': 0, 'seconds': 0} reset=False
+# restored switches: leanne_s_door_climate_mode=on, leanne_s_door_outside_temperature=off, sw_door_shade_manual_override_sw_door_shades=on, sw_door_shade_toggle_control_sw_door_shades=on
+# lines: cmd = outbound cover call; sensor = position sensor (intent), shown when it changes; input/human = scripted
+#
+03-08 00:30:00 MST  sensor 5 (sunset)
+03-08 07:55:00 MDT  cmd    set_cover_position cover.sw_sw_shade 97
+03-08 07:55:00 MDT  sensor 97 (default)
+03-08 08:00:00 MDT  input  sensor.upstairs_indoor_temperature = 71.0 °F
+03-08 10:00:00 MDT  input  sensor.upstairs_indoor_temperature = 73.0 °F
+03-08 11:00:00 MDT  input  weather.forecast_home_2 = cloudy
+03-08 11:05:00 MDT  sensor 97 (climate_default)
+03-08 13:00:00 MDT  input  weather.forecast_home_2 = sunny
+03-08 13:05:00 MDT  sensor 97 (default)
+03-08 13:30:00 MDT  cmd    set_cover_position cover.sw_sw_shade 19
+03-08 13:30:00 MDT  sensor 19 (calculated)
+03-08 13:30:00 MDT  human  cover.sw_sw_shade -> 37 (via remote)
+03-08 13:35:00 MDT  sensor 17 (calculated)
+03-08 13:40:00 MDT  sensor 16 (calculated)
+03-08 13:45:00 MDT  sensor 15 (calculated)
+03-08 13:55:00 MDT  sensor 14 (calculated)
+03-08 14:00:00 MDT  input  sensor.upstairs_indoor_temperature = 76.0 °F
+03-08 14:10:00 MDT  sensor 13 (calculated)
+03-08 14:20:00 MDT  sensor 12 (calculated)
+03-08 14:35:00 MDT  sensor 11 (calculated)
+03-08 14:50:00 MDT  sensor 10 (calculated)
+03-08 15:05:00 MDT  sensor 9 (calculated)
+03-08 15:25:00 MDT  sensor 8 (calculated)
+03-08 15:35:00 MDT  cmd    set_cover_position cover.sw_sw_shade 8
+03-08 15:40:00 MDT  cmd    set_cover_position cover.sw_sw_shade 7
+03-08 15:40:00 MDT  sensor 7 (calculated)
+03-08 16:05:00 MDT  cmd    set_cover_position cover.sw_sw_shade 6
+03-08 16:05:00 MDT  sensor 6 (calculated)
+03-08 16:35:00 MDT  cmd    set_cover_position cover.sw_sw_shade 5
+03-08 16:35:00 MDT  sensor 5 (calculated)
+03-08 17:05:00 MDT  cmd    set_cover_position cover.sw_sw_shade 4
+03-08 17:05:00 MDT  sensor 4 (calculated)
+03-08 17:35:00 MDT  cmd    set_cover_position cover.sw_sw_shade 3
+03-08 17:35:00 MDT  sensor 3 (calculated)
+03-08 18:00:00 MDT  input  sensor.upstairs_indoor_temperature = 74.0 °F
+03-08 18:10:00 MDT  cmd    set_cover_position cover.sw_sw_shade 2
+03-08 18:10:00 MDT  sensor 2 (calculated)
+03-08 18:40:00 MDT  cmd    set_cover_position cover.sw_sw_shade 1
+03-08 18:40:00 MDT  sensor 1 (calculated)
+03-08 19:00:00 MDT  cmd    set_cover_position cover.sw_sw_shade 5
+03-08 19:00:00 MDT  sensor 5 (sunset)
+03-08 21:00:00 MDT  input  sensor.upstairs_indoor_temperature = 71.5 °F
+03-09 00:30:00 MDT  end    shade at 5

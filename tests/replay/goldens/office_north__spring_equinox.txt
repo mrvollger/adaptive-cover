@@ -1,0 +1,26 @@
+# house replay: Office north (01KAD4XDDT8YPF97FN3095Y9C3) on 2026-03-20 (spring_equinox)
+# SLC (tests' lat/lon), tz=America/Denver, units=US customary, step=5min, travel=90s, 00:30 -> 00:30 next day
+# cover=cover.office_north_shades sensor_type=cover_blind options_sha256=a409f23c6886
+# azimuth=10.0 fov=60.0/60.0 elevation=5..45 window_h=2.02 distance=0.1 overhang=None/None glare=1.2/2.0
+# default=100.0 sunset_pos=0.0 sunset_off=0.0 sunrise_off=45.0 start=07:30:00 end=00:00:00 min=None (sun-only=False) max=None (sun-only=False) privacy=None
+# climate=True temp=sensor.upstairs_indoor_temperature (upstairs) low/high=72.0/75.0 sunny=sunny,partlycloudy,clear,windy,windy-variant override={'hours': 2, 'minutes': 0, 'seconds': 0} reset=False
+# restored switches: office_north_shade_climate_mode_office_north_shade=on, office_north_shade_outside_temperature_office_north_shade=off, office_north_shades_manual_override_office_north_shade=on, office_north_shades_toggle_control_office_north_shade=on
+# lines: cmd = outbound cover call; sensor = position sensor (intent), shown when it changes; input/human = scripted
+#
+03-20 00:30:00 MDT  sensor 0 (sunset)
+03-20 08:00:00 MDT  input  sensor.upstairs_indoor_temperature = 71.0 °F
+03-20 08:20:00 MDT  cmd    set_cover_position cover.office_north_shades 100
+03-20 08:20:00 MDT  sensor 100 (default)
+03-20 10:00:00 MDT  input  sensor.upstairs_indoor_temperature = 73.0 °F
+03-20 11:00:00 MDT  input  weather.forecast_home_2 = cloudy
+03-20 11:05:00 MDT  sensor 100 (climate_default)
+03-20 13:00:00 MDT  input  weather.forecast_home_2 = sunny
+03-20 13:05:00 MDT  sensor 100 (default)
+03-20 13:30:00 MDT  human  cover.office_north_shades -> 37 (via remote)
+03-20 14:00:00 MDT  input  sensor.upstairs_indoor_temperature = 76.0 °F
+03-20 15:35:00 MDT  cmd    set_cover_position cover.office_north_shades 100
+03-20 18:00:00 MDT  input  sensor.upstairs_indoor_temperature = 74.0 °F
+03-20 19:40:00 MDT  cmd    set_cover_position cover.office_north_shades 0
+03-20 19:40:00 MDT  sensor 0 (sunset)
+03-20 21:00:00 MDT  input  sensor.upstairs_indoor_temperature = 71.5 °F
+03-21 00:30:00 MDT  end    shade at 0
