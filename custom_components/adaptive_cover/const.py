@@ -104,3 +104,13 @@ class SensorType:
     BLIND = "cover_blind"
     AWNING = "cover_awning"
     TILT = "cover_tilt"
+
+# Shared defaults: the wizard, the add_entry service baseline, and the
+# coordinator fallbacks must agree (they drifted before: 60% vs 100%).
+DEFAULT_DEFAULT_HEIGHT = 100
+DEFAULT_MANUAL_OVERRIDE_DURATION = {"hours": 1, "minutes": 30, "seconds": 0}
+DEFAULT_WEATHER_STATE = ["sunny", "partlycloudy", "clear", "windy", "windy-variant"]
+DEFAULT_EYE_HEIGHT = 1.2  # m, seated eyes above the sill
+DEFAULT_OCCUPIED_DISTANCE = 2.0  # m from glass to the nearest seat
+# Climate thresholds per HA temperature unit: (winter below, summer above)
+DEFAULT_TEMP_THRESHOLDS = {"°F": (72, 75), "°C": (22, 24)}

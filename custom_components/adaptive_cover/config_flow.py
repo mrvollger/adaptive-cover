@@ -16,6 +16,12 @@ from homeassistant.helpers import selector
 
 from .const import (
     _LOGGER,
+    DEFAULT_DEFAULT_HEIGHT,
+    DEFAULT_EYE_HEIGHT,
+    DEFAULT_MANUAL_OVERRIDE_DURATION,
+    DEFAULT_OCCUPIED_DISTANCE,
+    DEFAULT_TEMP_THRESHOLDS,
+    DEFAULT_WEATHER_STATE,
     CONF_AWNING_ANGLE,
     CONF_AZIMUTH,
     CONF_BLIND_SPOT_ELEVATION,
@@ -117,7 +123,7 @@ OPTIONS = vol.Schema(
                 min=0, max=359, mode="slider", unit_of_measurement="°"
             )
         ),
-        vol.Required(CONF_DEFAULT_HEIGHT, default=60): selector.NumberSelector(
+        vol.Required(CONF_DEFAULT_HEIGHT, default=DEFAULT_DEFAULT_HEIGHT): selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=0, max=100, step=1, mode="slider", unit_of_measurement="%"
             )
@@ -194,12 +200,14 @@ VERTICAL_OPTIONS = vol.Schema(
                 min=0.1, max=10, step=0.01, mode="box", unit_of_measurement="m"
             )
         ),
-        vol.Optional(CONF_EYE_HEIGHT): selector.NumberSelector(
+        vol.Optional(CONF_EYE_HEIGHT, default=DEFAULT_EYE_HEIGHT): selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=0.1, max=3, step=0.01, mode="box", unit_of_measurement="m"
             )
         ),
-        vol.Optional(CONF_OCCUPIED_DISTANCE): selector.NumberSelector(
+        vol.Optional(
+            CONF_OCCUPIED_DISTANCE, default=DEFAULT_OCCUPIED_DISTANCE
+        ): selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=0.1, max=10, step=0.1, mode="box", unit_of_measurement="m"
             )
@@ -257,12 +265,12 @@ CLIMATE_OPTIONS = vol.Schema(
         vol.Required(CONF_TEMP_ENTITY): selector.EntitySelector(
             selector.EntityFilterSelectorConfig(domain=["climate", "sensor"])
         ),
-        vol.Required(CONF_TEMP_LOW, default=21): selector.NumberSelector(
+        vol.Required(CONF_TEMP_LOW, default=DEFAULT_TEMP_THRESHOLDS["°C"][0]): selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=0, max=86, step=1, mode="slider", unit_of_measurement="°"
             )
         ),
-        vol.Required(CONF_TEMP_HIGH, default=25): selector.NumberSelector(
+        vol.Required(CONF_TEMP_HIGH, default=DEFAULT_TEMP_THRESHOLDS["°C"][1]): selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=0, max=90, step=1, mode="slider", unit_of_measurement="°"
             )
@@ -309,10 +317,29 @@ CLIMATE_OPTIONS = vol.Schema(
     }
 )
 
+def climate_options_for(hass) -> vol.Schema:
+    """CLIMATE_OPTIONS with threshold defaults in HA's temperature unit.
+
+    Thresholds are compared in the system unit; a fixed 21/25 default was
+    Celsius-shaped and pinned every °F house in "summer".
+    """
+    units = getattr(getattr(hass, "config", None), "units", None)
+    unit = getattr(units, "temperature_unit", None)
+    low, high = DEFAULT_TEMP_THRESHOLDS.get(unit, DEFAULT_TEMP_THRESHOLDS["°C"])
+    fields = {}
+    for key, value in CLIMATE_OPTIONS.schema.items():
+        if key == CONF_TEMP_LOW:
+            key = vol.Required(CONF_TEMP_LOW, default=low)
+        elif key == CONF_TEMP_HIGH:
+            key = vol.Required(CONF_TEMP_HIGH, default=high)
+        fields[key] = value
+    return vol.Schema(fields)
+
+
 WEATHER_OPTIONS = vol.Schema(
     {
         vol.Optional(
-            CONF_WEATHER_STATE, default=["sunny", "partlycloudy", "cloudy", "clear"]
+            CONF_WEATHER_STATE, default=DEFAULT_WEATHER_STATE
         ): selector.SelectSelector(
             selector.SelectSelectorConfig(
                 multiple=True,
@@ -358,7 +385,7 @@ AUTOMATION_CONFIG = vol.Schema(
             selector.EntitySelectorConfig(domain=["sensor", "input_datetime"])
         ),
         vol.Required(
-            CONF_MANUAL_OVERRIDE_DURATION, default={"minutes": 15}
+            CONF_MANUAL_OVERRIDE_DURATION, default=DEFAULT_MANUAL_OVERRIDE_DURATION
         ): selector.DurationSelector(),
         vol.Required(CONF_MANUAL_OVERRIDE_RESET, default=False): bool,
         vol.Optional(CONF_MANUAL_THRESHOLD): vol.All(
@@ -650,7 +677,9 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             if self.config.get(CONF_WEATHER_ENTITY):
                 return await self.async_step_weather()
             return await self.async_step_update()
-        return self.async_show_form(step_id="climate", data_schema=CLIMATE_OPTIONS)
+        return self.async_show_form(
+            step_id="climate", data_schema=climate_options_for(self.hass)
+        )
 
     async def async_step_weather(self, user_input: dict[str, Any] | None = None):
         """Manage weather conditions."""
@@ -667,7 +696,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         options[CONF_MODE] = self.mode
         # Defaults for keys whose collecting step may not have run.
         options[CONF_MANUAL_OVERRIDE_DURATION] = self.config.get(
-            CONF_MANUAL_OVERRIDE_DURATION, {"minutes": 15}
+            CONF_MANUAL_OVERRIDE_DURATION, DEFAULT_MANUAL_OVERRIDE_DURATION
         )
         options[CONF_TRANSPARENT_BLIND] = self.config.get(
             CONF_TRANSPARENT_BLIND, False
@@ -797,7 +826,9 @@ class OptionsFlowHandler(OptionsFlow):
         if self.options.get(CONF_CLIMATE_MODE):
             sections["climate"] = {
                 **climate_toggle,
-                **_with_suggestions(_fields_of(CLIMATE_OPTIONS), self.options),
+                **_with_suggestions(
+                    _fields_of(climate_options_for(self.hass)), self.options
+                ),
                 **_with_suggestions(_fields_of(WEATHER_OPTIONS), self.options),
             }
         else:
@@ -1093,7 +1124,7 @@ class OptionsFlowHandler(OptionsFlow):
         return self.async_show_form(
             step_id="climate",
             data_schema=self.add_suggested_values_to_schema(
-                CLIMATE_OPTIONS, user_input or self.options
+                climate_options_for(self.hass), user_input or self.options
             ),
         )
 

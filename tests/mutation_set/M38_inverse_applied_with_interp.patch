@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1646,7 +1646,7 @@
+@@ -1698,7 +1698,7 @@
                  "Inverse state is not supported with interpolation, you can inverse the state by arranging the list from high to low"
              )
  

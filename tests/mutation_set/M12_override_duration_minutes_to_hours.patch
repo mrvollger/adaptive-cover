@@ -1,8 +1,8 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1315,7 +1315,7 @@
-         self.max_moves_hour = options.get(CONF_MAX_MOVES_HOUR)
+@@ -1367,7 +1367,7 @@
+             )
  
      def _update_manager_and_covers(self):
 -        self.manager.reset_duration = dt.timedelta(**self.manual_duration)

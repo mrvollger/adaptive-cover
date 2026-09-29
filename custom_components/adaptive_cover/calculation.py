@@ -12,7 +12,9 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
+from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import HomeAssistant
+from homeassistant.util.unit_conversion import TemperatureConverter
 
 from .config_context_adapter import ConfigContextAdapter
 from .engine import evaluate as engine_evaluate
@@ -431,33 +433,67 @@ class ClimateCoverData:
         except (TypeError, ValueError):
             return None
 
+    def _system_temperature_unit(self) -> str | None:
+        """HA's configured temperature unit, or None if unavailable."""
+        units = getattr(getattr(self.hass, "config", None), "units", None)
+        unit = getattr(units, "temperature_unit", None)
+        return unit if isinstance(unit, str) else None
+
+    def _to_system_unit(self, value, from_unit) -> float | None:
+        """Convert a reading into HA's configured temperature unit.
+
+        Thresholds (temp_low/high, outside threshold) are interpreted in the
+        system unit. Readings used to be compared raw, so a °F sensor
+        against thresholds entered in °C pinned every entry in "summer".
+        Unknown units pass through unchanged.
+        """
+        reading = self._as_float(value)
+        if reading is None:
+            return None
+        to_unit = self._system_temperature_unit()
+        if (
+            not isinstance(from_unit, str)
+            or to_unit is None
+            or from_unit == to_unit
+            or from_unit not in TemperatureConverter.VALID_UNITS
+            or to_unit not in TemperatureConverter.VALID_UNITS
+        ):
+            return reading
+        return TemperatureConverter.convert(reading, from_unit, to_unit)
+
     @property
     def outside_temperature(self):
-        """Get outside temperature."""
-        temp = None
+        """Get outside temperature (in HA's configured unit)."""
         if self.outside_entity:
-            temp = get_safe_state(
-                self.hass,
-                self.outside_entity,
+            return self._to_system_unit(
+                get_safe_state(self.hass, self.outside_entity),
+                get_safe_attr(
+                    self.hass, self.outside_entity, ATTR_UNIT_OF_MEASUREMENT
+                ),
             )
-        elif self.weather_entity:
-            temp = get_safe_attr(self.hass, self.weather_entity, "temperature")
-        return temp
+        if self.weather_entity:
+            return self._to_system_unit(
+                get_safe_attr(self.hass, self.weather_entity, "temperature"),
+                get_safe_attr(self.hass, self.weather_entity, "temperature_unit"),
+            )
+        return None
 
     @property
     def inside_temperature(self):
-        """Get inside temp from entity."""
-        if self.temp_entity is not None:
-            if get_domain(self.temp_entity) != "climate":
-                temp = get_safe_state(
-                    self.hass,
-                    self.temp_entity,
-                )
-            else:
-                temp = get_safe_attr(
-                    self.hass, self.temp_entity, "current_temperature"
-                )
-            return temp
+        """Get inside temperature (in HA's configured unit)."""
+        if self.temp_entity is None:
+            return None
+        if get_domain(self.temp_entity) != "climate":
+            return self._to_system_unit(
+                get_safe_state(self.hass, self.temp_entity),
+                get_safe_attr(
+                    self.hass, self.temp_entity, ATTR_UNIT_OF_MEASUREMENT
+                ),
+            )
+        # Climate entities already report in the system unit.
+        return self._as_float(
+            get_safe_attr(self.hass, self.temp_entity, "current_temperature")
+        )
 
     @property
     def get_current_temperature(self) -> float:

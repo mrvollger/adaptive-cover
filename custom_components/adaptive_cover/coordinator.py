@@ -105,6 +105,7 @@ from .const import (
     CONF_TEMP_ENTITY,
     CONF_TEMP_HIGH,
     CONF_TEMP_LOW,
+    DEFAULT_MANUAL_OVERRIDE_DURATION,
     CONF_TILT_DEPTH,
     CONF_TILT_DISTANCE,
     CONF_TILT_MODE,
@@ -185,7 +186,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             CONF_MANUAL_OVERRIDE_RESET, False
         )
         self.manual_duration = self.config_entry.options.get(
-            CONF_MANUAL_OVERRIDE_DURATION, {"minutes": 15}
+            CONF_MANUAL_OVERRIDE_DURATION, DEFAULT_MANUAL_OVERRIDE_DURATION
         )
         self.state_change = False
         self.cover_state_change = False
@@ -1322,7 +1323,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.end_time_entity = options.get(CONF_END_ENTITY)
         self.manual_reset = options.get(CONF_MANUAL_OVERRIDE_RESET, False)
         self.manual_duration = options.get(
-            CONF_MANUAL_OVERRIDE_DURATION, {"minutes": 15}
+            CONF_MANUAL_OVERRIDE_DURATION, DEFAULT_MANUAL_OVERRIDE_DURATION
         )
         self.manual_threshold = options.get(CONF_MANUAL_THRESHOLD)
         self.start_value = options.get(CONF_INTERP_START)
@@ -1332,6 +1333,38 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.quiet_start = options.get(CONF_QUIET_START)
         self.quiet_end = options.get(CONF_QUIET_END)
         self.max_moves_hour = options.get(CONF_MAX_MOVES_HOUR)
+        self._warn_if_threshold_unit_looks_wrong(options)
+
+    def _warn_if_threshold_unit_looks_wrong(self, options) -> None:
+        """Warn once when climate thresholds look like the other unit.
+
+        Thresholds are read in HA's configured temperature unit. 21 in a
+        °F house (or 72 in a °C house) silently pins the season.
+        """
+        if getattr(self, "_threshold_unit_warned", False):
+            return
+        if not options.get(CONF_CLIMATE_MODE):
+            return
+        units = getattr(getattr(self.hass, "config", None), "units", None)
+        unit = getattr(units, "temperature_unit", None)
+        suspicious = []
+        for key in (CONF_TEMP_LOW, CONF_TEMP_HIGH):
+            value = options.get(key)
+            if value is None:
+                continue
+            if unit == "°F" and value < 45:
+                suspicious.append(f"{key}={value}")
+            elif unit == "°C" and value > 45:
+                suspicious.append(f"{key}={value}")
+        if suspicious:
+            self._threshold_unit_warned = True
+            self.logger.warning(
+                "Climate thresholds %s look like the wrong unit: they are "
+                "compared in Home Assistant's unit (%s). Update them in the "
+                "options or with adaptive_cover.change_settings.",
+                ", ".join(suspicious),
+                unit,
+            )
 
     def _update_manager_and_covers(self):
         self.manager.reset_duration = dt.timedelta(**self.manual_duration)
