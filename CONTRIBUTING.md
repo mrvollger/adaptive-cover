@@ -30,7 +30,7 @@ The Python environment is managed with [pixi](https://pixi.sh). `pixi.toml` and 
 pixi install          # create the environment from pixi.lock
 pixi run test         # the full pytest suite, in parallel (pytest -n auto)
 pixi run lint         # ruff lint and format checks
-pixi run typecheck    # pyright (basic with a baseline; strict and zero errors on engine/)
+pixi run typecheck    # pyright (basic with a baseline; strict and zero errors on engine/ and runtime/)
 pixi run mutations    # the mutation kill matrix (tests/mutation_set/)
 ```
 
@@ -72,6 +72,7 @@ Copy `custom_components/adaptive_cover/` into `/config/custom_components/` on a 
 | Tier | Path | What it pins |
 |---|---|---|
 | Engine | `tests/engine/` | Pure `evaluate()` and geometry, including dense property sweeps. `test_purity.py` is a structural guard. |
+| Runtime | `tests/runtime/` | The components split out of the coordinator (P4), called directly with fakes and no `hass` fixture. Implementation tier: later P4 steps may reshape them. `test_no_hass.py` keeps them free of Home Assistant. |
 | Characterization | `tests/characterization/` | The climate truth table (`climate_truth_table.json`, 216 combinations), the golden day schedules (`goldens/*.txt`) and the outbound service calls (`test_service_calls.py`). |
 | Simulation | `tests/simulation/` | Full-day replays of the real integration against fake shades, a real astral sun and a stepped frozen clock (SimHouse). |
 | Entity surface | root `tests/test_*.py` | Config flow, options, services, entities, the hub and restore behavior, through a real config entry. |
