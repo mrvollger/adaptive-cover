@@ -342,3 +342,29 @@ The example below is inside an HTML comment. The checker ignores it.
   still wins if both held. Positions are unchanged (the climate strategy
   never read this value), so goldens, truth table and house replay are
   unchanged.
+
+## L0015 · 2026-09-29 · Return to auto no longer waits for the covers to land (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pin
+  `tests/simulation/test_regressions.py::test_regression_reset_button_returns_at_once`.
+  One behavior-tier test body changed without changing its id:
+  `tests/simulation/test_harness_smoke.py::test_press_reset_button_resumes_auto`
+  now lets the shade travel (advances to 11:20) before it checks the landed
+  position, because the press no longer waits for the landing. Its
+  assertions are unchanged.
+- **Mutations re-targeted:** none, and none added: the defect was a wait
+  loop, and a mutation that re-adds it would hang the entity tier until the
+  runner's 30-minute timeout.
+- **Contract change:** C5
+- **Reason:** defect fix listed in the plan's P4 ("the reset button no
+  longer blocks"). Confirmed first: `AdaptiveCoverButton.async_press`
+  commanded each overridden cover, then polled every second until it
+  reported landing or 120 s passed, before resetting the override and
+  moving on to the next cover. One press held its service call for up to
+  two minutes per overridden cover (the new two-cover scenario saw sim time
+  advance during the press). The button now sends each command and clears
+  the override at once. The travel stays ours through the coordinator's
+  travel window, so the landing is never read as a manual move (the new
+  scenario checks both covers after they land). Goldens, truth table and
+  house replay unchanged: none of them presses the button.

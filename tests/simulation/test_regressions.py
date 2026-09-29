@@ -381,3 +381,33 @@ async def test_regression_control_method_returns_to_intermediate(hass, freezer):
     await house.advance_to("12:00")
     assert house.sensor_value("control_method") == "intermediate"
     await house.teardown()
+
+
+async def test_regression_reset_button_returns_at_once(hass, freezer):
+    """Return to auto commands the covers and returns; it does not wait.
+
+    The button waited (polling every second, up to the 120 s travel
+    timeout) for each overridden cover to land before resetting the next,
+    so one press held its service call for minutes with several covers.
+    The overrides now clear as soon as the commands are sent; the landing
+    is still our own (never manual).
+    """
+    house = await SimHouse.create(hass, freezer, date="2026-03-20", covers=[A, B])
+    await house.advance_to("11:10")
+    await house.user_moves(A, 100, via="remote")
+    await house.user_moves(B, 100, via="remote")
+    await house.advance_to("11:20")
+    assert house.window(A).is_manual and house.window(B).is_manual
+
+    pressed_at = house.now
+    await house.press()
+    assert house.now == pressed_at, "the press waited for the covers to land"
+    for cover in (A, B):
+        assert house.auto_moves(cover, since="11:20"), f"{cover} not commanded"
+        assert not house.window(cover).is_manual, f"{cover} still overridden"
+
+    await house.advance_to("11:30")  # both land on our targets
+    for cover in (A, B):
+        assert not house.window(cover).is_manual, f"{cover} landing read as manual"
+        assert house.position(cover) == house.auto_moves(cover)[-1].position
+    await house.teardown()

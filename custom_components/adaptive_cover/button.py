@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
@@ -80,31 +79,18 @@ class AdaptiveCoverButton(
         self._attr_device_info = adaptive_cover_device_info(config_entry)
 
     async def async_press(self) -> None:
-        """Handle the button press."""
+        """Handle the button press.
+
+        Each overridden cover is sent the adaptive position and its
+        override cleared at once: the press does not wait for the cover to
+        land. Its travel is ours (the coordinator's travel window), so the
+        landing is never read as a manual move.
+        """
         coordinator = self.coordinator
         for entity in self._entities:
             if coordinator.manager.is_cover_manual(entity):
                 _LOGGER.debug("Resetting manual override for: %s", entity)
                 await coordinator.async_set_position(entity, coordinator.state)
-                # Wait for the cover to report arrival, but never past the
-                # coordinator's travel-time bound: a jammed motor or a
-                # dropped position report must not stall the reset of this
-                # cover (or the ones after it) forever.
-                while coordinator.wait_for_target.get(entity):
-                    sent_at = coordinator.target_call_time.get(entity)
-                    if (
-                        sent_at is None
-                        or coordinator.clock.utcnow() - sent_at
-                        > coordinator.TARGET_TIMEOUT
-                    ):
-                        _LOGGER.warning(
-                            "%s never confirmed reaching its target; "
-                            "clearing wait and resetting override anyway",
-                            entity,
-                        )
-                        coordinator.wait_for_target[entity] = False
-                        break
-                    await asyncio.sleep(1)
                 coordinator.manager.reset(entity)
             else:
                 _LOGGER.debug(
