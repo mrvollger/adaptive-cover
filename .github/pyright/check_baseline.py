@@ -11,7 +11,8 @@ part of the key, so moving or reformatting code does not invalidate it.
   ``--write`` so the fixed errors cannot come back unnoticed.
 - Paths in ``ZERO_ERROR_PATHS`` get no baseline at all: any error there
   fails the run, and ``--write`` refuses to record one. They are the
-  directories pyproject.toml lists under ``strict`` (P2: ``engine/``).
+  directories pyproject.toml lists under ``strict`` (P2: ``engine/``;
+  P4: ``runtime/``).
 
 Pyright settings live in ``[tool.pyright]`` in pyproject.toml. Messages
 depend on the pyright version and on the installed Home Assistant, so
@@ -37,7 +38,10 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 BASELINE = Path(__file__).resolve().with_name("baseline.json")
 # Checked in strict mode (pyproject.toml [tool.pyright] strict) with no
 # baseline: these must stay at zero errors.
-ZERO_ERROR_PATHS = ("custom_components/adaptive_cover/engine/",)
+ZERO_ERROR_PATHS = (
+    "custom_components/adaptive_cover/engine/",
+    "custom_components/adaptive_cover/runtime/",
+)
 
 Key = tuple[str, str, str]
 

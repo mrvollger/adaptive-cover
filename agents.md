@@ -40,8 +40,11 @@ custom_components/adaptive_cover/
 │   ├── geometry.py          # Gamma/FOV/elevation, per-cover-type %, overhang, glare-safe height
 │   ├── numeric.py           # clip/interp: scalar stand-ins for np.clip/np.interp
 │   └── evaluate.py          # evaluate(config, sun, ctx, climate=None) -> Decision
-├── runtime/                 # Runtime building blocks (P2: the clock; P4: the coordinator split)
-│   └── clock.py             # Clock protocol + HassClock: the only module that reads "now"
+├── runtime/                 # Runtime building blocks (P2: the clock; P4: the coordinator split; pyright strict)
+│   ├── clock.py             # Clock protocol + HassClock: the only module that reads "now"
+│   ├── shade_config.py      # ShadeConfig (typed per-refresh options), ControlState (switch toggles)
+│   ├── schedule.py          # Schedule: start/end time window (no hass; state reader + "now" passed in)
+│   └── gates.py             # GatePolicy: delta/time/quiet/budget gates and their order (no hass)
 ├── sun.py                   # Astral-based solar table (SolarDay, 5-minute points, stdlib only)
 ├── config_flow.py           # Setup wizard + one-page options form (routing only)
 ├── settings/                # One option spec; every settings surface is built from it (P3)
@@ -76,6 +79,7 @@ custom_components/adaptive_cover/
 ```
 tests/
 ├── engine/                  # Pure engine tests + property sweeps; test_purity.py guard
+├── runtime/                 # Runtime component unit tests with fakes, no hass (P4)
 ├── characterization/        # Climate truth table, golden days, outbound service calls
 ├── simulation/              # SimHouse full-day replays (README.md = harness API)
 ├── replay/                  # House-replay goldens: real configs x 6 dates (added in P0)
@@ -149,6 +153,8 @@ cover state change ────┘         ▼
 **`SunData`** (sun.py) — Wraps astral library. Generates daily solar position data at 5-minute intervals (`solar_day() -> SolarDay`, cached per local date). `times` is a tuple of tz-aware local datetimes (289 points; 277/301 on DST days); `solar_azimuth`/`solar_elevation` are lists; plus `sunrise()`/`sunset()`/`location`. `nearest_index()` finds the nearest point with `bisect` in UTC.
 
 **`Clock`** (runtime/clock.py) — Where "now" comes from. The coordinator owns one (`coordinator.clock`; `coordinator.default_clock` is the test seam) and hands it to its override manager, cover adapters and `SunData`. Production uses `HassClock` (`dt_util`, which `freezer` freezes).
+
+**`ShadeConfig`** / **`ControlState`** / **`Schedule`** / **`GatePolicy`** (runtime/, P4 batch 1) — Split out of the coordinator, no `hass`. The coordinator rebuilds `self.config = ShadeConfig.from_options(options)` each refresh, keeps the switch toggles in `self.controls` (the switch platform still sets `control_toggle`, `manual_toggle`, ... by name through `ControlToggle` forwards), asks `self.schedule` for the start/end window and `self.gates.first_blocking_gate(...)` for each automatic move.
 
 ### Config Flow (config_flow.py)
 
@@ -262,7 +268,7 @@ Environment and tasks come from `pixi.toml` (see `CONTRIBUTING.md`):
 pixi install          # environment from pixi.lock
 pixi run test         # full pytest suite, parallel (pytest -n auto)
 pixi run lint         # ruff
-pixi run typecheck    # pyright (strict and zero errors on engine/)
+pixi run typecheck    # pyright (strict and zero errors on engine/ and runtime/)
 pixi run mutations    # mutation kill matrix (tests/mutation_set/)
 pixi run pytest tests/simulation -q   # one tier or file
 ```
@@ -277,6 +283,7 @@ own npm toolchain in `card/` (`npm test`, `npm run typecheck`,
 | Tier | Path | Pins |
 |------|------|------|
 | Engine | `tests/engine/` | pure `evaluate()`/geometry, property sweeps; `test_purity.py` guards engine purity |
+| Runtime | `tests/runtime/` | runtime components called directly with fakes, no `hass` fixture (implementation tier); `test_no_hass.py` guards it |
 | Characterization | `tests/characterization/` | `climate_truth_table.json` (216 combos), golden day schedules in `goldens/`, outbound service calls |
 | Simulation | `tests/simulation/` | full-day SimHouse replays of the REAL integration (fake shades, real astral sun, stepped frozen clock) |
 | Entity surface | root `tests/test_*.py` | config flow, options, services, entities, hub, restore — through a real config entry |

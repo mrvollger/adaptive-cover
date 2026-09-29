@@ -1,6 +1,7 @@
 """Helper functions."""
 
 import datetime as dt
+from typing import overload
 
 from dateutil import parser
 from homeassistant.core import HomeAssistant, split_entity_id
@@ -29,8 +30,22 @@ def get_domain(entity: str):
         return domain
 
 
-def get_datetime_from_str(string: str, default_date: dt.date | None = None):
-    """Convert datetime string to datetime.
+@overload
+def get_datetime_from_str(
+    string: str, default_date: dt.date | None = None
+) -> dt.datetime: ...
+
+
+@overload
+def get_datetime_from_str(
+    string: str | None, default_date: dt.date | None = None
+) -> dt.datetime | None: ...
+
+
+def get_datetime_from_str(
+    string: str | None, default_date: dt.date | None = None
+) -> dt.datetime | None:
+    """Convert datetime string to datetime (None stays None).
 
     A bare time string gets its date from default_date when given.
     Without it, dateutil falls back to the PROCESS-local today, which is

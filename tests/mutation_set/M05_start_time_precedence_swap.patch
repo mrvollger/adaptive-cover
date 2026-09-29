@@ -1,33 +1,35 @@
-diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
---- a/custom_components/adaptive_cover/coordinator.py
-+++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1597,6 +1597,14 @@
-     def after_start_time(self):
-         """Check if time is after start time."""
-         now = self._now_local()
-+        if self.start_time is not None:
-+            time = get_datetime_from_str(self.start_time, default_date=now.date())
+diff --git a/custom_components/adaptive_cover/runtime/schedule.py b/custom_components/adaptive_cover/runtime/schedule.py
+--- a/custom_components/adaptive_cover/runtime/schedule.py
++++ b/custom_components/adaptive_cover/runtime/schedule.py
+@@ -56,6 +56,15 @@
+ 
+     def after_start(self, config: ShadeConfig, now: dt.datetime) -> bool:
+         """Return True once today's start time has passed (no start: True)."""
++        if config.start_time is not None:
++            time = get_datetime_from_str(config.start_time, default_date=now.date())
 +
 +            self.logger.debug(
 +                "Start time: %s, now: %s, now >= time: %s", time, now, now >= time
 +            )
-+            self._start_time
++            # Not recorded in last_start: the coordinator's line here was a
++            # no-op expression (a P4 ledgered fix, not this move).
 +            return now >= time
-         if self.start_time_entity is not None:
-             time = get_datetime_from_str(
-                 get_safe_state(self.hass, self.start_time_entity),
-@@ -1606,14 +1614,6 @@
+         if config.start_time_entity is not None:
+             # An unavailable start entity reads as None, and comparing with
+             # None raises TypeError (known, not fixed in this move); the
+@@ -71,15 +80,6 @@
                  "Start time: %s, now: %s, now >= time: %s ", time, now, now >= time
              )
-             self._start_time = time
+             self.last_start = time
 -            return now >= time
--        if self.start_time is not None:
--            time = get_datetime_from_str(self.start_time, default_date=now.date())
+-        if config.start_time is not None:
+-            time = get_datetime_from_str(config.start_time, default_date=now.date())
 -
 -            self.logger.debug(
 -                "Start time: %s, now: %s, now >= time: %s", time, now, now >= time
 -            )
--            self._start_time
+-            # Not recorded in last_start: the coordinator's line here was a
+-            # no-op expression (a P4 ledgered fix, not this move).
              return now >= time
          return True
  

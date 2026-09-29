@@ -1,50 +1,50 @@
 [
  {
   "id": "M01",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "check_position_delta",
+  "file": "custom_components/adaptive_cover/runtime/gates.py",
+  "function": "GatePolicy.position_delta_ok",
   "description": ">= min_change -> > (move exactly at threshold now blocked)",
   "patch": "M01_delta_gate_ge.patch"
  },
  {
   "id": "M02",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "check_quiet_hours",
+  "file": "custom_components/adaptive_cover/runtime/gates.py",
+  "function": "GatePolicy.quiet_hours_ok",
   "description": "remove the snap-position early return (evening close swallowed in quiet window)",
   "patch": "M02_quiet_hours_snap_bypass.patch"
  },
  {
   "id": "M03",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "check_move_budget",
+  "file": "custom_components/adaptive_cover/runtime/gates.py",
+  "function": "GatePolicy.move_budget_ok",
   "description": ">= max_moves_hour -> > (one extra move per rolling hour)",
   "patch": "M03_move_budget_ge.patch"
  },
  {
   "id": "M04",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "check_time_delta",
+  "file": "custom_components/adaptive_cover/runtime/gates.py",
+  "function": "GatePolicy.time_delta_ok",
   "description": "no-previous-command branch return True -> return False",
   "patch": "M04_time_delta_default_false.patch"
  },
  {
   "id": "M05",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "after_start_time",
+  "file": "custom_components/adaptive_cover/runtime/schedule.py",
+  "function": "Schedule.after_start",
   "description": "static CONF_START_TIME wins over the start-time entity (precedence swap)",
   "patch": "M05_start_time_precedence_swap.patch"
  },
  {
   "id": "M06",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "_end_time",
+  "file": "custom_components/adaptive_cover/runtime/schedule.py",
+  "function": "Schedule.end_time",
   "description": "drop the 00:00-means-next-midnight normalization",
   "patch": "M06_midnight_end_time_normalization.patch"
  },
  {
   "id": "M07",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "_first_blocking_gate",
+  "file": "custom_components/adaptive_cover/runtime/gates.py",
+  "function": "GatePolicy.first_blocking_gate",
   "description": "evaluate position-delta before the manual-override check (move_blocked_by names the wrong gate)",
   "patch": "M07_gate_order_delta_before_manual.patch"
  },
@@ -85,8 +85,8 @@
  },
  {
   "id": "M13",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "_update_manager_and_covers",
+  "file": "custom_components/adaptive_cover/runtime/shade_config.py",
+  "function": "ControlState.clears_overrides",
   "description": "swap the None (restart: preserve) and False (toggle-off: clear) branches",
   "patch": "M13_toggle_none_false_branch_swap.patch"
  },

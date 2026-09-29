@@ -45,6 +45,9 @@ BINARY = "custom_components/adaptive_cover/binary_sensor.py"
 INIT = "custom_components/adaptive_cover/__init__.py"
 SURFACE = "custom_components/adaptive_cover/entity_surface.py"
 SHARED = "custom_components/adaptive_cover/entity_shared.py"
+SHADE_CONFIG = "custom_components/adaptive_cover/runtime/shade_config.py"
+SCHEDULE = "custom_components/adaptive_cover/runtime/schedule.py"
+GATES = "custom_components/adaptive_cover/runtime/gates.py"
 
 
 @dataclass
@@ -64,126 +67,138 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M01",
         "delta_gate_ge",
-        COORD,
-        "check_position_delta",
+        GATES,
+        "GatePolicy.position_delta_ok",
         ">= min_change -> > (move exactly at threshold now blocked)",
-        "            condition = abs(position - state) >= self.min_change",
-        "            condition = abs(position - state) > self.min_change",
+        "            condition = abs(position - state) >= config.min_change",
+        "            condition = abs(position - state) > config.min_change",
     ),
     Mutation(
         "M02",
         "quiet_hours_snap_bypass",
-        COORD,
-        "check_quiet_hours",
+        GATES,
+        "GatePolicy.quiet_hours_ok",
         "remove the snap-position early return (evening close swallowed in quiet window)",
-        "        if not self.quiet_start or not self.quiet_end:\n"
+        "        if not config.quiet_start or not config.quiet_end:\n"
         "            return True\n"
-        "        if self._is_snap_position(state, options):\n"
+        "        if self.is_snap_position(state, config):\n"
         "            return True\n"
-        "        now = self._now_local().time()",
-        "        if not self.quiet_start or not self.quiet_end:\n"
+        "        now = now_local.time()",
+        "        if not config.quiet_start or not config.quiet_end:\n"
         "            return True\n"
-        "        now = self._now_local().time()",
+        "        now = now_local.time()",
     ),
     Mutation(
         "M03",
         "move_budget_ge",
-        COORD,
-        "check_move_budget",
+        GATES,
+        "GatePolicy.move_budget_ok",
         ">= max_moves_hour -> > (one extra move per rolling hour)",
-        "        if len(history) >= self.max_moves_hour:",
-        "        if len(history) > self.max_moves_hour:",
+        "        if len(history) >= config.max_moves_hour:",
+        "        if len(history) > config.max_moves_hour:",
     ),
     Mutation(
         "M04",
         "time_delta_default_false",
-        COORD,
-        "check_time_delta",
+        GATES,
+        "GatePolicy.time_delta_ok",
         "no-previous-command branch return True -> return False",
         "            return condition\n"
         "        return True\n"
         "\n"
-        "    @property\n"
-        "    def pos_sun(self):",
+        "    def is_snap_position(",
         "            return condition\n"
         "        return False\n"
         "\n"
-        "    @property\n"
-        "    def pos_sun(self):",
+        "    def is_snap_position(",
     ),
     Mutation(
         "M05",
         "start_time_precedence_swap",
-        COORD,
-        "after_start_time",
+        SCHEDULE,
+        "Schedule.after_start",
         "static CONF_START_TIME wins over the start-time entity (precedence swap)",
-        "        if self.start_time_entity is not None:\n"
-        "            time = get_datetime_from_str(\n"
-        "                get_safe_state(self.hass, self.start_time_entity),\n"
-        "                default_date=now.date(),\n"
+        "        if config.start_time_entity is not None:\n"
+        "            # An unavailable start entity reads as None, and comparing with\n"
+        "            # None raises TypeError (known, not fixed in this move); the\n"
+        "            # cast only tells the type checker what the code assumes.\n"
+        "            time = cast(\n"
+        "                dt.datetime,\n"
+        "                get_datetime_from_str(\n"
+        "                    self._read_state(config.start_time_entity),\n"
+        "                    default_date=now.date(),\n"
+        "                ),\n"
         "            )\n"
         "            self.logger.debug(\n"
         '                "Start time: %s, now: %s, now >= time: %s ", time, now, now >= time\n'
         "            )\n"
-        "            self._start_time = time\n"
+        "            self.last_start = time\n"
         "            return now >= time\n"
-        "        if self.start_time is not None:\n"
-        "            time = get_datetime_from_str(self.start_time, default_date=now.date())\n"
+        "        if config.start_time is not None:\n"
+        "            time = get_datetime_from_str(config.start_time, default_date=now.date())\n"
         "\n"
         "            self.logger.debug(\n"
         '                "Start time: %s, now: %s, now >= time: %s", time, now, now >= time\n'
         "            )\n"
-        "            self._start_time\n"
+        "            # Not recorded in last_start: the coordinator's line here was a\n"
+        "            # no-op expression (a P4 ledgered fix, not this move).\n"
         "            return now >= time\n"
         "        return True",
-        "        if self.start_time is not None:\n"
-        "            time = get_datetime_from_str(self.start_time, default_date=now.date())\n"
+        "        if config.start_time is not None:\n"
+        "            time = get_datetime_from_str(config.start_time, default_date=now.date())\n"
         "\n"
         "            self.logger.debug(\n"
         '                "Start time: %s, now: %s, now >= time: %s", time, now, now >= time\n'
         "            )\n"
-        "            self._start_time\n"
+        "            # Not recorded in last_start: the coordinator's line here was a\n"
+        "            # no-op expression (a P4 ledgered fix, not this move).\n"
         "            return now >= time\n"
-        "        if self.start_time_entity is not None:\n"
-        "            time = get_datetime_from_str(\n"
-        "                get_safe_state(self.hass, self.start_time_entity),\n"
-        "                default_date=now.date(),\n"
+        "        if config.start_time_entity is not None:\n"
+        "            # An unavailable start entity reads as None, and comparing with\n"
+        "            # None raises TypeError (known, not fixed in this move); the\n"
+        "            # cast only tells the type checker what the code assumes.\n"
+        "            time = cast(\n"
+        "                dt.datetime,\n"
+        "                get_datetime_from_str(\n"
+        "                    self._read_state(config.start_time_entity),\n"
+        "                    default_date=now.date(),\n"
+        "                ),\n"
         "            )\n"
         "            self.logger.debug(\n"
         '                "Start time: %s, now: %s, now >= time: %s ", time, now, now >= time\n'
         "            )\n"
-        "            self._start_time = time\n"
+        "            self.last_start = time\n"
         "            return now >= time\n"
         "        return True",
     ),
     Mutation(
         "M06",
         "midnight_end_time_normalization",
-        COORD,
-        "_end_time",
+        SCHEDULE,
+        "Schedule.end_time",
         "drop the 00:00-means-next-midnight normalization",
-        "            time = get_datetime_from_str(self.end_time, default_date=today)\n"
+        "            time = get_datetime_from_str(config.end_time, default_date=today)\n"
         "            if time.time() == dt.time(0, 0):\n"
         "                time = time + dt.timedelta(days=1)\n"
         "        return time",
-        "            time = get_datetime_from_str(self.end_time, default_date=today)\n"
+        "            time = get_datetime_from_str(config.end_time, default_date=today)\n"
         "        return time",
     ),
     Mutation(
         "M07",
         "gate_order_delta_before_manual",
-        COORD,
-        "_first_blocking_gate",
+        GATES,
+        "GatePolicy.first_blocking_gate",
         "evaluate position-delta before the manual-override check "
         "(move_blocked_by names the wrong gate)",
-        "        if self.manager.is_cover_manual(entity):\n"
+        "        if cover.is_manual():\n"
         '            return "manual_override"\n'
-        "        if self.wait_for_target.get(entity):",
-        "        if not self.check_position_delta(entity, state, options):\n"
+        "        if cover.awaiting_target():",
+        "        if not self.position_delta_ok(entity, cover.position(), state, config):\n"
         '            return "position_delta"\n'
-        "        if self.manager.is_cover_manual(entity):\n"
+        "        if cover.is_manual():\n"
         '            return "manual_override"\n'
-        "        if self.wait_for_target.get(entity):",
+        "        if cover.awaiting_target():",
     ),
     # ---- group B: manual override detection ----------------------------
     Mutation(
@@ -228,17 +243,17 @@ MUTATIONS: list[Mutation] = [
         COORD,
         "_update_manager_and_covers",
         "override duration unit blown up 60x (minutes behave like hours)",
-        "        self.manager.reset_duration = dt.timedelta(**self.manual_duration)",
-        "        self.manager.reset_duration = dt.timedelta(**self.manual_duration) * 60",
+        "        self.manager.reset_duration = dt.timedelta(**self.config.manual_duration)",
+        "        self.manager.reset_duration = dt.timedelta(**self.config.manual_duration) * 60",
     ),
     Mutation(
         "M13",
         "toggle_none_false_branch_swap",
-        COORD,
-        "_update_manager_and_covers",
+        SHADE_CONFIG,
+        "ControlState.clears_overrides",
         "swap the None (restart: preserve) and False (toggle-off: clear) branches",
-        "        if self._manual_toggle is False:",
-        "        if self._manual_toggle is None:",
+        "        return self.manual is False",
+        "        return self.manual is None",
     ),
     # ---- group C: end-of-day close lifecycle ---------------------------
     Mutation(

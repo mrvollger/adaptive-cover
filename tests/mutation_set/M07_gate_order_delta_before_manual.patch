@@ -1,12 +1,12 @@
-diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
---- a/custom_components/adaptive_cover/coordinator.py
-+++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1136,6 +1136,8 @@
-         Exposed per cover in the 'move_blocked_by' attribute so 'why didn't
-         it move?' is answerable from the UI.
+diff --git a/custom_components/adaptive_cover/runtime/gates.py b/custom_components/adaptive_cover/runtime/gates.py
+--- a/custom_components/adaptive_cover/runtime/gates.py
++++ b/custom_components/adaptive_cover/runtime/gates.py
+@@ -73,6 +73,8 @@
+         it move?' is answerable from the UI. ``now`` is aware UTC,
+         ``now_local`` naive wall time in HA's configured zone.
          """
-+        if not self.check_position_delta(entity, state, options):
++        if not self.position_delta_ok(entity, cover.position(), state, config):
 +            return "position_delta"
-         if self.manager.is_cover_manual(entity):
+         if cover.is_manual():
              return "manual_override"
-         if self.wait_for_target.get(entity):
+         if cover.awaiting_target():
