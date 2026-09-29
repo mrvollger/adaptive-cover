@@ -1,6 +1,9 @@
 {
   "domain": "adaptive_cover",
   "name": "Adaptive Cover",
+  "after_dependencies": [
+    "http"
+  ],
   "codeowners": [
     "@mrvollger"
   ],
@@ -20,5 +23,5 @@
     "astral",
     "pandas"
   ],
-  "version": "1.14.0"
+  "version": "1.15.0"
 }
