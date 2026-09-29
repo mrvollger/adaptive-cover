@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1461,6 +1461,14 @@
+@@ -1475,6 +1475,14 @@
      def after_start_time(self):
          """Check if time is after start time."""
          now = self._now_local()
@@ -16,7 +16,7 @@ diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components
          if self.start_time_entity is not None:
              time = get_datetime_from_str(
                  get_safe_state(self.hass, self.start_time_entity),
-@@ -1470,14 +1478,6 @@
+@@ -1484,14 +1492,6 @@
                  "Start time: %s, now: %s, now >= time: %s ", time, now, now >= time
              )
              self._start_time = time

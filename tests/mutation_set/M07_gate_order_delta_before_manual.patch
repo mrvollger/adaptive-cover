@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1077,6 +1077,8 @@
+@@ -1091,6 +1091,8 @@
          Exposed per cover in the 'move_blocked_by' attribute so 'why didn't
          it move?' is answerable from the UI.
          """
