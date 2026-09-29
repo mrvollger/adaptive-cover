@@ -575,6 +575,184 @@ class TestMigration:
         assert entry.state is ConfigEntryState.MIGRATION_ERROR
 
 
+# ------------------------------------------------ the live house upgrade
+
+SNAPSHOT = Path(__file__).parent / "fixtures" / "house_snapshot"
+
+
+def _snapshot_json(name: str) -> dict:
+    return json.loads((SNAPSHOT / name).read_text())
+
+
+def _load_live_house(hass) -> tuple[list[dict], list[dict], dict[str, str | None]]:
+    """Put the live house's registries and 1.1 entries into hass.
+
+    Returns (window and hub entries, their registry rows, cover -> the
+    cover's effective area).
+    """
+    entries = [
+        entry
+        for entry in _snapshot_json("config_entries.json")["entries"]
+        if entry["role"] in ("window", "hub")
+    ]
+    entry_ids = {entry["entry_id"] for entry in entries}
+    rows = [
+        row
+        for row in _snapshot_json("entity_registry.json")["entities"]
+        if row["config_entry_id"] in entry_ids
+    ]
+    covers = [
+        cover
+        for cover in _snapshot_json("physical_covers.json")["covers"]
+        if cover["platform"] != DOMAIN
+    ]
+    area_reg = ar.async_get(hass)
+    for area in _snapshot_json("floors_areas.json")["areas"]:
+        created = area_reg.async_create(area["area_id"])
+        assert created.id == area["area_id"]
+        area_reg.async_update(created.id, name=area["name"])
+
+    # The physical covers belong to another integration, with their areas.
+    zha = MockConfigEntry(domain="zha")
+    zha.add_to_hass(hass)
+    dev_reg = dr.async_get(hass)
+    ent_reg = er.async_get(hass)
+    for cover in covers:
+        device = dev_reg.async_get_or_create(
+            config_entry_id=zha.entry_id,
+            identifiers={("zha", cover["device_id"])},
+            name=cover["device_name"],
+        )
+        dev_reg.async_update_device(device.id, area_id=cover["device_area_id"])
+        platform_domain, object_id = cover["entity_id"].split(".", 1)
+        ent_reg.async_get_or_create(
+            platform_domain,
+            "zha",
+            cover["entity_id"],
+            config_entry=zha,
+            device_id=device.id,
+            suggested_object_id=object_id,
+        )
+        ent_reg.async_update_entity(
+            cover["entity_id"], area_id=cover["registry_area_id"]
+        )
+        hass.states.async_set(
+            cover["entity_id"],
+            cover["state_now"],
+            {"current_position": cover["current_position_now"]},
+        )
+
+    for entry in entries:
+        MockConfigEntry(
+            domain=DOMAIN,
+            entry_id=entry["entry_id"],
+            title=entry["title"],
+            data=entry["data"],
+            options=entry["options"],
+            version=1,
+            minor_version=1,
+        ).add_to_hass(hass)
+        if temp := entry["options"].get(CONF_TEMP_ENTITY):
+            hass.states.async_set(temp, "72", {"unit_of_measurement": "°F"})
+        if weather := entry["options"].get(CONF_WEATHER_ENTITY):
+            hass.states.async_set(weather, "sunny")
+
+    for device in _snapshot_json("device_registry.json")["devices"]:
+        (entry_id,) = device["config_entries"]
+        created = dev_reg.async_get_or_create(
+            config_entry_id=entry_id,
+            identifiers={tuple(identifier) for identifier in device["identifiers"]},
+            name=device["name"],
+        )
+        dev_reg.async_update_device(
+            created.id, name_by_user=device["name_by_user"], area_id=device["area_id"]
+        )
+
+    for row in rows:
+        platform_domain, object_id = row["entity_id"].split(".", 1)
+        created = ent_reg.async_get_or_create(
+            platform_domain,
+            DOMAIN,
+            row["unique_id"],
+            config_entry=hass.config_entries.async_get_entry(row["config_entry_id"]),
+            suggested_object_id=object_id,
+            has_entity_name=True,
+            original_name=row["original_name"],
+        )
+        assert created.entity_id == row["entity_id"]
+
+    hass.states.async_set(
+        "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 45.0}
+    )
+    cover_areas = {cover["entity_id"]: cover["effective_area_id"] for cover in covers}
+    return entries, rows, cover_areas
+
+
+async def test_live_house_upgrade(hass, cover_calls):
+    """The sanitized live house (tests/fixtures/house_snapshot) upgrades to
+    the P1 surface: identity frozen, surface applied, areas copied."""
+    entries, rows, cover_areas = _load_live_house(hass)
+    windows = [entry for entry in entries if entry["role"] == "window"]
+    assert len(windows) == 15
+    await _setup(hass, hass.config_entries.async_get_entry(windows[0]["entry_id"]))
+
+    # Every entry migrated and loaded.
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        assert entry.state is ConfigEntryState.LOADED, entry.title
+        assert (entry.version, entry.minor_version) == (1, 2), entry.title
+
+    # Identity is frozen: the same 318 (platform, unique_id) -> entity_id
+    # rows, no more. ("X_Manual Override" is both a switch and a sensor.)
+    ent_reg = er.async_get(hass)
+    after = {
+        (row.domain, row.unique_id): row.entity_id
+        for row in ent_reg.entities.values()
+        if row.platform == DOMAIN
+    }
+    assert after == {
+        (row["domain"], row["unique_id"]): row["entity_id"] for row in rows
+    }
+    assert len(after) == 318
+
+    # The surface lands on every window row; the hub stays primary.
+    window_ids = {entry["entry_id"] for entry in windows}
+    disabled = 0
+    for row in rows:
+        reg = ent_reg.async_get(row["entity_id"])
+        if row["config_entry_id"] in window_ids:
+            suffix = row["unique_id"].removeprefix(f"{row['config_entry_id']}_")
+            category, enabled, _name = WINDOW_SURFACE[(reg.domain, suffix)]
+        else:
+            category, enabled = None, True
+        assert reg.entity_category == category, row["entity_id"]
+        if enabled:
+            assert reg.disabled_by is None, row["entity_id"]
+        else:
+            assert reg.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+            disabled += 1
+    assert disabled == 15 * 4
+
+    # Areas: the owner's stay; the others come from the physical cover.
+    dev_reg = dr.async_get(hass)
+    snapshot_devices = {
+        device["config_entries"][0]: device
+        for device in _snapshot_json("device_registry.json")["devices"]
+    }
+    for entry in windows:
+        device = dev_reg.async_get_device(identifiers={(DOMAIN, entry["entry_id"])})
+        user_area = snapshot_devices[entry["entry_id"]]["area_id"]
+        (cover,) = entry["options"][CONF_ENTITIES]
+        assert device.area_id == (user_area or cover_areas[cover]), entry["title"]
+        assert device.area_id is not None, entry["title"]  # every cover has one
+
+        # Cards keep binding by entry_id: it is the window_key.
+        window = WindowHandle(hass, cover)
+        assert window.attributes["window_key"] == entry["entry_id"]
+        assert window.attributes["cover_entity"] == cover
+        friendly = window.state("position").attributes["friendly_name"]
+        assert friendly == f"{device.name_by_user or device.name} Target position"
+
+
 # ---------------------------------------------------- position attributes
 
 _NEXT_EVENT_RE = re.compile(
