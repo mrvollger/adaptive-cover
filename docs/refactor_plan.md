@@ -87,10 +87,10 @@ These defaults are the spec defaults for new installs. For the live house, a lif
 
 | Scope | Values |
 |---|---|
-| House | climate **on**; thresholds **72 / 75 °F** (22 / 24 °C on metric); weather `weather.forecast_home_2`; sunny states sunny, partlycloudy, clear, windy, windy-variant; eye height 1.2 m; seat distance 2 m; delta position 1 %; delta time 2 min; override duration 1:30, restart clock off, ignore intermediate off, detection on; end 00:00; return at sunset off; outside / lux / irradiance thresholds 0 / 1000 / 300; privacy delay 30 min, position 0; default position 100 |
+| House | climate **on**; thresholds **72 / 75 °F** (22 / 24 °C on metric); weather `weather.forecast_home_2`; sunny states sunny, partlycloudy, clear, windy, windy-variant; eye height 1.2 m; seat distance 2 m; delta position 1 %; delta time 2 min; override duration **2:00**, restart clock off, ignore intermediate off, detection on; end 00:00; return at sunset off; outside / lux / irradiance thresholds 0 / 1000 / 300; privacy delay 30 min, position 0; default position 100 |
 | Upstairs floor | `sensor.upstairs_indoor_temperature` |
 | Main + Ground floors | `sensor.downstairs_indoor_temperature` |
-| SW bedroom, Den areas | override duration 2:00, start 06:00, sunset offset −30, default position 97 |
+| SW bedroom, Den areas | start 06:00, sunset offset −30, default position 97 |
 | Office area | start 07:30, sunrise offset +45 |
 | Presets (copy-from) | **East:** az 100, FOV 90/44, max elevation 50, offsets −20/+20. **South:** az 190, FOV 50/50, overhang 1.2/2.6, privacy on. **Door:** az 145, FOV 40/40, overhang 1.2/2.3, min position 9, max elevation 40, sunset position 3 |
 
@@ -203,6 +203,7 @@ services.py · diagnostics.py (per device) · frontend.py · <platform>.py
   - The card discovers windows through attributes and the unique_id prefix, not `config_entry_id`.
   - The dialog's configure button links directly to that window's settings.
   - The Mode select becomes primary. It keeps today's vocabulary for now.
+  - **Naming cleanup** (decision 5): dry-run list → owner approval → backup → rename entities, devices and physical covers to the `<area>_<window>_<role>` scheme, rewriting every reference in the same step.
 - **Tests:** surface tests for category, visibility and area; vitest discovery against the snapshot registry and a subentry-shaped registry.
 - **Rollback:** downgrade. The category and area changes are harmless to older code.
 
@@ -329,7 +330,6 @@ services.py · diagnostics.py (per device) · frontend.py · <platform>.py
   - Set `single_config_entry` in the manifest.
   - Remove the hub's leftover geometry and its reference to itself in `group`.
   - Run pyright in standard mode across the rest of the code.
-  - Add an optional `normalize_entity_ids` service with a dry run.
 - **Rollback:** restore the backup and reinstall v2.0.x.
 
 ## Migration of the live house
@@ -467,14 +467,25 @@ services.py · diagnostics.py (per device) · frontend.py · <platform>.py
 7. **The split drifts.** The split uses move-only PRs, mutations re-anchored in the same PR, and the deletion drill.
 8. **Churn in the 2026.8+ device registry API.** Use only `via_device_id`, `config_subentry_id` and `async_get_device_by_identifier(config_entry_id=)`.
 
-## Decisions needed from the owner
+## Decisions (answered by the owner, 2026-09-28)
 
-1. **Window Mode = Auto / Hold / Off**, with climate set at house or area level plus a one-time per-window "ignore climate". *Recommended: yes.* Today's "Sun only" becomes the house or area Climate off.
-2. **The 2 h override for Den and SW bedroom:** keep it as an area rule, or unify at 1:30? *Recommended: keep it as an area rule.* The lift does this automatically.
-3. **Consolidate into one house entry (P7–P8)**, or stop after P6 on legacy entries? *Recommended: consolidate.* It gives the Add window button and a single entry, and daily use is the same.
-4. **Dashboard:** *Recommended: run the generated dashboard next to `dashboard-shades` for 2 weeks, then retire the old one and keep its JSON.*
-5. **Normalize the messy entity_ids** (`ne_door_*`, `sw_sw_*`, `office_office_*`) in P8? *Recommended: yes, dry run first.* No automation references them.
-6. **Grouping:** HA areas and floors, or custom zones? *Recommended: areas and floors only.*
+1. **Window Mode = Auto / Hold / Off**, with climate at house or area level plus a one-time per-window "ignore climate". **Yes.**
+2. **Manual override duration:** **2 hours is the house default for every window**, and a room (area) may override it. Already applied to the live house on 2026-09-28 (all 15 windows set to 2:00) and to the built-in default in `const.py`.
+3. **Consolidate into one house entry (P7–P8).** **Yes.**
+4. **Dashboard:** run the generated dashboard next to `dashboard-shades` for 2 weeks, then retire the old one and keep its JSON. **Yes.**
+5. **Names:** **clean up and make consistent, and remove leftovers where needed.** This moves from optional-in-P8 to **P1** (see "Naming cleanup" below), because entity_ids survive consolidation (unique_ids never change), so renaming once in P1 does not have to be redone later.
+6. **Grouping by HA areas and floors**, not custom zones. **Yes.**
+
+### Naming cleanup (decision 5, delivered in P1)
+
+- **Scheme:** `<domain>.<area>_<window>_<role>`, all lowercase, from the HA area and a short window name, for example `sensor.office_door_position`, `select.office_door_mode`, `button.office_door_return_to_auto`. The house device uses `<domain>.shades_<role>`.
+- **Scope:** every adaptive_cover entity and device name, and the physical cover entities (`cover.ne_door_shades`, `cover.sw_sw_shade`, `cover.sw_sw_1st_floor_bed`, …) renamed to the same scheme (`cover.office_door_shade`, …).
+- **Leftovers removed:** the 3 disabled "SE" multi-cover entries (P0), orphaned registry rows, and entities that the new surface drops (P1/P5).
+- **Safety:**
+  - A **dry run** first lists every old → new entity_id and every reference to it: automations, scripts, scenes, dashboards, groups, and the HomeKit bridge's entity filters. HA does not rewrite these references automatically.
+  - The owner approves the list before anything is applied.
+  - The rename updates every listed reference in the same step, and a backup is taken first.
+  - Physical covers belong to other integrations (Zigbee/HomeKit bridge), so their renames are part of the same approved list and are applied with HA's entity registry, not by this integration's code.
 
 ## Appendix: how the three designs scored
 

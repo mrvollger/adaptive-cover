@@ -176,9 +176,9 @@ def test_regression_default_position_fully_open():
     assert DEFAULT_OPTIONS[CONF_DEFAULT_HEIGHT] == 100
 
 
-def test_regression_manual_override_default_90_minutes():
+def test_regression_manual_override_default_two_hours():
     wizard = _default_of(AUTOMATION_CONFIG, CONF_MANUAL_OVERRIDE_DURATION)
-    assert wizard == {"hours": 1, "minutes": 30, "seconds": 0}
+    assert wizard == {"hours": 2, "minutes": 0, "seconds": 0}
     assert DEFAULT_OPTIONS[CONF_MANUAL_OVERRIDE_DURATION] == wizard
 
 
