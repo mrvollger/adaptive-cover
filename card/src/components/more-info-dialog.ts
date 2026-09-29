@@ -2,7 +2,7 @@ import { LitElement, html, css, nothing, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { HomeAssistant } from 'custom-card-helpers';
 
-import { COVER_TYPE_ICONS, HANDLER_I18N_KEYS, INTEGRATION_DOMAIN, type BadgeKind } from '../const';
+import { COVER_TYPE_ICONS, HANDLER_I18N_KEYS, type BadgeKind } from '../const';
 import { buildDecisionSentence } from '../lib/decision-summary';
 import {
   buildSolarActiveContext,
@@ -16,6 +16,7 @@ import { formatPercent } from '../lib/formatters';
 import { t } from '../lib/i18n';
 import { confirmResume } from '../lib/confirm';
 import { tooltip } from '../lib/tooltip';
+import { windowSettingsPath, windowSettingsTarget } from '../lib/settings-link';
 
 import './tile-badge';
 import './decision-strip';
@@ -101,7 +102,7 @@ export class MoreInfoDialog extends LitElement {
     const showResume = this._shouldShowResume();
     const automaticControl = this._switchOn('automatic_control_switch');
     const badgeKinds = this._badgeKinds(winner, automaticControl);
-    const configureLabel = t('dialog.configure_integration');
+    const configureLabel = t('dialog.window_settings');
     const deviceLabel = t('dialog.open_device_page');
     const closeLabel = t('dialog.close');
 
@@ -130,7 +131,7 @@ export class MoreInfoDialog extends LitElement {
               type="button"
               aria-label=${configureLabel}
               ${tooltip(configureLabel)}
-              @click=${this._openIntegrationPage}
+              @click=${this._openWindowSettings}
             >
               <ha-icon icon="mdi:tune-variant"></ha-icon>
             </button>
@@ -345,8 +346,10 @@ export class MoreInfoDialog extends LitElement {
     this._navigate(`/config/devices/device/${deviceId}`);
   };
 
-  private _openIntegrationPage = (): void => {
-    this._navigate(`/config/integrations/integration/${INTEGRATION_DOMAIN}`);
+  /** Open this window's settings (today: its config entry on the integration
+   *  page, highlighted; see lib/settings-link.ts). */
+  private _openWindowSettings = (): void => {
+    this._navigate(windowSettingsPath(windowSettingsTarget(this.discovered)));
   };
 
   private _navigate(path: string): void {

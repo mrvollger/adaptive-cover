@@ -35,7 +35,7 @@ export const en = {
       'Forecast assumes current temperature/presence/weather persist — manual overrides are not reflected.',
   },
   dialog: {
-    configure_integration: 'Configure integration',
+    window_settings: 'Window settings',
     open_device_page: 'Open device page',
     close: 'Close',
     target: 'Target',

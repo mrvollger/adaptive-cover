@@ -39,12 +39,15 @@ When a config sets more than one, `window` wins, then `entry_id`, then `cover`. 
 
 Discovery never uses the registry's `config_entry_id` to find a window, because it stops naming a window once windows become subentries of one house entry (it is read only to build the settings link). The card finds the Cover Position sensor by its attributes first, and falls back to the unique_id prefix: every entity's unique_id is `{window_key}_{suffix}` and never changes. The window's other entities come from the same prefix.
 
+The dialog's settings button (the tune icon, "Window settings") opens the integration page with that window's config entry highlighted; its **Configure** button opens the window's options.
+
 All cover actions use standard Home Assistant services (`cover.set_cover_position`, `cover.stop_cover`, `cover.set_cover_tilt_position`, `switch.turn_on/off`, `button.press`) — no custom services, and the cards make zero third-party network calls.
 
 ### Known limitations
 
 - **With an integration that does not publish `cover_entity`**, the managed covers come from `last_moves` / `move_blocked_by`. Until it has recorded at least one move (or blocked gate) for a cover, the tile's `↑ ■ ▼` controls and the per-cover bars have nothing to act on, and a `cover:`-only card cannot find its window. Setting `window:` (or `entry_id:`) plus `cover:` works with any version.
 - **With an integration that does not publish `cover_type`**, the compass/tile default to vertical-blind visuals. Tilt windows are inferred when the managed covers only report `current_tilt_position`; awning geometry renders as a vertical blind. Override the tile icon with `icon:` if desired.
+- The settings button cannot open the options dialog directly (Home Assistant has no link for that); it highlights the window's entry, one click away.
 - The manual-override badge shows no expiry countdown (the integration does not expose the override end time).
 
 ## Install

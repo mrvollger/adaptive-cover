@@ -169,7 +169,7 @@ describe('acp-more-info-dialog: header nav buttons', () => {
     expect(el.shadowRoot!.querySelector('button.options-link')).toBeTruthy();
   });
 
-  it('clicking options-link navigates to the integration page and closes the dialog', async () => {
+  it("clicking options-link opens this window's settings and closes the dialog", async () => {
     const el = await mount({ hass: hass(), discovered: discovered(), open: true });
     const pushSpy = vi.spyOn(history, 'pushState');
     const eventSpy = vi.fn();
@@ -179,16 +179,45 @@ describe('acp-more-info-dialog: header nav buttons', () => {
 
     (el.shadowRoot!.querySelector('button.options-link') as HTMLElement).click();
 
+    // The integration page highlights the entry named in `#config_entry=`;
+    // today a window's key is its config entry_id.
     expect(pushSpy).toHaveBeenCalledWith(
       null,
       '',
-      '/config/integrations/integration/adaptive_cover',
+      '/config/integrations/integration/adaptive_cover#config_entry=entry_xyz',
     );
     expect(eventSpy).toHaveBeenCalledTimes(1);
     expect(closeSpy).toHaveBeenCalledTimes(1);
 
     window.removeEventListener('location-changed', eventSpy);
     pushSpy.mockRestore();
+  });
+
+  it('links a subentry window to its house entry, not to the window key', async () => {
+    const d: DiscoveredEntities = {
+      ...discovered(),
+      window_key: '01WINDOWSUBENTRY',
+      entry_id: '01WINDOWSUBENTRY',
+      config_entry_id: '01HOUSEENTRY',
+      config_subentry_id: '01WINDOWSUBENTRY',
+    };
+    const el = await mount({ hass: hass(), discovered: d, open: true });
+    const pushSpy = vi.spyOn(history, 'pushState');
+
+    (el.shadowRoot!.querySelector('button.options-link') as HTMLElement).click();
+
+    expect(pushSpy).toHaveBeenCalledWith(
+      null,
+      '',
+      '/config/integrations/integration/adaptive_cover#config_entry=01HOUSEENTRY',
+    );
+    pushSpy.mockRestore();
+  });
+
+  it('labels the options-link button "Window settings"', async () => {
+    const el = await mount({ hass: hass(), discovered: discovered(), open: true });
+    const btn = el.shadowRoot!.querySelector('button.options-link') as HTMLElement;
+    expect(btn.getAttribute('aria-label')).toBe('Window settings');
   });
 });
 
