@@ -456,8 +456,15 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 else "current_tilt_position"
             )
             target = self.target_call.get(entity_id)
+            # Only a settled report is an arrival. An opening/closing report
+            # still carries the position the shade LEFT, which for a small
+            # move (99 -> 100) is within tolerance of the target: counting
+            # it cleared the latch, and the next refresh re-sent the same
+            # snap position (snaps bypass the delta and time gates).
+            settled = event.new_state.state not in ("opening", "closing")
             arrived = (
-                position is not None
+                settled
+                and position is not None
                 and target is not None
                 and abs(position - target) <= self.TARGET_TOLERANCE
             )

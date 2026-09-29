@@ -27,7 +27,7 @@
 12-21 11:00:00 MST  cmd    set_cover_position cover.master_trap_shades 14
 12-21 11:00:00 MST  sensor 14 (calculated)
 12-21 11:00:00 MST  input  weather.forecast_home_2 = cloudy
-12-21 11:01:30 MST  cmd    set_cover_position cover.master_trap_shades 99
+12-21 11:05:00 MST  cmd    set_cover_position cover.master_trap_shades 99
 12-21 11:05:00 MST  sensor 99 (climate_default)
 12-21 13:00:00 MST  input  weather.forecast_home_2 = sunny
 12-21 13:05:00 MST  cmd    set_cover_position cover.master_trap_shades 4

@@ -47,7 +47,6 @@
 06-21 08:00:00 MDT  cmd    set_cover_position cover.master_east_shades 100
 06-21 08:00:00 MDT  sensor 100 (admit_no_glare)
 06-21 08:00:00 MDT  input  sensor.upstairs_indoor_temperature = 71.0 °F
-06-21 08:01:30 MDT  cmd    set_cover_position cover.master_east_shades 100
 06-21 10:00:00 MDT  input  sensor.upstairs_indoor_temperature = 73.0 °F
 06-21 10:05:00 MDT  cmd    set_cover_position cover.master_east_shades 5
 06-21 10:05:00 MDT  sensor 5 (calculated)

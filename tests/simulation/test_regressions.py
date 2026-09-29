@@ -2,8 +2,16 @@
 
 import datetime as dt
 
+import pytest
 from astral import sun as astral_sun
 from homeassistant.util import dt as dt_util
+
+from custom_components.adaptive_cover.const import (
+    CONF_AZIMUTH,
+    CONF_DEFAULT_HEIGHT,
+    CONF_FOV_LEFT,
+    CONF_FOV_RIGHT,
+)
 
 from .harness import SimHouse
 
@@ -86,4 +94,39 @@ async def test_regression_next_change_uses_local_date(hass, freezer):
     expected = dt_util.parse_datetime(attrs["expected_time"])
     assert dt_util.as_local(expected).date() == dt.date(2026, 3, 21)
     assert expected == tomorrow_sunrise
+    await house.teardown()
+
+
+@pytest.mark.parametrize(
+    ("start", "snap"), [(99, 100), (1, 0)], ids=["99_to_100", "1_to_0"]
+)
+async def test_regression_small_snap_move_sent_once(hass, freezer, start, snap):
+    """A small move to a snap position is commanded exactly once.
+
+    The shade's 'opening'/'closing' report still carries the OLD position,
+    which is within TARGET_TOLERANCE of a 1% target. That intermediate
+    report cleared the in-flight latch as "arrived", so the next refresh
+    (a sun tick one minute later) re-sent the same target: snap positions
+    bypass the delta and time gates. Arrival needs a settled report.
+    """
+    house = await SimHouse.create(
+        hass,
+        freezer,
+        date="2026-03-20",
+        start_at="10:00",
+        step_minutes=1,  # sun ticks land inside the 120 s travel window
+        initial_position=start,
+        # A north window: the sun never enters, the default rules all day.
+        options={
+            CONF_AZIMUTH: 0,
+            CONF_FOV_LEFT: 10,
+            CONF_FOV_RIGHT: 10,
+            CONF_DEFAULT_HEIGHT: snap,
+        },
+    )
+    await house.advance_to("10:10")
+
+    commands = [ev.position for ev in house.auto_moves("cover.shade")]
+    assert commands == [snap]
+    assert house.position("cover.shade") == snap
     await house.teardown()
