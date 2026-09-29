@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, cast
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
@@ -69,6 +69,7 @@ async def _async_bootstrap_hub(hass: HomeAssistant) -> None:
 SERVICE_GET_FORECAST = "get_forecast"
 SERVICE_CHANGE_SETTINGS = "change_settings"
 SERVICE_HOLD = "hold"
+SERVICE_SET_PROFILE = "set_profile"
 GET_FORECAST_SCHEMA = vol.Schema({vol.Required("config_entry"): str})
 # adaptive_cover.hold: an entity service on the Mode selects (and the house
 # select), so it targets entities, areas and floors (P5 flip).
@@ -155,6 +156,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
         add_entry_baseline,
         add_entry_schema,
         change_settings_schema,
+        set_profile_schema,
     )
 
     # Climate thresholds are validated in HA's temperature unit.
@@ -242,6 +244,35 @@ def _async_register_services(hass: HomeAssistant) -> None:
         "add_entry",
         handle_add_entry,
         schema=add_entry_schema(temperature_unit),
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    async def handle_set_profile(call: ServiceCall) -> ServiceResponse:
+        """Store house, floor or area settings; every window acts on them."""
+        from .layers import ProfileError, async_set_profile, async_settings_changed
+        from .settings.spec import Level
+
+        scope = call.data["scope"]
+        scope_id = call.data.get("id")
+        changes = {k: v for k, v in call.data.items() if k not in ("scope", "id")}
+        if not changes:
+            raise ServiceValidationError("No settings provided to set")
+        try:
+            changed = async_set_profile(hass, Level(scope), scope_id, changes)
+        except ProfileError as err:
+            raise ServiceValidationError(str(err)) from err
+        if changed:
+            await async_settings_changed(hass)
+        response: dict[str, Any] = {"scope": scope, "id": scope_id, "changed": changed}
+        return cast(ServiceResponse, response)
+
+    from .settings.shadow import SHADOW_SPEC
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SET_PROFILE,
+        handle_set_profile,
+        schema=set_profile_schema(SHADOW_SPEC, temperature_unit),
         supports_response=SupportsResponse.OPTIONAL,
     )
 

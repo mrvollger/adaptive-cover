@@ -934,3 +934,33 @@ The example below is inside an HTML comment. The checker ignores it.
     (what the window acts on) and `settings_provenance`.
   - Goldens, truth table and house replay byte-identical, with every
     replayed window running on its resolved settings.
+
+## L0029 · 2026-09-29 · adaptive_cover.set_profile: house, floor and room settings (C6, P5 flip)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins `tests/test_set_profile.py::*` (a house
+  setting reaches every window without a reload; a room setting beats the
+  house for its windows only and `null` removes it; floor < area < window
+  precedence; a window moved to another room takes that room's settings at
+  its next refresh; values a level may not hold, an id the house does not
+  take, an unknown area, a floor without an id, an empty call and an empty
+  house value are refused and store nothing)
+- **Mutations re-targeted:** added M91 (`layers.py` `async_set_profile`:
+  a floor's values are stored under the area of that id and an area's
+  under the floor; killed by the entity tier, `--mutations M91 --jobs 3`).
+- **Contract change:** C6 (a new service; plan "Services":
+  `adaptive_cover.set_profile(scope, **opts)`)
+- **Reason:** plan P5 flip ("The `hold` service and `set_profile` are
+  added"). `set_profile(scope: house|floor|area, id?, **settings)` stores
+  recurring settings in the hub's layered profiles. The schema takes every
+  recurring setting (the change_settings validators, plus booleans for the
+  toggles and entity ids for the entity fields, all nullable); which level
+  may hold which setting is checked against the spec's home and
+  overridable_at levels, the floor or area id against HA's registries. On
+  a floor or an area `null` removes the value (the rooms inherit again);
+  the house keeps an explicit empty value only for options that may be
+  empty (entity fields, nullable service fields). Every window acts on the
+  change at once (`layers.async_settings_changed`: a refresh; a setup-only
+  value reloads the window). Response: `{scope, id, changed}`. The
+  services.yaml entry lists the common settings; the schema accepts all.
+  Goldens, truth table and house replay unchanged.

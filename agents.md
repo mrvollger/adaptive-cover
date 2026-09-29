@@ -84,7 +84,7 @@ custom_components/adaptive_cover/
 ├── helpers.py               # Utility functions (safe state access, datetime parsing)
 ├── config_context_adapter.py # Logger adapter that tags logs with config name
 ├── diagnostics.py           # HA diagnostics export (incl. the resolved settings a window acts on)
-├── services.yaml            # get_forecast, hold (entity service on the Mode selects), change_settings, add_entry
+├── services.yaml            # get_forecast, hold (entity service on the Mode selects), set_profile, change_settings, add_entry
 ├── manifest.json            # Integration metadata, version & requirements
 ├── strings.json             # English UI strings (source for translations/en.json)
 ├── icons.json               # MDI icon mappings

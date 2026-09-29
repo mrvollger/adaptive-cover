@@ -407,6 +407,13 @@
   "patch": "M90_runtime_ignores_window_override.patch"
  },
  {
+  "id": "M91",
+  "file": "custom_components/adaptive_cover/layers.py",
+  "function": "async_set_profile",
+  "description": "set_profile writes the wrong level: a floor's values are stored as the area of that id and an area's as the floor",
+  "patch": "M91_set_profile_writes_the_wrong_level.patch"
+ },
+ {
   "id": "M70",
   "file": "custom_components/adaptive_cover/settings/shadow.py",
   "function": "differing_keys",

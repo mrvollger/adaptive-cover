@@ -8,6 +8,7 @@ Every settings surface comes from ``spec.OPTS``:
 - the one-page options form sections (``options_section_fields``);
 - the ``change_settings`` and ``add_entry`` service schemas, and the
   options ``add_entry`` gives an entry without ``copy_from``;
+- the ``set_profile`` service schema (every recurring setting);
 - the ranges of the live number entities (``number_shape``).
 """
 
@@ -569,6 +570,53 @@ def change_settings_schema(temperature_unit: str | None = None) -> vol.Schema:
     }
     for key, validator in changeable_options(temperature_unit).items():
         schema[vol.Optional(key)] = validator
+    return vol.Schema(schema)
+
+
+PROFILE_SCOPES: Final = ("house", "floor", "area")
+
+
+def profile_validator(opt: Opt, temperature_unit: str | None = None) -> Any:
+    """How ``set_profile`` validates ``opt`` (a recurring setting).
+
+    The option's service validator where it has one; a toggle or a
+    checkbox takes a boolean, an entity field an entity id. None is always
+    accepted: on a floor or an area it removes the value (the house decides
+    whether it may be empty, ``layers.async_set_profile``).
+    """
+    if opt.service is not None:
+        validator = service_validator(opt, temperature_unit)
+    elif opt.kind in (Kind.BOOL, Kind.SWITCH, Kind.INTERNAL):
+        # vol.Boolean is a decorated validator factory; its stub hides that.
+        validator = vol.Boolean()  # pyright: ignore[reportCallIssue]
+    elif opt.kind is Kind.ENTITY:
+        validator = vol.Match(ENTITY_ID_PATTERN)
+    else:
+        raise ValueError(f"{opt.key} has no set_profile validator")
+    return vol.Any(None, validator)
+
+
+def may_be_empty(opt: Opt) -> bool:
+    """Whether ``opt`` may be stored as None (an entity, or a nullable service field)."""
+    return opt.kind is Kind.ENTITY or (opt.service is not None and opt.service.nullable)
+
+
+def set_profile_schema(
+    spec: tuple[Opt, ...] | list[Opt], temperature_unit: str | None = None
+) -> vol.Schema:
+    """Build the set_profile schema: scope, id and every recurring setting.
+
+    Which level may store which setting is checked when the call runs
+    (``layers.check_profile_keys``), from the spec's home and
+    overridable_at levels.
+    """
+    schema: dict[vol.Marker, Any] = {
+        vol.Required("scope"): vol.In(PROFILE_SCOPES),
+        vol.Optional("id"): vol.All(str, vol.Length(min=1)),
+    }
+    recurring = [opt for opt in spec if opt.scope is Scope.RECURRING]
+    for opt in recurring:
+        schema[vol.Optional(opt.key)] = profile_validator(opt, temperature_unit)
     return vol.Schema(schema)
 
 

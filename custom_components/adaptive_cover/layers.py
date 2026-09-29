@@ -84,6 +84,7 @@ from .settings.shadow import (
     stored_overrides,
     stored_profiles,
 )
+from .settings.schema import may_be_empty
 from .settings.spec import OPTS_BY_KEY, Level, Opt, Scope
 from .shadow import lifted_hub, read_toggles, runtime_options, window_placement
 
@@ -382,6 +383,14 @@ def async_set_profile(
         raise ProfileError("the house has no layered settings yet")
     _check_scope(hass, level, scope_id)
     check_profile_keys(level, changes)
+    if level is Level.HOUSE:
+        empty = sorted(
+            key
+            for key, value in changes.items()
+            if value is None and not may_be_empty(SPEC[key])
+        )
+        if empty:
+            raise ProfileError(f"the house needs a value for: {', '.join(empty)}")
     current = profile_values(hub.options, level, scope_id)
     stored = dict(current)
     for key, value in changes.items():

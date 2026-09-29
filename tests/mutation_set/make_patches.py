@@ -778,6 +778,18 @@ MUTATIONS: list[Mutation] = [
         "                hub.options,\n                overrides,\n",
         "                hub.options,\n                WindowOverrides(),\n",
     ),
+    Mutation(
+        "M91",
+        "set_profile_writes_the_wrong_level",
+        LAYERS,
+        "async_set_profile",
+        "set_profile writes the wrong level: a floor's values are stored as "
+        "the area of that id and an area's as the floor",
+        "        bucket = FLOORS if level is Level.FLOOR else AREAS\n"
+        "        profiles = dict(options.get(bucket) or {})\n",
+        "        bucket = AREAS if level is Level.FLOOR else FLOORS\n"
+        "        profiles = dict(options.get(bucket) or {})\n",
+    ),
     # P5 shadow release (v1.18.0): the diff repair and the switch capture.
     Mutation(
         "M70",

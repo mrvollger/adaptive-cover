@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/layers.py b/custom_components/adaptive_cover/layers.py
 --- a/custom_components/adaptive_cover/layers.py
 +++ b/custom_components/adaptive_cover/layers.py
-@@ -264,7 +264,7 @@
+@@ -265,7 +265,7 @@
      for key, value in changes.items():
          place = where(key) if key in SPEC else Where.OPTIONS
          if place is Where.OPTIONS:

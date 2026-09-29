@@ -42,6 +42,77 @@ hold:
       selector:
         number: { min: 0, max: 100, step: 1, unit_of_measurement: "%", mode: slider }
 
+set_profile:
+  name: Set house, floor or room settings
+  description: >-
+    Store recurring settings for the whole house, one floor or one room
+    (area). Every window inherits them unless a narrower level or the
+    window itself sets its own value; they apply at once, without a
+    reload. A floor or room value of null removes it (the windows inherit
+    again). Which level may hold which setting follows the option spec
+    (for example the heating threshold: house, floor or room; the position
+    delta: house only). Any recurring setting of change_settings is
+    accepted; the common ones are listed here.
+  fields:
+    scope:
+      name: Scope
+      required: true
+      example: area
+      selector:
+        select:
+          options: [house, floor, area]
+    id:
+      name: Floor or area id
+      description: The floor_id or area_id. Leave empty for the house.
+      required: false
+      example: office
+      selector: { text: }
+    climate_on:
+      name: Climate control
+      selector: { boolean: }
+    temp_low:
+      name: Heating threshold
+      selector: { number: { mode: box, step: 0.5 } }
+    temp_high:
+      name: Cooling threshold
+      selector: { number: { mode: box, step: 0.5 } }
+    temp_entity:
+      name: Indoor temperature sensor
+      selector: { entity: { domain: [climate, sensor] } }
+    manual_override_duration:
+      name: Manual override duration
+      selector: { duration: }
+    manual_detection:
+      name: Detect manual moves
+      selector: { boolean: }
+    eye_height:
+      name: Eye height (m)
+      selector: { number: { min: 0.1, max: 3, step: 0.01, mode: box } }
+    occupied_distance:
+      name: Seat distance from window (m)
+      selector: { number: { min: 0.1, max: 10, step: 0.1, mode: box } }
+    default_percentage:
+      name: Default position (%)
+      selector: { number: { min: 0, max: 100, step: 1, mode: slider } }
+    sunset_position:
+      name: Sunset position (%)
+      selector: { number: { min: 0, max: 100, step: 1, mode: slider } }
+    sunset_offset:
+      name: Sunset offset (min)
+      selector: { number: { step: 1, mode: box } }
+    sunrise_offset:
+      name: Sunrise offset (min)
+      selector: { number: { step: 1, mode: box } }
+    start_time:
+      name: Start time
+      selector: { time: }
+    end_time:
+      name: End time
+      selector: { time: }
+    privacy_offset:
+      name: Privacy delay after sunset (min)
+      selector: { number: { min: 0, max: 180, step: 5, mode: box } }
+
 change_settings:
   name: Change settings
   description: >-
