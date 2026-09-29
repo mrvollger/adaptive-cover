@@ -108,6 +108,7 @@ RULES: list[tuple[str, str]] = [
     ("tests/settings/*", IMPLEMENTATION),
     ("tests/test_coordinator.py::*", IMPLEMENTATION),
     ("tests/test_calculation.py::*", IMPLEMENTATION),
+    ("tests/test_cover_adapters.py::*", IMPLEMENTATION),  # P3 adapter factory
     ("tests/test_button.py::*", IMPLEMENTATION),
     ("tests/test_helpers.py::*", IMPLEMENTATION),
     # P2 clock seam: injects through coordinator.default_clock, which P4

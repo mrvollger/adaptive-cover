@@ -407,24 +407,29 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M27",
         "sunrise_fallback_zero",
-        COORD,
-        "common_data",
+        SHADE_CONFIG,
+        "_sunrise_offset",
         "sunrise-offset fallback falls back to 0 instead of sunset_offset",
-        "            options.get(CONF_SUNRISE_OFFSET, options.get(CONF_SUNSET_OFFSET)),",
-        "            options.get(CONF_SUNRISE_OFFSET, 0),",
+        "    return options.get(CONF_SUNRISE_OFFSET, _read(options, CONF_SUNSET_OFFSET))",
+        "    return options.get(CONF_SUNRISE_OFFSET, 0)",
         deviation="roadmap filed this under engine/geometry.py; the fallback "
-        "actually lives in coordinator.common_data.",
+        "actually lives in runtime/shade_config._sunrise_offset (moved there "
+        "from coordinator.common_data in P3, ledger L0010).",
     ),
     Mutation(
         "M28",
         "privacy_offset_or_coercion",
-        COORD,
-        "_apply_extended_config",
+        SHADE_CONFIG,
+        "CoverGeometry.from_options",
         "'offset or DEFAULT' coercion so privacy_offset=0 becomes 30",
-        "                offset_min=30 if _privacy_offset is None else _privacy_offset,",
-        "                offset_min=_privacy_offset or 30,",
+        "            privacy_offset=(\n"
+        "                PRIVACY_OFFSET_FALLBACK if privacy_offset is None else privacy_offset\n"
+        "            ),",
+        "            privacy_offset=privacy_offset or PRIVACY_OFFSET_FALLBACK,",
         deviation="roadmap filed this under engine/geometry.py; the None-check "
-        "actually lives in coordinator._apply_extended_config.",
+        "actually lives in runtime/shade_config.CoverGeometry.from_options "
+        "(moved there from coordinator._apply_extended_config in P3, ledger "
+        "L0010).",
     ),
     # ---- group E: engine strategy --------------------------------------
     Mutation(

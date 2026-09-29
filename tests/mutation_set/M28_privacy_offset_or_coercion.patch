@@ -1,12 +1,14 @@
-diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
---- a/custom_components/adaptive_cover/coordinator.py
-+++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1472,7 +1472,7 @@
-                 enabled=True,
-                 # explicit None check: an offset of 0 ("close right at
-                 # sunset") must not be coerced to the 30-minute default
--                offset_min=30 if _privacy_offset is None else _privacy_offset,
-+                offset_min=_privacy_offset or 30,
-                 position=options.get(CONF_PRIVACY_POSITION, 0) or 0,
-             )
+diff --git a/custom_components/adaptive_cover/runtime/shade_config.py b/custom_components/adaptive_cover/runtime/shade_config.py
+--- a/custom_components/adaptive_cover/runtime/shade_config.py
++++ b/custom_components/adaptive_cover/runtime/shade_config.py
+@@ -289,9 +289,7 @@
+             privacy_mode=_read(options, CONF_PRIVACY_MODE),
+             # explicit None check: an offset of 0 ("close right at sunset")
+             # must not be coerced to the 30-minute fallback
+-            privacy_offset=(
+-                PRIVACY_OFFSET_FALLBACK if privacy_offset is None else privacy_offset
+-            ),
++            privacy_offset=privacy_offset or PRIVACY_OFFSET_FALLBACK,
+             privacy_position=_read(options, CONF_PRIVACY_POSITION) or 0,
+         )
  

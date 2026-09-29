@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -338,7 +338,7 @@
+@@ -300,7 +300,7 @@
              # Device just came back: deliver any end-of-day close that
              # could not be sent while it was away.
              pending = self._pending_end_snap.pop(data["entity_id"], None)

@@ -6,9 +6,13 @@ delegate every calculation to engine functions. All math lives in
 ``engine/geometry.py``; all strategy logic lives in ``engine/evaluate.py``.
 """
 
+from __future__ import annotations
+
 from abc import ABC
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
+from typing import Any, ClassVar, Self
 
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import HomeAssistant
@@ -31,6 +35,7 @@ from .engine.models import (
 )
 from .helpers import get_domain, get_safe_attr, get_safe_state
 from .runtime.clock import SYSTEM_CLOCK, Clock
+from .runtime.shade_config import ClimateOptions, ControlState, CoverGeometry
 from .sun import SunData
 
 # Seam: how every cover adapter builds its solar day, called as
@@ -135,9 +140,14 @@ def build_day_forecast(cover, climate_data=None) -> list[dict]:
     return entries
 
 
-@dataclass
+@dataclass(kw_only=True)
 class AdaptiveGeneralCover(ABC):
-    """Adapter between HA context and the pure engine (common data)."""
+    """Adapter between HA context and the pure engine (common data).
+
+    Built from the window's options with :meth:`from_config` (the fields
+    are keyword-only: the old 20-odd positional values were order-coupled
+    to three option readers in the coordinator).
+    """
 
     hass: HomeAssistant
     logger: ConfigContextAdapter
@@ -162,18 +172,84 @@ class AdaptiveGeneralCover(ABC):
     min_elevation: int
     max_elevation: int
     sun_data: SunData = field(init=False)
-    # Extended config, assigned by the coordinator after construction so
-    # historical positional construction and all subclasses stay intact.
-    overhang: "Overhang | None" = field(init=False, default=None)
-    glare: "GlareModel | None" = field(init=False, default=None)
-    privacy: "PrivacyConfig | None" = field(init=False, default=None)
-    # Where "now" comes from (runtime/clock.py): the coordinator passes its
-    # own. Keyword-only so the positional constructors stay unchanged.
-    clock: Clock = field(default=SYSTEM_CLOCK, kw_only=True)
+    # Extended config, assigned by from_config after construction.
+    overhang: Overhang | None = field(init=False, default=None)
+    glare: GlareModel | None = field(init=False, default=None)
+    privacy: PrivacyConfig | None = field(init=False, default=None)
+    # Where "now" comes from (runtime/clock.py).
+    clock: Clock = SYSTEM_CLOCK
+
+    # Whether the overhang and glare options apply (vertical blinds only).
+    _SHADING: ClassVar[bool] = False
 
     def __post_init__(self):
         """Add solar data to dataset."""
         self.sun_data = sun_data_factory(self.timezone, self.hass, clock=self.clock)
+
+    @classmethod
+    def from_config(
+        cls,
+        hass: HomeAssistant,
+        logger: ConfigContextAdapter,
+        geometry: CoverGeometry,
+        *,
+        sun: Sequence[Any],
+        timezone: str,
+    ) -> Self:
+        """Build the adapter from the window's options.
+
+        ``sun`` is the solar (azimuth, elevation) now; ``timezone`` is HA's
+        configured time zone.
+        """
+        cover = cls(
+            hass=hass,
+            logger=logger,
+            sol_azi=sun[0],
+            sol_elev=sun[1],
+            sunset_pos=geometry.sunset_pos,
+            sunset_off=geometry.sunset_off,
+            sunrise_off=geometry.sunrise_off,
+            timezone=timezone,
+            fov_left=geometry.fov_left,
+            fov_right=geometry.fov_right,
+            win_azi=geometry.win_azi,
+            h_def=geometry.h_def,
+            max_pos=geometry.max_pos,
+            min_pos=geometry.min_pos,
+            max_pos_bool=geometry.max_pos_bool,
+            min_pos_bool=geometry.min_pos_bool,
+            blind_spot_left=geometry.blind_spot_left,
+            blind_spot_right=geometry.blind_spot_right,
+            blind_spot_elevation=geometry.blind_spot_elevation,
+            blind_spot_on=geometry.blind_spot_on,
+            min_elevation=geometry.min_elevation,
+            max_elevation=geometry.max_elevation,
+            **cls._type_fields(geometry),
+        )
+        cover._attach_extended(geometry)
+        return cover
+
+    @classmethod
+    def _type_fields(cls, geometry: CoverGeometry) -> dict[str, Any]:
+        """Return the constructor fields of one cover type."""
+        return {}
+
+    def _attach_extended(self, geometry: CoverGeometry) -> None:
+        """Attach the overhang, glare and privacy config."""
+        depth = geometry.overhang_depth
+        height = geometry.overhang_height
+        if depth and height and self._SHADING:
+            self.overhang = Overhang(depth=depth, height_above_sill=height)
+        eye_height = geometry.eye_height
+        occupied = geometry.occupied_distance
+        if eye_height and occupied and self._SHADING:
+            self.glare = GlareModel(eye_height=eye_height, occupied_distance=occupied)
+        if geometry.privacy_mode:
+            self.privacy = PrivacyConfig(
+                enabled=True,
+                offset_min=geometry.privacy_offset,
+                position=geometry.privacy_position,
+            )
 
     # --- engine input builders ---
 
@@ -429,9 +505,12 @@ class NormalCoverState:
         return self.get_decision().position
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ClimateCoverData:
-    """Resolve climate entity readings from HA (adapter for ClimateInputs)."""
+    """Resolve climate entity readings from HA (adapter for ClimateInputs).
+
+    Built from the window's options with :meth:`from_config`.
+    """
 
     hass: HomeAssistant
     logger: ConfigContextAdapter
@@ -442,16 +521,48 @@ class ClimateCoverData:
     weather_entity: str
     weather_condition: list[str]
     outside_entity: str
-    temp_switch: bool
-    blind_type: str
+    temp_switch: bool | None  # None until the switch restores
+    blind_type: str | None
     transparent_blind: bool
     lux_entity: str
     irradiance_entity: str
     lux_threshold: int
     irradiance_threshold: int
     temp_summer_outside: float
-    _use_lux: bool
-    _use_irradiance: bool
+    _use_lux: bool | None
+    _use_irradiance: bool | None
+
+    @classmethod
+    def from_config(
+        cls,
+        hass: HomeAssistant,
+        logger: ConfigContextAdapter,
+        climate: ClimateOptions,
+        controls: ControlState,
+        blind_type: str | None,
+    ) -> Self:
+        """Build the adapter from the window's options and switch toggles."""
+        return cls(
+            hass=hass,
+            logger=logger,
+            temp_entity=climate.temp_entity,
+            temp_low=climate.temp_low,
+            temp_high=climate.temp_high,
+            presence_entity=climate.presence_entity,
+            weather_entity=climate.weather_entity,
+            weather_condition=climate.weather_condition,
+            outside_entity=climate.outside_entity,
+            temp_switch=controls.outside_temp,
+            blind_type=blind_type,
+            transparent_blind=climate.transparent_blind,
+            lux_entity=climate.lux_entity,
+            irradiance_entity=climate.irradiance_entity,
+            lux_threshold=climate.lux_threshold,
+            irradiance_threshold=climate.irradiance_threshold,
+            temp_summer_outside=climate.temp_summer_outside,
+            _use_lux=controls.lux,
+            _use_irradiance=controls.irradiance,
+        )
 
     @staticmethod
     def _as_float(value):
@@ -671,7 +782,7 @@ class ClimateCoverState(NormalCoverState):
         return self.get_decision().position
 
 
-@dataclass
+@dataclass(kw_only=True)
 class AdaptiveVerticalCover(AdaptiveGeneralCover):
     """Calculate state for Vertical blinds."""
 
@@ -679,6 +790,11 @@ class AdaptiveVerticalCover(AdaptiveGeneralCover):
     h_win: float
 
     _COVER_TYPE = "vertical"
+    _SHADING: ClassVar[bool] = True
+
+    @classmethod
+    def _type_fields(cls, geometry: CoverGeometry) -> dict[str, Any]:
+        return {"distance": geometry.distance, "h_win": geometry.h_win}
 
     def _extra_config(self) -> dict:
         return {
@@ -693,7 +809,7 @@ class AdaptiveVerticalCover(AdaptiveGeneralCover):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class AdaptiveHorizontalCover(AdaptiveVerticalCover):
     """Calculate state for Horizontal blinds."""
 
@@ -701,6 +817,15 @@ class AdaptiveHorizontalCover(AdaptiveVerticalCover):
     awn_angle: float
 
     _COVER_TYPE = "awning"
+    _SHADING: ClassVar[bool] = False
+
+    @classmethod
+    def _type_fields(cls, geometry: CoverGeometry) -> dict[str, Any]:
+        return {
+            **super()._type_fields(geometry),
+            "awn_length": geometry.awn_length,
+            "awn_angle": geometry.awn_angle,
+        }
 
     def _extra_config(self) -> dict:
         return {
@@ -717,7 +842,7 @@ class AdaptiveHorizontalCover(AdaptiveVerticalCover):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class AdaptiveTiltCover(AdaptiveGeneralCover):
     """Calculate state for tilted blinds."""
 
@@ -726,6 +851,14 @@ class AdaptiveTiltCover(AdaptiveGeneralCover):
     mode: str
 
     _COVER_TYPE = "tilt"
+
+    @classmethod
+    def _type_fields(cls, geometry: CoverGeometry) -> dict[str, Any]:
+        return {
+            "slat_distance": geometry.slat_distance,
+            "depth": geometry.slat_depth,
+            "mode": geometry.tilt_mode,
+        }
 
     def _extra_config(self) -> dict:
         return {
@@ -747,3 +880,27 @@ class AdaptiveTiltCover(AdaptiveGeneralCover):
         return engine_geometry.tilt_slat_angle(
             self.engine_config(), self.sun_snapshot()
         )
+
+
+# The adapter class for each cover type (entry data ``sensor_type``).
+COVER_ADAPTERS: dict[str, type[AdaptiveGeneralCover]] = {
+    "cover_blind": AdaptiveVerticalCover,
+    "cover_awning": AdaptiveHorizontalCover,
+    "cover_tilt": AdaptiveTiltCover,
+}
+
+
+def build_cover(
+    cover_type: str | None,
+    hass: HomeAssistant,
+    logger: ConfigContextAdapter,
+    geometry: CoverGeometry,
+    *,
+    sun: Sequence[Any],
+    timezone: str,
+) -> AdaptiveGeneralCover:
+    """Build the adapter for ``cover_type`` from the window's options."""
+    adapter = COVER_ADAPTERS.get(cover_type or "")
+    if adapter is None:
+        raise ValueError(f"Unknown cover type {cover_type!r}")
+    return adapter.from_config(hass, logger, geometry, sun=sun, timezone=timezone)

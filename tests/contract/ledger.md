@@ -236,3 +236,26 @@ The example below is inside an HTML comment. The checker ignores it.
   both. The options form now runs every rule in `settings/validate.py` on
   the options as they would be saved, and shows the error at form level.
   `spec_parity.json`, goldens, truth table and house replay unchanged.
+
+## L0010 · 2026-09-29 · ShadeConfig feeds the cover adapters (C3)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins `tests/test_cover_adapters.py::*`
+  (implementation tier: the adapter factory) and
+  `tests/runtime/test_option_reads.py::*` (one fallback per option)
+- **Mutations re-targeted:** M27 (sunrise-offset fallback) moved from
+  `coordinator.common_data` to `runtime/shade_config._sunrise_offset`;
+  M28 (privacy-offset None check) moved from
+  `coordinator._apply_extended_config` to
+  `runtime/shade_config.CoverGeometry.from_options`. Descriptions
+  unchanged. The other coordinator and calculation patches were
+  regenerated for line offsets only.
+- **Contract change:** C3
+- **Reason:** P3 replaces the positional adapter constructors (three
+  order-coupled lists of 18, 2-3 values each in the coordinator) with
+  `AdaptiveGeneralCover.from_config` / `calculation.build_cover` and
+  `ClimateCoverData.from_config`, fed by `ShadeConfig.geometry` and
+  `ShadeConfig.climate`. The adapters' fields are keyword-only. Every
+  option read now has one fallback (`runtime/shade_config.ABSENT`), which
+  config migration 1.3 writes into entries. No output changes: goldens,
+  truth table and house replay are byte-identical.
