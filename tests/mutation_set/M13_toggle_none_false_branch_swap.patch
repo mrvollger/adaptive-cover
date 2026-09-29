@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1395,7 +1395,7 @@
+@@ -1416,7 +1416,7 @@
          # Only an EXPLICIT off clears overrides. During startup/reload the
          # toggle is still None (switches restore after the first refresh),
          # and treating that as off wiped overrides on every options edit.

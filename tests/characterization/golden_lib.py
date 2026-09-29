@@ -14,8 +14,8 @@ import datetime as dt
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
-import pandas as pd
 from astral import LocationInfo
 from astral import sun as astral_sun
 from astral.location import Location
@@ -43,6 +43,34 @@ STEP_MINUTES = 15
 TEMP_LOW = 21.0
 TEMP_HIGH = 23.0
 WEATHER_CONDITIONS = ("sunny", "partlycloudy", "clear")
+
+
+def local_day_points(date: dt.date, tz: str, minutes: int) -> list[dt.datetime]:
+    """Local midnight to the next local midnight, every ``minutes`` of real time.
+
+    Stepped in UTC and shown in ``tz`` (so a DST day has one hour fewer or
+    more points): the instants ``pandas.date_range(date, date + 1 day,
+    freq=f"{minutes}min", tz=tz)`` gave before P2. Written here, not
+    imported from sun.py, so the goldens do not depend on the code they pin.
+    """
+    zone = ZoneInfo(tz)
+    start = dt.datetime.combine(date, dt.time(), tzinfo=zone).astimezone(dt.UTC)
+    end = dt.datetime.combine(
+        date + dt.timedelta(days=1), dt.time(), tzinfo=zone
+    ).astimezone(dt.UTC)
+    step = dt.timedelta(minutes=minutes)
+    return [
+        (start + k * step).astimezone(zone) for k in range((end - start) // step + 1)
+    ]
+
+
+def local_midnight(date: dt.date | dt.datetime | str) -> dt.datetime:
+    """Naive midnight of ``date`` (what ``pd.Timestamp(date)`` gave before P2)."""
+    if isinstance(date, str):
+        date = dt.date.fromisoformat(date)
+    if isinstance(date, dt.datetime):
+        date = date.date()
+    return dt.datetime.combine(date, dt.time())
 
 
 class SunDataOverride:
@@ -141,10 +169,14 @@ class FlatSunData:
         self.sunset_at: dt.datetime | None = None
 
     @property
-    def times(self) -> pd.DatetimeIndex:
+    def times(self) -> list[dt.datetime]:
         tz = dt_util.DEFAULT_TIME_ZONE
         today_local = dt_util.now(tz).date()
-        return pd.date_range(start=today_local, periods=self.N, freq="5min", tz=str(tz))
+        start = dt.datetime.combine(today_local, dt.time(), tzinfo=tz)
+        step = dt.timedelta(minutes=5)
+        return [
+            (start.astimezone(dt.UTC) + k * step).astimezone(tz) for k in range(self.N)
+        ]
 
     @property
     def solar_azimuth(self) -> list[float]:
@@ -184,7 +216,11 @@ class FlatSunData:
 
 
 class FakeSunData:
-    """Deterministic SunData replacement for a fixed date and location."""
+    """Deterministic SunData replacement for a fixed date and location.
+
+    ``date`` is a naive local midnight (a date or ISO string is accepted);
+    ``times`` are tz-aware local datetimes, one per ``STEP_MINUTES``.
+    """
 
     def __init__(self, lat, lon, tz, date):
         info = LocationInfo(
@@ -194,19 +230,11 @@ class FakeSunData:
         self.observer = info.observer
         self.elevation = 0
         self.timezone = tz
-        self.date = date
-        self.times = pd.date_range(
-            start=date,
-            end=date + pd.Timedelta(days=1),
-            freq=f"{STEP_MINUTES}min",
-            tz=tz,
-            name="time",
-        )
-        self.solar_azimuth = [
-            astral_sun.azimuth(self.observer, t.to_pydatetime()) for t in self.times
-        ]
+        self.date = local_midnight(date)
+        self.times = local_day_points(self.date.date(), tz, STEP_MINUTES)
+        self.solar_azimuth = [astral_sun.azimuth(self.observer, t) for t in self.times]
         self.solar_elevation = [
-            astral_sun.elevation(self.observer, t.to_pydatetime()) for t in self.times
+            astral_sun.elevation(self.observer, t) for t in self.times
         ]
 
     def sunset(self):
@@ -396,29 +424,21 @@ def _climate_inputs(scenario: Scenario) -> ClimateInputs:
 
 def _solar_times(scenario: Scenario, sun_data: FakeSunData):
     """Start/end sun times over the day table (mirrors the adapter's rule)."""
-    solpos = pd.DataFrame(
-        {
-            "azimuth": sun_data.solar_azimuth,
-            "elevation": sun_data.solar_elevation,
-        }
-    ).set_index(sun_data.times)
     azi_min_abs = (scenario.win_azi - scenario.fov_left + 360) % 360
     azi_max_abs = (scenario.win_azi + scenario.fov_right + 360) % 360
-    alpha = solpos["azimuth"]
-    elevation_ok = solpos["elevation"].map(
-        lambda elev: engine_geometry.valid_elevation(
+    hits = [
+        ts
+        for ts, alpha, elev in zip(
+            sun_data.times, sun_data.solar_azimuth, sun_data.solar_elevation
+        )
+        if (alpha - azi_min_abs) % 360 <= (azi_max_abs - azi_min_abs) % 360
+        and engine_geometry.valid_elevation(
             elev, scenario.min_elevation, scenario.max_elevation
         )
-    )
-    frame = (
-        (alpha - azi_min_abs) % 360 <= (azi_max_abs - azi_min_abs) % 360
-    ) & elevation_ok
-    if solpos[frame].empty:
+    ]
+    if not hits:
         return None, None
-    return (
-        solpos[frame].index[0].to_pydatetime(),
-        solpos[frame].index[-1].to_pydatetime(),
-    )
+    return hits[0], hits[-1]
 
 
 def _basic_reason(config: CoverConfig, sun: SunSnapshot, ctx: TimeContext) -> str:
@@ -480,8 +500,7 @@ def _climate_reason(
 def render_scenario(scenario: Scenario) -> str:
     """Run one scenario through engine.evaluate(); return the schedule text."""
     loc = scenario.location
-    date = pd.Timestamp(scenario.date)
-    sun_data = FakeSunData(loc["lat"], loc["lon"], loc["tz"], date)
+    sun_data = FakeSunData(loc["lat"], loc["lon"], loc["tz"], scenario.date)
 
     config = _engine_config(scenario)
     inputs = _climate_inputs(scenario) if scenario.climate else None
@@ -517,7 +536,7 @@ def render_scenario(scenario: Scenario) -> str:
             elevation=sun_data.solar_elevation[i],
         )
         ctx = TimeContext(
-            now_utc=ts.tz_convert("UTC").tz_localize(None).to_pydatetime(),
+            now_utc=ts.astimezone(dt.UTC).replace(tzinfo=None),
             sunrise_utc=sunrise_utc,
             sunset_utc=sunset_utc,
             sun_at_dusk_lead=sun_at_dusk_lead,

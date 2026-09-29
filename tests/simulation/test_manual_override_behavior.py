@@ -451,7 +451,7 @@ async def test_day_two_solar_schedule(hass, freezer):
         "solar-time sensors still report day-one times on day two"
     )
     for label, value in (("start", start_day2), ("end", end_day2)):
-        when = dt.datetime.fromisoformat(value).astimezone(house.tz)
+        when = house.tz.normalize(dt.datetime.fromisoformat(value))
         assert when.date() == dt.date(2026, 3, 21), (
             f"day-two {label} sun sensor reads {value}: not day-two data"
         )
@@ -468,7 +468,7 @@ async def test_day_two_solar_schedule(hass, freezer):
     # closes again at the DAY-TWO dusk. The sun leaves this south window
     # right before sunset, so the close starts then (DUSK_LEAD).
     day_two = house.tz.localize(dt.datetime(2026, 3, 21, 0, 0))
-    sunset_local = sunset_day2.astimezone(house.tz)
+    sunset_local = house.tz.normalize(sunset_day2)
     dusk = sunset_local - DUSK_LEAD
     await house.advance_to("21:00")
     reopened = [

@@ -28,7 +28,7 @@ from homeassistant.helpers import (
     entity_registry as er,
 )
 from homeassistant.util import dt as dt_util
-import pandas as pd
+from zoneinfo import ZoneInfo
 import pytest
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
@@ -813,8 +813,10 @@ class TestPositionAttributes:
         self, hass, cover_calls, now_str, time_str, pos
     ):
         await hass.config.async_set_time_zone(SLC["tz"])
-        local_now = pd.Timestamp(now_str, tz=SLC["tz"]).to_pydatetime()
-        sun = FakeSunData(SLC["lat"], SLC["lon"], SLC["tz"], pd.Timestamp("2026-03-20"))
+        local_now = dt.datetime.fromisoformat(now_str).replace(
+            tzinfo=ZoneInfo(SLC["tz"])
+        )
+        sun = FakeSunData(SLC["lat"], SLC["lon"], SLC["tz"], "2026-03-20")
         with freeze_time(local_now), patch_sun_data(sun):
             _set_world(hass)
             entry = _entry(hass, name=f"Next {now_str[-8:]}")

@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1506,8 +1506,6 @@
+@@ -1527,8 +1527,6 @@
              )
          elif self.end_time is not None:
              time = get_datetime_from_str(self.end_time, default_date=today)

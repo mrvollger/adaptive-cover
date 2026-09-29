@@ -1,14 +1,86 @@
-"""Fetch sun data."""
+"""Fetch sun data.
 
-from datetime import date, datetime, timedelta
+The solar table for one local day is built with the standard library (P2,
+ADR 0005; pandas until then). Its values are unchanged; its types are now
+plain Python: ``times`` is a tuple of tz-aware datetimes in the configured
+time zone, ``solar_azimuth`` and ``solar_elevation`` are lists of floats
+(contract change C2).
+"""
+
+from __future__ import annotations
+
+from bisect import bisect_left
+from collections.abc import Sequence
+from dataclasses import dataclass
+from datetime import UTC, date, datetime, time, timedelta, tzinfo
 from zoneinfo import ZoneInfo
 
-import pandas as pd
 from astral import LocationInfo
 from astral.location import Location
 from homeassistant.core import HomeAssistant
 
 from .runtime.clock import SYSTEM_CLOCK, Clock
+
+# One solar-table point every STEP of real (UTC) time.
+STEP = timedelta(minutes=5)
+
+
+def day_steps(day: date, tz: tzinfo, step: timedelta = STEP) -> tuple[datetime, ...]:
+    """Return the points of one local day, both midnights included.
+
+    The points are ``step`` apart in real time, stepped in UTC and shown in
+    ``tz``: 289 on a 24-hour day, 277 on the 23-hour day DST starts, 301 on
+    the 25-hour day it ends. They are the instants
+    ``pandas.date_range(day, day + 1 day, freq=step, tz=tz)`` produced
+    before P2. (pandas raised when a zone skips or repeats midnight; this
+    takes the first reading of such a midnight.)
+    """
+    start = datetime.combine(day, time(), tzinfo=tz).astimezone(UTC)
+    end = datetime.combine(day + timedelta(days=1), time(), tzinfo=tz).astimezone(UTC)
+    count = (end - start) // step
+    return tuple((start + i * step).astimezone(tz) for i in range(count + 1))
+
+
+def _utc(moment: datetime) -> datetime:
+    return moment.astimezone(UTC)
+
+
+def nearest_index(times: Sequence[datetime], when: datetime) -> int:
+    """Return the index of the point nearest ``when``; -1 if there are none.
+
+    ``times`` must be sorted and tz-aware, ``when`` tz-aware. A tie goes to
+    the later point and a time outside the table to its nearest end: the
+    result of pandas ``DatetimeIndex.get_indexer([when], method="nearest")``,
+    which this replaces. Everything is compared in UTC, because Python
+    compares two datetimes that share a tzinfo by wall time, which is
+    wrong across a DST fold.
+    """
+    if not times:
+        return -1
+    target = _utc(when)
+    i = bisect_left(times, target, key=_utc)
+    if i == 0:
+        return 0
+    if i == len(times):
+        return len(times) - 1
+    before = target - _utc(times[i - 1])
+    after = _utc(times[i]) - target
+    return i - 1 if before < after else i
+
+
+@dataclass(frozen=True, slots=True)
+class SolarDay:
+    """One local day of solar positions, a point every ``STEP`` (C2).
+
+    Replaces the pandas table (DatetimeIndex plus two lists) with the same
+    values: ``times`` from :func:`day_steps`, ``azimuth[i]`` and
+    ``elevation[i]`` for ``times[i]``.
+    """
+
+    date: date
+    times: tuple[datetime, ...]
+    azimuth: list[float]
+    elevation: list[float]
 
 
 def _astral_location(hass: HomeAssistant) -> tuple[Location, float]:
@@ -43,10 +115,7 @@ class SunData:
         self.timezone = timezone
         # Per-local-date snapshot cache: times + azimuth/elevation computed
         # together so they can never pair data from different days.
-        self._snapshot_date: date | None = None
-        self._times: pd.DatetimeIndex | None = None
-        self._solar_azimuth: list | None = None
-        self._solar_elevation: list | None = None
+        self._day: SolarDay | None = None
 
     def _today_local(self) -> date:
         """Today in the HA-configured timezone.
@@ -58,8 +127,8 @@ class SunData:
         """
         return self._clock.now(ZoneInfo(str(self.timezone))).date()
 
-    def _snapshot(self) -> tuple[pd.DatetimeIndex, list, list]:
-        """Return (times, azimuth, elevation) computed from one date read.
+    def solar_day(self) -> SolarDay:
+        """Return today's table, computed once per local date.
 
         Historically each property regenerated the times index on access,
         so around midnight (or a DST shift) the azimuth/elevation lists
@@ -67,40 +136,34 @@ class SunData:
         once per local date and serve it from the same snapshot.
         """
         today = self._today_local()
-        if self._snapshot_date != today:
-            start_date = today
-            end_date = start_date + timedelta(days=1)
-            times = pd.date_range(
-                start=start_date,
-                end=end_date,
-                freq="5min",
-                tz=self.timezone,
-                name="time",
+        if self._day is None or self._day.date != today:
+            times = day_steps(today, ZoneInfo(str(self.timezone)))
+            self._day = SolarDay(
+                date=today,
+                times=times,
+                azimuth=[
+                    self.location.solar_azimuth(ts, self.elevation) for ts in times
+                ],
+                elevation=[
+                    self.location.solar_elevation(ts, self.elevation) for ts in times
+                ],
             )
-            self._times = times
-            self._solar_azimuth = [
-                self.location.solar_azimuth(ts, self.elevation) for ts in times
-            ]
-            self._solar_elevation = [
-                self.location.solar_elevation(ts, self.elevation) for ts in times
-            ]
-            self._snapshot_date = today
-        return self._times, self._solar_azimuth, self._solar_elevation
+        return self._day
 
     @property
-    def times(self) -> pd.DatetimeIndex:
-        """Define time interval."""
-        return self._snapshot()[0]
+    def times(self) -> tuple[datetime, ...]:
+        """Today's 5-minute points: tz-aware datetimes in the configured zone."""
+        return self.solar_day().times
 
     @property
-    def solar_azimuth(self) -> list:
+    def solar_azimuth(self) -> list[float]:
         """Create list with solar azimuth data per 5 minutes."""
-        return self._snapshot()[1]
+        return self.solar_day().azimuth
 
     @property
-    def solar_elevation(self) -> list:
+    def solar_elevation(self) -> list[float]:
         """Create list with solar elevation data per 5 minutes."""
-        return self._snapshot()[2]
+        return self.solar_day().elevation
 
     def sunset(self) -> datetime:
         """Fetch today's (local date) sunset time."""

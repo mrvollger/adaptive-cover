@@ -109,6 +109,10 @@ RULES: list[tuple[str, str]] = [
     # P2 clock seam: injects through coordinator.default_clock, which P4
     # moves with the coordinator split.
     ("tests/test_clock_seam.py::*", IMPLEMENTATION),
+    # P2 stdlib time helpers (day_steps, nearest_index, localize_standard):
+    # edge cases of private helpers; the SunData contract pins (277/289/301
+    # points, astral values) are behavior tier in test_regression_fixes.py.
+    ("tests/test_time_helpers.py::*", IMPLEMENTATION),
 ]
 
 

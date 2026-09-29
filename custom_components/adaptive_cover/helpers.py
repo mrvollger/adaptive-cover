@@ -2,7 +2,6 @@
 
 import datetime as dt
 
-import pandas as pd
 from dateutil import parser
 from homeassistant.core import HomeAssistant, split_entity_id
 
@@ -28,12 +27,6 @@ def get_domain(entity: str):
     if entity is not None:
         domain, object_id = split_entity_id(entity)
         return domain
-
-
-def get_timedelta_str(string: str):
-    """Convert string to timedelta."""
-    if string is not None:
-        return pd.to_timedelta(string)
 
 
 def get_datetime_from_str(string: str, default_date: dt.date | None = None):

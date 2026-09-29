@@ -6,10 +6,7 @@ import asyncio
 import datetime as dt
 from collections import deque
 from dataclasses import dataclass
-from functools import lru_cache
 
-import numpy as np
-import pytz
 from homeassistant.components.cover import DOMAIN as COVER_DOMAIN
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -27,6 +24,7 @@ from homeassistant.core import (
 )
 from homeassistant.helpers.event import async_call_later, async_track_point_in_time
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.util import dt as dt_util
 
 from .config_context_adapter import ConfigContextAdapter
 from .runtime.clock import SYSTEM_CLOCK, Clock
@@ -42,6 +40,8 @@ from .calculation import (
     get_state_reason,
 )
 from .engine.models import GlareModel, Overhang, PrivacyConfig
+from .engine.numeric import interp
+from .sun import nearest_index
 from .const import (
     _LOGGER,
     ATTR_POSITION,
@@ -129,15 +129,39 @@ from .helpers import (
 default_clock: Clock = SYSTEM_CLOCK
 
 
-@lru_cache(maxsize=8)
-def cached_timezone(name: str):
-    """Return the pytz timezone by name, cached.
+def cached_timezone(name: str) -> dt.tzinfo:
+    """Return the time zone by name, cached (``dt_util.get_time_zone``).
 
-    pytz reads a zoneinfo file on first construction — blocking I/O that
-    must not run in the event loop. async_setup_entry primes this cache
-    from an executor; every later call is a dict lookup.
+    The first construction reads a zoneinfo file: blocking I/O that must
+    not run in the event loop. async_setup_entry primes this cache from an
+    executor; every later call is a dict lookup.
+
+    Raises
+    ------
+    KeyError
+        For an unknown name, like pytz's UnknownTimeZoneError (a KeyError)
+        before P2. Home Assistant validates its configured zone, so this
+        does not happen in practice.
+
     """
-    return pytz.timezone(name)
+    zone = dt_util.get_time_zone(name)
+    if zone is None:
+        raise KeyError(name)
+    return zone
+
+
+def localize_standard(naive: dt.datetime, tz: dt.tzinfo) -> dt.datetime:
+    """Attach ``tz`` to a naive local time, standard time where it is ambiguous.
+
+    What pytz's ``localize()`` did (``is_dst=False``): a repeated wall time
+    (the hour DST ends) takes the standard-time reading, a skipped one (the
+    hour DST starts) the offset from before the jump.
+    """
+    first = naive.replace(tzinfo=tz, fold=0)
+    second = naive.replace(tzinfo=tz, fold=1)
+    if first.utcoffset() == second.utcoffset():
+        return first
+    return first if not first.dst() else second
 
 
 @dataclass
@@ -569,12 +593,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             times = sun_data.times
             azimuths = sun_data.solar_azimuth
             elevations = sun_data.solar_elevation
-        _ = times
-        # Convert target_time to same timezone as sun data times for correct indexing
-        target_tz = target_time
-        if times.tz is not None and target_time.tzinfo is not None:
-            target_tz = target_time.astimezone(times.tz)
-        idx = times.get_indexer([target_tz], method="nearest")[0]
+        # Nearest table point to the tz-aware target, compared as instants
+        # (the table is in local time, the target usually UTC).
+        idx = nearest_index(times, target_time)
         if idx < 0 or idx >= len(times):
             return int(cover_data.h_def)
         return cover_data.calculate_percentage_at(azimuths[idx], elevations[idx])
@@ -584,7 +605,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         if time is None:
             return None
         if time.tzinfo is None:
-            return time.replace(tzinfo=pytz.UTC)
+            return time.replace(tzinfo=dt.UTC)
         return time
 
     def _compute_next_event(self, cover_data, start, end):
@@ -650,7 +671,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             end_t = self._end_time
             if end_t.tzinfo is None:
                 local_tz = cached_timezone(self.hass.config.time_zone)
-                end_t = local_tz.localize(end_t)
+                end_t = localize_standard(end_t, local_tz)
             if end_t > now:
                 events.append(
                     (
@@ -1725,7 +1746,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             normal_range = list(map(int, self.normal_list))
             new_range = list(map(int, self.new_list))
         if new_range:
-            state = np.interp(state, normal_range, new_range)
+            state = interp(state, normal_range, new_range)
             if state == new_range[0]:
                 state = 0
             if state == new_range[-1]:

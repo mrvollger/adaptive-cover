@@ -6,11 +6,15 @@ built on determinism silently breaks. This lint test makes that structural
 rule executable.
 
 Since P2 the whole integration is held to part of this rule: outside the
-clock seam (``runtime/clock.py``) nothing reads the wall clock.
+clock seam (``runtime/clock.py``) nothing reads the wall clock, and nothing
+imports a third-party package that neither the manifest nor Home Assistant
+provides (ADR 0005 dropped pandas, numpy and pytz).
 """
 
 import ast
+import json
 import re
+import sys
 from pathlib import Path
 
 PACKAGE_DIR = (
@@ -29,6 +33,15 @@ FORBIDDEN = re.compile(
 CLOCK_ATTRIBUTES = {"now", "utcnow", "today"}
 # time.time() and friends, when the module imports the time module.
 TIME_MODULE_CALLS = {"time", "time_ns", "monotonic", "monotonic_ns", "perf_counter"}
+
+# ADR 0005: removed in P2 and must not come back.
+DROPPED_PACKAGES = {"pandas", "numpy", "pytz"}
+# Third-party imports allowed in the integration: Home Assistant itself,
+# what it installs (voluptuous; astral, which the manifest also declares;
+# dateutil, which HA core brings via hass-nabucasa -> pycognito -> boto3 ->
+# botocore and which pandas used to bring too), and nothing else.
+ALLOWED_THIRD_PARTY = {"homeassistant", "voluptuous", "astral", "dateutil"}
+MANIFEST_REQUIREMENTS = ["astral"]
 
 
 def test_engine_dir_exists():
@@ -128,3 +141,32 @@ def test_clock_scan_catches_every_form(tmp_path):
     reads = _clock_reads(sample)
     assert len(reads) == 8, reads
     assert not any("clock" in read or "moment" in read for read in reads)
+
+
+def _third_party_imports(path: Path) -> list[tuple[str, int]]:
+    """Top-level names of absolute non-stdlib imports in one module."""
+    tree = ast.parse(path.read_text(), filename=str(path))
+    names = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names += [(alias.name.split(".")[0], node.lineno) for alias in node.names]
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            names.append((node.module.split(".")[0], node.lineno))
+    return [
+        (name, line)
+        for name, line in names
+        if name not in sys.stdlib_module_names and name != "__future__"
+    ]
+
+
+def test_no_dropped_or_undeclared_dependencies():
+    """P2 dependency diet: no pandas/numpy/pytz; manifest requires only astral."""
+    manifest = json.loads((PACKAGE_DIR / "manifest.json").read_text())
+    assert manifest["requirements"] == MANIFEST_REQUIREMENTS
+    offenders = []
+    for path in sorted(PACKAGE_DIR.rglob("*.py")):
+        rel = path.relative_to(PACKAGE_DIR)
+        for name, line in _third_party_imports(path):
+            if name in DROPPED_PACKAGES or name not in ALLOWED_THIRD_PARTY:
+                offenders.append(f"{rel}:{line}: imports {name}")
+    assert not offenders, "Undeclared or dropped dependencies:\n" + "\n".join(offenders)
