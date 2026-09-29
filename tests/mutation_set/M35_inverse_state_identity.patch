@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1477,4 +1477,4 @@
+@@ -1410,4 +1410,4 @@
  
  def inverse_state(state: int) -> int:
      """Inverse state."""

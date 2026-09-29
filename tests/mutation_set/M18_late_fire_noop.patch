@@ -1,12 +1,12 @@
-diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
---- a/custom_components/adaptive_cover/coordinator.py
-+++ b/custom_components/adaptive_cover/coordinator.py
-@@ -272,6 +272,10 @@
+diff --git a/custom_components/adaptive_cover/runtime/end_of_day.py b/custom_components/adaptive_cover/runtime/end_of_day.py
+--- a/custom_components/adaptive_cover/runtime/end_of_day.py
++++ b/custom_components/adaptive_cover/runtime/end_of_day.py
+@@ -106,6 +106,10 @@
          exception: the end time was moved LATER after arming — re-arm.
          """
-         current_end = self._end_time
-+        if self._scheduled_time is not None and self._now_local() > (
-+            self._scheduled_time + dt.timedelta(seconds=1)
+         current_end = self._end_time()
++        if self.scheduled_time is not None and self._now_local() > (
++            self.scheduled_time + dt.timedelta(seconds=1)
 +        ):
 +            return
          self.logger.debug(

@@ -51,6 +51,7 @@ GATES = "custom_components/adaptive_cover/runtime/gates.py"
 COMMANDS = "custom_components/adaptive_cover/runtime/command_tracker.py"
 DETECTOR = "custom_components/adaptive_cover/runtime/manual_detector.py"
 OVERRIDES = "custom_components/adaptive_cover/runtime/override_tracker.py"
+END_OF_DAY = "custom_components/adaptive_cover/runtime/end_of_day.py"
 
 
 @dataclass
@@ -262,57 +263,49 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M14",
         "catchup_flag_inverted",
-        COORD,
-        "async_timed_end_time",
+        END_OF_DAY,
+        "EndOfDay.arm",
         "catch-up flag inversion <= -> > (on-time closes skip overridden covers)",
-        "        self._end_time_is_catchup = self._end_time <= self._now_local()",
-        "        self._end_time_is_catchup = self._end_time > self._now_local()",
+        "        self.is_catchup = end <= self._now_local()",
+        "        self.is_catchup = end > self._now_local()",
     ),
     Mutation(
         "M15",
         "end_close_skips_transform",
-        COORD,
-        "async_handle_timed_refresh",
+        END_OF_DAY,
+        "EndOfDay.close",
         "skip the sunset-position transform (raw value sent to interpolated/inverse covers)",
-        "            target = int(self._transform_state(options.get(CONF_SUNSET_POS)))",
-        "            target = int(options.get(CONF_SUNSET_POS))",
+        "        target = int(transform(sunset_pos))",
+        "        target = int(sunset_pos)",
     ),
     Mutation(
         "M16",
         "pending_snap_retry_inverted",
-        COORD,
-        "async_check_cover_state_change",
+        END_OF_DAY,
+        "EndOfDay.take_retry",
         "pending-snap retry control_toggle condition inverted",
-        "            if pending is not None and self.control_toggle:",
-        "            if pending is not None and not self.control_toggle:",
+        "        if pending is not None and control:",
+        "        if pending is not None and not control:",
     ),
     Mutation(
         "M17",
         "end_time_rearm_skipped",
-        COORD,
-        "_async_update_data",
+        END_OF_DAY,
+        "EndOfDay.ensure_armed",
         "keep the stale timer: only arm once, never re-arm on an options change",
-        "        if (\n"
-        "            self._end_time\n"
-        "            and self._track_end_time\n"
-        "            and self._end_time != self._scheduled_time\n"
-        "        ):",
-        "        if (\n"
-        "            self._end_time\n"
-        "            and self._track_end_time\n"
-        "            and self._scheduled_time is None\n"
-        "        ):",
+        "        if end and track_end_time and end != self.scheduled_time:",
+        "        if end and track_end_time and self.scheduled_time is None:",
     ),
     Mutation(
         "M18",
         "late_fire_noop",
-        COORD,
-        "async_timed_refresh",
+        END_OF_DAY,
+        "EndOfDay._on_fire",
         "late delivery becomes a no-op (the historical 1-second-equality bug)",
-        "        current_end = self._end_time\n        self.logger.debug(",
-        "        current_end = self._end_time\n"
-        "        if self._scheduled_time is not None and self._now_local() > (\n"
-        "            self._scheduled_time + dt.timedelta(seconds=1)\n"
+        "        current_end = self._end_time()\n        self.logger.debug(",
+        "        current_end = self._end_time()\n"
+        "        if self.scheduled_time is not None and self._now_local() > (\n"
+        "            self.scheduled_time + dt.timedelta(seconds=1)\n"
         "        ):\n"
         "            return\n"
         "        self.logger.debug(",

@@ -1,12 +1,12 @@
-diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
---- a/custom_components/adaptive_cover/coordinator.py
-+++ b/custom_components/adaptive_cover/coordinator.py
-@@ -954,7 +954,7 @@
-             # Same transform pipeline as every other move (interpolation +
-             # inversion) — a raw sunset position is out of calibration for
-             # interpolated covers and then primes false manual detection.
--            target = int(self._transform_state(options.get(CONF_SUNSET_POS)))
-+            target = int(options.get(CONF_SUNSET_POS))
-             for cover in self.entities:
-                 if self._end_time_is_catchup and self.manager.is_cover_manual(cover):
-                     # A catch-up close (armed after its moment: restart or
+diff --git a/custom_components/adaptive_cover/runtime/end_of_day.py b/custom_components/adaptive_cover/runtime/end_of_day.py
+--- a/custom_components/adaptive_cover/runtime/end_of_day.py
++++ b/custom_components/adaptive_cover/runtime/end_of_day.py
+@@ -143,7 +143,7 @@
+         # Same transform pipeline as every other move (interpolation +
+         # inversion) — a raw sunset position is out of calibration for
+         # interpolated covers and then primes false manual detection.
+-        target = int(transform(sunset_pos))
++        target = int(sunset_pos)
+         for cover in covers:
+             if self.is_catchup and is_manual(cover):
+                 # A catch-up close (armed after its moment: restart or

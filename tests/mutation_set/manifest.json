@@ -92,36 +92,36 @@
  },
  {
   "id": "M14",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "async_timed_end_time",
+  "file": "custom_components/adaptive_cover/runtime/end_of_day.py",
+  "function": "EndOfDay.arm",
   "description": "catch-up flag inversion <= -> > (on-time closes skip overridden covers)",
   "patch": "M14_catchup_flag_inverted.patch"
  },
  {
   "id": "M15",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "async_handle_timed_refresh",
+  "file": "custom_components/adaptive_cover/runtime/end_of_day.py",
+  "function": "EndOfDay.close",
   "description": "skip the sunset-position transform (raw value sent to interpolated/inverse covers)",
   "patch": "M15_end_close_skips_transform.patch"
  },
  {
   "id": "M16",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "async_check_cover_state_change",
+  "file": "custom_components/adaptive_cover/runtime/end_of_day.py",
+  "function": "EndOfDay.take_retry",
   "description": "pending-snap retry control_toggle condition inverted",
   "patch": "M16_pending_snap_retry_inverted.patch"
  },
  {
   "id": "M17",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "_async_update_data",
+  "file": "custom_components/adaptive_cover/runtime/end_of_day.py",
+  "function": "EndOfDay.ensure_armed",
   "description": "keep the stale timer: only arm once, never re-arm on an options change",
   "patch": "M17_end_time_rearm_skipped.patch"
  },
  {
   "id": "M18",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "async_timed_refresh",
+  "file": "custom_components/adaptive_cover/runtime/end_of_day.py",
+  "function": "EndOfDay._on_fire",
   "description": "late delivery becomes a no-op (the historical 1-second-equality bug)",
   "patch": "M18_late_fire_noop.patch",
   "deviation": "roadmap wrote the guard as 'if now < end_time: return'; the kill-relevant behavior (a LATE fire is dropped) needs the inverse comparison, implemented here against the armed time."

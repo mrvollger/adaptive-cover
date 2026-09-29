@@ -21,7 +21,6 @@ from homeassistant.core import (
     EventStateChangedData,
     HomeAssistant,
     State,
-    callback,
 )
 from homeassistant.helpers.event import async_call_later, async_track_point_in_time
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -30,6 +29,7 @@ from homeassistant.util import dt as dt_util
 from .config_context_adapter import ConfigContextAdapter
 from .runtime.clock import SYSTEM_CLOCK, Clock
 from .runtime.command_tracker import CommandTracker
+from .runtime.end_of_day import EndOfDay
 from .runtime.gates import CoverFacts, GatePolicy
 from .runtime.manual_detector import ManualDetector
 from .runtime.override_tracker import OverrideTracker
@@ -234,12 +234,13 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.ignore_intermediate_states = self.config_entry.options.get(
             CONF_MANUAL_IGNORE_INTERMEDIATE, False
         )
-        self._update_listener = None
-        self._scheduled_time = None  # nothing armed yet; != compare re-arms
-        self._end_time_is_catchup = False
-        # Covers whose end-of-day close could not be delivered (device
-        # unavailable / service error): retried when the cover comes back.
-        self._pending_end_snap: dict[str, int] = {}
+        self.end_of_day = EndOfDay(
+            lambda action, point: async_track_point_in_time(self.hass, action, point),
+            self._now_local,
+            lambda: self._end_time,
+            self._request_end_close,
+            self.logger,
+        )
 
         self._cached_options = None
         self._previous_state = None
@@ -262,34 +263,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         await super().async_config_entry_first_refresh()
         self.logger.debug("Config entry first refresh")
 
-    async def async_timed_refresh(self, event) -> None:
-        """Control state at end time.
-
-        The point-in-time listener never fires early, so a fire IS the end
-        time: run the close unconditionally. (A 1-second equality check here
-        silently dropped the close whenever the event loop delivered the
-        callback late — the shades then stayed up all night.) The only
-        exception: the end time was moved LATER after arming — re-arm.
-        """
-        current_end = self._end_time
-        self.logger.debug(
-            "Timed refresh fired. Configured end: %s, armed for: %s",
-            current_end,
-            self._scheduled_time,
-        )
-        # Compare configured vs armed on the SAME naive basis — never
-        # against a re-read wall clock, which diverges from the armed time
-        # whenever the process timezone differs from HA's configured one.
-        if (
-            current_end is not None
-            and self._scheduled_time is not None
-            and current_end > self._scheduled_time
-        ):
-            self.logger.debug(
-                "End time moved later (%s) after arming; re-arming", current_end
-            )
-            await self.async_timed_end_time()
-            return
+    async def _request_end_close(self) -> None:
+        """Run the end-of-day close on a refresh (EndOfDay calls this)."""
         self.timed_refresh = True
         self.logger.debug("Timed refresh triggered")
         await self.async_refresh()
@@ -343,8 +318,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             )
             # Device just came back: deliver any end-of-day close that
             # could not be sent while it was away.
-            pending = self._pending_end_snap.pop(data["entity_id"], None)
-            if pending is not None and self.control_toggle:
+            pending = self.end_of_day.take_retry(data["entity_id"], self.control_toggle)
+            if pending is not None:
                 self.logger.debug(
                     "Retrying missed end-of-day close for %s", data["entity_id"]
                 )
@@ -471,36 +446,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         used to outlive the entry and fire against a dead coordinator.
         """
         self.commands.cancel_polls()
-        self._async_cancel_update_listener()
-        self._scheduled_time = None
+        self.end_of_day.shutdown()
         await super().async_shutdown()
-
-    @callback
-    def _async_cancel_update_listener(self) -> None:
-        """Cancel the scheduled update."""
-        if self._update_listener:
-            self._update_listener()
-            self._update_listener = None
-
-    async def async_timed_end_time(self) -> None:
-        """(Re)arm the end-of-day listener for the current end time.
-
-        Arming a time already in the past fires immediately: after an HA
-        restart or entry reload that lands past the end time, the close
-        still runs (as a catch-up, which respects manual overrides).
-        """
-        self._async_cancel_update_listener()
-        self._end_time_is_catchup = self._end_time <= self._now_local()
-        self.logger.debug(
-            "Scheduling end time update at %s (was %s, catchup=%s)",
-            self._end_time,
-            self._scheduled_time,
-            self._end_time_is_catchup,
-        )
-        self._update_listener = async_track_point_in_time(
-            self.hass, self.async_timed_refresh, self._end_time
-        )
-        self._scheduled_time = self._end_time
 
     def _predict_position_at_time(self, cover_data, target_time):
         """Predict cover position at a specific future time using sun data."""
@@ -653,15 +600,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
         await self.manager.reset_if_needed()
 
-        if (
-            self._end_time
-            and self._track_end_time
-            and self._end_time != self._scheduled_time
-        ):
-            # != (not >) so moving the end time EARLIER re-arms too; and a
-            # first refresh after the end time arms a past point, which
-            # fires immediately as a catch-up close.
-            await self.async_timed_end_time()
+        self.end_of_day.ensure_armed(self._end_time, self._track_end_time)
 
         # Capture flags before handlers reset them
         had_cover_state_change = self.cover_state_change
@@ -951,33 +890,27 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self.logger.debug("Timed refresh deferred: control switch not restored yet")
             return
         if self.control_toggle:
-            # Same transform pipeline as every other move (interpolation +
-            # inversion) — a raw sunset position is out of calibration for
-            # interpolated covers and then primes false manual detection.
-            target = int(self._transform_state(options.get(CONF_SUNSET_POS)))
-            for cover in self.entities:
-                if self._end_time_is_catchup and self.manager.is_cover_manual(cover):
-                    # A catch-up close (armed after its moment: restart or
-                    # reload landed past the end time) must not bulldoze an
-                    # override a human set in the meantime. The on-time
-                    # close still wins over manual by design.
-                    self.logger.debug(
-                        "Catch-up end close skips manually overridden %s", cover
-                    )
-                    continue
-                delivered = await self.async_set_manual_position(
-                    cover,
-                    target,
-                    source="end_time",
-                    reason="configured end time reached",
-                )
-                if not delivered:
-                    self._pending_end_snap[cover] = target
+            await self.end_of_day.close(
+                self.entities,
+                options.get(CONF_SUNSET_POS),
+                self._transform_state,
+                self.manager.is_cover_manual,
+                self._send_end_close,
+            )
         else:
             self.logger.debug("Timed refresh but control toggle is off")
-        self._end_time_is_catchup = False
+        self.end_of_day.finish()
         self.timed_refresh = False
         self.logger.debug("Timed refresh handled")
+
+    async def _send_end_close(self, cover: str, target: int) -> bool:
+        """Send the end-of-day close to one cover; False when undelivered."""
+        return await self.async_set_manual_position(
+            cover,
+            target,
+            source="end_time",
+            reason="configured end time reached",
+        )
 
     async def async_handle_call_service(self, entity, state: int):
         """Handle call service."""

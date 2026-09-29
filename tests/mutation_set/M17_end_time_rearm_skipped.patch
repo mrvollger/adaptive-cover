@@ -1,12 +1,12 @@
-diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
---- a/custom_components/adaptive_cover/coordinator.py
-+++ b/custom_components/adaptive_cover/coordinator.py
-@@ -656,7 +656,7 @@
-         if (
-             self._end_time
-             and self._track_end_time
--            and self._end_time != self._scheduled_time
-+            and self._scheduled_time is None
-         ):
-             # != (not >) so moving the end time EARLIER re-arms too; and a
-             # first refresh after the end time arms a past point, which
+diff --git a/custom_components/adaptive_cover/runtime/end_of_day.py b/custom_components/adaptive_cover/runtime/end_of_day.py
+--- a/custom_components/adaptive_cover/runtime/end_of_day.py
++++ b/custom_components/adaptive_cover/runtime/end_of_day.py
+@@ -64,7 +64,7 @@
+         # != (not >) so moving the end time EARLIER re-arms too; and a
+         # first refresh after the end time arms a past point, which
+         # fires immediately as a catch-up close.
+-        if end and track_end_time and end != self.scheduled_time:
++        if end and track_end_time and self.scheduled_time is None:
+             self.arm(end)
+ 
+     def arm(self, end: dt.datetime) -> None:

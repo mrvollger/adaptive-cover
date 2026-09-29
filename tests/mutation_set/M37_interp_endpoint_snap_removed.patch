@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1455,10 +1455,6 @@
+@@ -1388,10 +1388,6 @@
              new_range = list(map(int, self.config.interp_list_new))
          if new_range:
              state = interp(state, normal_range, new_range)
