@@ -9,4 +9,4 @@ diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_compon
 +    return (solar_azimuth - window_azimuth + 180) % 360 - 180
  
  
- def valid_elevation(
+ def _missing(name: str) -> TypeError:

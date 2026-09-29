@@ -431,8 +431,8 @@ MUTATIONS: list[Mutation] = [
         EVAL,
         "evaluate",
         "privacy-first ordering dropped for climate mode",
-        "    if geometry.privacy_active(config, ctx):",
-        "    if climate is None and geometry.privacy_active(config, ctx):",
+        "    if geometry.privacy_active(config, ctx) and privacy is not None:",
+        "    if climate is None and geometry.privacy_active(config, ctx) and privacy is not None:",
     ),
     Mutation(
         "M31",
@@ -440,8 +440,8 @@ MUTATIONS: list[Mutation] = [
         EVAL,
         "_apply_limits",
         "max-clamp comparison flip",
-        "    if apply_max and result > limits.max_position:",
-        "    if apply_max and result < limits.max_position:",
+        "    if max_position is not None and apply_max and result > max_position:",
+        "    if max_position is not None and apply_max and result < max_position:",
     ),
     Mutation(
         "M32",

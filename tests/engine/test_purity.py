@@ -18,6 +18,7 @@ ENGINE_DIR = (
 
 FORBIDDEN = re.compile(
     r"homeassistant|datetime\.now|utcnow|date\.today|time\.time\(|import pandas"
+    r"|import numpy|from numpy"
 )
 
 

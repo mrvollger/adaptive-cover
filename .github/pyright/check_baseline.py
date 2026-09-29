@@ -9,6 +9,9 @@ part of the key, so moving or reformatting code does not invalidate it.
 - A key whose count goes UP fails the run and prints the new errors.
 - A key whose count goes DOWN only prints a note; shrink the baseline with
   ``--write`` so the fixed errors cannot come back unnoticed.
+- Paths in ``ZERO_ERROR_PATHS`` get no baseline at all: any error there
+  fails the run, and ``--write`` refuses to record one. They are the
+  directories pyproject.toml lists under ``strict`` (P2: ``engine/``).
 
 Pyright settings live in ``[tool.pyright]`` in pyproject.toml. Messages
 depend on the pyright version and on the installed Home Assistant, so
@@ -32,6 +35,9 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BASELINE = Path(__file__).resolve().with_name("baseline.json")
+# Checked in strict mode (pyproject.toml [tool.pyright] strict) with no
+# baseline: these must stay at zero errors.
+ZERO_ERROR_PATHS = ("custom_components/adaptive_cover/engine/",)
 
 Key = tuple[str, str, str]
 
@@ -98,6 +104,21 @@ def main() -> int:
 
     version, errors = run_pyright()
     current = Counter(key_of(d) for d in errors)
+
+    zero_error = [d for d in errors if key_of(d)[0].startswith(ZERO_ERROR_PATHS)]
+    if zero_error:
+        print(
+            f"FAIL: {len(zero_error)} pyright error(s) in a zero-error path "
+            f"({', '.join(ZERO_ERROR_PATHS)}); these cannot be baselined:"
+        )
+        for diag in zero_error:
+            file, rule, message = key_of(diag)
+            line = diag["range"]["start"]["line"] + 1
+            col = diag["range"]["start"]["character"] + 1
+            rule_txt = f" ({rule})" if rule else ""
+            print(f"  {file}:{line}:{col}: {message}{rule_txt}")
+            print(f"::error file={file},line={line},col={col}::{message}{rule_txt}")
+        return 1
 
     if args.write:
         write_baseline(version, current)

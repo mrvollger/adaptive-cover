@@ -85,3 +85,6 @@ include = ["custom_components/adaptive_cover"]
 exclude = ["**/__pycache__", "custom_components/adaptive_cover/www"]
 pythonVersion = "3.14"
 typeCheckingMode = "basic"
+# The pure engine is held to strict mode with zero errors (P2); the
+# `typecheck` task checks it separately and allows no baseline there.
+strict = ["custom_components/adaptive_cover/engine"]
