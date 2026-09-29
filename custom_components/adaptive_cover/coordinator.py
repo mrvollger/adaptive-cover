@@ -629,6 +629,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     "min_elevation": cover_data.min_elevation,
                     "max_elevation": cover_data.max_elevation,
                 },
+                cached_timezone(self.hass.config.time_zone),
             ),
         )
 

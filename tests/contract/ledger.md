@@ -662,3 +662,22 @@ The example below is inside an HTML comment. The checker ignores it.
   `build_cover` and `from_config` now take `clock=`, and the coordinator
   passes its own. Production uses `SYSTEM_CLOCK` for both, so nothing
   changes there; goldens, truth table and house replay unchanged.
+
+## L0024 · 2026-09-29 · last_moves shows the house's local time (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins
+  `tests/simulation/test_regressions.py::test_regression_last_move_time_is_house_time`
+  and `tests/runtime/test_explainer.py::test_regression_last_move_time_is_in_the_given_zone[*]`
+- **Mutations re-targeted:** none. Added M66 (the last-move HH:MM uses the
+  process time zone instead of HA's).
+- **Contract change:** C5
+- **Reason:** defect fix. The Position sensor's `last_moves` line
+  ("HH:MM -> 37% (source: reason)") converted the move time with a bare
+  `astimezone()`, which uses the PROCESS time zone: UTC in a docker
+  container, so the hour differed from the house's clock. It now converts
+  to HA's configured time zone, which the coordinator passes to the
+  Explainer. The new scenario runs the process in Asia/Tokyo and failed
+  with "01:00" for a 10:00 move in Salt Lake City. Position attributes keep
+  their names; only this value changes. Goldens, truth table and house
+  replay unchanged (none records this attribute).

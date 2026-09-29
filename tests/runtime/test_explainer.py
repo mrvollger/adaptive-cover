@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass, field
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -221,11 +222,21 @@ def test_move_log_keeps_the_last_ten():
 
 def test_last_move_line():
     explainer = Explainer()
-    assert explainer.format_last_move("cover.a") is None
+    assert explainer.format_last_move("cover.a", UTC) is None
     explainer.record("cover.a", 37, "manual", None, NOW)
-    line = explainer.format_last_move("cover.a")
-    assert line is not None
-    assert line.endswith(" -> 37% (manual)")
+    assert explainer.format_last_move("cover.a", UTC) == "18:00 -> 37% (manual)"
+
+
+@pytest.mark.parametrize(
+    ("zone", "hhmm"),
+    [("America/Denver", "12:00"), ("Pacific/Auckland", "07:00"), ("UTC", "18:00")],
+)
+def test_regression_last_move_time_is_in_the_given_zone(zone, hhmm):
+    """HH:MM is in HA's zone, whatever the process's zone is."""
+    explainer = Explainer()
+    explainer.record("cover.a", 37, "adaptive", "glare", NOW)
+    line = explainer.format_last_move("cover.a", ZoneInfo(zone))
+    assert line == f"{hhmm} -> 37% (adaptive: glare)"
 
 
 def test_attributes():
@@ -238,10 +249,11 @@ def test_attributes():
         {"cover.a": None, "cover.b": "quiet_hours"},
         ["cover.a", "cover.b"],
         {"azimuth": 180},
+        UTC,
     )
     assert attrs["intent"] == str(Intent.CALCULATED)
     assert attrs["decision_trace"] == ["a", "b"]
     assert attrs["move_blocked_by"] == {"cover.b": "quiet_hours"}
     assert list(attrs["last_moves"]) == ["cover.a"]
     assert attrs["sun"] == {"azimuth": 180}
-    assert explainer.attributes({}, None, {}, [], {})["intent"] is None
+    assert explainer.attributes({}, None, {}, [], {}, UTC)["intent"] is None

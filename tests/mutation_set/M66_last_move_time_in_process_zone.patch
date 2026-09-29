@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/runtime/explainer.py b/custom_components/adaptive_cover/runtime/explainer.py
+--- a/custom_components/adaptive_cover/runtime/explainer.py
++++ b/custom_components/adaptive_cover/runtime/explainer.py
+@@ -366,7 +366,7 @@
+         if not log:
+             return None
+         entry = log[-1]
+-        when = dt.datetime.fromisoformat(entry["time"]).astimezone(tz)
++        when = dt.datetime.fromisoformat(entry["time"]).astimezone()
+         line = f"{when.strftime('%H:%M')} -> {entry['position']}% ({entry['source']}"
+         if entry.get("reason"):
+             line += f": {entry['reason']}"

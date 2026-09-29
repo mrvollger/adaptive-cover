@@ -55,6 +55,7 @@ END_OF_DAY = "custom_components/adaptive_cover/runtime/end_of_day.py"
 RESOLVE = "custom_components/adaptive_cover/settings/resolve.py"
 LIFT = "custom_components/adaptive_cover/settings/lift.py"
 DECIDER = "custom_components/adaptive_cover/runtime/decider.py"
+EXPLAINER = "custom_components/adaptive_cover/runtime/explainer.py"
 WINDOW_COVER = "custom_components/adaptive_cover/window_cover.py"
 SCHEMA = "custom_components/adaptive_cover/settings/schema.py"
 CONFIG_FLOW = "custom_components/adaptive_cover/config_flow.py"
@@ -218,6 +219,15 @@ MUTATIONS: list[Mutation] = [
         "the cover adapters read the system clock instead of the coordinator's",
         "        hass, logger, geometry, sun=sun, timezone=timezone, clock=clock\n",
         "        hass, logger, geometry, sun=sun, timezone=timezone\n",
+    ),
+    Mutation(
+        "M66",
+        "last_move_time_in_process_zone",
+        EXPLAINER,
+        "Explainer.format_last_move",
+        "the last-move HH:MM uses the process time zone instead of HA's",
+        '        when = dt.datetime.fromisoformat(entry["time"]).astimezone(tz)',
+        '        when = dt.datetime.fromisoformat(entry["time"]).astimezone()',
     ),
     Mutation(
         "M60",

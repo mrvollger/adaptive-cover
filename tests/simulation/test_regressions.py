@@ -2,6 +2,8 @@
 
 import datetime as dt
 import logging
+import os
+import time
 
 import pytest
 from astral import sun as astral_sun
@@ -411,4 +413,35 @@ async def test_regression_reset_button_returns_at_once(hass, freezer):
     for cover in (A, B):
         assert not house.window(cover).is_manual, f"{cover} landing read as manual"
         assert house.position(cover) == house.auto_moves(cover)[-1].position
+    await house.teardown()
+
+
+@pytest.fixture
+def process_in_tokyo():
+    """Run with the PROCESS time zone far from the house's (Asia/Tokyo)."""
+    saved = os.environ.get("TZ")
+    os.environ["TZ"] = "Asia/Tokyo"
+    time.tzset()
+    yield
+    if saved is None:
+        os.environ.pop("TZ", None)
+    else:
+        os.environ["TZ"] = saved
+    time.tzset()
+
+
+async def test_regression_last_move_time_is_house_time(hass, freezer, process_in_tokyo):
+    """The last_moves HH:MM is the house's local time, not the process's.
+
+    The line converted the move time with a bare astimezone(), which uses
+    the process time zone (UTC in a docker container), so it showed a
+    different hour than the house's clock.
+    """
+    house = await SimHouse.create(
+        hass, freezer, date="2026-03-20", start_at="10:00", initial_position=100
+    )
+    assert house.auto_moves("cover.shade"), "no startup command"
+    line = house.window().last_move_line
+    assert line is not None
+    assert line.startswith("10:00 -> "), line
     await house.teardown()

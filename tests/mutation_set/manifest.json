@@ -63,6 +63,13 @@
   "patch": "M65_adapters_ignore_coordinator_clock.patch"
  },
  {
+  "id": "M66",
+  "file": "custom_components/adaptive_cover/runtime/explainer.py",
+  "function": "Explainer.format_last_move",
+  "description": "the last-move HH:MM uses the process time zone instead of HA's",
+  "patch": "M66_last_move_time_in_process_zone.patch"
+ },
+ {
   "id": "M60",
   "file": "custom_components/adaptive_cover/runtime/schedule.py",
   "function": "Schedule.after_start",

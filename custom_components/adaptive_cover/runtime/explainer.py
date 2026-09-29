@@ -357,13 +357,16 @@ class Explainer:
         del log[: -self.MOVE_LOG_LIMIT]
         return entry
 
-    def format_last_move(self, entity: str) -> str | None:
-        """Compact 'HH:MM -> 37% (source: reason)' line for attributes."""
+    def format_last_move(self, entity: str, tz: dt.tzinfo) -> str | None:
+        """Compact 'HH:MM -> 37% (source: reason)' line for attributes.
+
+        HH:MM is in ``tz``, HA's configured time zone (not the process's).
+        """
         log = self.move_log.get(entity)
         if not log:
             return None
         entry = log[-1]
-        when = dt.datetime.fromisoformat(entry["time"]).astimezone()
+        when = dt.datetime.fromisoformat(entry["time"]).astimezone(tz)
         line = f"{when.strftime('%H:%M')} -> {entry['position']}% ({entry['source']}"
         if entry.get("reason"):
             line += f": {entry['reason']}"
@@ -378,8 +381,12 @@ class Explainer:
         gate_blocks: Mapping[str, str | None],
         entities: Iterable[str],
         sun: dict[str, Any],
+        tz: dt.tzinfo,
     ) -> dict[str, Any]:
-        """Build the Position sensor's explanation attributes."""
+        """Build the Position sensor's explanation attributes.
+
+        ``tz`` is HA's configured time zone, for the last-move times.
+        """
         return {
             "default": options.get(CONF_DEFAULT_HEIGHT),
             "sunset_default": options.get(CONF_SUNSET_POS),
@@ -399,7 +406,7 @@ class Explainer:
             "last_moves": {
                 entity: line
                 for entity in entities
-                if (line := self.format_last_move(entity)) is not None
+                if (line := self.format_last_move(entity, tz)) is not None
             },
             "sun": sun,
         }
