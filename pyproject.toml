@@ -73,3 +73,13 @@ max-complexity = 25
 [tool.ruff.lint.per-file-ignores]
 # Tests: docstring rules are not enforced (test names are the documentation).
 "tests/**" = ["D", "C408", "UP038", "T201"]
+
+# ---------------------------------------------------------------------------
+# Pyright (basic). CI fails only on errors missing from the committed
+# baseline: `pixi run typecheck`; refresh with `pixi run typecheck-baseline`.
+# ---------------------------------------------------------------------------
+[tool.pyright]
+include = ["custom_components/adaptive_cover"]
+exclude = ["**/__pycache__", "custom_components/adaptive_cover/www"]
+pythonVersion = "3.14"
+typeCheckingMode = "basic"
