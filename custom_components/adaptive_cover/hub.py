@@ -188,11 +188,6 @@ class HouseModeSelect(SelectEntity):
         self._attr_device_info = hub_device_info()
 
     @property
-    def name(self):
-        """Name of the entity."""
-        return "Cover control mode"
-
-    @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """State the override contract where users will look for it."""
         return {
@@ -250,16 +245,12 @@ class ResetAllOverridesButton(ButtonEntity):
     def __init__(self, hass: HomeAssistant) -> None:
         """Initialize the reset-all button."""
         self.hass = hass
+        # Pressing this moves covers back to their adaptive positions, so
+        # the label (translation key) says "return", not "reset"; the
+        # unique_id keeps the old reset_all slug.
         self._attr_unique_id = f"{HUB_UNIQUE_ID}_reset_all"
         apply_surface(self, HUB_SURFACE[("button", "reset_all")])
         self._attr_device_info = hub_device_info()
-
-    @property
-    def name(self):
-        """Name of the entity."""
-        # Pressing this moves covers back to their adaptive positions, so
-        # the label says "resume", not "reset" (unique_id keeps the old slug).
-        return "Return all shades to auto"
 
     async def async_press(self) -> None:
         """Reset overrides everywhere and re-apply positions immediately.

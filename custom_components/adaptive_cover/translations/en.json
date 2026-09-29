@@ -511,5 +511,94 @@
         "mode2": "bi-directional (0% = closed / 50% = open / 100% = closed)"
       }
     }
+  },
+  "entity": {
+    "binary_sensor": {
+      "manual_override": {
+        "name": "Manual override"
+      },
+      "sun_motion": {
+        "name": "Sun in front"
+      }
+    },
+    "button": {
+      "return_all_to_auto": {
+        "name": "Return all shades to auto"
+      },
+      "return_to_auto": {
+        "name": "Return to auto"
+      }
+    },
+    "number": {
+      "eye_height": {
+        "name": "Eye height"
+      },
+      "occupied_distance": {
+        "name": "Seat distance from window"
+      },
+      "overhang_depth": {
+        "name": "Overhang depth"
+      },
+      "overhang_height": {
+        "name": "Overhang height above sill"
+      },
+      "privacy_offset": {
+        "name": "Privacy delay after sunset"
+      },
+      "temp_high": {
+        "name": "Cooling threshold"
+      },
+      "temp_low": {
+        "name": "Heating threshold"
+      }
+    },
+    "select": {
+      "house_mode": {
+        "name": "Cover control mode"
+      },
+      "mode": {
+        "name": "Mode"
+      }
+    },
+    "sensor": {
+      "control": {
+        "name": "Control method"
+      },
+      "end_sun": {
+        "name": "End sun"
+      },
+      "last_change": {
+        "name": "Last change"
+      },
+      "next_change": {
+        "name": "Next change"
+      },
+      "start_sun": {
+        "name": "Start sun"
+      },
+      "target_position": {
+        "name": "Target position"
+      }
+    },
+    "switch": {
+      "control_toggle": {
+        "name": "Automatic control"
+      },
+      "irradiance_toggle": {
+        "name": "Irradiance"
+      },
+      "lux_toggle": {
+        "name": "Lux"
+      },
+      "manual_toggle": {
+        "name": "Manual override detection"
+      },
+      "switch_mode": {
+        "name": "Climate mode"
+      },
+      "temp_toggle": {
+        "name": "Outside temperature"
+      }
+    }
   }
 }

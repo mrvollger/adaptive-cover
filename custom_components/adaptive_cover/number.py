@@ -38,7 +38,7 @@ class TunableSpec:
     """One live-tunable option exposed as a number entity."""
 
     key: str
-    name: str
+    name: str  # English name; strings.json entity.number.<key>.name shows it
     min_value: float
     max_value: float
     step: float
@@ -134,11 +134,6 @@ class AdaptiveCoverNumber(
         self._device_id = config_entry.entry_id
         self._name = config_entry.data["name"]
         self._attr_device_info = adaptive_cover_device_info(config_entry)
-
-    @property
-    def name(self):
-        """Name of the entity."""
-        return self._spec.name
 
     @property
     def native_value(self) -> float | None:

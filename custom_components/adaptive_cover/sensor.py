@@ -109,11 +109,6 @@ class AdaptiveCoverSensorEntity(
         self.async_write_ha_state()
 
     @property
-    def name(self):
-        """Name of the entity."""
-        return self._sensor_name
-
-    @property
     def native_value(self) -> str | None:
         """Handle when entity is added."""
         return self.data.states["state"]
@@ -166,11 +161,6 @@ class AdaptiveCoverTimeSensorEntity(
         self.async_write_ha_state()
 
     @property
-    def name(self):
-        """Name of the entity."""
-        return self._sensor_name
-
-    @property
     def native_value(self) -> str | None:
         """Handle when entity is added."""
         return self.data.states[self.key]
@@ -214,11 +204,6 @@ class AdaptiveCoverControlSensorEntity(
         self.async_write_ha_state()
 
     @property
-    def name(self):
-        """Name of the entity."""
-        return self._sensor_name
-
-    @property
     def native_value(self) -> str | None:
         """Handle when entity is added."""
         return self.data.states["control"]
@@ -259,11 +244,6 @@ class AdaptiveCoverNextChangeSensorEntity(
         """Handle updated data from the coordinator."""
         self.data = self.coordinator.data
         self.async_write_ha_state()
-
-    @property
-    def name(self):
-        """Name of the entity."""
-        return self._sensor_name
 
     @property
     def native_value(self) -> str | None:
@@ -325,11 +305,6 @@ class AdaptiveCoverLastChangeSensorEntity(
         """Handle updated data from the coordinator."""
         self.data = self.coordinator.data
         self.async_write_ha_state()
-
-    @property
-    def name(self):
-        """Name of the entity."""
-        return self._sensor_name
 
     @property
     def native_value(self) -> str | None:

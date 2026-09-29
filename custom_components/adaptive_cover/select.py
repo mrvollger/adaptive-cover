@@ -76,11 +76,6 @@ class AdaptiveCoverModeSelect(
         self._attr_device_info = adaptive_cover_device_info(config_entry)
 
     @property
-    def name(self):
-        """Name of the entity."""
-        return "Mode"
-
-    @property
     def current_option(self) -> str:
         """Derive the mode from the coordinator's toggles."""
         if not self.coordinator.control_toggle:

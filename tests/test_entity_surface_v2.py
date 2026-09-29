@@ -1,7 +1,7 @@
 """Entity surface v2 (P1; contract change C1 in docs/refactor_plan.md).
 
-Pins the per-window and hub entity surface: category and default
-visibility.
+Pins the per-window and hub entity surface: category, default visibility
+and "<Device> <Role>" names.
 
 Public seams only: config entries, the entity/device/area registries,
 hass.states and the translation files. The expected surface below is
@@ -11,6 +11,7 @@ integration, so it is an independent pin.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from homeassistant.const import EntityCategory
@@ -43,6 +44,7 @@ from custom_components.adaptive_cover.const import (
     DOMAIN,
     SensorType,
 )
+from custom_components.adaptive_cover.number import TUNABLES
 
 from .conftest import COMMON_OPTIONS
 
@@ -202,6 +204,39 @@ class TestFreshSurface:
                 assert row.disabled_by is er.RegistryEntryDisabler.INTEGRATION, key
                 assert hass.states.get(row.entity_id) is None, key
 
+    async def test_names_are_device_plus_role(self, hass, cover_calls):
+        _set_world(hass)
+        entry = _entry(hass, **FULL_CLIMATE)
+        await _setup(hass, entry)
+
+        for key, row in _rows(hass, entry).items():
+            _category, enabled, name = WINDOW_SURFACE[key]
+            assert row.has_entity_name, key
+            assert row.original_name == name, key
+            if enabled:
+                friendly = hass.states.get(row.entity_id).attributes["friendly_name"]
+                assert friendly == f"Office Door {name}", key
+
+    async def test_regression_manual_override_names_distinct(self, hass, cover_calls):
+        """The override-detection switch and the override binary sensor were
+        both named "<Device> Manual Override"; every role now has its own
+        name (P1 naming cleanup, decision 5)."""
+        _set_world(hass)
+        entry = _entry(hass, **FULL_CLIMATE)
+        await _setup(hass, entry)
+        rows = _rows(hass, entry)
+
+        friendly = {
+            key: hass.states.get(row.entity_id).attributes["friendly_name"]
+            for key, row in rows.items()
+            if row.disabled_by is None
+        }
+        assert (
+            friendly[("switch", "Manual Override")]
+            != friendly[("binary_sensor", "Manual Override")]
+        )
+        assert len(set(friendly.values())) == len(friendly)
+
     async def test_hub_entities_primary_with_stable_ids(self, hass, cover_calls):
         _set_world(hass)
         entry = _entry(hass)
@@ -217,3 +252,22 @@ class TestFreshSurface:
             assert row.entity_category is None
             assert row.disabled_by is None
             assert hass.states.get(entity_id).attributes["friendly_name"] == friendly
+
+
+class TestTranslations:
+    """Entity names come from strings.json, mirrored in translations/en.json."""
+
+    @staticmethod
+    def _entity_strings(path: Path) -> dict:
+        return json.loads(path.read_text())["entity"]
+
+    def test_en_json_mirrors_strings_json(self):
+        assert self._entity_strings(PKG / "strings.json") == self._entity_strings(
+            PKG / "translations" / "en.json"
+        )
+
+    def test_number_names_match_tunable_specs(self):
+        numbers = self._entity_strings(PKG / "strings.json")["number"]
+        assert {spec.key: spec.name for spec in TUNABLES} == {
+            key: value["name"] for key, value in numbers.items()
+        }

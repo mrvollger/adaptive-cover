@@ -140,11 +140,6 @@ class AdaptiveCoverSwitch(
 
         self.coordinator.logger.debug("Setup switch")
 
-    @property
-    def name(self):
-        """Name of the entity."""
-        return self._switch_name
-
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
         self.coordinator.logger.debug("Turning on")
