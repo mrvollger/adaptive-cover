@@ -46,6 +46,7 @@ INIT = "custom_components/adaptive_cover/__init__.py"
 SURFACE = "custom_components/adaptive_cover/entity_surface.py"
 SHARED = "custom_components/adaptive_cover/entity_shared.py"
 SHADE_CONFIG = "custom_components/adaptive_cover/runtime/shade_config.py"
+SCHEDULE = "custom_components/adaptive_cover/runtime/schedule.py"
 
 
 @dataclass
@@ -115,63 +116,73 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M05",
         "start_time_precedence_swap",
-        COORD,
-        "after_start_time",
+        SCHEDULE,
+        "Schedule.after_start",
         "static CONF_START_TIME wins over the start-time entity (precedence swap)",
-        "        if self.config.start_time_entity is not None:\n"
-        "            time = get_datetime_from_str(\n"
-        "                get_safe_state(self.hass, self.config.start_time_entity),\n"
-        "                default_date=now.date(),\n"
+        "        if config.start_time_entity is not None:\n"
+        "            # An unavailable start entity reads as None, and comparing with\n"
+        "            # None raises TypeError (known, not fixed in this move); the\n"
+        "            # cast only tells the type checker what the code assumes.\n"
+        "            time = cast(\n"
+        "                dt.datetime,\n"
+        "                get_datetime_from_str(\n"
+        "                    self._read_state(config.start_time_entity),\n"
+        "                    default_date=now.date(),\n"
+        "                ),\n"
         "            )\n"
         "            self.logger.debug(\n"
         '                "Start time: %s, now: %s, now >= time: %s ", time, now, now >= time\n'
         "            )\n"
-        "            self._start_time = time\n"
+        "            self.last_start = time\n"
         "            return now >= time\n"
-        "        if self.config.start_time is not None:\n"
-        "            time = get_datetime_from_str(\n"
-        "                self.config.start_time, default_date=now.date()\n"
-        "            )\n"
+        "        if config.start_time is not None:\n"
+        "            time = get_datetime_from_str(config.start_time, default_date=now.date())\n"
         "\n"
         "            self.logger.debug(\n"
         '                "Start time: %s, now: %s, now >= time: %s", time, now, now >= time\n'
         "            )\n"
-        "            self._start_time\n"
+        "            # Not recorded in last_start: the coordinator's line here was a\n"
+        "            # no-op expression (a P4 ledgered fix, not this move).\n"
         "            return now >= time\n"
         "        return True",
-        "        if self.config.start_time is not None:\n"
-        "            time = get_datetime_from_str(\n"
-        "                self.config.start_time, default_date=now.date()\n"
-        "            )\n"
+        "        if config.start_time is not None:\n"
+        "            time = get_datetime_from_str(config.start_time, default_date=now.date())\n"
         "\n"
         "            self.logger.debug(\n"
         '                "Start time: %s, now: %s, now >= time: %s", time, now, now >= time\n'
         "            )\n"
-        "            self._start_time\n"
+        "            # Not recorded in last_start: the coordinator's line here was a\n"
+        "            # no-op expression (a P4 ledgered fix, not this move).\n"
         "            return now >= time\n"
-        "        if self.config.start_time_entity is not None:\n"
-        "            time = get_datetime_from_str(\n"
-        "                get_safe_state(self.hass, self.config.start_time_entity),\n"
-        "                default_date=now.date(),\n"
+        "        if config.start_time_entity is not None:\n"
+        "            # An unavailable start entity reads as None, and comparing with\n"
+        "            # None raises TypeError (known, not fixed in this move); the\n"
+        "            # cast only tells the type checker what the code assumes.\n"
+        "            time = cast(\n"
+        "                dt.datetime,\n"
+        "                get_datetime_from_str(\n"
+        "                    self._read_state(config.start_time_entity),\n"
+        "                    default_date=now.date(),\n"
+        "                ),\n"
         "            )\n"
         "            self.logger.debug(\n"
         '                "Start time: %s, now: %s, now >= time: %s ", time, now, now >= time\n'
         "            )\n"
-        "            self._start_time = time\n"
+        "            self.last_start = time\n"
         "            return now >= time\n"
         "        return True",
     ),
     Mutation(
         "M06",
         "midnight_end_time_normalization",
-        COORD,
-        "_end_time",
+        SCHEDULE,
+        "Schedule.end_time",
         "drop the 00:00-means-next-midnight normalization",
-        "            time = get_datetime_from_str(self.config.end_time, default_date=today)\n"
+        "            time = get_datetime_from_str(config.end_time, default_date=today)\n"
         "            if time.time() == dt.time(0, 0):\n"
         "                time = time + dt.timedelta(days=1)\n"
         "        return time",
-        "            time = get_datetime_from_str(self.config.end_time, default_date=today)\n"
+        "            time = get_datetime_from_str(config.end_time, default_date=today)\n"
         "        return time",
     ),
     Mutation(

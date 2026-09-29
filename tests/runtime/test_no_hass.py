@@ -17,7 +17,7 @@ RUNTIME_DIR = (
     / "adaptive_cover"
     / "runtime"
 )
-PURE_MODULES = ["shade_config.py"]
+PURE_MODULES = ["schedule.py", "shade_config.py"]
 
 
 def _hass_uses(source: str) -> list[str]:

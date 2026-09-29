@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -375,7 +375,7 @@
+@@ -378,7 +378,7 @@
                  else "current_position"
              )
              if target is not None and old_pos is not None and target != old_pos:

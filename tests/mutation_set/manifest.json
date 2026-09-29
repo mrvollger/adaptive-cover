@@ -29,15 +29,15 @@
  },
  {
   "id": "M05",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "after_start_time",
+  "file": "custom_components/adaptive_cover/runtime/schedule.py",
+  "function": "Schedule.after_start",
   "description": "static CONF_START_TIME wins over the start-time entity (precedence swap)",
   "patch": "M05_start_time_precedence_swap.patch"
  },
  {
   "id": "M06",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "_end_time",
+  "file": "custom_components/adaptive_cover/runtime/schedule.py",
+  "function": "Schedule.end_time",
   "description": "drop the 00:00-means-next-midnight normalization",
   "patch": "M06_midnight_end_time_normalization.patch"
  },

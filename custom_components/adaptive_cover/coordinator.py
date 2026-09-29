@@ -29,6 +29,7 @@ from homeassistant.util import dt as dt_util
 
 from .config_context_adapter import ConfigContextAdapter
 from .runtime.clock import SYSTEM_CLOCK, Clock
+from .runtime.schedule import Schedule
 from .runtime.shade_config import ControlState, ControlToggle, ShadeConfig
 
 from .calculation import (
@@ -194,11 +195,13 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self._inverse_state = self.config_entry.options.get(CONF_INVERSE_STATE, False)
         self._use_interpolation = self.config_entry.options.get(CONF_INTERP, False)
         self._track_end_time = self.config_entry.options.get(CONF_RETURN_SUNSET)
-        self._start_time = None
         self._sun_end_time = None
         self._sun_start_time = None
         # Re-read on every refresh (_update_options).
         self.config = ShadeConfig.from_options(self.config_entry.options)
+        self.schedule = Schedule(
+            lambda entity_id: get_safe_state(self.hass, entity_id), self.logger
+        )
         self.state_change = False
         self.cover_state_change = False
         self.first_refresh = False
@@ -1467,65 +1470,12 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     @property
     def check_adaptive_time(self):
         """Check if time is within start and end times."""
-        if self._start_time and self._end_time and self._start_time > self._end_time:
-            self.logger.error("Start time is after end time")
-        return self.before_end_time and self.after_start_time
-
-    @property
-    def after_start_time(self):
-        """Check if time is after start time."""
-        now = self._now_local()
-        if self.config.start_time_entity is not None:
-            time = get_datetime_from_str(
-                get_safe_state(self.hass, self.config.start_time_entity),
-                default_date=now.date(),
-            )
-            self.logger.debug(
-                "Start time: %s, now: %s, now >= time: %s ", time, now, now >= time
-            )
-            self._start_time = time
-            return now >= time
-        if self.config.start_time is not None:
-            time = get_datetime_from_str(
-                self.config.start_time, default_date=now.date()
-            )
-
-            self.logger.debug(
-                "Start time: %s, now: %s, now >= time: %s", time, now, now >= time
-            )
-            self._start_time
-            return now >= time
-        return True
+        return self.schedule.in_window(self.config, self._now_local())
 
     @property
     def _end_time(self) -> dt.datetime | None:
         """Get end time (naive, in HA's configured timezone, today)."""
-        time = None
-        today = self._now_local().date()
-        if self.config.end_time_entity is not None:
-            time = get_datetime_from_str(
-                get_safe_state(self.hass, self.config.end_time_entity),
-                default_date=today,
-            )
-        elif self.config.end_time is not None:
-            time = get_datetime_from_str(self.config.end_time, default_date=today)
-            if time.time() == dt.time(0, 0):
-                time = time + dt.timedelta(days=1)
-        return time
-
-    @property
-    def before_end_time(self):
-        """Check if time is before end time."""
-        if self._end_time is not None:
-            now = self._now_local()
-            self.logger.debug(
-                "End time: %s, now: %s, now < time: %s",
-                self._end_time,
-                now,
-                now < self._end_time,
-            )
-            return now < self._end_time
-        return True
+        return self.schedule.end_time(self.config, self._now_local().date())
 
     def _get_current_position(self, entity) -> int | None:
         """Get current position of cover."""
