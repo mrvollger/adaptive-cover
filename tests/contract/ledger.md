@@ -128,3 +128,19 @@ The example below is inside an HTML comment. The checker ignores it.
   `tests/test_units_and_defaults.py` default tests now read the wizard's
   forms through a real flow instead of module-level schema constants (same
   ids, same assertions). Goldens, truth table and house replay unchanged.
+
+## L0005 · 2026-09-29 · Window height and distance take up to 10 m everywhere (C3)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pin
+  `tests/test_config_flow.py::test_regression_height_distance_max_ten`
+- **Mutations re-targeted:** none
+- **Contract change:** C3
+- **Reason:** drift fix. The change_settings and add_entry services took
+  `window_height` and `distance_shaded_area` from 0.1 to 10 m, but the
+  wizard and the options form capped the height at 6 m and the distance at
+  2 m, so a value set by the service could not be saved from the options
+  form again. `spec_parity.json` changes in four lines: the form `max` of
+  both keys (wizard vertical/horizontal, options covers_geometry) is now 10.
+  Stored values are untouched (the range only widens). Goldens, truth table
+  and house replay unchanged.

@@ -783,7 +783,7 @@
      "options.init.covers_geometry [types=cover_awning|cover_blind]"
     ],
     "kind": "number",
-    "max": 2,
+    "max": 10,
     "min": 0.1,
     "mode": "slider",
     "step": 0.1,
@@ -797,7 +797,7 @@
      "wizard.vertical [types=cover_blind]"
     ],
     "kind": "number",
-    "max": 2,
+    "max": 10,
     "min": 0.1,
     "mode": "slider",
     "step": 0.1,
@@ -3097,7 +3097,7 @@
      "options.init.covers_geometry [types=cover_awning|cover_blind]"
     ],
     "kind": "number",
-    "max": 6,
+    "max": 10,
     "min": 0.1,
     "mode": "slider",
     "step": 0.01,
@@ -3111,7 +3111,7 @@
      "wizard.vertical [types=cover_blind]"
     ],
     "kind": "number",
-    "max": 6,
+    "max": 10,
     "min": 0.1,
     "mode": "slider",
     "step": 0.01,
