@@ -123,7 +123,9 @@ OPTIONS = vol.Schema(
                 min=0, max=359, mode="slider", unit_of_measurement="°"
             )
         ),
-        vol.Required(CONF_DEFAULT_HEIGHT, default=DEFAULT_DEFAULT_HEIGHT): selector.NumberSelector(
+        vol.Required(
+            CONF_DEFAULT_HEIGHT, default=DEFAULT_DEFAULT_HEIGHT
+        ): selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=0, max=100, step=1, mode="slider", unit_of_measurement="%"
             )
@@ -200,7 +202,9 @@ VERTICAL_OPTIONS = vol.Schema(
                 min=0.1, max=10, step=0.01, mode="box", unit_of_measurement="m"
             )
         ),
-        vol.Optional(CONF_EYE_HEIGHT, default=DEFAULT_EYE_HEIGHT): selector.NumberSelector(
+        vol.Optional(
+            CONF_EYE_HEIGHT, default=DEFAULT_EYE_HEIGHT
+        ): selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=0.1, max=3, step=0.01, mode="box", unit_of_measurement="m"
             )
@@ -265,12 +269,16 @@ CLIMATE_OPTIONS = vol.Schema(
         vol.Required(CONF_TEMP_ENTITY): selector.EntitySelector(
             selector.EntityFilterSelectorConfig(domain=["climate", "sensor"])
         ),
-        vol.Required(CONF_TEMP_LOW, default=DEFAULT_TEMP_THRESHOLDS["°C"][0]): selector.NumberSelector(
+        vol.Required(
+            CONF_TEMP_LOW, default=DEFAULT_TEMP_THRESHOLDS["°C"][0]
+        ): selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=0, max=86, step=1, mode="slider", unit_of_measurement="°"
             )
         ),
-        vol.Required(CONF_TEMP_HIGH, default=DEFAULT_TEMP_THRESHOLDS["°C"][1]): selector.NumberSelector(
+        vol.Required(
+            CONF_TEMP_HIGH, default=DEFAULT_TEMP_THRESHOLDS["°C"][1]
+        ): selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=0, max=90, step=1, mode="slider", unit_of_measurement="°"
             )
@@ -316,6 +324,7 @@ CLIMATE_OPTIONS = vol.Schema(
         ),
     }
 )
+
 
 def climate_options_for(hass) -> vol.Schema:
     """CLIMATE_OPTIONS with threshold defaults in HA's temperature unit.
@@ -493,9 +502,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         """
         from .hub import CONF_IS_HUB, HUB_ENTRY_NAME, HUB_UNIQUE_ID
 
-        if import_data and import_data.get("name") and not import_data.get(
-            CONF_IS_HUB
-        ):
+        if import_data and import_data.get("name") and not import_data.get(CONF_IS_HUB):
             return self.async_create_entry(
                 title=import_data["name"],
                 data={
@@ -698,9 +705,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         options[CONF_MANUAL_OVERRIDE_DURATION] = self.config.get(
             CONF_MANUAL_OVERRIDE_DURATION, DEFAULT_MANUAL_OVERRIDE_DURATION
         )
-        options[CONF_TRANSPARENT_BLIND] = self.config.get(
-            CONF_TRANSPARENT_BLIND, False
-        )
+        options[CONF_TRANSPARENT_BLIND] = self.config.get(CONF_TRANSPARENT_BLIND, False)
         options[CONF_INTERP_LIST] = self.config.get(CONF_INTERP_LIST, [])
         options[CONF_INTERP_LIST_NEW] = self.config.get(CONF_INTERP_LIST_NEW, [])
         return self.async_create_entry(
@@ -812,9 +817,7 @@ class OptionsFlowHandler(OptionsFlow):
             "sun_behavior": {
                 **_with_suggestions(_fields_of(OPTIONS), self.options),
                 **_with_suggestions(BLIND_SPOT_FIELDS, self.options),
-                **_with_suggestions(
-                    _fields_of(INTERPOLATION_OPTIONS), self.options
-                ),
+                **_with_suggestions(_fields_of(INTERPOLATION_OPTIONS), self.options),
             },
             "automation_timing": _with_suggestions(
                 _fields_of(AUTOMATION_CONFIG), self.options
@@ -841,9 +844,7 @@ class OptionsFlowHandler(OptionsFlow):
         """Show and process the single options page."""
         section_fields = self._section_fields()
         self._shown_keys = {
-            marker.schema
-            for fields in section_fields.values()
-            for marker in fields
+            marker.schema for fields in section_fields.values() for marker in fields
         }
 
         if user_input is not None:

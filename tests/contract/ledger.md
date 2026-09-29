@@ -49,4 +49,17 @@ The example below is inside an HTML comment. The checker ignores it.
 
 ## Entries
 
-(none yet)
+## L0001 · 2026-09-28 · bbca2e9 regression moved to the entity boundary (P0)
+- **Renamed:**
+  - `tests/characterization/test_service_calls.py::test_regression_bbca2e9_predict_position_timezone` -> `tests/characterization/test_service_calls.py::test_regression_bbca2e9_predicted_entry_position`
+- **Replacements:**
+  - `tests/characterization/test_service_calls.py::test_regression_bbca2e9_predicted_entry_position`
+- **Mutations re-targeted:** none
+- **Contract change:** none
+- **Reason:** the old test built a coordinator with `object.__new__` and called
+  the private `_predict_position_at_time`. The replacement asserts the same
+  regression (a tz-aware sun table indexed from a UTC target returns the
+  calculated, not default, position) through the Next State Change sensor's
+  `expected_position`. It fails on the default-fallback and UTC-as-local
+  mutations. The helper's UTC-input branch is unreachable from any public path.
+

@@ -78,9 +78,7 @@ async def test_privacy_closes_after_dusk(hass, mock_sun_data, mock_sun_entity):
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     # Land the startup move so its travel window clears.
-    hass.states.async_set(
-        COVER, "open", {"current_position": window.last_command}
-    )
+    hass.states.async_set(COVER, "open", {"current_position": window.last_command})
     await hass.async_block_till_done()
     calls = async_mock_service(hass, "cover", "set_cover_position")
 
@@ -131,9 +129,7 @@ async def test_privacy_offset_zero_engages_at_sunset(
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     # Land the startup move so its travel window clears.
-    hass.states.async_set(
-        COVER, "open", {"current_position": window.last_command}
-    )
+    hass.states.async_set(COVER, "open", {"current_position": window.last_command})
     await hass.async_block_till_done()
     calls = async_mock_service(hass, "cover", "set_cover_position")
 
@@ -190,9 +186,7 @@ async def test_sunrise_offset_falls_back_to_sunset_offset(
     # The fixed startup refresh already tracks the sun (the inherited -60
     # offset released the before-sunrise hold); land that move so its
     # travel window clears before the nudge under test.
-    hass.states.async_set(
-        COVER, "open", {"current_position": window.last_command}
-    )
+    hass.states.async_set(COVER, "open", {"current_position": window.last_command})
     await hass.async_block_till_done()
     calls = async_mock_service(hass, "cover", "set_cover_position")
 
@@ -245,9 +239,7 @@ async def test_privacy_beats_winter_open(hass, mock_sun_data, mock_sun_entity):
     assert WindowHandle(hass, COVER).target == 0  # privacy, not winter-100
 
 
-async def test_regression_target_latch_tolerance(
-    hass, mock_sun_data, mock_sun_entity
-):
+async def test_regression_target_latch_tolerance(hass, mock_sun_data, mock_sun_entity):
     """Cover lands NEAR the target (99 vs 100): latch must clear so the
     next human move is detected as manual. Production bug 2026-07-02."""
     entry = MockConfigEntry(
@@ -368,9 +360,7 @@ async def test_user_context_move_latches_even_mid_window(
     assert _awaiting_target(hass, entry) is False  # contract: internal (latch)
 
 
-async def test_no_recommand_while_awaiting_target(
-    hass, mock_sun_data, mock_sun_entity
-):
+async def test_no_recommand_while_awaiting_target(hass, mock_sun_data, mock_sun_entity):
     """While a command is in flight, adaptive ticks must not re-send:
     only the latest command matters, no stacking."""
     entry = MockConfigEntry(
@@ -392,9 +382,7 @@ async def test_no_recommand_while_awaiting_target(
     await hass.async_block_till_done()
     # Land the startup move (fixed first refresh) so its travel window
     # clears; the in-flight command under test is the nudge's own.
-    hass.states.async_set(
-        COVER, "open", {"current_position": window.last_command}
-    )
+    hass.states.async_set(COVER, "open", {"current_position": window.last_command})
     await hass.async_block_till_done()
     calls = async_mock_service(hass, "cover", "set_cover_position")
 

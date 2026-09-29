@@ -55,8 +55,7 @@ async def test_away_summer_closes(hass, freezer):
     await house.advance_to("12:00")
 
     assert house.position(SHADE) == 0, (
-        f"away+summer+sun in FOV must close fully; "
-        f"moves: {house.auto_moves(SHADE)}"
+        f"away+summer+sun in FOV must close fully; moves: {house.auto_moves(SHADE)}"
     )
     closes = [m for m in house.auto_moves(SHADE) if m.position == 0]
     assert closes, "no close command was ever issued"
@@ -64,9 +63,7 @@ async def test_away_summer_closes(hass, freezer):
     # Midday stays closed: no command reopens while conditions hold.
     await house.advance_to("14:00")
     assert house.position(SHADE) == 0
-    reopen = [
-        m for m in house.auto_moves(SHADE, since="12:00") if m.position != 0
-    ]
+    reopen = [m for m in house.auto_moves(SHADE, since="12:00") if m.position != 0]
     assert reopen == [], f"away+summer reopened mid-day: {reopen}"
     await house.teardown()
 
@@ -115,18 +112,14 @@ async def test_intermediate_temp_equals_basic(hass, freezer):
         climate={"temp": 22.0, "presence": "home", "weather": "sunny"},
     )
     await climate_house.advance_to("14:00")
-    climate_cmds = [
-        (ev.time, ev.position) for ev in climate_house.auto_moves(SHADE)
-    ]
+    climate_cmds = [(ev.time, ev.position) for ev in climate_house.auto_moves(SHADE)]
     # teardown() disarms the service re-win guard, so the dead house
     # cannot steal the cover services back from the basic house next.
     await climate_house.teardown()
 
     basic_house = await SimHouse.create(hass, freezer, date=DATE)
     await basic_house.advance_to("14:00")
-    basic_cmds = [
-        (ev.time, ev.position) for ev in basic_house.auto_moves(SHADE)
-    ]
+    basic_cmds = [(ev.time, ev.position) for ev in basic_house.auto_moves(SHADE)]
     await basic_house.teardown()
 
     assert climate_cmds, "climate-neutral day produced no commands at all"
@@ -240,9 +233,7 @@ async def test_sensor_garbage_resilience(hass, freezer):
 
     # The day still ends properly: the sunset snap goes out after dark.
     await house.advance_to("20:00")
-    closes = [
-        m for m in house.auto_moves(SHADE, since="19:30") if m.position == 0
-    ]
+    closes = [m for m in house.auto_moves(SHADE, since="19:30") if m.position == 0]
     assert closes, "the sunset close never fired after garbage inputs"
     assert house.window().available
     await house.teardown()
@@ -489,8 +480,7 @@ async def test_climate_tilt_presence_presets(hass, freezer):
         "climate tilt entry commanded through set_cover_position"
     )
     assert house.position(SHADE, tilt=True) == 89, (
-        f"home + bright: expected the 80-degree preset (89 %); "
-        f"moves: {tilt_moves}"
+        f"home + bright: expected the 80-degree preset (89 %); moves: {tilt_moves}"
     )
 
     await house.set_lux(100)  # below threshold: dim summer

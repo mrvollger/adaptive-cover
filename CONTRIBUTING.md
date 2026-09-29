@@ -117,13 +117,14 @@ from .harness import SimHouse
 
 async def test_my_scenario(hass, freezer):
     house = await SimHouse.create(
-        hass, freezer,
+        hass,
+        freezer,
         date="2026-03-20",
         covers=["cover.shade"],
         options={CONF_END_TIME: "20:00:00", CONF_RETURN_SUNSET: True},
     )
     await house.advance_to("14:00")
-    await house.user_moves("cover.shade", 100, via="remote")   # or "dashboard"
+    await house.user_moves("cover.shade", 100, via="remote")  # or "dashboard"
     await house.advance_to("16:00")
     assert house.auto_moves("cover.shade", since="14:00") == []
     await house.teardown()

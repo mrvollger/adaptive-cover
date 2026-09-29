@@ -174,9 +174,7 @@ async def test_hub_unloads_cleanly(hass, mock_sun_entity):
     assert await hass.config_entries.async_unload(hub.entry_id)
 
 
-async def test_aggregate_cover_polls_and_recovers_from_boot_race(
-    hass, mock_sun_entity
-):
+async def test_aggregate_cover_polls_and_recovers_from_boot_race(hass, mock_sun_entity):
     """Regression: frozen 'unknown / 0 covers' state after hub loaded first.
 
     The aggregate must poll so its state converges even when it rendered

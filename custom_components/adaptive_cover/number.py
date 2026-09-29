@@ -54,32 +54,76 @@ class TunableSpec:
 # tuning those makes things worse.
 TUNABLES: tuple[TunableSpec, ...] = (
     TunableSpec(
-        CONF_EYE_HEIGHT, "Eye height", 0.5, 3.0, 0.05, "m",
-        "mdi:eye-arrow-left-outline", blind_only=True,
+        CONF_EYE_HEIGHT,
+        "Eye height",
+        0.5,
+        3.0,
+        0.05,
+        "m",
+        "mdi:eye-arrow-left-outline",
+        blind_only=True,
     ),
     TunableSpec(
-        CONF_OCCUPIED_DISTANCE, "Seat distance from window", 0.1, 10.0, 0.1, "m",
-        "mdi:sofa-single-outline", blind_only=True,
+        CONF_OCCUPIED_DISTANCE,
+        "Seat distance from window",
+        0.1,
+        10.0,
+        0.1,
+        "m",
+        "mdi:sofa-single-outline",
+        blind_only=True,
     ),
     TunableSpec(
-        CONF_OVERHANG_DEPTH, "Overhang depth", 0.0, 5.0, 0.05, "m",
-        "mdi:home-roof", blind_only=True,
+        CONF_OVERHANG_DEPTH,
+        "Overhang depth",
+        0.0,
+        5.0,
+        0.05,
+        "m",
+        "mdi:home-roof",
+        blind_only=True,
     ),
     TunableSpec(
-        CONF_OVERHANG_HEIGHT, "Overhang height above sill", 0.5, 10.0, 0.05, "m",
-        "mdi:arrow-expand-up", blind_only=True,
+        CONF_OVERHANG_HEIGHT,
+        "Overhang height above sill",
+        0.5,
+        10.0,
+        0.05,
+        "m",
+        "mdi:arrow-expand-up",
+        blind_only=True,
     ),
     TunableSpec(
-        CONF_TEMP_LOW, "Heating threshold", 5, 30, 0.5, "°C",
-        "mdi:thermometer-chevron-down", climate_only=True, default=21,
+        CONF_TEMP_LOW,
+        "Heating threshold",
+        5,
+        30,
+        0.5,
+        "°C",
+        "mdi:thermometer-chevron-down",
+        climate_only=True,
+        default=21,
     ),
     TunableSpec(
-        CONF_TEMP_HIGH, "Cooling threshold", 10, 40, 0.5, "°C",
-        "mdi:thermometer-chevron-up", climate_only=True, default=25,
+        CONF_TEMP_HIGH,
+        "Cooling threshold",
+        10,
+        40,
+        0.5,
+        "°C",
+        "mdi:thermometer-chevron-up",
+        climate_only=True,
+        default=25,
     ),
     TunableSpec(
-        CONF_PRIVACY_OFFSET, "Privacy delay after sunset", 0, 180, 5, "min",
-        "mdi:weather-sunset-down", default=30,
+        CONF_PRIVACY_OFFSET,
+        "Privacy delay after sunset",
+        0,
+        180,
+        5,
+        "min",
+        "mdi:weather-sunset-down",
+        default=30,
     ),
 )
 
@@ -99,8 +143,7 @@ async def async_setup_entry(
     entities = [
         AdaptiveCoverNumber(config_entry, coordinator, spec)
         for spec in TUNABLES
-        if (not spec.blind_only or is_blind)
-        and (not spec.climate_only or is_climate)
+        if (not spec.blind_only or is_blind) and (not spec.climate_only or is_climate)
     ]
     async_add_entities(entities)
 

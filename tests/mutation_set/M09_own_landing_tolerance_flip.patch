@@ -1,12 +1,12 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -917,7 +917,7 @@
-         position = event.new_state.attributes.get(pos_attr)
-         return (
-             position is not None
--            and abs(position - target) <= self.TARGET_TOLERANCE
-+            and abs(position - target) > self.TARGET_TOLERANCE
+@@ -932,7 +932,7 @@
+             else "current_position"
          )
+         position = event.new_state.attributes.get(pos_attr)
+-        return position is not None and abs(position - target) <= self.TARGET_TOLERANCE
++        return position is not None and abs(position - target) > self.TARGET_TOLERANCE
  
      async def async_handle_cover_state_change(self, state: int):
+         """Handle state change from assigned covers."""

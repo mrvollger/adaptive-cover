@@ -262,9 +262,7 @@ async def test_midnight_end_time(hass, freezer):
     )
 
     await house.advance_to("00:30")  # crosses local midnight
-    closes = [
-        m for m in house.auto_moves(SHADE, since="23:55") if m.position == 0
-    ]
+    closes = [m for m in house.auto_moves(SHADE, since="23:55") if m.position == 0]
     assert closes, "no close at the NEXT midnight"
     assert closes[0].time.day == 21, f"close fired on the wrong day: {closes}"
     assert house.position(SHADE) == 0
@@ -368,9 +366,7 @@ async def test_move_budget(hass, freezer):
         "expected two corrections right before sunset"
     )
     await house.advance_to("20:30")
-    closes = [
-        m for m in house.auto_moves(SHADE, since="19:20") if m.position == 0
-    ]
+    closes = [m for m in house.auto_moves(SHADE, since="19:20") if m.position == 0]
     assert closes, "the sunset snap must bypass an exhausted move budget"
     assert house.position(SHADE) == 0
     await house.teardown()
@@ -589,9 +585,7 @@ async def test_control_off_on_clears_overrides(hass, freezer):
     await house.teardown()
 
 
-async def test_manual_switch_off_clears_overrides_reload_preserves(
-    hass, freezer
-):
+async def test_manual_switch_off_clears_overrides_reload_preserves(hass, freezer):
     """Reload preserves overrides; ONLY an explicit manual-off clears (M13).
 
     Saving the options dialog unchanged reloads the entry: the active

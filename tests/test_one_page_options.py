@@ -113,9 +113,7 @@ async def test_absent_nullable_field_clears_setting(
     assert vertical_config_entry.options[CONF_MAX_ELEVATION] is None
 
 
-async def test_elevation_validation_error(
-    hass, vertical_config_entry, mock_sun_entity
-):
+async def test_elevation_validation_error(hass, vertical_config_entry, mock_sun_entity):
     result = await _open_options(hass, vertical_config_entry)
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],

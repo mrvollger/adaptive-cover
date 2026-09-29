@@ -43,8 +43,7 @@ def _hub_entry_exists(hass: HomeAssistant) -> bool:
     from .hub import is_hub_entry
 
     return any(
-        is_hub_entry(entry)
-        for entry in hass.config_entries.async_entries(DOMAIN)
+        is_hub_entry(entry) for entry in hass.config_entries.async_entries(DOMAIN)
     )
 
 
@@ -57,6 +56,7 @@ async def _async_bootstrap_hub(hass: HomeAssistant) -> None:
     await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_IMPORT}, data={}
     )
+
 
 SERVICE_GET_FORECAST = "get_forecast"
 SERVICE_CHANGE_SETTINGS = "change_settings"
@@ -87,9 +87,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
         entry = _resolve_entry(hass, call.data["config_entry"])
         coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
         if coordinator is None:
-            raise ServiceValidationError(
-                f"Entry '{entry.title}' is not loaded"
-            )
+            raise ServiceValidationError(f"Entry '{entry.title}' is not loaded")
         return {"forecast": coordinator.forecast or []}
 
     hass.services.async_register(
@@ -247,9 +245,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         from .frontend import async_register_card
 
         integration = await async_get_integration(hass, DOMAIN)
-        hass.async_create_task(
-            async_register_card(hass, str(integration.version))
-        )
+        hass.async_create_task(async_register_card(hass, str(integration.version)))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -262,9 +258,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     from .hub import is_hub_entry
 
     if is_hub_entry(entry):
-        return await hass.config_entries.async_unload_platforms(
-            entry, HUB_PLATFORMS
-        )
+        return await hass.config_entries.async_unload_platforms(entry, HUB_PLATFORMS)
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hass.data[DOMAIN].pop(entry.entry_id)
 

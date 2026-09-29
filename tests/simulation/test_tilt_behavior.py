@@ -60,10 +60,12 @@ async def test_tilt_commands_use_tilt_service(hass, freezer):
 
     tilt_moves = house.auto_moves(SHADE, service="set_cover_tilt_position")
     assert tilt_moves, "tilt entry never commanded the cover via tilt service"
-    assert house.moves(SHADE, actor="integration", service="set_cover_position") == [], (
-        "a venetian entry must never call set_cover_position"
+    assert (
+        house.moves(SHADE, actor="integration", service="set_cover_position") == []
+    ), "a venetian entry must never call set_cover_position"
+    assert all(
+        ev.service == "set_cover_tilt_position" for ev in house.auto_moves(SHADE)
     )
-    assert all(ev.service == "set_cover_tilt_position" for ev in house.auto_moves(SHADE))
 
     positions = [ev.position for ev in tilt_moves]
     # Pre-dawn snap to the sunset position, then the post-sunrise default.
@@ -74,8 +76,7 @@ async def test_tilt_commands_use_tilt_service(hass, freezer):
     noon = house.auto_moves(SHADE, since="12:00", until="12:10")
     assert [ev.position for ev in noon] == [85], f"solar-noon tilt: {noon}"
     calculated = [
-        ev.position
-        for ev in house.auto_moves(SHADE, since="09:30", until="17:25")
+        ev.position for ev in house.auto_moves(SHADE, since="09:30", until="17:25")
     ]
     assert calculated and max(calculated) == 99 and min(calculated) == 84, (
         f"mode2 calculated band should span 84-99, never clip to 100: {calculated}"

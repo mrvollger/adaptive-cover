@@ -91,6 +91,12 @@ RULES: list[tuple[str, str]] = [
     # Post-roadmap file (v1.13.5): config-surface defaults + control-method
     # sensor through hass.states -> contract seams (2) and (3).
     ("tests/test_units_and_defaults.py::*", BEHAVIOR),
+    # P0 additions: whole-house replay pins the outbound command timeline;
+    # translations are part of the UI surface; the snapshot guard only checks
+    # the fixture is sanitized, so it is tooling.
+    ("tests/replay/test_house_replay.py::*", BEHAVIOR),
+    ("tests/replay/test_house_snapshot.py::*", TOOLING),
+    ("tests/test_translations.py::*", BEHAVIOR),
     # Implementation tier: a refactor may freely break these.
     ("tests/test_coordinator.py::*", IMPLEMENTATION),
     ("tests/test_calculation.py::*", IMPLEMENTATION),

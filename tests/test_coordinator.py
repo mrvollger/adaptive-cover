@@ -87,15 +87,15 @@ class TestDurationFormatVariants:
         mgr.mark_manual_control("cover.a")
 
         # 10 minutes ago — should still be active (10 < 45)
-        mgr.manual_control_time["cover.a"] = dt.datetime.now(
-            dt.UTC
-        ) - dt.timedelta(minutes=10)
+        mgr.manual_control_time["cover.a"] = dt.datetime.now(dt.UTC) - dt.timedelta(
+            minutes=10
+        )
         await mgr.reset_if_needed()
         assert mgr.is_cover_manual("cover.a") is True
 
         # 50 minutes ago — should expire (50 > 45)
-        mgr.manual_control_time["cover.a"] = dt.datetime.now(
-            dt.UTC
-        ) - dt.timedelta(minutes=50)
+        mgr.manual_control_time["cover.a"] = dt.datetime.now(dt.UTC) - dt.timedelta(
+            minutes=50
+        )
         await mgr.reset_if_needed()
         assert mgr.is_cover_manual("cover.a") is False

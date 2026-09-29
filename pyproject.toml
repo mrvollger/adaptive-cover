@@ -15,7 +15,7 @@ filterwarnings = [
 # https://github.com/home-assistant/core/blob/dev/pyproject.toml
 # ---------------------------------------------------------------------------
 [tool.ruff]
-target-version = "py314"
+target-version = "py313"  # py314 would emit `except A, B:` syntax
 
 [tool.ruff.lint]
 select = [

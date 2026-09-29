@@ -70,8 +70,7 @@ async def test_end_close_applies_inverse_transform(hass, freezer):
     await house.advance_to("19:00")
     closes = list(house.auto_moves(SHADE, since="17:55"))
     assert closes and closes[-1].position == 100, (
-        "inverse cover: end close must command 100 (inverse of sunset 0); "
-        f"got {closes}"
+        f"inverse cover: end close must command 100 (inverse of sunset 0); got {closes}"
     )
     await house.teardown()
 

@@ -163,10 +163,7 @@ Sun is "in front" when `-fov_right < gamma < fov_left` and elevation > 0.
 
 ### Vertical Blind Position
 ```python
-blind_height = clip(
-    (distance / cos(gamma_rad)) * tan(elevation_rad),
-    0, window_height
-)
+blind_height = clip((distance / cos(gamma_rad)) * tan(elevation_rad), 0, window_height)
 position = blind_height / window_height * 100
 ```
 Lower sun → more penetration → cover moves down.

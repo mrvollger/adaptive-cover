@@ -20,14 +20,10 @@ def truth_table():
     return load_table()
 
 
-@pytest.mark.parametrize(
-    "combo", _COMBOS, ids=[combo_key(*c) for c in _COMBOS]
-)
+@pytest.mark.parametrize("combo", _COMBOS, ids=[combo_key(*c) for c in _COMBOS])
 def test_climate_state_matches_recorded_behavior(combo, truth_table):
     key = combo_key(*combo)
-    assert key in truth_table, (
-        f"No recorded row for {key}; regenerate the truth table"
-    )
+    assert key in truth_table, f"No recorded row for {key}; regenerate the truth table"
     assert evaluate_combo(*combo) == truth_table[key]
 
 

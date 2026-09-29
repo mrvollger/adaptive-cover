@@ -12,9 +12,7 @@ async def test_regression_group_remote_latches_both_covers(hass, freezer):
     A single shared state_change_data slot dropped one event when a
     room-group remote moved several covers at once.
     """
-    house = await SimHouse.create(
-        hass, freezer, date="2026-03-20", covers=[A, B]
-    )
+    house = await SimHouse.create(hass, freezer, date="2026-03-20", covers=[A, B])
     await house.advance_to("11:10")
 
     await house.user_moves(A, 100, via="remote")

@@ -105,6 +105,7 @@ class SensorType:
     AWNING = "cover_awning"
     TILT = "cover_tilt"
 
+
 # Shared defaults: the wizard, the add_entry service baseline, and the
 # coordinator fallbacks must agree (they drifted before: 60% vs 100%).
 DEFAULT_DEFAULT_HEIGHT = 100

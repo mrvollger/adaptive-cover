@@ -172,13 +172,13 @@ class TestPositionSensor:
         commanded = [c.data["position"] for c in calls]
         assert commanded == [100 - POS_AT_30]
 
-    async def test_position_sensor_attributes(
-        self, hass, mock_sun_entity, cover_calls
-    ):
+    async def test_position_sensor_attributes(self, hass, mock_sun_entity, cover_calls):
         _set_cover(hass, 60)
         entry = _entry(hass)
         await _setup(hass, entry)
-        attrs = hass.states.get(_eid(hass, "sensor", entry, "Cover Position")).attributes
+        attrs = hass.states.get(
+            _eid(hass, "sensor", entry, "Cover Position")
+        ).attributes
         assert attrs["intent"] == "calculated"
         assert isinstance(attrs["decision_trace"], list)
         assert isinstance(attrs["forecast_today"], list)
@@ -284,8 +284,7 @@ class TestNextChangeSensor:
             state = hass.states.get(_eid(hass, "sensor", entry, "Next State Change"))
             when = dt_util.parse_datetime(time_str)
             expected = (
-                f"{event_name} at {dt_util.as_local(when).strftime('%H:%M')} "
-                f"→ {pos}%"
+                f"{event_name} at {dt_util.as_local(when).strftime('%H:%M')} → {pos}%"
             )
             assert state.state == expected
             assert state.attributes["event"] == event_name
@@ -296,9 +295,7 @@ class TestNextChangeSensor:
 class TestLastChangeSensor:
     """Gap last-change-sensor: 'old% -> new%: reason' for both change kinds."""
 
-    async def test_last_change_sensor_format(
-        self, hass, mock_sun_entity, cover_calls
-    ):
+    async def test_last_change_sensor_format(self, hass, mock_sun_entity, cover_calls):
         _set_cover(hass, 60)
         entry = _entry(hass)
         await _setup(hass, entry)
@@ -340,9 +337,7 @@ class TestStateReason:
         ).attributes
         assert attrs["current_reason"] == "Sun in window (azi 180°, elev 45°)"
 
-    async def test_reason_after_sunset(
-        self, hass, mock_sun_data, cover_calls
-    ):
+    async def test_reason_after_sunset(self, hass, mock_sun_data, cover_calls):
         now = dt.datetime.now(dt.UTC)
         mock_sun_data.sunset_at = now - dt.timedelta(hours=2)
         mock_sun_data.sunrise_at = now - dt.timedelta(hours=14)
@@ -355,7 +350,9 @@ class TestStateReason:
         ).attributes
         assert attrs["current_reason"] == "Sunset position"
         # And the position sensor parks at the sunset position.
-        assert hass.states.get(_eid(hass, "sensor", entry, "Cover Position")).state == "0"
+        assert (
+            hass.states.get(_eid(hass, "sensor", entry, "Cover Position")).state == "0"
+        )
 
     async def test_reason_during_manual_override(
         self, hass, mock_sun_entity, cover_calls
@@ -438,9 +435,7 @@ class TestConditionalEntityCreation:
     )
 
     def _present_switches(self, hass, entry):
-        return {
-            name for name in self.SWITCHES if _eid(hass, "switch", entry, name)
-        }
+        return {name for name in self.SWITCHES if _eid(hass, "switch", entry, name)}
 
     async def test_no_covers_no_switches_no_button(
         self, hass, mock_sun_entity, cover_calls

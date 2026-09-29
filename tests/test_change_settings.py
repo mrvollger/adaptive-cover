@@ -55,9 +55,7 @@ async def _setup(hass, entry):
     await hass.async_block_till_done()
 
 
-async def test_change_settings_persists_and_reloads(
-    hass, entry, mock_sun_entity
-):
+async def test_change_settings_persists_and_reloads(hass, entry, mock_sun_entity):
     """Rolling the pilot config to an entry is one service call."""
     await _setup(hass, entry)
 
@@ -80,8 +78,7 @@ async def test_change_settings_persists_and_reloads(
     assert entry.options[CONF_OVERHANG_HEIGHT] == 2.6
     assert entry.options[CONF_PRIVACY_MODE] is True
     assert response["changed"] == sorted(
-        [CONF_OVERHANG_DEPTH, CONF_OVERHANG_HEIGHT, CONF_EYE_HEIGHT,
-         CONF_PRIVACY_MODE]
+        [CONF_OVERHANG_DEPTH, CONF_OVERHANG_HEIGHT, CONF_EYE_HEIGHT, CONF_PRIVACY_MODE]
     )
     # Reload picked it up: the cover adapter now has the overhang.
     # contract: internal (no entity exposes the adapter's overhang/privacy
@@ -151,8 +148,7 @@ async def test_regression_rename_updates_title_and_device_name(
     await _setup(hass, entry)
     registry = er.async_get(hass)
     before = {
-        e.unique_id
-        for e in er.async_entries_for_config_entry(registry, entry.entry_id)
+        e.unique_id for e in er.async_entries_for_config_entry(registry, entry.entry_id)
     }
     assert before
 
@@ -167,8 +163,7 @@ async def test_regression_rename_updates_title_and_device_name(
     assert entry.title == "Office north"
     assert entry.data["name"] == "Office north"
     after = {
-        e.unique_id
-        for e in er.async_entries_for_config_entry(registry, entry.entry_id)
+        e.unique_id for e in er.async_entries_for_config_entry(registry, entry.entry_id)
     }
     assert after == before  # rename must never orphan entities
 
@@ -224,11 +219,11 @@ async def test_regression_change_settings_enables_climate_mode(
     # in the sensor's own unit: 68 °F < 70 → winter.
     registry = er.async_get(hass)
     unique_ids = {
-        e.unique_id
-        for e in er.async_entries_for_config_entry(registry, entry.entry_id)
+        e.unique_id for e in er.async_entries_for_config_entry(registry, entry.entry_id)
     }
-    assert any(uid.endswith("_Climate Mode") or "climate" in uid.lower()
-               for uid in unique_ids), unique_ids
+    assert any(
+        uid.endswith("_Climate Mode") or "climate" in uid.lower() for uid in unique_ids
+    ), unique_ids
     method = next(
         e.entity_id
         for e in er.async_entries_for_config_entry(registry, entry.entry_id)

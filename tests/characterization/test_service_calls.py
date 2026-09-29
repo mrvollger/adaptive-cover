@@ -230,7 +230,9 @@ async def test_regression_bbca2e9_predicted_entry_position(hass, cover_calls):
     (table-local time), not the default.
     """
     await hass.config.async_set_time_zone(SLC["tz"])
-    sun_data = FakeSunData(SLC["lat"], SLC["lon"], SLC["tz"], pd.Timestamp("2026-03-20"))
+    sun_data = FakeSunData(
+        SLC["lat"], SLC["lon"], SLC["tz"], pd.Timestamp("2026-03-20")
+    )
     win_azi, fov = 250, 45
     entry = MockConfigEntry(
         domain=DOMAIN,
