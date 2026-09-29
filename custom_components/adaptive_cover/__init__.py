@@ -40,10 +40,16 @@ PLATFORMS = [
     Platform.SWITCH,
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
-    Platform.NUMBER,
     Platform.SELECT,
 ]
-HUB_PLATFORMS = [Platform.COVER, Platform.SELECT, Platform.BUTTON]
+# The hub also carries the house settings (P5 flip: house_settings.py).
+HUB_PLATFORMS = [
+    Platform.COVER,
+    Platform.SELECT,
+    Platform.BUTTON,
+    Platform.SWITCH,
+    Platform.NUMBER,
+]
 CONF_SUN = ["sun.sun"]
 
 
@@ -390,6 +396,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     async_sync_unique_id(hass, entry)
     async_check_split_issue(hass, entry)
+    # P5 flip: the window numbers are house settings and layered edits now.
+    from .entity_surface import async_remove_window_numbers
+
+    async_remove_window_numbers(hass, entry)
 
     # Prime the timezone cache off-loop: the first construction reads a
     # zoneinfo file, and schedule math needs it inside the loop.

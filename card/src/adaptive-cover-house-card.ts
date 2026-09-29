@@ -432,10 +432,15 @@ export class AdaptiveCoverHouseCard extends LitElement {
     >
       ${t('house.return_all')}
     </button>`;
+    // The house settings live on the house device (P5 flip), else the
+    // integration page.
+    const settingsPath = model.hubDeviceId
+      ? `/config/devices/device/${encodeURIComponent(model.hubDeviceId)}`
+      : SETTINGS_PATH;
     const settings = html`<a
       class="link settings"
-      href=${SETTINGS_PATH}
-      @click=${(e: Event) => this._navigate(e, SETTINGS_PATH)}
+      href=${settingsPath}
+      @click=${(e: Event) => this._navigate(e, settingsPath)}
       ><ha-icon icon="mdi:tune-variant"></ha-icon>${narrow
         ? t('house.settings_short')
         : t('house.settings')}</a
@@ -475,12 +480,15 @@ export class AdaptiveCoverHouseCard extends LitElement {
         </button>
       </div>
       <div class="grow"></div>
-      ${this._renderClimate(model.windows)} ${settings}
+      ${this._renderClimate(model.windows, scope)} ${settings}
     </section>`;
   }
 
-  private _renderClimate(windows: HouseWindow[]): TemplateResult | typeof nothing {
-    const st = climateState(this.hass, windows);
+  private _renderClimate(
+    windows: HouseWindow[],
+    scope: HouseScope,
+  ): TemplateResult | typeof nothing {
+    const st = climateState(this.hass, windows, scope);
     if (st === null) return nothing;
     let text: string;
     if (st === 'on') {
@@ -499,7 +507,7 @@ export class AdaptiveCoverHouseCard extends LitElement {
       type="button"
       class="btn climate ${st}"
       aria-pressed=${st === 'on' ? 'true' : st === 'off' ? 'false' : 'mixed'}
-      @click=${() => void this._run(planClimate(windows, st !== 'on'))}
+      @click=${() => void this._run(planClimate(windows, st !== 'on', this.hass, scope))}
     >
       <span class="track"><span class="knob"></span></span>
       <span class="strong">${t('house.climate')}</span>

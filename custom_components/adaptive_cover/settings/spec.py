@@ -197,7 +197,9 @@ class Service:
 
 @dataclass(frozen=True, kw_only=True)
 class LiveNumber:
-    """The option also has a live number entity (number.py owns its name).
+    """The option also has a live number entity: the house's (P5 flip).
+
+    ``house_settings.HOUSE_NUMBERS`` owns which ones and their icons.
 
     ``shows_default``: the entity shows the default while the option is
     unset (otherwise it shows unknown until set).
@@ -397,14 +399,13 @@ OPTS: Final[tuple[Opt, ...]] = (
         cover_types=POSITION_COVER_TYPES, default=0.5, min=0.1, max=10,
         step=0.1, unit="m", slider=True, wizard_required=True, baseline=True,
         service=_FLOAT),
+    # The overhang is window geometry: no live number since the P5 flip.
     Opt(CONF_OVERHANG_DEPTH, Kind.NUMBER, Group.COVER, ONE, W,
         cover_types=POSITION_COVER_TYPES, min=0.1, max=5, step=0.01, unit="m",
-        clearable=True, service=_FLOAT_OPTIONAL, number=LiveNumber(),
-        legacy={**_ANY_NUMBER, "number.min": 0, "number.step": 0.05}),
+        clearable=True, service=_FLOAT_OPTIONAL, legacy=_ANY_NUMBER),
     Opt(CONF_OVERHANG_HEIGHT, Kind.NUMBER, Group.COVER, ONE, W,
         cover_types=POSITION_COVER_TYPES, min=0.1, max=10, step=0.01, unit="m",
-        clearable=True, service=_FLOAT_OPTIONAL, number=LiveNumber(),
-        legacy={**_ANY_NUMBER, "number.min": 0.5, "number.step": 0.05}),
+        clearable=True, service=_FLOAT_OPTIONAL, legacy=_ANY_NUMBER),
     Opt(CONF_EYE_HEIGHT, Kind.NUMBER, Group.COVER, REC, H, (A, W),
         cover_types=POSITION_COVER_TYPES, default=DEFAULT_EYE_HEIGHT, min=0.1,
         max=3, step=0.01, unit="m", clearable=True, service=_FLOAT_OPTIONAL,

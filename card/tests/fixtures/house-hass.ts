@@ -391,3 +391,22 @@ export function p5House(fx: HouseFixture, hass: HouseTestHass = fx.hass): HouseT
   }
   return { ...out, entities } as HouseTestHass;
 }
+
+export const HUB_DEVICE = 'd256706cec9e1aab19295d3b7c942f4c';
+export const HUB_CLIMATE_SWITCH = 'switch.adaptive_cover_all_climate';
+
+/** The house's Climate switch on the hub device (P5 flip), in `state`. */
+export function withHubClimate(hass: HouseTestHass, state: 'on' | 'off'): HouseTestHass {
+  const out = withStates(hass, { [HUB_CLIMATE_SWITCH]: { state, attributes: {} } });
+  const entities = {
+    ...out.entities,
+    [HUB_CLIMATE_SWITCH]: {
+      entity_id: HUB_CLIMATE_SWITCH,
+      platform: 'adaptive_cover',
+      device_id: HUB_DEVICE,
+      area_id: null,
+      translation_key: 'climate_on',
+    },
+  };
+  return { ...out, entities } as HouseTestHass;
+}

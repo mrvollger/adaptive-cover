@@ -964,3 +964,69 @@ The example below is inside an HTML comment. The checker ignores it.
   value reloads the window). Response: `{scope, id, changed}`. The
   services.yaml entry lists the common settings; the schema accepts all.
   Goldens, truth table and house replay unchanged.
+
+## L0030 · 2026-09-29 · House settings on the hub device; the window numbers are gone (C7, P5 flip)
+- **Removed:**
+  - `tests/test_live_tunables.py::TestNumberEntities::*`
+- **Renamed:** none
+- **Replacements:** `tests/test_house_settings.py::*` (the five house
+  switches and six house numbers sit on the hub device, Climate primary,
+  the rest CONFIG, and the windows have no numbers; the numbers show the
+  house's values, the thresholds and privacy delay their spec default
+  while unset; `test_regression_threshold_numbers_follow_unit_system[*]`
+  moves here from the window numbers: HA's unit, its range, stored as
+  given; a house number or switch reaches every window without a reload,
+  and the window's hidden alias follows; a window with its own value keeps
+  it) and `tests/simulation/test_house_settings.py::test_house_threshold_change_reaches_every_window`
+  (the plan's scenario: a house cooling threshold change flips every
+  window's season at once, no reload, before the next sun tick).
+  Behavior-tier test bodies changed without changing ids:
+  `tests/test_units_and_defaults.py::test_regression_thresholds_unit_aware_everywhere[*]`
+  (reads the house threshold numbers); in `tests/test_entity_surface_v2.py`,
+  `TestTranslations::test_number_names_match_tunable_specs` (every number
+  name is a house number's), `TestMigration::test_migration_applies_surface_to_legacy_rows`
+  (the legacy number rows are gone after setup; the other rows keep their
+  identity) and `test_live_house_upgrade` (the live house loses its 105
+  window number rows and the hub gains 11 house-setting rows; every other
+  row keeps its entity_id). Implementation tier: `tests/settings/test_spec.py`
+  (the live-number rows are the house numbers; the overhang's number drift
+  is gone), `tests/test_translations.py` (numbers come from the hub table).
+  `tests/contract/spec_parity.json` regenerated: the `number` surface is
+  the house's six numbers (the same shapes for the thresholds, eye height,
+  seat distance and privacy delay; the override duration new, in minutes
+  1-1440; the overhang numbers gone), for every cover type and climate
+  mode.
+- **Mutations re-targeted:** added M92 (`house_settings.py`
+  `HouseSetting._store`: a house entity's change is stored but not
+  propagated; killed by the simulation and entity tiers). M52 re-run
+  (its surface table changed around it): killed. `--mutations M92,M52
+  --jobs 3`: 2/2.
+- **Contract change:** C7 (the window numbers become house entities; plan
+  "Entity surface": "7 numbers | removed in P5")
+- **Reason:** plan P5 flip ("The house CONFIG entities go live", "The
+  window numbers are removed, and their registry rows are cleaned up").
+  - The hub device carries the house settings (`house_settings.py`): the
+    Climate switch (`climate_on`, primary), the manual-move detection and
+    the outside-temperature / lux / irradiance switches, and the numbers
+    for the heating and cooling thresholds (HA's unit and range, from the
+    spec), the manual override duration (minutes), the eye height, the
+    seat distance and the privacy delay (CONFIG). Each shows the house's
+    value in the layered settings and stores a change through
+    `layers.async_set_profile`; every window acts on it at once
+    (`async_settings_changed`), without a reload. They follow the settings
+    signal, so a `set_profile` or a lift updates them too; they are
+    unavailable before the house is lifted.
+  - The seven window numbers are removed; a window's old number rows are
+    removed at its setup (`entity_surface.async_remove_window_numbers`,
+    idempotent, no config version needed). Their values live in the
+    layers: the thresholds, eye height, seat distance and privacy delay are
+    house settings (a floor, room or window can still set its own through
+    `set_profile` and the options form), the overhang is window geometry
+    (the options form, Reconfigure). A downgrade creates the window numbers
+    again.
+  - Card: the house Climate control uses the house Climate switch when the
+    card acts through the hub (a card showing some rooms still toggles
+    their windows' hidden Climate mode aliases), and "House settings"
+    opens the house device page. Bundle rebuilt.
+  - Goldens, truth table and house replay unchanged (no replay reads a
+    number entity).

@@ -68,7 +68,14 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the demo switch platform."""
+    """Set up a window's switch aliases, or the hub's house switches."""
+    from .hub import hub_device_info, is_hub_entry
+
+    if is_hub_entry(config_entry):
+        from .house_settings import house_switches
+
+        async_add_entities(house_switches(hass, hub_device_info()))
+        return
     coordinator: AdaptiveDataUpdateCoordinator = config_entry.runtime_data
 
     manual_switch = AdaptiveCoverSwitch(

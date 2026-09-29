@@ -64,6 +64,7 @@ SETTINGS_SHADOW = "custom_components/adaptive_cover/settings/shadow.py"
 SHADOW = "custom_components/adaptive_cover/shadow.py"
 MODE = "custom_components/adaptive_cover/runtime/mode.py"
 LAYERS = "custom_components/adaptive_cover/layers.py"
+HOUSE_SETTINGS = "custom_components/adaptive_cover/house_settings.py"
 
 
 @dataclass
@@ -789,6 +790,16 @@ MUTATIONS: list[Mutation] = [
         "        profiles = dict(options.get(bucket) or {})\n",
         "        bucket = AREAS if level is Level.FLOOR else FLOORS\n"
         "        profiles = dict(options.get(bucket) or {})\n",
+    ),
+    Mutation(
+        "M92",
+        "house_setting_change_does_not_propagate",
+        HOUSE_SETTINGS,
+        "HouseSetting._store",
+        "a house entity's change is stored but not propagated: the windows "
+        "act on it only at their next refresh",
+        "        await async_settings_changed(self.hass)\n",
+        "        pass\n",
     ),
     # P5 shadow release (v1.18.0): the diff repair and the switch capture.
     Mutation(

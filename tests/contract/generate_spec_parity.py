@@ -435,28 +435,30 @@ def _walk_services_yaml(obs: Observations) -> None:
 
 
 async def _walk_numbers(obs: Observations) -> None:
-    """The live number entities, per cover type, climate mode and unit."""
+    """The live number entities, per cover type, climate mode and unit.
+
+    Since the P5 flip they are the house's (the hub device); they do not
+    depend on a window's cover type or climate mode, and show the spec
+    default before the house is lifted.
+    """
     from custom_components.adaptive_cover import number as number_platform
 
     for unit in UNITS:
         for cover_type in COVER_TYPES:
             for climate in CLIMATES:
-                entry = SimpleNamespace(
-                    entry_id="spec-parity",
-                    title="Spec parity",
-                    data={"name": "Spec parity", "sensor_type": cover_type},
-                    options={"climate_mode": climate == "on"},
-                    # the window's coordinator: what it acts on
-                    runtime_data=SimpleNamespace(
-                        options={"climate_mode": climate == "on"}
-                    ),
+                hub = SimpleNamespace(
+                    entry_id="spec-parity-hub",
+                    title="Adaptive Cover All",
+                    domain="adaptive_cover",
+                    data={"name": "Adaptive Cover All", "is_hub": True},
+                    options={},
                 )
-                hass = _fake_hass(unit)
+                hass = _fake_hass(unit, config_entries=_entries(hub))
                 added: list[Any] = []
-                await number_platform.async_setup_entry(hass, entry, added.extend)
+                await number_platform.async_setup_entry(hass, hub, added.extend)
                 order = []
                 for entity in added:
-                    key = entity.unique_id.removeprefix(f"{entry.entry_id}_number_")
+                    key = entity.unique_id.removeprefix("adaptive_cover_hub_")
                     order.append(key)
                     described = _clean(
                         {

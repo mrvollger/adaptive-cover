@@ -70,12 +70,13 @@ custom_components/adaptive_cover/
 ├── repairs.py               # Fix flow of the "split" issue (multi-cover entry -> one window per cover)
 ├── const.py                 # All config keys, defaults, enums
 ├── hub.py                   # "Adaptive Cover All" hub device (all-shades cover, house Mode select auto/hold/off/mixed, reset-all button)
+├── house_settings.py        # P5 flip: the house settings on the hub (Climate + toggle switches, threshold/duration/geometry numbers)
 ├── cover.py                 # Cover platform: only the hub's aggregate cover
 ├── sensor.py                # Position %, solar times, control method, next/last change
 ├── binary_sensor.py         # Sun in front, manual override active
 ├── switch.py                # Hidden switch aliases (P5): Toggle Control writes the Mode; the others write the window's toggle value
 ├── select.py                # Mode select auto/hold/off (RestoreEntity, source of truth) + the hold entity service
-├── number.py                # Live tunables that skip the options wizard (write the window's own value)
+├── number.py                # The hub's house numbers (the window numbers were removed in the P5 flip)
 ├── button.py                # Return to auto button (Mode auto)
 ├── entity_shared.py         # Shared entity helpers (device info, Position window attributes)
 ├── entity_surface.py        # Entity surface table (category, visibility, name key) + 1.2/1.5 migrations + area copy
@@ -280,7 +281,8 @@ if it has none.
 | sensor | Control method (`Control Method`) | diagnostic | "winter" / "summer" / "intermediate" |
 | sensor | Start sun, End sun, Next change, Last change | diagnostic, disabled by default | Solar times and the next/last change |
 | switch | Automatic control, Manual override detection, Climate mode, Outside temperature, Lux, Irradiance | config, hidden (enabled) | Aliases until P8: Automatic control writes/mirrors the Mode; the others still set the window's ControlState (house settings `manual_detection`, `climate_on`, `use_*` in the stored layers) |
-| number | Eye height, seat distance, overhang, thresholds, privacy delay | config | Live tunables (removed in P5) |
+| hub switch | Climate (`climate_on`), Manual-move detection, Use outside temperature / lux / irradiance | primary (Climate), config | The house's settings (P5 flip); a change reaches every window without a reload |
+| hub number | Heating / cooling threshold, manual override duration (min), eye height, seat distance, privacy delay | config | The house's settings (P5 flip); the window numbers are gone (rows removed at setup) |
 
 ## Manual Override Detection
 

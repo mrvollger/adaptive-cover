@@ -1,93 +1,18 @@
-"""Number platform: live tunables that skip the options-flow wizard.
+"""Number platform: the house's numbers on the hub device (P5 flip).
 
-Each number shows the value the window acts on and writes the window's
-own value (P5 flip, ``layers.async_write_window``): a recurring setting
-becomes a window override (sparse), a one-time one (the overhang) goes to
-the options and reloads the window.
-
-Range, step, unit and unset-default come from the option spec
-(settings/spec.py); this module owns only each number's name, icon and
-which entries get it.
+The seven per-window live tunables are gone: the thresholds, the eye
+height, the seat distance and the privacy delay are house settings here
+(``house_settings.py``; floors, rooms and windows can still set their own
+through ``set_profile`` and the options form), and the overhang is window
+geometry (the options form, Reconfigure). A window's old number rows are
+removed at its setup (``entity_surface.async_remove_window_numbers``).
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-
-from .const import (
-    CONF_CLIMATE_MODE,
-    CONF_EYE_HEIGHT,
-    CONF_OCCUPIED_DISTANCE,
-    CONF_OVERHANG_DEPTH,
-    CONF_OVERHANG_HEIGHT,
-    CONF_PRIVACY_OFFSET,
-    CONF_SENSOR_TYPE,
-    CONF_TEMP_HIGH,
-    CONF_TEMP_LOW,
-    SensorType,
-)
-from .coordinator import AdaptiveDataUpdateCoordinator
-from .entity_shared import adaptive_cover_device_info
-from .entity_surface import apply_surface, window_surface
-from .layers import async_write_window
-from .settings.schema import NumberShape, number_shape
-
-
-@dataclass(frozen=True)
-class TunableSpec:
-    """One live-tunable option exposed as a number entity."""
-
-    key: str
-    name: str  # English name; strings.json entity.number.<key>.name shows it
-    icon: str
-    blind_only: bool = False
-    climate_only: bool = False
-
-
-# Persona-review scope: only knobs a resident should touch. Motor-protection
-# settings (position delta, move cap) stay wizard-only on purpose - users
-# tuning those makes things worse.
-TUNABLES: tuple[TunableSpec, ...] = (
-    TunableSpec(
-        CONF_EYE_HEIGHT, "Eye height", "mdi:eye-arrow-left-outline", blind_only=True
-    ),
-    TunableSpec(
-        CONF_OCCUPIED_DISTANCE,
-        "Seat distance from window",
-        "mdi:sofa-single-outline",
-        blind_only=True,
-    ),
-    TunableSpec(
-        CONF_OVERHANG_DEPTH, "Overhang depth", "mdi:home-roof", blind_only=True
-    ),
-    TunableSpec(
-        CONF_OVERHANG_HEIGHT,
-        "Overhang height above sill",
-        "mdi:arrow-expand-up",
-        blind_only=True,
-    ),
-    TunableSpec(
-        CONF_TEMP_LOW,
-        "Heating threshold",
-        "mdi:thermometer-chevron-down",
-        climate_only=True,
-    ),
-    TunableSpec(
-        CONF_TEMP_HIGH,
-        "Cooling threshold",
-        "mdi:thermometer-chevron-up",
-        climate_only=True,
-    ),
-    TunableSpec(
-        CONF_PRIVACY_OFFSET, "Privacy delay after sunset", "mdi:weather-sunset-down"
-    ),
-)
 
 
 async def async_setup_entry(
@@ -95,70 +20,11 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up number entities for one config entry."""
-    coordinator: AdaptiveDataUpdateCoordinator = config_entry.runtime_data
-    is_blind = config_entry.data.get(CONF_SENSOR_TYPE) == SensorType.BLIND
-    is_climate = bool(coordinator.options.get(CONF_CLIMATE_MODE))
-    # Climate thresholds are stored and compared in HA's temperature unit,
-    # so their numbers show that unit with a range that fits it.
-    temperature_unit = hass.config.units.temperature_unit
+    """Set up the hub's house numbers (windows have none)."""
+    from .hub import hub_device_info, is_hub_entry
 
-    entities = [
-        AdaptiveCoverNumber(
-            config_entry, coordinator, spec, number_shape(spec.key, temperature_unit)
-        )
-        for spec in TUNABLES
-        if (not spec.blind_only or is_blind) and (not spec.climate_only or is_climate)
-    ]
-    async_add_entities(entities)
+    if not is_hub_entry(config_entry):
+        return
+    from .house_settings import house_numbers
 
-
-class AdaptiveCoverNumber(
-    CoordinatorEntity[AdaptiveDataUpdateCoordinator], NumberEntity
-):
-    """A config-entry option exposed as a live-adjustable number."""
-
-    _attr_has_entity_name = True
-    _attr_should_poll = False
-    _attr_mode = NumberMode.BOX
-
-    def __init__(
-        self,
-        config_entry: ConfigEntry,
-        coordinator: AdaptiveDataUpdateCoordinator,
-        spec: TunableSpec,
-        shape: NumberShape,
-    ) -> None:
-        """Initialize the tunable."""
-        super().__init__(coordinator=coordinator)
-        self._config_entry = config_entry
-        self._spec = spec
-        self._default = shape.default
-        self._attr_native_min_value = shape.min
-        self._attr_native_max_value = shape.max
-        self._attr_native_step = shape.step
-        self._attr_native_unit_of_measurement = shape.unit
-        self._attr_icon = spec.icon
-        self._attr_unique_id = f"{config_entry.entry_id}_number_{spec.key}"
-        apply_surface(self, window_surface("number", f"number_{spec.key}"))
-        self._device_id = config_entry.entry_id
-        self._name = config_entry.data["name"]
-        self._attr_device_info = adaptive_cover_device_info(config_entry)
-
-    @property
-    def native_value(self) -> float | None:
-        """Current value from the config entry options.
-
-        Falls back to the effective default so the entity never reads
-        "unknown" for options that have one. Geometry options without a
-        default (eye height, overhang) legitimately show empty until set -
-        setting them is how the feature is enabled.
-        """
-        value = self.coordinator.options.get(self._spec.key)
-        if value is None:
-            return self._default
-        return value
-
-    async def async_set_native_value(self, value: float) -> None:
-        """Store the window's value; its update listener applies it."""
-        async_write_window(self.hass, self._config_entry, {self._spec.key: value})
+    async_add_entities(house_numbers(hass, hub_device_info()))

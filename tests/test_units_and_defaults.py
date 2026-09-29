@@ -265,10 +265,9 @@ async def test_regression_thresholds_unit_aware_everywhere(
     registry = er.async_get(hass)
     for key, (low, high, default) in shapes.items():
         assert _selector_shape(climate, key) == (low, high, 0.5, unit)
+        # The house's threshold numbers (P5 flip: on the hub device).
         state = hass.states.get(
-            registry.async_get_entity_id(
-                "number", DOMAIN, f"{entry.entry_id}_number_{key}"
-            )
+            registry.async_get_entity_id("number", DOMAIN, f"adaptive_cover_hub_{key}")
         )
         assert float(state.state) == default
         assert (

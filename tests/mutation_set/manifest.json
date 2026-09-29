@@ -414,6 +414,13 @@
   "patch": "M91_set_profile_writes_the_wrong_level.patch"
  },
  {
+  "id": "M92",
+  "file": "custom_components/adaptive_cover/house_settings.py",
+  "function": "HouseSetting._store",
+  "description": "a house entity's change is stored but not propagated: the windows act on it only at their next refresh",
+  "patch": "M92_house_setting_change_does_not_propagate.patch"
+ },
+ {
   "id": "M70",
   "file": "custom_components/adaptive_cover/settings/shadow.py",
   "function": "differing_keys",
