@@ -17,15 +17,20 @@ Unique_ids are never changed here: the suffix is only used as a lookup key.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import (
+    area_registry as ar,
+    device_registry as dr,
+    entity_registry as er,
+)
 from homeassistant.helpers.entity import Entity
 
-from .const import DOMAIN
+from .const import CONF_ENTITIES, DOMAIN
 
 # Hub unique_ids are f"{HUB_UNIQUE_ID}_{suffix}". Defined here (hub.py
 # imports it) so this module does not import the hub.
@@ -166,3 +171,42 @@ def async_apply_surface_to_registry(hass: HomeAssistant, entry: ConfigEntry) -> 
             registry.async_update_entity(row.entity_id, **changes)
             updated += 1
     return updated
+
+
+def cover_area_id(hass: HomeAssistant, covers: Iterable[str]) -> str | None:
+    """Return the area of the first cover that has one.
+
+    An entity's own area wins over its device's area, as in HA.
+    """
+    ent_reg = er.async_get(hass)
+    dev_reg = dr.async_get(hass)
+    areas = ar.async_get(hass)
+    for cover in covers:
+        row = ent_reg.async_get(cover)
+        if row is None:
+            continue
+        area_id = row.area_id
+        if area_id is None and row.device_id is not None:
+            device = dev_reg.async_get(row.device_id)
+            area_id = device.area_id if device is not None else None
+        if area_id is not None and areas.async_get_area(area_id) is not None:
+            return area_id
+    return None
+
+
+@callback
+def async_copy_cover_area(hass: HomeAssistant, entry: ConfigEntry) -> str | None:
+    """Give the window device its physical cover's area if it has none.
+
+    Never overwrites an area already on the device (the user's choice).
+    Returns the area_id that was set, or None.
+    """
+    dev_reg = dr.async_get(hass)
+    device = dev_reg.async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    if device is None or device.area_id is not None:
+        return None
+    area_id = cover_area_id(hass, entry.options.get(CONF_ENTITIES) or [])
+    if area_id is None:
+        return None
+    dev_reg.async_update_device(device.id, area_id=area_id)
+    return area_id

@@ -1,9 +1,9 @@
 """Entity surface v2 (P1; contract change C1 in docs/refactor_plan.md).
 
 Pins the per-window and hub entity surface: category, default visibility
-and "<Device> <Role>" names; and the 1.1 -> 1.2 config-entry migration
-that applies the surface to EXISTING registry rows without overriding
-user choices.
+and "<Device> <Role>" names; the device area copied from the physical
+cover; and the 1.1 -> 1.2 config-entry migration that applies the
+surface to EXISTING registry rows without overriding user choices.
 
 Public seams only: config entries, the entity/device/area registries,
 hass.states and the translation files. The expected surface below is
@@ -19,6 +19,8 @@ from pathlib import Path
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import EntityCategory
 from homeassistant.helpers import (
+    area_registry as ar,
+    device_registry as dr,
     entity_registry as er,
 )
 import pytest
@@ -274,6 +276,93 @@ class TestTranslations:
         assert {spec.key: spec.name for spec in TUNABLES} == {
             key: value["name"] for key, value in numbers.items()
         }
+
+
+# ------------------------------------------------------------------ areas
+
+
+def _window_device(hass, entry) -> dr.DeviceEntry | None:
+    return dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+
+
+def _physical_cover(hass, *, device_area=None, entity_area=None):
+    """Register COVER as another integration's entity on its own device."""
+    other = MockConfigEntry(domain="test")
+    other.add_to_hass(hass)
+    dev_reg = dr.async_get(hass)
+    device = dev_reg.async_get_or_create(
+        config_entry_id=other.entry_id,
+        identifiers={("test", "shade-1")},
+        name="Office shade",
+    )
+    if device_area is not None:
+        dev_reg.async_update_device(device.id, area_id=device_area)
+    ent_reg = er.async_get(hass)
+    row = ent_reg.async_get_or_create(
+        "cover",
+        "test",
+        "shade-1",
+        config_entry=other,
+        device_id=device.id,
+        suggested_object_id="test_cover",
+    )
+    assert row.entity_id == COVER
+    if entity_area is not None:
+        ent_reg.async_update_entity(COVER, area_id=entity_area)
+
+
+class TestDeviceArea:
+    """The window device takes the physical cover's area (never overwritten)."""
+
+    async def test_area_copied_from_cover_device(self, hass, cover_calls):
+        office = ar.async_get(hass).async_create("Office")
+        _physical_cover(hass, device_area=office.id)
+        _set_world(hass)
+        entry = _entry(hass)
+        await _setup(hass, entry)
+        assert _window_device(hass, entry).area_id == office.id
+
+    async def test_cover_entity_area_wins_over_its_device(self, hass, cover_calls):
+        areas = ar.async_get(hass)
+        office = areas.async_create("Office")
+        den = areas.async_create("Den")
+        _physical_cover(hass, device_area=office.id, entity_area=den.id)
+        _set_world(hass)
+        entry = _entry(hass)
+        await _setup(hass, entry)
+        assert _window_device(hass, entry).area_id == den.id
+
+    async def test_user_area_not_overwritten(self, hass, cover_calls):
+        areas = ar.async_get(hass)
+        office = areas.async_create("Office")
+        den = areas.async_create("Den")
+        _physical_cover(hass, device_area=office.id)
+        _set_world(hass)
+        entry = _entry(hass)
+        # The user already put the window device in the den.
+        dev_reg = dr.async_get(hass)
+        device = dev_reg.async_get_or_create(
+            config_entry_id=entry.entry_id,
+            identifiers={(DOMAIN, entry.entry_id)},
+            name="Office Door",
+        )
+        dev_reg.async_update_device(device.id, area_id=den.id)
+
+        await _setup(hass, entry)
+        assert _window_device(hass, entry).area_id == den.id
+
+    async def test_no_area_when_cover_has_none(self, hass, cover_calls):
+        _physical_cover(hass)
+        _set_world(hass)
+        entry = _entry(hass)
+        await _setup(hass, entry)
+        assert _window_device(hass, entry).area_id is None
+
+    async def test_cover_outside_registry_is_ignored(self, hass, cover_calls):
+        _set_world(hass)  # COVER exists only as a state
+        entry = _entry(hass)
+        await _setup(hass, entry)
+        assert _window_device(hass, entry).area_id is None
 
 
 # -------------------------------------------------------------- migration

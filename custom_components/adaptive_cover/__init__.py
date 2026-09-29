@@ -283,6 +283,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    # The window device exists now (the platforms created it): give it the
+    # physical cover's area unless the user already chose one.
+    from .entity_surface import async_copy_cover_area
+
+    async_copy_cover_area(hass, entry)
 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     return True
