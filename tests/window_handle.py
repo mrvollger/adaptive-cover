@@ -3,9 +3,9 @@
 A window is addressed by its cover entity id (or by its window key, which
 today is the config entry id). Its entities are found by ROLE through the
 entity registry; reads go through ``hass.states`` and event-bus records;
-actions go through real service calls. Nothing here reads ``hass.data``,
-the coordinator, or entity objects, so a backend rewrite does not touch
-the tests that use it.
+actions go through real service calls. WindowHandle never reads
+``hass.data``, the coordinator, or entity objects, so a backend rewrite
+does not touch the tests that use it.
 
     window = WindowHandle(hass, "cover.office")   # before setup: records
     await hass.config_entries.async_setup(entry.entry_id)
