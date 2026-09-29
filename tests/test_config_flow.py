@@ -1,4 +1,4 @@
-"""Tests for config flow."""
+"""Tests for the config flow: the one-screen add-window form (P6)."""
 
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResultType
@@ -30,7 +30,6 @@ from custom_components.adaptive_cover.const import (
     CONF_MAX_ELEVATION,
     CONF_MAX_MOVES_HOUR,
     CONF_MIN_ELEVATION,
-    CONF_MODE,
     CONF_OCCUPIED_DISTANCE,
     CONF_OVERHANG_DEPTH,
     CONF_OVERHANG_HEIGHT,
@@ -49,10 +48,22 @@ from custom_components.adaptive_cover.const import (
     CONF_TILT_DEPTH,
     CONF_TILT_DISTANCE,
     CONF_TILT_MODE,
-    DOMAIN,
     SensorType,
 )
+from custom_components.adaptive_cover.settings.validate import ERROR_ELEVATION_ORDER
 
+from .window_form import (
+    add_window,
+    collapsed,
+    prefilled,
+    show_type,
+    shown,
+    start_add,
+    submit,
+)
+
+# What a user enters for a vertical blind (flat; tests/window_form.py puts
+# each field in its section). The form has a default for everything else.
 VERTICAL_STEP_INPUT = {
     CONF_CLIMATE_MODE: False,
     CONF_COVER_ENTITY: "cover.test_window",
@@ -124,39 +135,24 @@ async def unload_all_entries(hass):
 
 
 async def test_user_step_shows_form(hass):
-    """Test that the initial step shows a form."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
-    )
+    """Adding a window is one form: the Window section open, the rest collapsed."""
+    result = await start_add(hass)
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "user"
+    assert collapsed(result) == {
+        "window": False,
+        "sun_limits": True,
+        "advanced": True,
+        "exceptions_positions": True,
+        "exceptions_schedule": True,
+        "exceptions_climate": True,
+    }
 
 
 async def test_full_vertical_flow(hass):
-    """Test complete config flow for vertical blinds."""
-    # Step 1: User selects blind type
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
-    )
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {"name": "Living Room", CONF_MODE: SensorType.BLIND},
-    )
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "vertical"
-
-    # Step 2: Vertical configuration
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        VERTICAL_STEP_INPUT,
-    )
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "automation"
-
-    # Step 3: Automation configuration
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        AUTOMATION_STEP_INPUT,
+    """Test complete config flow for vertical blinds: one submit."""
+    result = await add_window(
+        hass, {"name": "Living Room", **VERTICAL_STEP_INPUT, **AUTOMATION_STEP_INPUT}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == "Living Room"
@@ -165,70 +161,54 @@ async def test_full_vertical_flow(hass):
 
 
 async def test_full_horizontal_flow(hass):
-    """Test complete config flow for horizontal awnings."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
-    )
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {"name": "Terrace", CONF_MODE: SensorType.AWNING},
-    )
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "horizontal"
+    """Test complete config flow for horizontal awnings.
 
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        HORIZONTAL_STEP_INPUT,
-    )
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "automation"
+    Picking the awning type shows the form again with the awning's
+    geometry; the second submit creates the window.
+    """
+    result = await start_add(hass)
+    result = await show_type(hass, result, SensorType.AWNING, "cover.test_window")
+    assert result["step_id"] == "user"
+    assert {CONF_LENGTH_AWNING, CONF_AWNING_ANGLE} <= set(shown(result)["window"])
 
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        AUTOMATION_STEP_INPUT,
+    result = await submit(
+        hass,
+        result,
+        {"name": "Terrace", **HORIZONTAL_STEP_INPUT, **AUTOMATION_STEP_INPUT},
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == "Terrace"
     assert result["data"][CONF_SENSOR_TYPE] == SensorType.AWNING
+    assert result["options"][CONF_LENGTH_AWNING] == 2.1
 
 
 async def test_full_tilt_flow(hass):
-    """Test complete config flow for tilt blinds."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
-    )
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {"name": "Bedroom", CONF_MODE: SensorType.TILT},
-    )
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "tilt"
+    """Test complete config flow for tilt blinds (slats, no window height)."""
+    result = await start_add(hass)
+    result = await show_type(hass, result, SensorType.TILT, "cover.test_window")
+    assert result["step_id"] == "user"
+    window = set(shown(result)["window"])
+    assert {CONF_TILT_DEPTH, CONF_TILT_DISTANCE, CONF_TILT_MODE} <= window
+    assert CONF_HEIGHT_WIN not in window
 
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        TILT_STEP_INPUT,
-    )
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "automation"
-
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        AUTOMATION_STEP_INPUT,
+    result = await submit(
+        hass, result, {"name": "Bedroom", **TILT_STEP_INPUT, **AUTOMATION_STEP_INPUT}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == "Bedroom"
     assert result["data"][CONF_SENSOR_TYPE] == SensorType.TILT
+    assert result["options"][CONF_TILT_MODE] == "mode2"
 
 
 async def test_regression_wizard_drops_automation_keys(hass):
-    """The setup wizard must persist every option it collects.
+    """The setup form must persist every option it collects.
 
     Regression: async_step_update built the created entry's options from a
     hand-maintained whitelist, silently dropping end_time, end_entity,
     return_sunset, privacy_*, quiet_*, max_moves_hour, and overhang/glare
     keys — a fresh entry configured with an end time never closed at end of
-    day.  The OptionsFlow already preserved these keys; the wizard must
-    round-trip them too.
+    day.  The OptionsFlow already preserved these keys; the setup form
+    (the wizard before P6) must round-trip them too.
     """
     geometry_input = {
         **VERTICAL_STEP_INPUT,
@@ -257,72 +237,47 @@ async def test_regression_wizard_drops_automation_keys(hass):
         CONF_MAX_MOVES_HOUR: 4,
     }
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
-    )
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {"name": "Round Trip", CONF_MODE: SensorType.BLIND},
-    )
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], geometry_input
-    )
-    assert result["step_id"] == "automation"
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], automation_input
+    result = await add_window(
+        hass, {"name": "Round Trip", **geometry_input, **automation_input}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
 
     options = result["options"]
     for key, value in {**geometry_input, **automation_input}.items():
-        assert key in options, f"wizard dropped option key: {key}"
+        assert key in options, f"setup form dropped option key: {key}"
         assert options[key] == value, (
-            f"wizard mangled option {key}: {options[key]!r} != {value!r}"
+            f"setup form mangled option {key}: {options[key]!r} != {value!r}"
         )
 
 
 async def test_elevation_validation_error(hass):
     """Test that max_elevation <= min_elevation shows an error."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
-    )
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {"name": "Test", CONF_MODE: SensorType.BLIND},
-    )
-    assert result["step_id"] == "vertical"
-
-    # Submit with max_elevation <= min_elevation
+    result = await start_add(hass)
     bad_input = {
         **VERTICAL_STEP_INPUT,
         CONF_MIN_ELEVATION: 50,
         CONF_MAX_ELEVATION: 30,
     }
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        bad_input,
-    )
+    result = await submit(hass, result, bad_input)
     assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "vertical"
-    assert result["errors"] is not None
-    assert CONF_MAX_ELEVATION in result["errors"]
+    assert result["step_id"] == "user"
+    # Shown above the form (HA shows no error on a field inside a section).
+    assert result["errors"] == {"base": ERROR_ELEVATION_ORDER}
+    # Nothing the user entered is lost.
+    assert prefilled(result)[CONF_MIN_ELEVATION] == 50
 
 
 async def _wizard_blind(hass, geometry: dict, automation: dict):
-    """Run the setup wizard for a blind; return the final flow result."""
-    flow = hass.config_entries.flow
-    result = await flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
-    )
-    result = await flow.async_configure(
-        result["flow_id"], {"name": "Drift fix", CONF_MODE: SensorType.BLIND}
-    )
-    result = await flow.async_configure(
-        result["flow_id"], {**VERTICAL_STEP_INPUT, **geometry}
-    )
-    assert result["step_id"] == "automation", result
-    return await flow.async_configure(
-        result["flow_id"], {**AUTOMATION_STEP_INPUT, **automation}
+    """Add a blind through the setup form; return the final flow result."""
+    return await add_window(
+        hass,
+        {
+            "name": "Drift fix",
+            **VERTICAL_STEP_INPUT,
+            **geometry,
+            **AUTOMATION_STEP_INPUT,
+            **automation,
+        },
     )
 
 

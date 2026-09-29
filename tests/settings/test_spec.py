@@ -275,12 +275,18 @@ def test_add_entry_baseline_is_a_fresh_copy():
     assert second["manual_override_duration"]["hours"] == 2
 
 
-def test_wizard_covers_every_cover_type():
+def test_setup_form_covers_every_cover_type():
+    """Every form option of a type is on the setup form exactly once."""
     for cover_type in (SensorType.BLIND, SensorType.AWNING, SensorType.TILT):
-        keys = {str(m) for m in schema.wizard_type_schema(cover_type, "°C").schema}
+        sections = schema.setup_section_fields(
+            cover_type, values={}, temperature_unit="°C", windows={"w": "Window"}
+        )
+        keys = [str(m) for fields in sections.values() for m in fields]
+        assert len(keys) == len(set(keys))
         expected = {
             o.key
             for o in OPTS
-            if o.group in schema.WIZARD_TYPE_GROUPS and cover_type in o.cover_types
+            if o.group is not spec.Group.NONE and cover_type in o.cover_types
         }
-        assert keys == expected
+        form_only = {"copy_from", "preset", "name", "sensor_type"}
+        assert set(keys) == expected | form_only

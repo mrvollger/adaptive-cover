@@ -24,7 +24,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResultType, section
 from homeassistant.helpers import selector
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -56,12 +55,17 @@ from custom_components.adaptive_cover.const import (
     CONF_TILT_DEPTH,
     CONF_TILT_DISTANCE,
     CONF_TILT_MODE,
-    CONF_WEATHER_ENTITY,
     DOMAIN,
     SensorType,
 )
+from custom_components.adaptive_cover.config_flow import (
+    ABORT_NOT_A_WINDOW,
+    ERROR_COVER_TYPE,
+)
 from custom_components.adaptive_cover.settings.validate import ERROR_KEYS
 from custom_components.adaptive_cover.window_cover import ERROR_COVER_IN_USE
+
+from .window_form import show_type, start_add, start_reconfigure
 
 PACKAGE = Path(__file__).resolve().parents[1] / "custom_components" / "adaptive_cover"
 STRINGS_PATH = PACKAGE / "strings.json"
@@ -188,66 +192,38 @@ def _literal_step_ids(class_name: str) -> set[str]:
     }
 
 
-async def _configure(
-    hass, result: dict[str, Any], user_input: dict[str, Any], expect_step: str
-) -> dict[str, Any]:
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], user_input
-    )
-    assert result["type"] is FlowResultType.FORM, result
-    assert result["step_id"] == expect_step, result
-    return result
-
-
 async def _config_flow_forms(hass) -> list[dict[str, Any]]:
-    """Walk the setup wizard through every page it can show."""
+    """Walk the window form: add and reconfigure, for every cover type.
+
+    A window exists first, so the add form offers "Copy from".
+    """
     forms: list[dict[str, Any]] = []
-    type_steps = {
-        SensorType.BLIND: "vertical",
-        SensorType.AWNING: "horizontal",
-        SensorType.TILT: "tilt",
-    }
-    for sensor_type, type_step in type_steps.items():
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": config_entries.SOURCE_USER}
-        )
+    MockConfigEntry(
+        domain=DOMAIN,
+        title="i18n source",
+        data={"name": "i18n source", CONF_SENSOR_TYPE: SensorType.BLIND},
+        options={**BASE_OPTIONS, **TYPE_OPTIONS[SensorType.BLIND]},
+    ).add_to_hass(hass)
+    for sensor_type in TYPE_OPTIONS:
+        result = await start_add(hass)
         assert result["step_id"] == "user", result
         forms.append(result)
-        result = await _configure(
-            hass,
-            result,
-            {"name": f"i18n {sensor_type}", CONF_MODE: sensor_type},
-            type_step,
-        )
-        forms.append(result)
-        if sensor_type == SensorType.BLIND:
-            # Opt into every optional page: interp -> blind_spot -> automation
-            # -> climate -> weather.
-            result = await _configure(
-                hass,
-                result,
-                {
-                    CONF_CLIMATE_MODE: True,
-                    CONF_INTERP: True,
-                    CONF_ENABLE_BLIND_SPOT: True,
-                },
-                "interp",
-            )
+        if sensor_type != SensorType.BLIND:
+            result = await show_type(hass, result, sensor_type, "cover.i18n")
+            assert result["step_id"] == "user", result
             forms.append(result)
-            for user_input, step in (
-                ({}, "blind_spot"),
-                ({}, "automation"),
-                ({}, "climate"),
-                (
-                    {
-                        CONF_TEMP_ENTITY: "sensor.indoor",
-                        CONF_WEATHER_ENTITY: "weather.home",
-                    },
-                    "weather",
-                ),
-            ):
-                result = await _configure(hass, result, user_input, step)
-                forms.append(result)
+        hass.config_entries.flow.async_abort(result["flow_id"])
+    for sensor_type, type_options in TYPE_OPTIONS.items():
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=f"i18n {sensor_type}",
+            data={"name": f"i18n {sensor_type}", CONF_SENSOR_TYPE: sensor_type},
+            options={**BASE_OPTIONS, **type_options},
+        )
+        entry.add_to_hass(hass)
+        result = await start_reconfigure(hass, entry)
+        assert result["step_id"] == "reconfigure", result
+        forms.append(result)
         hass.config_entries.flow.async_abort(result["flow_id"])
     return forms
 
@@ -439,11 +415,11 @@ async def test_flow_strings_cover_every_form(hass, strings: dict[str, Any]) -> N
     options_forms = await _options_flow_forms(hass)
 
     # The walk must reach every step the code can show, and every step
-    # method must be reachable (import and update show no form: import is
-    # programmatic, update creates the entry). The options flow lost nine
-    # unreachable per-page steps in P3; this keeps dead steps from returning.
+    # method must be reachable (import shows no form: it is programmatic).
+    # The options flow lost nine unreachable per-page steps in P3 and the
+    # setup wizard its nine pages in P6; this keeps dead steps from returning.
     for flow, cls, forms, formless in (
-        ("config", "ConfigFlowHandler", config_forms, {"import", "update"}),
+        ("config", "ConfigFlowHandler", config_forms, {"import"}),
         ("options", "OptionsFlowHandler", options_forms, set()),
     ):
         shown = {result["step_id"] for result in forms}
@@ -468,6 +444,11 @@ async def test_flow_strings_cover_every_form(hass, strings: dict[str, Any]) -> N
     needs.need(f"config.error.{ERROR_COVER_IN_USE}")
     needs.need(f"options.error.{ERROR_COVER_IN_USE}")
     needs.need("config.abort.already_configured")
+    # The window form checks the cover can move the way its type needs;
+    # Reconfigure ends with HA's success reason, or aborts on the house.
+    needs.need(f"config.error.{ERROR_COVER_TYPE}")
+    needs.need("config.abort.reconfigure_successful")
+    needs.need(f"config.abort.{ABORT_NOT_A_WINDOW}")
 
     have = {
         key

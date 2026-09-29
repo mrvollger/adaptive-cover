@@ -517,3 +517,64 @@ The example below is inside an HTML comment. The checker ignores it.
   `tests/test_entity_surface_v2.py::TestPositionAttributes::test_multi_cover_entry_lists_every_cover`).
   Goldens, truth table and house replay unchanged (the replay drives one
   cover per window).
+
+## L0021 · 2026-09-29 · One-screen window form replaces the setup wizard (C3, P6)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins `tests/test_window_setup_form.py::*`
+  (one screen, recurring settings only in the collapsed exceptions
+  sections; a window from only a cover and an azimuth is valid and
+  resolves to the house defaults; the name defaults to the cover's;
+  a cover type switch keeps what was entered; a cover that cannot move
+  the way the type needs is refused; "Copy from" pre-fills everything but
+  the name and cover; presets fill geometry only; Reconfigure shows and
+  changes the one-time settings only, refuses a cover in use and aborts
+  on the house entry). Implementation tier: `tests/settings/test_setup_form.py`.
+- **Mutations re-targeted:** added M80 (`settings/schema.py`
+  `copy_from_values`: "Copy from" copies the cover), M81
+  (`settings/schema.py` `setup_section`: recurring settings land in the
+  one-time sections), M82 (`settings/schema.py` `_setup_marker`: no field
+  gets its spec default), M83 (`config_flow.py` `WindowForm.submit`: a
+  cover type switch saves instead of showing that type's geometry). No
+  earlier mutation targets these files.
+- **Contract change:** C3 (the setup surface, generated from the spec;
+  plan P6 "one-screen setup")
+- **Reason:** plan P6 and the owner's UI principle (one-time settings in a
+  window submenu, used once; everything recurring at a higher level). The
+  nine-step wizard (user -> vertical/horizontal/tilt -> interp ->
+  blind_spot -> automation -> climate -> weather -> update) is one form,
+  `config.step.user`, built by `settings/schema.py`
+  (`setup_section_fields`) from the spec: an expanded Window section
+  (Copy from, preset, name, cover, cover type, azimuth, field of view,
+  the type's geometry incl. overhang), then collapsed `sun_limits`,
+  `advanced` and three "Exceptions for this window" sections that hold
+  every recurring setting at its spec default. The same form without the
+  exceptions is the new `config.step.reconfigure` (cover, type, geometry;
+  recurring options untouched; the options form stays the everyday
+  editor). Picking another cover type, a preset or a window to copy shows
+  the form again, filled in. `spec_parity.json`: the `wizard.*` places
+  become `setup.user[.<section>]` and `setup.reconfigure[.<section>]`;
+  every option keeps its kind, default, min, max, step, unit and
+  required flag from the wizard, except that the cover is required and
+  offers covers of either type (`supported_features` [4, 128]; checked on
+  submit, error `cover_type_unsupported`), `name` is optional (the cover's
+  name), and `temp_entity` is optional (the climate section is optional;
+  the runtime already runs climate mode without it, and the options form
+  never required it). The first page's type picker `mode` becomes
+  `sensor_type`; `copy_from` and `preset` are new. The options form, the
+  services, services.yaml and the number entities are unchanged in the
+  snapshot. A new window now stores the spec default for settings whose
+  wizard page used to be skipped (blind spot edges, climate thresholds,
+  sunny states; before: None); each is read only when its feature is on,
+  so a new window behaves the same. Errors show above the form (`base`),
+  as on the options form: HA shows no error on a field inside a section.
+  Behavior-tier test bodies changed without changing ids (same intent,
+  new form): `tests/test_config_flow.py::*`,
+  `tests/test_one_cover_per_window.py::test_wizard_*` (the cover error is
+  now `{"base": "cover_in_use"}`),
+  `tests/test_units_and_defaults.py` (the defaults are read from the
+  exceptions sections), and
+  `tests/test_translations.py::test_flow_strings_cover_every_form` (walks
+  add and reconfigure per type; needs the new error and abort strings;
+  the wizard's step strings are gone). Goldens, truth table and house
+  replay unchanged.

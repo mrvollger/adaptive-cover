@@ -1,7 +1,7 @@
 """spec_parity.json matches what every settings surface shows today.
 
 The snapshot pins each option key's kind, default, range, unit and
-placement on the wizard, the options form, the change_settings and
+placement on the setup form, the options form, the change_settings and
 add_entry services, services.yaml and the number entities. A change to any
 of them must regenerate the snapshot in the same commit:
 
@@ -44,16 +44,19 @@ async def test_snapshot_covers_every_surface():
     forms = (await build_snapshot())["forms"]
     places = {name.split(" ")[0] for name in forms}
     places = {p for p in places if not p.startswith("options.init.")}
+    setup_sections = (
+        "window",
+        "sun_limits",
+        "advanced",
+        "exceptions_positions",
+        "exceptions_schedule",
+        "exceptions_climate",
+    )
     assert places >= {
-        "wizard.user",
-        "wizard.vertical",
-        "wizard.horizontal",
-        "wizard.tilt",
-        "wizard.interp",
-        "wizard.blind_spot",
-        "wizard.automation",
-        "wizard.climate",
-        "wizard.weather",
+        "setup.user",
+        *(f"setup.user.{name}" for name in setup_sections),
+        "setup.reconfigure",
+        *(f"setup.reconfigure.{name}" for name in setup_sections[:3]),
         "options.init",
         "change_settings",
         "add_entry",
