@@ -465,7 +465,7 @@ class TestMigration:
         await _setup(hass, entry)
 
         assert entry.state is ConfigEntryState.LOADED
-        assert (entry.version, entry.minor_version) == (1, 2)
+        assert (entry.version, entry.minor_version) == (1, 3)
         rows = _rows(hass, entry)
         # Identity is frozen: same unique_ids, same entity_ids.
         assert {
@@ -530,7 +530,7 @@ class TestMigration:
         hass.config_entries.async_update_entry(entry, minor_version=1)
         await _setup(hass, entry)
 
-        assert entry.minor_version == 2
+        assert entry.minor_version == 3
         assert _snapshot(hass, entry) == after_first
 
     async def test_user_reenabled_entity_stays_enabled(self, hass, cover_calls):
@@ -558,10 +558,10 @@ class TestMigration:
         """A downgrade from a later 1.x keeps working (minor bumps are
         backward compatible) and is not rewritten."""
         _set_world(hass)
-        entry = _entry(hass, minor_version=3)
+        entry = _entry(hass, minor_version=4)
         await _setup(hass, entry)
         assert entry.state is ConfigEntryState.LOADED
-        assert (entry.version, entry.minor_version) == (1, 3)
+        assert (entry.version, entry.minor_version) == (1, 4)
 
     async def test_newer_major_version_is_refused(self, hass, cover_calls):
         _set_world(hass)
@@ -702,7 +702,7 @@ async def test_live_house_upgrade(hass, cover_calls):
     # Every entry migrated and loaded.
     for entry in hass.config_entries.async_entries(DOMAIN):
         assert entry.state is ConfigEntryState.LOADED, entry.title
-        assert (entry.version, entry.minor_version) == (1, 2), entry.title
+        assert (entry.version, entry.minor_version) == (1, 3), entry.title
 
     # Identity is frozen: the same 318 (platform, unique_id) -> entity_id
     # rows, no more. ("X_Manual Override" is both a switch and a sensor.)

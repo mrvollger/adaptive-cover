@@ -232,6 +232,10 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     defaults) to the entry's existing registry rows; new rows get it from
     the entity classes. User choices are kept (see entity_surface).
 
+    1.2 -> 1.3 (P3): write the options' fallback values, the cover as
+    cover_entity_id, and the cover's registry id as unique_id (see
+    migration.py). The hub only gets the version bump.
+
     A newer MINOR version (after a downgrade) loads as is. A newer MAJOR
     version is refused.
     """
@@ -253,6 +257,14 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             "Migrated %s to 1.2: %s registry rows updated", entry.title, updated
         )
         hass.config_entries.async_update_entry(entry, minor_version=2)
+    if entry.minor_version < 3:
+        from .hub import is_hub_entry
+        from .migration import async_migrate_1_3
+
+        if is_hub_entry(entry):
+            hass.config_entries.async_update_entry(entry, minor_version=3)
+        else:
+            async_migrate_1_3(hass, entry)
     return True
 
 
@@ -265,6 +277,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if is_hub_entry(entry):
         await hass.config_entries.async_forward_entry_setups(entry, HUB_PLATFORMS)
         return True
+
+    # One cover per window (ADR 0002): the unique_id follows the cover, and
+    # an entry from before P3 with several covers gets a "split" issue.
+    from .migration import async_sync_unique_id
+    from .window_cover import async_check_split_issue
+
+    async_sync_unique_id(hass, entry)
+    async_check_split_issue(hass, entry)
 
     # Prime the timezone cache off-loop: the first construction reads a
     # zoneinfo file, and schedule math needs it inside the loop.
@@ -336,6 +356,15 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Drop a removed window's split issue, if it had one."""
+    from homeassistant.helpers import issue_registry as ir
+
+    from .window_cover import split_issue_id
+
+    ir.async_delete_issue(hass, DOMAIN, split_issue_id(entry.entry_id))
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:

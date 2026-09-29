@@ -511,5 +511,21 @@
         "name": "Outside temperature"
       }
     }
+  },
+  "issues": {
+    "split_window": {
+      "title": "{window} drives several covers",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Split {window} into one window per cover",
+            "description": "A window drives one cover. {window} keeps {kept}. New windows with a copy of its settings: {new_windows}. Removed because another window drives them: {dropped}."
+          }
+        },
+        "abort": {
+          "entry_removed": "This window no longer exists."
+        }
+      }
+    }
   }
 }

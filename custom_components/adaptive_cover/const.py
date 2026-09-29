@@ -8,8 +8,11 @@ DOMAIN = "adaptive_cover"
 # code loads the entry as is); async_migrate_entry in __init__.py upgrades.
 #   1.2 (P1): entity categories and disabled defaults applied to existing
 #             registry rows.
+#   1.3 (P3): fallback values written into the options, the cover written
+#             as cover_entity_id (group kept), unique_id = the cover's
+#             entity-registry id (migration.py).
 CONFIG_ENTRY_VERSION = 1
-CONFIG_ENTRY_MINOR_VERSION = 2
+CONFIG_ENTRY_MINOR_VERSION = 3
 LOGGER = logging.getLogger(__package__)
 _LOGGER = logging.getLogger(__name__)
 

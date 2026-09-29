@@ -292,3 +292,38 @@ The example below is inside an HTML comment. The checker ignores it.
   `tests/test_translations.py::test_flow_strings_cover_every_form` also
   requires the new error and abort strings. Goldens, truth table and
   house replay unchanged.
+
+## L0012 · 2026-09-29 · Config entry migration 1.3: fallbacks written, one cover, split repair (C4)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins `tests/test_migration_1_3.py::*` (the
+  15 live windows: no runtime read changes, exactly which keys are
+  written, cover and unique_id; multi-cover entries keep working with a
+  fixable split issue; the split fix; two windows on one cover)
+- **Mutations re-targeted:** none
+- **Contract change:** C4
+- **Reason:** plan P3 / ADR 0002. `CONFIG_ENTRY_MINOR_VERSION` is 3.
+  Migration 1.3 (`migration.py`) writes every option a window reads
+  through a code fallback (`runtime/shade_config.ABSENT`) into its
+  options before any default changes, writes `cover_entity_id` next to
+  `group: [cover]`, and sets the entry unique_id to the cover's registry
+  id when the cover is registered and no other entry holds it. The hub
+  only gets the version bump. On the live snapshot it writes 116 keys
+  (every one None, plus the cover) and changes none; `ShadeConfig` is
+  identical before and after for all 15 windows. Setup now keeps the
+  unique_id on the cover (the options form can change the cover) and
+  raises a fixable `split_window` repair issue for an entry with several
+  covers (`repairs.py` splits it: the entry keeps the first free cover,
+  each other free cover gets a copy of the settings as a new window named
+  after the cover, covers another window drives are dropped). The house
+  replay starts its entries at 1.1, so every golden now runs the migrated
+  options; `tests/replay/house_replay.py` asserts the entry reached 1.3.
+  Goldens, truth table and house replay unchanged. Behavior-tier test
+  bodies changed without changing ids: in `tests/test_entity_surface_v2.py`,
+  `TestMigration::test_migration_applies_surface_to_legacy_rows`,
+  `TestMigration::test_migration_is_idempotent` and
+  `test_live_house_upgrade` expect 1.3 instead of 1.2, and
+  `TestMigration::test_newer_minor_version_loads_unchanged` uses 1.4 as
+  the newer version (1.3 is now current);
+  `tests/test_one_page_options.py::test_regression_options_form_runs_every_cross_field_check`
+  takes its "before" options after setup (the migration adds keys).

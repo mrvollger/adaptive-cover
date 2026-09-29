@@ -1868,6 +1868,43 @@ tests/test_live_tunables.py::TestNumberEntities::test_setting_number_persists_an
 tests/test_live_tunables.py::TestNumberEntities::test_temp_numbers_only_with_climate
 tests/test_live_tunables.py::TestNumberEntities::test_temp_numbers_with_climate_show_defaults
 tests/test_live_tunables.py::TestNumberEntities::test_unset_geometry_shows_unknown_not_zero
+tests/test_migration_1_3.py::test_live_house_migrates_to_1_3
+tests/test_migration_1_3.py::test_migration_changes_no_runtime_read[Den south]
+tests/test_migration_1_3.py::test_migration_changes_no_runtime_read[Den southwest]
+tests/test_migration_1_3.py::test_migration_changes_no_runtime_read[Den west]
+tests/test_migration_1_3.py::test_migration_changes_no_runtime_read[Family door]
+tests/test_migration_1_3.py::test_migration_changes_no_runtime_read[Family east]
+tests/test_migration_1_3.py::test_migration_changes_no_runtime_read[Family south]
+tests/test_migration_1_3.py::test_migration_changes_no_runtime_read[Leanne's door]
+tests/test_migration_1_3.py::test_migration_changes_no_runtime_read[Leanne's south]
+tests/test_migration_1_3.py::test_migration_changes_no_runtime_read[Master door]
+tests/test_migration_1_3.py::test_migration_changes_no_runtime_read[Master east]
+tests/test_migration_1_3.py::test_migration_changes_no_runtime_read[Master south]
+tests/test_migration_1_3.py::test_migration_changes_no_runtime_read[Master trap]
+tests/test_migration_1_3.py::test_migration_changes_no_runtime_read[Office door]
+tests/test_migration_1_3.py::test_migration_changes_no_runtime_read[Office east]
+tests/test_migration_1_3.py::test_migration_changes_no_runtime_read[Office north]
+tests/test_migration_1_3.py::test_migration_only_adds_keys[Den south]
+tests/test_migration_1_3.py::test_migration_only_adds_keys[Den southwest]
+tests/test_migration_1_3.py::test_migration_only_adds_keys[Den west]
+tests/test_migration_1_3.py::test_migration_only_adds_keys[Family door]
+tests/test_migration_1_3.py::test_migration_only_adds_keys[Family east]
+tests/test_migration_1_3.py::test_migration_only_adds_keys[Family south]
+tests/test_migration_1_3.py::test_migration_only_adds_keys[Leanne's door]
+tests/test_migration_1_3.py::test_migration_only_adds_keys[Leanne's south]
+tests/test_migration_1_3.py::test_migration_only_adds_keys[Master door]
+tests/test_migration_1_3.py::test_migration_only_adds_keys[Master east]
+tests/test_migration_1_3.py::test_migration_only_adds_keys[Master south]
+tests/test_migration_1_3.py::test_migration_only_adds_keys[Master trap]
+tests/test_migration_1_3.py::test_migration_only_adds_keys[Office door]
+tests/test_migration_1_3.py::test_migration_only_adds_keys[Office east]
+tests/test_migration_1_3.py::test_migration_only_adds_keys[Office north]
+tests/test_migration_1_3.py::test_multi_cover_entry_keeps_working_with_a_split_issue
+tests/test_migration_1_3.py::test_removing_a_multi_cover_entry_clears_its_issue
+tests/test_migration_1_3.py::test_snapshot_has_fifteen_single_cover_windows
+tests/test_migration_1_3.py::test_split_drops_a_cover_another_window_drives
+tests/test_migration_1_3.py::test_split_gives_each_cover_its_own_window
+tests/test_migration_1_3.py::test_two_windows_on_one_cover_keep_one_unique_id
 tests/test_night_born_entries.py::test_regression_entry_born_at_night_parks_at_sunset_position
 tests/test_night_born_entries.py::test_regression_sun_data_dates_follow_configured_timezone
 tests/test_one_cover_per_window.py::test_add_entry_needs_exactly_one_form_of_the_cover[both_forms]
