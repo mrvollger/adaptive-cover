@@ -12,7 +12,7 @@ ClimateCoverState.get_state() branch-for-branch, including quirks:
 
 from __future__ import annotations
 
-import numpy as np
+import math
 
 from . import geometry
 from .models import (
@@ -23,25 +23,28 @@ from .models import (
     SunSnapshot,
     TimeContext,
 )
+from .numeric import clip
 
 
 def _apply_limits(
     result: float, dsv: bool, config: CoverConfig, trace: list[str]
 ) -> float:
     limits = config.limits
-    apply_max = limits.max_position is not None and limits.max_position != 100
+    max_position = limits.max_position
+    apply_max = max_position is not None and max_position != 100
     if apply_max and limits.max_only_when_sun:
         apply_max = dsv
-    if apply_max and result > limits.max_position:
-        trace.append(f"max limit {limits.max_position} applied (was {result})")
-        return limits.max_position
+    if max_position is not None and apply_max and result > max_position:
+        trace.append(f"max limit {max_position} applied (was {result})")
+        return max_position
 
-    apply_min = limits.min_position is not None and limits.min_position != 0
+    min_position = limits.min_position
+    apply_min = min_position is not None and min_position != 0
     if apply_min and limits.min_only_when_sun:
         apply_min = dsv
-    if apply_min and result < limits.min_position:
-        trace.append(f"min limit {limits.min_position} applied (was {result})")
-        return limits.min_position
+    if min_position is not None and apply_min and result < min_position:
+        trace.append(f"min limit {min_position} applied (was {result})")
+        return min_position
     return result
 
 
@@ -69,7 +72,7 @@ def _evaluate_basic(
         else:
             intent = Intent.DEFAULT
             trace.append(f"sun not in window: default {raw}")
-    result = np.clip(raw, 0, 100)
+    result = clip(raw, 0, 100)
     result = _apply_limits(result, dsv, config, trace)
     return result, intent
 
@@ -159,7 +162,7 @@ def _evaluate_climate_tilt(
         trace.append("tilt, presence: 80 deg preset")
         return 80 / degrees * 100, Intent.CLIMATE_TILT_PRESET
 
-    beta = np.rad2deg(geometry.tilt_beta(config, sun))
+    beta = math.degrees(geometry.tilt_beta(config, sun))
     if valid:
         if climate.is_summer:
             trace.append("tilt, summer, away: close fully")
@@ -184,9 +187,10 @@ def evaluate(
 
     # Privacy runs before everything: a lit room against a dark sky is
     # visible from outside no matter what solar/climate logic says.
-    if geometry.privacy_active(config, ctx):
-        trace.append(f"dark outside: privacy position {config.privacy.position}")
-        result = _apply_limits(config.privacy.position, False, config, trace)
+    privacy = config.privacy
+    if geometry.privacy_active(config, ctx) and privacy is not None:
+        trace.append(f"dark outside: privacy position {privacy.position}")
+        result = _apply_limits(privacy.position, False, config, trace)
         return Decision(position=result, intent=Intent.PRIVACY, trace=tuple(trace))
 
     if climate is None:

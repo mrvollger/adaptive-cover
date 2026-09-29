@@ -1,18 +1,18 @@
 """Pure solar/cover geometry.
 
 Formulas are kept operation-for-operation identical to the historical
-implementation in calculation.py so positions reproduce bit-for-bit.
+implementation in calculation.py so positions reproduce bit-for-bit. The
+math is scalar ``math`` (numpy until P2); ``numeric.clip`` is ``np.clip``.
 """
 
 from __future__ import annotations
 
 from datetime import timedelta
-
-import numpy as np
-from numpy import cos, sin, tan
-from numpy import radians as rad
+from math import atan, cos, degrees, sin, sqrt, tan
+from math import radians as rad
 
 from .models import BlindSpot, CoverConfig, SunSnapshot, TimeContext
+from .numeric import clip
 
 # When the sun leaves a window less than this before the sunset position
 # begins, the sunset position starts right away. Without it such a window
@@ -23,6 +23,29 @@ DUSK_LEAD = timedelta(minutes=30)
 def gamma(window_azimuth: float, solar_azimuth: float) -> float:
     """Relative angle between window normal and sun (surface solar azimuth)."""
     return (window_azimuth - solar_azimuth + 180) % 360 - 180
+
+
+def _missing(name: str) -> TypeError:
+    """Build the error for a missing (None) geometry parameter.
+
+    TypeError is what the arithmetic on None raised before the engine was
+    typed, so callers see the same exception type as before.
+    """
+    return TypeError(f"cover geometry is missing {name}")
+
+
+def _required(value: float | None, name: str) -> float:
+    """Return a geometry parameter the formula needs.
+
+    Raises
+    ------
+    TypeError
+        If it is missing (see ``_missing``).
+
+    """
+    if value is None:
+        raise _missing(name)
+    return value
 
 
 def valid_elevation(
@@ -121,7 +144,7 @@ def profile_angle(config: CoverConfig, sun: SunSnapshot) -> float:
     fast rays descend into the room.
     """
     g = gamma(config.window_azimuth, sun.azimuth)
-    return np.arctan(tan(rad(sun.elevation)) / cos(rad(g)))
+    return atan(tan(rad(sun.elevation)) / cos(rad(g)))
 
 
 def sunlit_top(config: CoverConfig, sun: SunSnapshot) -> float:
@@ -137,7 +160,7 @@ def sunlit_top(config: CoverConfig, sun: SunSnapshot) -> float:
     shadow_line = config.overhang.height_above_sill - config.overhang.depth * tan(
         profile_angle(config, sun)
     )
-    return float(np.clip(shadow_line, 0, config.window_height))
+    return float(clip(shadow_line, 0, config.window_height))
 
 
 def window_fully_shaded(config: CoverConfig, sun: SunSnapshot) -> bool:
@@ -172,9 +195,8 @@ def admit_no_glare_percentage(config: CoverConfig, sun: SunSnapshot) -> float:
     safe = glare_safe_height(config, sun)
     if top <= safe:
         return 100
-    return round(
-        float(np.clip(safe, 0, config.window_height)) / config.window_height * 100
-    )
+    height = _required(config.window_height, "window_height")
+    return round(float(clip(safe, 0, height)) / height * 100)
 
 
 def dusk_lead_active(config: CoverConfig, sun: SunSnapshot, ctx: TimeContext) -> bool:
@@ -212,7 +234,10 @@ def default_position(config: CoverConfig, sun: SunSnapshot, ctx: TimeContext) ->
 def vertical_blind_height(config: CoverConfig, sun: SunSnapshot) -> float:
     """Height (m) below the blind edge that direct sun may reach."""
     g = gamma(config.window_azimuth, sun.azimuth)
-    return np.clip(
+    if config.distance_shaded_area is None:
+        raise _missing("distance_shaded_area")
+    # np.clip semantics: no window_height means no upper bound.
+    return clip(
         (config.distance_shaded_area / cos(rad(g))) * tan(rad(sun.elevation)),
         0,
         config.window_height,
@@ -229,12 +254,12 @@ def vertical_percentage(config: CoverConfig, sun: SunSnapshot) -> float:
     position = vertical_blind_height(config, sun)
     if config.overhang is not None and sunlit_top(config, sun) <= position:
         return 100
-    return round(position / config.window_height * 100)
+    return round(position / _required(config.window_height, "window_height") * 100)
 
 
 def awning_extension(config: CoverConfig, sun: SunSnapshot) -> float:
     """Return the required awning extension length (m), clipped to the awning."""
-    awn_angle = 90 - config.awning_angle
+    awn_angle = 90 - _required(config.awning_angle, "awning_angle")
     a_angle = 90 - sun.elevation
     c_angle = 180 - awn_angle - a_angle
     vertical_position = vertical_blind_height(config, sun)
@@ -244,16 +269,22 @@ def awning_extension(config: CoverConfig, sun: SunSnapshot) -> float:
     # round(inf) raised OverflowError in the update loop. Full extension is
     # the physical answer: rays are parallel to the awning plane.
     if abs(denominator) < 1e-9:
-        return float(config.awning_length)
+        return float(_required(config.awning_length, "awning_length"))
     extension = (
-        (config.window_height - vertical_position) * sin(rad(a_angle))
+        (_required(config.window_height, "window_height") - vertical_position)
+        * sin(rad(a_angle))
     ) / denominator
-    return float(np.clip(extension, 0, config.awning_length))
+    # np.clip semantics: no awning_length means no upper bound.
+    return float(clip(extension, 0, config.awning_length))
 
 
 def awning_percentage(config: CoverConfig, sun: SunSnapshot) -> float:
     """Awning position as % of awning length (0-100 after extension clip)."""
-    return round(awning_extension(config, sun) / config.awning_length * 100)
+    return round(
+        awning_extension(config, sun)
+        / _required(config.awning_length, "awning_length")
+        * 100
+    )
 
 
 def tilt_beta(config: CoverConfig, sun: SunSnapshot) -> float:
@@ -264,13 +295,15 @@ def tilt_beta(config: CoverConfig, sun: SunSnapshot) -> float:
 def tilt_slat_angle(config: CoverConfig, sun: SunSnapshot) -> float:
     """Venetian slat angle (degrees), per MDPI 1996-1073/13/7/1731."""
     beta = tilt_beta(config, sun)
-    ratio = config.slat_distance / config.slat_depth
+    ratio = _required(config.slat_distance, "slat_distance") / _required(
+        config.slat_depth, "slat_depth"
+    )
     # With slat_distance > slat_depth (the UI allows it) the discriminant
     # can go negative at low profile angles; sqrt would produce NaN and
     # round(NaN) kills the update loop. Clamp to 0: max-blocking angle.
-    discriminant = np.clip((tan(beta) ** 2) - (ratio**2) + 1, 0, None)
-    slat = 2 * np.arctan((tan(beta) + np.sqrt(discriminant)) / (1 + ratio))
-    return np.rad2deg(slat)
+    discriminant = clip((tan(beta) ** 2) - (ratio**2) + 1, 0, None)
+    slat = 2 * atan((tan(beta) + sqrt(discriminant)) / (1 + ratio))
+    return degrees(slat)
 
 
 def tilt_percentage(config: CoverConfig, sun: SunSnapshot) -> float:

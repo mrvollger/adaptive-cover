@@ -2,6 +2,5 @@
 # environment is pixi.toml (`pixi run test`). Keep the Home Assistant minimum
 # in sync with hacs.json and the pytest-homeassistant-custom-component pin.
 homeassistant>=2026.8.0
-pandas>=2.2
-# Imported by coordinator.py but not declared in manifest.json (removed in P2).
-pytz
+# manifest.json requirements (astral also ships with Home Assistant).
+astral

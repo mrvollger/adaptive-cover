@@ -431,8 +431,8 @@ MUTATIONS: list[Mutation] = [
         EVAL,
         "evaluate",
         "privacy-first ordering dropped for climate mode",
-        "    if geometry.privacy_active(config, ctx):",
-        "    if climate is None and geometry.privacy_active(config, ctx):",
+        "    if geometry.privacy_active(config, ctx) and privacy is not None:",
+        "    if climate is None and geometry.privacy_active(config, ctx) and privacy is not None:",
     ),
     Mutation(
         "M31",
@@ -440,8 +440,8 @@ MUTATIONS: list[Mutation] = [
         EVAL,
         "_apply_limits",
         "max-clamp comparison flip",
-        "    if apply_max and result > limits.max_position:",
-        "    if apply_max and result < limits.max_position:",
+        "    if max_position is not None and apply_max and result > max_position:",
+        "    if max_position is not None and apply_max and result < max_position:",
     ),
     Mutation(
         "M32",
@@ -512,8 +512,10 @@ MUTATIONS: list[Mutation] = [
         COORD,
         "interpolate_states",
         "np.interp xp/fp argument swap",
-        "            state = np.interp(state, normal_range, new_range)",
-        "            state = np.interp(state, new_range, normal_range)",
+        "            state = interp(state, normal_range, new_range)",
+        "            state = interp(state, new_range, normal_range)",
+        deviation="P2 replaced np.interp with engine.numeric.interp (same "
+        "semantics); the swap is anchored on the helper call.",
     ),
     Mutation(
         "M37",
@@ -521,14 +523,16 @@ MUTATIONS: list[Mutation] = [
         COORD,
         "interpolate_states",
         "interpolation endpoint snap-to-0/100 removed",
-        "            state = np.interp(state, normal_range, new_range)\n"
+        "            state = interp(state, normal_range, new_range)\n"
         "            if state == new_range[0]:\n"
         "                state = 0\n"
         "            if state == new_range[-1]:\n"
         "                state = 100\n"
         "        return state",
-        "            state = np.interp(state, normal_range, new_range)\n"
+        "            state = interp(state, normal_range, new_range)\n"
         "        return state",
+        deviation="P2 replaced np.interp with engine.numeric.interp (same "
+        "semantics); re-anchored on the helper call.",
     ),
     Mutation(
         "M38",

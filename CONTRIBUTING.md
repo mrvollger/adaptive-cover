@@ -30,7 +30,7 @@ The Python environment is managed with [pixi](https://pixi.sh). `pixi.toml` and 
 pixi install          # create the environment from pixi.lock
 pixi run test         # the full pytest suite, in parallel (pytest -n auto)
 pixi run lint         # ruff lint and format checks
-pixi run typecheck    # pyright
+pixi run typecheck    # pyright (basic with a baseline; strict and zero errors on engine/)
 pixi run mutations    # the mutation kill matrix (tests/mutation_set/)
 ```
 
@@ -61,7 +61,8 @@ Copy `custom_components/adaptive_cover/` into `/config/custom_components/` on a 
 ## Project rules
 
 - **The engine is pure.** `custom_components/adaptive_cover/engine/` has no `homeassistant` imports, no wall-clock reads and no entity access. `tests/engine/test_purity.py` enforces this. The engine is frozen during the refactor: the solar and glare algorithm does not change.
-- **Time is an input.** Never call `datetime.now()` or `utcnow()` in logic. Pass the time in.
+- **Time is an input.** Never call `datetime.now()` or `utcnow()` in logic. Pass the time in. Outside `runtime/clock.py` nothing reads the wall clock: code uses the coordinator's `clock`, and `tests/engine/test_purity.py` fails on any other `now()`, `utcnow()`, `today()` or `time.time()`. Tests freeze time with `freezer`, or inject a clock through `coordinator.default_clock`.
+- **No new dependencies.** The manifest requires only `astral`. `tests/engine/test_purity.py` fails on pandas, numpy or pytz, and on any third-party import that Home Assistant does not provide (ADR 0005).
 - **Tests use public surfaces.** New tests must not read `hass.data`, coordinator attributes or private attributes. Use entity states, registries, services and the SimHouse helpers (`house.eid(...)`, `house.sensor_attr(...)`).
 - **Frozen behavior stays frozen.** The refactor contract ([ADR 0004](docs/adr/0004-refactor-contract-v2.md)) lists what must not change without a ledger entry: outbound cover calls, manual-override semantics, unique_ids and entity_ids, Position attributes, and service names and response schemas.
 - **Commits explain why.** Write the reason in the commit message, not only the change. Use a feature branch for any non-trivial change.

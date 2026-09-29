@@ -229,8 +229,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await hass.config_entries.async_forward_entry_setups(entry, HUB_PLATFORMS)
         return True
 
-    # Prime the timezone cache off-loop: pytz reads a zoneinfo file on
-    # first construction, and schedule math needs it inside the loop.
+    # Prime the timezone cache off-loop: the first construction reads a
+    # zoneinfo file, and schedule math needs it inside the loop.
     from .coordinator import cached_timezone
 
     await hass.async_add_executor_job(cached_timezone, hass.config.time_zone)

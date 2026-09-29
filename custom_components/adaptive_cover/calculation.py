@@ -10,8 +10,6 @@ from abc import ABC
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
-import numpy as np
-import pandas as pd
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import HomeAssistant
 from homeassistant.util.unit_conversion import TemperatureConverter
@@ -19,6 +17,7 @@ from homeassistant.util.unit_conversion import TemperatureConverter
 from .config_context_adapter import ConfigContextAdapter
 from .engine import evaluate as engine_evaluate
 from .engine import geometry as engine_geometry
+from .engine.numeric import clip
 from .engine.models import (
     BlindSpot,
     ClimateInputs,
@@ -31,12 +30,13 @@ from .engine.models import (
     TimeContext,
 )
 from .helpers import get_domain, get_safe_attr, get_safe_state
+from .runtime.clock import SYSTEM_CLOCK, Clock
 from .sun import SunData
 
 # Seam: how every cover adapter builds its solar day, called as
-# ``sun_data_factory(timezone, hass)``. Production always uses the real
-# SunData; tests assign a fake factory here instead of patching the import
-# (see tests/characterization/golden_lib.patch_sun_data).
+# ``sun_data_factory(timezone, hass, clock=clock)``. Production always uses
+# the real SunData; tests assign a fake factory here instead of patching the
+# import (see tests/characterization/golden_lib.patch_sun_data).
 sun_data_factory = SunData
 
 
@@ -92,8 +92,8 @@ def build_day_forecast(cover, climate_data=None) -> list[dict]:
 
     Returns change-points only: [{time, position, intent}, ...]. Climate
     readings are a snapshot of right now - the forecast assumes current
-    temperature/presence/weather persist. Blocking (pandas/astral); call
-    from an executor.
+    temperature/presence/weather persist. Blocking (astral); call from an
+    executor.
     """
     config = cover.engine_config()
     sun_data = cover.sun_data
@@ -108,7 +108,7 @@ def build_day_forecast(cover, climate_data=None) -> list[dict]:
     entries: list[dict] = []
     last_key = None
     for i, ts in enumerate(times):
-        now_utc = ts.tz_convert("UTC").tz_localize(None).to_pydatetime()
+        now_utc = ts.astimezone(UTC).replace(tzinfo=None)
         ctx = TimeContext(
             now_utc=now_utc,
             sunrise_utc=sunrise,
@@ -167,10 +167,13 @@ class AdaptiveGeneralCover(ABC):
     overhang: "Overhang | None" = field(init=False, default=None)
     glare: "GlareModel | None" = field(init=False, default=None)
     privacy: "PrivacyConfig | None" = field(init=False, default=None)
+    # Where "now" comes from (runtime/clock.py): the coordinator passes its
+    # own. Keyword-only so the positional constructors stay unchanged.
+    clock: Clock = field(default=SYSTEM_CLOCK, kw_only=True)
 
     def __post_init__(self):
         """Add solar data to dataset."""
-        self.sun_data = sun_data_factory(self.timezone, self.hass)
+        self.sun_data = sun_data_factory(self.timezone, self.hass, clock=self.clock)
 
     # --- engine input builders ---
 
@@ -219,7 +222,7 @@ class AdaptiveGeneralCover(ABC):
         """Time inputs (naive UTC, matching historical arithmetic)."""
         sunset_utc = self.sun_data.sunset().replace(tzinfo=None)
         return TimeContext(
-            now_utc=datetime.now(UTC).replace(tzinfo=None),
+            now_utc=self.clock.utcnow().replace(tzinfo=None),
             sunrise_utc=self.sun_data.sunrise().replace(tzinfo=None),
             sunset_utc=sunset_utc,
             sun_at_dusk_lead=self.sun_at_dusk_lead(sunset_utc),
@@ -249,36 +252,32 @@ class AdaptiveGeneralCover(ABC):
     # --- solar day table ---
 
     def solar_times(self):
-        """Determine start/end times."""
-        df_today = pd.DataFrame(
-            {
-                "azimuth": self.sun_data.solar_azimuth,
-                "elevation": self.sun_data.solar_elevation,
-            }
-        )
-        solpos = df_today.set_index(self.sun_data.times)
+        """Determine start/end times.
 
-        alpha = solpos["azimuth"]
+        The first and last table points with the sun inside the azimuth
+        window and the elevation band, or (None, None).
+        """
+        azi_min_abs = self.azi_min_abs
+        span = (self.azi_max_abs - azi_min_abs) % 360
         # Use the same elevation predicate the engine enforces (min/max
         # elevation band) so the start/end sun-time sensors agree with
         # when control actually engages.
-        elevation_ok = solpos["elevation"].map(
-            lambda elev: engine_geometry.valid_elevation(
+        in_window = [
+            ts
+            for ts, alpha, elev in zip(
+                self.sun_data.times,
+                self.sun_data.solar_azimuth,
+                self.sun_data.solar_elevation,
+                strict=True,
+            )
+            if (alpha - azi_min_abs) % 360 <= span
+            and engine_geometry.valid_elevation(
                 elev, self.min_elevation, self.max_elevation
             )
-        )
-        frame = (
-            (alpha - self.azi_min_abs) % 360
-            <= (self.azi_max_abs - self.azi_min_abs) % 360
-        ) & elevation_ok
-
-        if solpos[frame].empty:
+        ]
+        if not in_window:
             return None, None
-        else:
-            return (
-                solpos[frame].index[0].to_pydatetime(),
-                solpos[frame].index[-1].to_pydatetime(),
-            )
+        return in_window[0], in_window[-1]
 
     # --- delegated geometry properties (public API preserved) ---
 
@@ -385,7 +384,7 @@ class AdaptiveGeneralCover(ABC):
         config = self.engine_config()
         sun = SunSnapshot(azimuth=azi, elevation=elev)
         if engine_geometry.sun_in_fov(config, sun) and elev > 0:
-            result = np.clip(engine_geometry.calculated_percentage(config, sun), 0, 100)
+            result = clip(engine_geometry.calculated_percentage(config, sun), 0, 100)
             if self.apply_max_position and result > self.max_pos:
                 return self.max_pos
             if self.apply_min_position and result < self.min_pos:

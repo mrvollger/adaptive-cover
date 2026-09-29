@@ -44,7 +44,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from unittest.mock import patch
 
-import pandas as pd
 from homeassistant.core import State
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
@@ -295,7 +294,7 @@ class ReplayHouse(SimHouse):
         self.now = when
         self.freezer.move_to(when)
         if self.now.date() != self.sun_data.date.date():
-            self.sun_data.regenerate_for(pd.Timestamp(self.now.date()))
+            self.sun_data.regenerate_for(self.now.date())
         async_fire_time_changed(self.hass, when)
         await self.hass.async_block_till_done()
         for shade in self.shades.values():

@@ -254,14 +254,16 @@
   "file": "custom_components/adaptive_cover/coordinator.py",
   "function": "interpolate_states",
   "description": "np.interp xp/fp argument swap",
-  "patch": "M36_interp_xp_fp_swap.patch"
+  "patch": "M36_interp_xp_fp_swap.patch",
+  "deviation": "P2 replaced np.interp with engine.numeric.interp (same semantics); the swap is anchored on the helper call."
  },
  {
   "id": "M37",
   "file": "custom_components/adaptive_cover/coordinator.py",
   "function": "interpolate_states",
   "description": "interpolation endpoint snap-to-0/100 removed",
-  "patch": "M37_interp_endpoint_snap_removed.patch"
+  "patch": "M37_interp_endpoint_snap_removed.patch",
+  "deviation": "P2 replaced np.interp with engine.numeric.interp (same semantics); re-anchored on the helper call."
  },
  {
   "id": "M38",
