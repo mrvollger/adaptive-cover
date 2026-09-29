@@ -34,6 +34,7 @@ from .runtime.events import RefreshEvent, RefreshQueue
 from .runtime.explainer import Explainer
 from .runtime.gates import CoverFacts, GatePolicy
 from .runtime.manual_detector import ManualDetector
+from .runtime.mode import ModeControl
 from .runtime.override_tracker import OverrideTracker
 from .runtime.schedule import Schedule
 from .runtime.shade_config import ControlState, ControlToggle, ShadeConfig
@@ -186,6 +187,10 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self.logger,
         )
         self.detector = ManualDetector(self.manager, self.commands, self.logger)
+        # The window's Mode (auto / hold / off): the Mode select, its
+        # Toggle Control alias, the Return to auto button and the hold
+        # service change it here.
+        self.modes = ModeControl(self, self.logger)
         self._sun_table = None
         self._missing_warned: set[str] = set()
         self.ignore_intermediate_states = self.config_entry.options.get(
@@ -431,11 +436,10 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 CONF_SUNSET_POS, cover_data.sunset_pos
             ),
             override_expiries=[
-                override_time + self.manager.reset_duration
-                for override_time in self.manager.manual_control_time.values()
-            ]
-            if self.manager.binary_cover_manual
-            else [],
+                expiry
+                for cover in list(self.manager.manual_control_time)
+                if (expiry := self.manager.expires_at(cover)) is not None
+            ],
         )
 
     async def _async_update_data(self) -> AdaptiveCoverData:
@@ -517,9 +521,10 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             and _local_date != self._sun_start_time.date()
         ):
             # New solar day: the natural boundary where deliberate
-            # (reset=False) overrides end and auto control resumes.
+            # (reset=False) overrides end and auto control resumes. A
+            # requested hold keeps its own end.
             self.logger.debug("New solar day: clearing manual overrides")
-            self.manager.reset_all()
+            self.manager.reset_detected()
         if solar_day_stale:
             self.logger.debug("Calculating solar times")
             loop = asyncio.get_event_loop()
@@ -636,7 +641,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         )
 
     async def async_handle_state_change(self, state: int):
-        """Handle state change from tracked entities."""
+        """Handle state change from tracked entities (Mode off: no moves)."""
         if self.control_toggle:
             for cover in self.entities:
                 await self.async_handle_call_service(cover, state)
@@ -896,7 +901,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         """Append to the per-cover move log and fire a logbook event.
 
         Answers "what moved this cover and why": source is adaptive /
-        startup / end_time / control_enabled / all_covers / manual, with
+        startup / end_time / control_enabled / all_covers / hold / manual, with
         the driving intent as reason where known.
         """
         entry = self.explainer.record(
@@ -960,10 +965,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # Only an EXPLICIT off clears overrides. During startup/reload the
         # toggle is still None (switches restore after the first refresh),
         # and treating that as off wiped overrides on every options edit.
+        # A requested hold (Mode hold, the hold service) is not a detected
+        # move, so it survives detection being off.
         if self.controls.clears_overrides:
             self.logger.debug("Manual toggle is off, clearing all manual overrides")
-            for entity in self.manager.manual_controlled:
-                self.manager.reset(entity)
+            self.manager.reset_detected()
 
     def get_blind_data(self, options=None):
         """Build the cover adapter for this window's type.
@@ -1081,7 +1087,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     temp_toggle = ControlToggle[bool | None]("outside_temp")
     """Let switch toggle between inside or outside temperature."""
     control_toggle = ControlToggle[bool | None]("control")
-    """Toggle automation."""
+    """Automatic control: False is Mode off (the Mode select sets it)."""
     manual_toggle = ControlToggle[bool | None]("manual")
     """Toggle manual-override detection."""
     lux_toggle = ControlToggle[bool | None]("lux")

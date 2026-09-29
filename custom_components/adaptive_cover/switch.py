@@ -1,4 +1,20 @@
-"""Switch platform for the Adaptive Cover integration."""
+"""Switch platform for the Adaptive Cover integration.
+
+P5 flip: the six per-window switches are hidden aliases (removed in P8).
+They stay registered and enabled for one release so existing automations
+keep working:
+
+- **Toggle Control** writes through to the window's Mode (on: automatic
+  control on, off: Mode off) and mirrors it. It no longer restores
+  itself: the Mode select restores the control state, and reads this
+  switch's last state on its first boot after the flip.
+- **Manual Override, Climate Mode, Outside Temperature, Lux,
+  Irradiance** keep restoring and setting the window's ``ControlState``
+  (detection, climate, the outside temperature / lux / irradiance
+  use-flags); migration 1.4 recorded their states as the house settings
+  ``manual_detection``, ``climate_on``, ``use_outside_temp``, ``use_lux``
+  and ``use_irradiance``.
+"""
 
 from __future__ import annotations
 
@@ -41,7 +57,7 @@ async def async_setup_entry(
         "manual_toggle",
         coordinator,
     )
-    control_switch = AdaptiveCoverSwitch(
+    control_switch = ControlAliasSwitch(
         config_entry,
         config_entry.entry_id,
         "Toggle Control",
@@ -142,10 +158,6 @@ class AdaptiveCoverSwitch(
         self.coordinator.logger.debug("Turning on")
         self._attr_is_on = True
         setattr(self.coordinator, self._key, True)
-        if self._key == "control_toggle" and kwargs.get("added") is not True:
-            await self.coordinator.async_force_apply(
-                source="control_enabled", reason="adaptive control switched on"
-            )
         await self.coordinator.async_refresh()
         self.schedule_update_ha_state()
 
@@ -154,9 +166,6 @@ class AdaptiveCoverSwitch(
         self.coordinator.logger.debug("Turning off")
         self._attr_is_on = False
         setattr(self.coordinator, self._key, False)
-        if self._key == "control_toggle" and kwargs.get("added") is not True:
-            for entity in self.coordinator.manager.manual_controlled:
-                self.coordinator.manager.reset(entity)
         await self.coordinator.async_refresh()
         self.schedule_update_ha_state()
 
@@ -170,3 +179,33 @@ class AdaptiveCoverSwitch(
             await self.async_turn_on(added=True)
         else:
             await self.async_turn_off(added=True)
+
+
+class ControlAliasSwitch(AdaptiveCoverSwitch):
+    """Toggle Control: a hidden alias of the window's Mode (P5 flip).
+
+    On is automatic control (Mode auto or hold), off is Mode off. Turning
+    it on works as it always did: control comes back on and the target
+    position goes out now to every cover that is not held. Turning it off
+    is Mode off (every hold ends). Its state follows the Mode select; it
+    does not restore itself.
+    """
+
+    @property
+    def is_on(self) -> bool | None:
+        """Automatic control (unknown until the Mode select restores)."""
+        return self.coordinator.control_toggle
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Automatic control on (Mode auto; holds are kept)."""
+        await self.coordinator.modes.enable()
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Mode off."""
+        await self.coordinator.modes.off()
+        self.async_write_ha_state()
+
+    async def async_added_to_hass(self) -> None:
+        """Follow the coordinator; the Mode select restores the state."""
+        await super(AdaptiveCoverSwitch, self).async_added_to_hass()

@@ -27,8 +27,10 @@ import {
   dominantClimateMethod,
   groupMode,
   hubCanHold,
+  msUntilTonight,
   planClimate,
   planCovers,
+  planHold,
   planHouseCovers,
   planHouseMode,
   planReturnAll,
@@ -65,6 +67,14 @@ import type { AdaptiveCoverHouseCardConfig } from './types';
 type Filter = 'all' | 'sun' | 'hold' | 'off';
 const FILTERS: Filter[] = ['all', 'sun', 'hold', 'off'];
 const MODES: WindowMode[] = ['auto', 'hold', 'off'];
+const HOUR_MS = 60 * 60 * 1000;
+/** The detail sheet's Hold chips: 1 h / 2 h / 4 h / until tonight. */
+const HOLD_CHIPS: Array<{ key: string; ms: (nowMs: number) => number }> = [
+  { key: '1h', ms: () => HOUR_MS },
+  { key: '2h', ms: () => 2 * HOUR_MS },
+  { key: '4h', ms: () => 4 * HOUR_MS },
+  { key: 'tonight', ms: msUntilTonight },
+];
 const NARROW_MAX_PX = 600;
 const UPCOMING_LIMIT = 5;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -840,7 +850,22 @@ export class AdaptiveCoverHouseCard extends LitElement {
             (m) => this._setWindows([w], m),
             'lg',
           )}
-          ${holdEnabled ? nothing : html`<p class="hint muted">${t('house.sheet.hold_hint')}</p>`}
+          ${holdEnabled
+            ? html`<div class="hold-chips" role="group" aria-label=${t('house.sheet.hold_for')}>
+                <span class="muted">${t('house.sheet.hold_for')}</span>
+                ${HOLD_CHIPS.map(
+                  (c) =>
+                    html`<button
+                      type="button"
+                      class="btn hold-chip"
+                      data-hold=${c.key}
+                      @click=${() => void this._run(planHold(this.hass, [w], c.ms(Date.now())))}
+                    >
+                      ${t(`house.sheet.hold_${c.key}`)}
+                    </button>`,
+                )}
+              </div>`
+            : html`<p class="hint muted">${t('house.sheet.hold_hint')}</p>`}
         </div>
         <div class="why">
           <span class="eyebrow">${t('house.why.title')}</span>
@@ -1498,6 +1523,17 @@ export class AdaptiveCoverHouseCard extends LitElement {
     .hint {
       margin: 0;
       font-size: 0.85rem;
+    }
+    .hold-chips {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    .hold-chips .btn {
+      min-height: 36px;
+      padding: 0 12px;
+      border-radius: 18px;
     }
     .why {
       display: flex;

@@ -213,7 +213,7 @@ async def test_live_house_lifts_into_house_floor_and_area_profiles(hass, cover_c
         for e in json.loads((SNAPSHOT / "config_entries.json").read_text())["entries"]
     }
 
-    assert hub.minor_version == 4
+    assert hub.minor_version == 5
     assert hub.options["house"] == HOUSE
     assert hub.options["temperature_unit"] == "°F"
     assert hub.options["floors"] == FLOORS
@@ -222,7 +222,7 @@ async def test_live_house_lifts_into_house_floor_and_area_profiles(hass, cover_c
     for title, entry_id in windows.items():
         entry = hass.config_entries.async_get_entry(entry_id)
         assert entry.state is ConfigEntryState.LOADED, title
-        assert entry.minor_version == 4, title
+        assert entry.minor_version == 5, title
         assert _overrides(hass, entry_id) == WINDOWS[title], title
         # the legacy keys are untouched: only "overrides" is new
         legacy = {k: v for k, v in entry.options.items() if k != "overrides"}
@@ -308,7 +308,7 @@ async def test_lift_is_idempotent(hass, cover_calls):
     assert await hass.config_entries.async_reload(hub.entry_id)
     await hass.async_block_till_done()
 
-    assert hub.minor_version == 4
+    assert hub.minor_version == 5
     assert dict(hub.options) == hub_options
     for entry_id, options in window_options.items():
         assert dict(hass.config_entries.async_get_entry(entry_id).options) == options
@@ -395,7 +395,7 @@ async def test_lift_reads_the_restored_switch_state(hass, cover_calls):
     assert await hass.config_entries.async_set_disabled_by(hub.entry_id, None)
     await hass.async_block_till_done()
 
-    assert hub.minor_version == 4
+    assert hub.minor_version == 5
     assert hub.options["house"]["use_outside_temp"] is True
     # (the indoor sensor lives on a floor; this window has no area)
     assert _overrides(hass, window.entry_id) == (
@@ -420,7 +420,7 @@ async def test_lift_does_not_reload_a_running_window(hass, cover_calls):
     assert await hass.config_entries.async_set_disabled_by(hub.entry_id, None)
     await hass.async_block_till_done()
 
-    assert hub.minor_version == 4
+    assert hub.minor_version == 5
     assert _overrides(hass, window.entry_id) == ({}, {})
     assert handle.teardowns == 0
     # The new provenance reached the Position sensor without a reload.
@@ -437,7 +437,7 @@ async def test_hub_created_at_1_4_is_not_lifted(hass, cover_calls):
     (hub,) = [
         e for e in hass.config_entries.async_entries(DOMAIN) if e.data.get("is_hub")
     ]
-    assert hub.minor_version == 4
+    assert hub.minor_version == 5
     assert "house" not in hub.options
     assert "overrides" not in window.options
     assert handle.attributes["provenance"] is None

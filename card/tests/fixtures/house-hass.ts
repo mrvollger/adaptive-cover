@@ -348,3 +348,46 @@ export function mixedHouse(fx: HouseFixture, nowIso = FIXTURE_NOW): HouseTestHas
   }
   return withStates(fx.hass, changes);
 }
+
+export const HUB_MODE_SELECT = 'select.adaptive_cover_all_cover_control_mode';
+
+/**
+ * The P5 flip projected onto `hass` (default: the fixture's): every window's
+ * Mode select offers auto / hold / off and shows the window's mode (a
+ * "Manual" select or a latched Manual override become off / hold, the hold
+ * keeping its `until`), the house select offers auto / hold / off / mixed,
+ * and the window switches are hidden aliases.
+ */
+export function p5House(fx: HouseFixture, hass: HouseTestHass = fx.hass): HouseTestHass {
+  const changes: Record<string, { state?: string; attributes?: Record<string, unknown> }> = {};
+  const modes = new Set<string>();
+  for (const e of WINDOW_ENTRIES) {
+    let modeId: string;
+    try {
+      modeId = fx.eid(e.title, 'mode');
+    } catch {
+      continue;
+    }
+    const override = hass.states[fx.eid(e.title, 'manualOverride')];
+    let mode = 'auto';
+    let until: unknown = null;
+    if (hass.states[modeId]?.state === 'Manual') mode = 'off';
+    else if (override?.state === 'on') {
+      mode = 'hold';
+      until = override.attributes?.until ?? null;
+    }
+    modes.add(mode);
+    changes[modeId] = { state: mode, attributes: { options: ['auto', 'hold', 'off'], until } };
+  }
+  changes[HUB_MODE_SELECT] = {
+    state: modes.size === 1 ? [...modes][0] : 'mixed',
+    attributes: { options: ['auto', 'hold', 'off', 'mixed'] },
+  };
+  const out = withStates(hass, changes);
+  const entities: Record<string, Record<string, unknown>> = {};
+  for (const [id, row] of Object.entries(out.entities)) {
+    const hidden = row.platform === 'adaptive_cover' && id.startsWith('switch.');
+    entities[id] = hidden ? { ...row, hidden: true } : row;
+  }
+  return { ...out, entities } as HouseTestHass;
+}

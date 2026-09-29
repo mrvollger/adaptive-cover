@@ -77,22 +77,12 @@ class AdaptiveCoverButton(
         self._attr_device_info = adaptive_cover_device_info(config_entry)
 
     async def async_press(self) -> None:
-        """Handle the button press.
+        """Handle the button press: the window's Mode becomes auto.
 
-        Each overridden cover is sent the adaptive position and its
-        override cleared at once: the press does not wait for the cover to
-        land. Its travel is ours (the coordinator's travel window), so the
-        landing is never read as a manual move.
+        A hold ends: each held cover is sent the adaptive position and its
+        override cleared at once (the press does not wait for the cover to
+        land; its travel is ours, so the landing is never read as a manual
+        move). A window that was off comes back on (runtime/mode.py).
         """
-        coordinator = self.coordinator
-        for entity in self._entities:
-            if coordinator.manager.is_cover_manual(entity):
-                _LOGGER.debug("Resetting manual override for: %s", entity)
-                await coordinator.async_set_position(entity, coordinator.state)
-                coordinator.manager.reset(entity)
-            else:
-                _LOGGER.debug(
-                    "Resetting manual override for %s is not needed since it is already auto-controlled",
-                    entity,
-                )
-        await self.coordinator.async_refresh()
+        _LOGGER.debug("Return to auto: %s", self._entities)
+        await self.coordinator.modes.auto()

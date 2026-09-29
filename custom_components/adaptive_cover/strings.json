@@ -492,10 +492,21 @@
     },
     "select": {
       "house_mode": {
-        "name": "Cover control mode"
+        "name": "Cover control mode",
+        "state": {
+          "auto": "Auto",
+          "hold": "Hold",
+          "off": "Off",
+          "mixed": "Mixed"
+        }
       },
       "mode": {
-        "name": "Mode"
+        "name": "Mode",
+        "state": {
+          "auto": "Auto",
+          "hold": "Hold",
+          "off": "Off"
+        }
       }
     },
     "sensor": {

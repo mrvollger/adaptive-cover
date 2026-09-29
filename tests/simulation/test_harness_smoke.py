@@ -97,15 +97,16 @@ async def test_toggle_flips_real_switch_entity(hass, freezer):
 
 
 async def test_select_option_drives_mode(hass, freezer):
-    """select_option() flips the underlying control switch."""
+    """select_option() sets the Mode; the control switch alias follows it."""
     house = await SimHouse.create(hass, freezer, date="2026-03-20")
     await house.advance_to("10:00")
 
-    await house.select_option("mode_select", "Manual")
+    await house.select_option("mode_select", "off")
     assert house.entity("switch", "toggle_control").state == "off"
-    assert house.entity("select", "mode_select").state == "Manual"
-    await house.select_option("mode_select", "Sun tracking")
+    assert house.entity("select", "mode_select").state == "off"
+    await house.select_option("mode_select", "auto")
     assert house.entity("switch", "toggle_control").state == "on"
+    assert house.entity("select", "mode_select").state == "auto"
     await house.teardown()
 
 

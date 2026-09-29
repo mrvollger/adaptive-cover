@@ -1,4 +1,7 @@
-"""Live tunables: number entities, the mode select, and gate visibility."""
+"""Live tunables: number entities and gate visibility.
+
+The Mode select moved to tests/test_mode_select.py (P5 flip).
+"""
 
 from __future__ import annotations
 
@@ -203,78 +206,6 @@ class TestNumberEntities:
         )
         await hass.async_block_till_done()
         assert entry.options[CONF_TEMP_LOW] == new_low
-
-
-class TestModeSelect:
-    async def test_options_without_climate(
-        self, hass, cover_calls_stub, mock_sun_entity
-    ):
-        entry = _entry(hass)
-        await _setup(hass, entry)
-        eid = _entity_id(hass, "select", f"{entry.entry_id}_mode_select")
-        state = hass.states.get(eid)
-        assert state.attributes["options"] == ["Manual", "Sun tracking"]
-        assert state.state == "Sun tracking"  # control restores on
-
-    async def test_options_with_climate(self, hass, cover_calls_stub, mock_sun_entity):
-        entry = _entry(hass, climate=True)
-        await _setup(hass, entry)
-        eid = _entity_id(hass, "select", f"{entry.entry_id}_mode_select")
-        state = hass.states.get(eid)
-        assert state.attributes["options"] == [
-            "Manual",
-            "Sun tracking",
-            "Sun + climate",
-        ]
-        assert state.state == "Sun + climate"  # climate switch restores on
-
-    async def test_manual_mode_turns_control_off(
-        self, hass, cover_calls_stub, mock_sun_entity
-    ):
-        entry = _entry(hass)
-        await _setup(hass, entry)
-        eid = _entity_id(hass, "select", f"{entry.entry_id}_mode_select")
-
-        await hass.services.async_call(
-            "select",
-            "select_option",
-            {"entity_id": eid, "option": "Manual"},
-            blocking=True,
-        )
-        await hass.async_block_till_done()
-
-        control_eid = _entity_id(hass, "switch", f"{entry.entry_id}_Toggle Control")
-        assert hass.states.get(control_eid).state == "off"
-        assert hass.states.get(eid).state == "Manual"
-
-        # Control off: a sun change commands nothing.
-        calls = async_mock_service(hass, "cover", "set_cover_position")
-        hass.states.async_set(
-            "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
-        )
-        await hass.async_block_till_done()
-        assert calls == []
-
-    async def test_sun_tracking_mode_disables_climate(
-        self, hass, cover_calls_stub, mock_sun_entity
-    ):
-        entry = _entry(hass, climate=True)
-        await _setup(hass, entry)
-        eid = _entity_id(hass, "select", f"{entry.entry_id}_mode_select")
-
-        await hass.services.async_call(
-            "select",
-            "select_option",
-            {"entity_id": eid, "option": "Sun tracking"},
-            blocking=True,
-        )
-        await hass.async_block_till_done()
-
-        control_eid = _entity_id(hass, "switch", f"{entry.entry_id}_Toggle Control")
-        climate_eid = _entity_id(hass, "switch", f"{entry.entry_id}_Climate Mode")
-        assert hass.states.get(control_eid).state == "on"
-        assert hass.states.get(climate_eid).state == "off"
-        assert hass.states.get(eid).state == "Sun tracking"
 
 
 class TestGateVisibility:

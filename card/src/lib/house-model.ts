@@ -352,8 +352,12 @@ export function discoverHouse(
   const classified: Classified[] = [];
   for (const row of platformRows(h, regRows)) {
     const reg = regIdx?.get(row.entity_id);
-    if (row.hidden || row.disabled_by || reg?.hidden_by || reg?.disabled_by) continue;
+    if (row.disabled_by || reg?.disabled_by) continue;
     const hit = classify(row, reg);
+    // Hidden rows are left out, except the Climate mode switch: a hidden
+    // alias since the P5 flip that the house Climate control still drives
+    // until the house has a climate switch of its own.
+    if ((row.hidden || reg?.hidden_by) && hit?.window !== 'climateSwitch') continue;
     if (hit) classified.push(hit);
     else if (!nonEmpty(row.translation_key) && !reg && domainOf(row.entity_id) !== 'number') {
       needsRegistry = true;

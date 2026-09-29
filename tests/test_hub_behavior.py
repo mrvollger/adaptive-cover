@@ -218,13 +218,21 @@ async def test_reset_all_button(hass, mock_sun_entity):
         assert _manual_binary(hass, entry).state == "off"
 
 
-async def test_house_mode_mixed_and_adaptive(hass, mock_sun_entity):
-    """One control off shows Mixed; Adaptive skips the overridden cover."""
+async def test_house_mode_mixed_and_auto(hass, mock_sun_entity):
+    """Windows in different Modes show Mixed; Auto sets every window to auto.
+
+    Entry 1 goes off through its Toggle Control alias (a hidden switch that
+    writes through to the Mode), entry 2 is on hold after a remote move.
+    The house Auto turns entry 1 back on and ends entry 2's hold: both
+    covers are commanded to their targets (P5 flip: the house select sets
+    each window's Mode directly).
+    """
     e1, e2 = await _setup_two_entries(hass)
 
     # Latch a manual override on entry 2's cover via a real remote move.
     await _latch_override_by_remote_move(hass, "cover.b", 70)
     assert _manual_binary(hass, e2).state == "on"
+    assert WindowHandle(hass, "cover.b").mode == "hold"
 
     # Turn entry 1's Toggle Control off through the real switch service.
     switch_id = _entry_eid(hass, "switch", e1, "Toggle Control")
@@ -233,27 +241,106 @@ async def test_house_mode_mixed_and_adaptive(hass, mock_sun_entity):
     )
     await hass.async_block_till_done()
     assert hass.states.get(switch_id).state == "off"
+    assert WindowHandle(hass, "cover.a").mode == "off"
 
     select_id = _hub_eid(hass, "select", "house_mode")
-    assert (await _poll(hass, select_id)).state == "Mixed"
+    assert (await _poll(hass, select_id)).state == "mixed"
 
     calls = async_mock_service(hass, "cover", "set_cover_position")
     await hass.services.async_call(
         "select",
         "select_option",
-        {"entity_id": select_id, "option": "Adaptive"},
+        {"entity_id": select_id, "option": "auto"},
         blocking=True,
     )
     await hass.async_block_till_done()
 
     assert hass.states.get(switch_id).state == "on"
-    assert (await _poll(hass, select_id)).state == "Adaptive"
+    assert (await _poll(hass, select_id)).state == "auto"
     targeted = [call.data["entity_id"] for call in calls]
-    assert "cover.a" in targeted, "resumed cover must be re-commanded"
-    assert "cover.b" not in targeted, (
-        "Adaptive must respect an existing manual override"
+    assert "cover.a" in targeted, "the window that was off must be re-commanded"
+    assert "cover.b" in targeted, "Auto must end the hold and re-command"
+    assert _manual_binary(hass, e2).state == "off"
+    for cover in ("cover.a", "cover.b"):
+        assert WindowHandle(hass, cover).mode == "auto"
+
+
+async def test_house_mode_hold_and_off(hass, mock_sun_entity):
+    """The house Hold holds every window where it is; Off turns them all off.
+
+    The display-only Mixed does nothing when picked.
+    """
+    await _setup_two_entries(hass)
+    select_id = _hub_eid(hass, "select", "house_mode")
+    assert (await _poll(hass, select_id)).attributes["options"] == [
+        "auto",
+        "hold",
+        "off",
+        "mixed",
+    ]
+
+    calls = async_mock_service(hass, "cover", "set_cover_position")
+    await hass.services.async_call(
+        "select",
+        "select_option",
+        {"entity_id": select_id, "option": "hold"},
+        blocking=True,
     )
-    assert _manual_binary(hass, e2).state == "on"
+    await hass.async_block_till_done()
+    assert calls == [], "Hold must keep the covers where they are"
+    for cover in ("cover.a", "cover.b"):
+        window = WindowHandle(hass, cover)
+        assert window.mode == "hold"
+        assert window.manual_override
+        assert window.hold_until is not None
+    assert (await _poll(hass, select_id)).state == "hold"
+
+    await hass.services.async_call(
+        "select",
+        "select_option",
+        {"entity_id": select_id, "option": "mixed"},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+    assert (await _poll(hass, select_id)).state == "hold"
+
+    await hass.services.async_call(
+        "select",
+        "select_option",
+        {"entity_id": select_id, "option": "off"},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+    for cover in ("cover.a", "cover.b"):
+        window = WindowHandle(hass, cover)
+        assert window.mode == "off"
+        assert not window.manual_override, "Off must end every hold"
+    assert (await _poll(hass, select_id)).state == "off"
+
+
+async def test_hold_service_on_the_house_select_holds_every_window(
+    hass, mock_sun_entity
+):
+    """adaptive_cover.hold on the house select: every window, one call."""
+    await _setup_two_entries(hass)
+    select_id = _hub_eid(hass, "select", "house_mode")
+    calls = async_mock_service(hass, "cover", "set_cover_position")
+
+    await hass.services.async_call(
+        DOMAIN,
+        "hold",
+        {"entity_id": select_id, "duration": {"minutes": 90}, "position": 30},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    assert sorted((c.data["entity_id"], c.data["position"]) for c in calls) == [
+        ("cover.a", 30),
+        ("cover.b", 30),
+    ]
+    for cover in ("cover.a", "cover.b"):
+        assert WindowHandle(hass, cover).mode == "hold"
+    assert (await _poll(hass, select_id)).state == "hold"
 
 
 async def test_aggregate_state_rules(hass, mock_sun_entity):

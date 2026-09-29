@@ -5,10 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import '../src/adaptive-cover-house-card';
 import type { AdaptiveCoverHouseCardConfig } from '../src/types';
+import { holdDuration, msUntilTonight } from '../src/lib/house-actions';
 import {
   FIXTURE_NOW,
   houseFixture,
   mixedHouse,
+  p5House,
   withStates,
   type HouseFixture,
   type HouseTestHass,
@@ -362,7 +364,7 @@ describe('detail sheet', () => {
   it('explains a hold', async () => {
     const { sheet } = await openSheet(mixedHouse(fx), 'Master door');
     expect(text(sheet.querySelector('.why-text'))).toMatch(
-      /^Someone moved this shade, so it is on hold until 11:52\s?AM\. Auto takes over again after that\.$/,
+      /^On hold until 11:52\s?AM\. Auto takes over again after that\.$/,
     );
     expect(text(sheet.querySelector('.chip'))).toBe('Hold · 1h 12m');
   });
@@ -391,6 +393,38 @@ describe('detail sheet', () => {
         { entity_id: [fx.eid('Den west', 'mode')], option: 'Sun + climate' },
       ],
       ['button', 'press', { entity_id: [fx.eid('Den west', 'returnButton')] }],
+    ]);
+  });
+
+  it('P5: Hold chips hold this window for 1 h / 2 h / 4 h / until tonight', async () => {
+    const hass = p5House(fx);
+    const { el, sheet } = await openSheet(hass, 'Office north');
+    expect(sheet.querySelector('.hint')).toBeNull();
+    const chips = Array.from(sheet.querySelectorAll<HTMLElement>('.hold-chip'));
+    expect(chips.map((c) => text(c))).toEqual(['1 h', '2 h', '4 h', 'Until tonight']);
+    await click(el, sheet.querySelector<HTMLElement>('.hold-chip[data-hold="4h"]'));
+    await click(el, sheet.querySelector<HTMLElement>('.hold-chip[data-hold="tonight"]'));
+    const mode = fx.eid('Office north', 'mode');
+    const tonight = msUntilTonight(Date.now());
+    expect(hass.callService.mock.calls).toEqual([
+      [
+        'adaptive_cover',
+        'hold',
+        { entity_id: [mode], duration: { hours: 4, minutes: 0, seconds: 0 } },
+      ],
+      ['adaptive_cover', 'hold', { entity_id: [mode], duration: holdDuration(tonight) }],
+    ]);
+  });
+
+  it('P5: the window Mode Off and Auto are select_option off / auto', async () => {
+    const hass = p5House(fx, mixedHouse(fx));
+    const { el, sheet } = await openSheet(hass, 'Den west');
+    expect(segment(sheet, 'off').getAttribute('aria-pressed')).toBe('true');
+    await click(el, segment(sheet, 'auto'));
+    await click(el, segment(sheet, 'hold'));
+    expect(hass.callService.mock.calls).toEqual([
+      ['select', 'select_option', { entity_id: [fx.eid('Den west', 'mode')], option: 'auto' }],
+      ['adaptive_cover', 'hold', { entity_id: [fx.eid('Den west', 'mode')] }],
     ]);
   });
 

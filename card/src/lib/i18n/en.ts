@@ -434,8 +434,8 @@ export const en = {
     },
     why: {
       title: 'Why this position',
-      hold: 'Someone moved this shade, so it is on hold until {time}. Auto takes over again after that.',
-      hold_unknown: 'Someone moved this shade, so it is on hold. Pick Auto to return it now.',
+      hold: 'On hold until {time}. Auto takes over again after that.',
+      hold_unknown: 'On hold. Pick Auto to return it now.',
       off: 'Automatic control is off for this window. It moves only when someone moves it.',
       none: 'No decision recorded yet.',
       steps: 'Show the steps',
@@ -451,6 +451,11 @@ export const en = {
       target: 'Target {position}',
       hold_hint:
         'To hold this shade, move it with Open or Close. Auto takes over again after the manual-override time.',
+      hold_for: 'Hold for',
+      hold_1h: '1 h',
+      hold_2h: '2 h',
+      hold_4h: '4 h',
+      hold_tonight: 'Until tonight',
       setup: 'Window setup',
       setup_hint: 'Cover, direction, size. Set once.',
       faces: 'Faces {deg}° {dir}',

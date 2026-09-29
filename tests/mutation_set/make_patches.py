@@ -62,6 +62,7 @@ SCHEMA = "custom_components/adaptive_cover/settings/schema.py"
 CONFIG_FLOW = "custom_components/adaptive_cover/config_flow.py"
 SETTINGS_SHADOW = "custom_components/adaptive_cover/settings/shadow.py"
 SHADOW = "custom_components/adaptive_cover/shadow.py"
+MODE = "custom_components/adaptive_cover/runtime/mode.py"
 
 
 @dataclass
@@ -711,7 +712,7 @@ MUTATIONS: list[Mutation] = [
         "                service = SERVICE_SET_COVER_TILT_POSITION",
         "                service = SERVICE_SET_COVER_POSITION",
     ),
-    # ---- group J: layered settings (P5; M44, M47-M51 reserved by the plan) --
+    # ---- group J: layered settings (P5; M44, M49-M50 reserved by the plan) --
     Mutation(
         "M45",
         "area_floor_precedence_swapped",
@@ -730,6 +731,39 @@ MUTATIONS: list[Mutation] = [
         "            elif Level.WINDOW in self.allowed:\n"
         "                placed.overrides[win.key] = win.value\n",
         "            elif Level.WINDOW in self.allowed:\n                continue\n",
+    ),
+    # P5 flip, batch 1: Mode (auto / hold / off) and Hold.
+    Mutation(
+        "M47",
+        "gates_ignore_mode_off",
+        COORD,
+        "async_handle_state_change",
+        "gates ignore Mode off: the sun-tracking path moves a window whose Mode is off",
+        '        """Handle state change from tracked entities (Mode off: no moves)."""\n'
+        "        if self.control_toggle:\n",
+        '        """Handle state change from tracked entities (Mode off: no moves)."""\n'
+        "        if self.control_toggle is not None:\n",
+    ),
+    Mutation(
+        "M48",
+        "hold_ignores_its_duration",
+        MODE,
+        "ModeControl.hold",
+        "hold ignores its duration: every hold lasts the override duration",
+        "        length = duration if duration is not None else "
+        "window.manager.reset_duration\n",
+        "        length = window.manager.reset_duration\n",
+    ),
+    Mutation(
+        "M51",
+        "mode_restore_ignores_switch_fallback",
+        MODE,
+        "restored_mode",
+        "Mode restore ignores the legacy switch fallback: a window whose "
+        "Toggle Control was off comes back in auto on the first boot after the "
+        "flip",
+        '    if legacy_switch == "off":\n        return Restored(Mode.OFF)\n',
+        "    if False:\n        return Restored(Mode.OFF)\n",
     ),
     # P5 shadow release (v1.18.0): the diff repair and the switch capture.
     Mutation(
@@ -778,11 +812,14 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M55",
         "override_until_without_duration",
-        SHARED,
-        "override_until",
+        OVERRIDES,
+        "OverrideTracker.expires_at",
         "override_until reports the latch time, not latch time + override duration",
-        "        latched_at + manager.reset_duration\n",
-        "        latched_at\n",
+        "        return latched_at + self.reset_duration\n",
+        "        return latched_at\n",
+        deviation="P5 flip: override_until (entity_shared.py) reads "
+        "OverrideTracker.expires_at, which also knows a requested hold's end; "
+        "the latch-time-plus-duration rule moved there.",
     ),
     # ---- group I: settings surfaces (P3) --------------------------------
     Mutation(

@@ -15,9 +15,12 @@ from homeassistant.core import (
     SupportsResponse,
 )
 from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.event import (
     async_track_state_change_event,
 )
+from homeassistant.helpers.service import async_register_platform_entity_service
+from homeassistant.helpers.typing import VolDictType
 
 from .const import (
     CONF_END_ENTITY,
@@ -65,7 +68,14 @@ async def _async_bootstrap_hub(hass: HomeAssistant) -> None:
 
 SERVICE_GET_FORECAST = "get_forecast"
 SERVICE_CHANGE_SETTINGS = "change_settings"
+SERVICE_HOLD = "hold"
 GET_FORECAST_SCHEMA = vol.Schema({vol.Required("config_entry"): str})
+# adaptive_cover.hold: an entity service on the Mode selects (and the house
+# select), so it targets entities, areas and floors (P5 flip).
+HOLD_SCHEMA: VolDictType = {
+    vol.Optional("duration"): vol.All(cv.time_period, cv.positive_timedelta),
+    vol.Optional("position"): vol.All(vol.Coerce(int), vol.Range(min=0, max=100)),
+}
 
 
 def _window_coordinator(entry: ConfigEntry) -> AdaptiveDataUpdateCoordinator | None:
@@ -227,6 +237,17 @@ def _async_register_services(hass: HomeAssistant) -> None:
         supports_response=SupportsResponse.OPTIONAL,
     )
 
+    # hold(duration?, position?) on a window's Mode select (area and floor
+    # targets resolve to those), or on the house select (every window).
+    async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_HOLD,
+        entity_domain=Platform.SELECT,
+        schema=HOLD_SCHEMA,
+        func="async_hold",
+    )
+
 
 async def async_initialize_integration(
     hass: HomeAssistant,
@@ -252,6 +273,13 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     floor and area profiles in its options and writes each window's sparse
     ``overrides``, recording the states of the switches P5 drops (see
     shadow.py). Windows only get the version bump; their legacy keys stay.
+
+    1.4 -> 1.5 (P5 flip): the window's six switches become hidden aliases
+    (hidden_by integration, still enabled) of the Mode select and the
+    house toggles, unless the user already chose their visibility (see
+    entity_surface). The hub only gets the version bump. The Mode select
+    needs no migration: on its first boot it restores from the Toggle
+    Control switch's last state (select.py).
 
     A newer MINOR version (after a downgrade) loads as is. A newer MAJOR
     version is refused.
@@ -290,6 +318,14 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             async_migrate_hub_1_4(hass, entry)
         else:
             hass.config_entries.async_update_entry(entry, minor_version=4)
+    if entry.minor_version < 5:
+        updated = async_apply_surface_to_registry(hass, entry)
+        _LOGGER.debug(
+            "Migrated %s to 1.5: %s registry rows updated (switch aliases hidden)",
+            entry.title,
+            updated,
+        )
+        hass.config_entries.async_update_entry(entry, minor_version=5)
     return True
 
 

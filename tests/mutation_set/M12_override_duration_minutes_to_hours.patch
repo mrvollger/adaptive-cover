@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/runtime/override_tracker.py b/custom_components/adaptive_cover/runtime/override_tracker.py
 --- a/custom_components/adaptive_cover/runtime/override_tracker.py
 +++ b/custom_components/adaptive_cover/runtime/override_tracker.py
-@@ -57,7 +57,7 @@
+@@ -66,7 +66,7 @@
  
      def set_duration(self, duration: Mapping[str, float]) -> None:
          """Set the override duration (``timedelta`` keyword arguments)."""

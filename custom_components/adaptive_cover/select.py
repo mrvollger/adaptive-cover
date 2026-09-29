@@ -1,32 +1,46 @@
-"""Select platform: one legible mode control instead of a pile of toggles.
+"""Select platform: the window's Mode, ``auto`` / ``hold`` / ``off`` (P5 flip).
 
-Modes (persona-reviewed wording):
-- "Manual"         - automation off; the shades stay wherever they are
-- "Sun tracking"   - basic solar-geometry positioning
-- "Sun + climate"  - adds temperature/presence/weather logic
+- ``auto``: the window follows the sun (and climate, where the house or
+  the room has it on).
+- ``hold``: a manual override with an expiry. A detected manual move sets
+  it for the override duration; picking it holds the covers where they
+  are for that duration. The ``adaptive_cover.hold`` entity service holds
+  for a given duration, optionally after commanding a position, and can
+  target areas and floors.
+- ``off``: no moves and no manual-move detection.
 
-The select drives the existing Toggle Control / Climate Mode switches via
-their services, so the switches (kept for compatibility and existing
-automations) always stay in sync.
+The select is the source of truth for the window's control state: it
+restores its own state (a hold with its end, the ``until`` attribute). On
+its first boot after the flip it has none and falls back to the Toggle
+Control switch's last state (runtime/mode.py ``restored_mode``). The
+options are translation keys; ``strings.json`` names them.
+
+The hub's house select lives in hub.py and shares this platform.
 """
 
 from __future__ import annotations
+
+import datetime as dt
+from typing import Any
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import restore_state
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
-from .const import CONF_CLIMATE_MODE, DOMAIN
+from .const import DOMAIN
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info
 from .entity_surface import apply_surface, window_surface
+from .runtime.mode import MODE_OPTIONS, Mode, restored_mode
 
-MODE_MANUAL = "Manual"
-MODE_SUN = "Sun tracking"
-MODE_CLIMATE = "Sun + climate"
+ATTR_UNTIL = "until"
+LEGACY_CONTROL_SWITCH = "Toggle Control"
 
 
 async def async_setup_entry(
@@ -40,20 +54,34 @@ async def async_setup_entry(
     if is_hub_entry(config_entry):
         async_add_entities([HouseModeSelect(hass)])
         return
-    coordinator: AdaptiveDataUpdateCoordinator = hass.data[DOMAIN][
-        config_entry.entry_id
-    ]
+    coordinator: AdaptiveDataUpdateCoordinator = config_entry.runtime_data
     async_add_entities([AdaptiveCoverModeSelect(config_entry, coordinator)])
 
 
+def _parse_until(value: Any) -> dt.datetime | None:
+    """Parse a stored ``until`` attribute (ISO, local) to aware UTC."""
+    if not isinstance(value, str):
+        return None
+    parsed = dt_util.parse_datetime(value)
+    if parsed is None or parsed.tzinfo is None:
+        return None
+    return dt_util.as_utc(parsed)
+
+
+def iso_local(value: dt.datetime | None) -> str | None:
+    """Local-time ISO string, or None."""
+    return dt_util.as_local(value).isoformat() if value is not None else None
+
+
 class AdaptiveCoverModeSelect(
-    CoordinatorEntity[AdaptiveDataUpdateCoordinator], SelectEntity
+    CoordinatorEntity[AdaptiveDataUpdateCoordinator], SelectEntity, RestoreEntity
 ):
-    """Single mode control mirroring the control/climate switches."""
+    """The window's Mode: auto / hold / off."""
 
     _attr_has_entity_name = True
     _attr_should_poll = False
     _attr_icon = "mdi:sun-compass"
+    _attr_options = MODE_OPTIONS
 
     def __init__(
         self,
@@ -63,12 +91,6 @@ class AdaptiveCoverModeSelect(
         """Initialize the mode select."""
         super().__init__(coordinator=coordinator)
         self._config_entry = config_entry
-        self._has_climate = bool(config_entry.options.get(CONF_CLIMATE_MODE))
-        self._attr_options = (
-            [MODE_MANUAL, MODE_SUN, MODE_CLIMATE]
-            if self._has_climate
-            else [MODE_MANUAL, MODE_SUN]
-        )
         self._name = config_entry.data["name"]
         self._attr_unique_id = f"{config_entry.entry_id}_mode_select"
         apply_surface(self, window_surface("select", "mode_select"))
@@ -76,37 +98,49 @@ class AdaptiveCoverModeSelect(
         self._attr_device_info = adaptive_cover_device_info(config_entry)
 
     @property
-    def current_option(self) -> str:
-        """Derive the mode from the coordinator's toggles."""
-        if not self.coordinator.control_toggle:
-            return MODE_MANUAL
-        if self._has_climate and self.coordinator.switch_mode:
-            return MODE_CLIMATE
-        return MODE_SUN
+    def current_option(self) -> str | None:
+        """The window's Mode (unknown until it is restored)."""
+        mode = self.coordinator.modes.mode
+        return mode.value if mode is not None else None
 
-    def _switch_entity_id(self, switch_name: str) -> str | None:
-        registry = er.async_get(self.hass)
-        return registry.async_get_entity_id(
-            "switch", DOMAIN, f"{self._device_id}_{switch_name}"
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """``until``: when the hold ends (local ISO time); None unless held."""
+        modes = self.coordinator.modes
+        until = modes.until if modes.mode is Mode.HOLD else None
+        return {ATTR_UNTIL: iso_local(until)}
+
+    def _legacy_control_state(self) -> str | None:
+        """Return the Toggle Control switch's last recorded state (first boot)."""
+        entity_id = er.async_get(self.hass).async_get_entity_id(
+            "switch", DOMAIN, f"{self._device_id}_{LEGACY_CONTROL_SWITCH}"
         )
-
-    async def _set_switch(self, switch_name: str, on: bool) -> None:
-        entity_id = self._switch_entity_id(switch_name)
         if entity_id is None:
-            return
-        await self.hass.services.async_call(
-            "switch",
-            "turn_on" if on else "turn_off",
-            {"entity_id": entity_id},
-            blocking=True,
+            return None
+        stored = restore_state.async_get(self.hass).last_states.get(entity_id)
+        return stored.state.state if stored is not None else None
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the Mode (else the Toggle Control switch's last state)."""
+        await super().async_added_to_hass()
+        last = await self.async_get_last_state()
+        restored = restored_mode(
+            last.state if last is not None else None,
+            _parse_until(last.attributes.get(ATTR_UNTIL)) if last is not None else None,
+            self._legacy_control_state(),
+            self.coordinator.clock.utcnow(),
         )
+        self.coordinator.logger.debug("Mode restores as %s", restored)
+        await self.coordinator.modes.restore(restored)
 
     async def async_select_option(self, option: str) -> None:
-        """Apply the mode by driving the underlying switches."""
-        if option == MODE_MANUAL:
-            await self._set_switch("Toggle Control", False)
-        else:
-            if self._has_climate:
-                await self._set_switch("Climate Mode", option == MODE_CLIMATE)
-            await self._set_switch("Toggle Control", True)
+        """Apply the picked Mode."""
+        await self.coordinator.modes.select(Mode(option))
+        self.async_write_ha_state()
+
+    async def async_hold(
+        self, duration: dt.timedelta | None = None, position: int | None = None
+    ) -> None:
+        """``adaptive_cover.hold``: hold (after moving to ``position``)."""
+        await self.coordinator.modes.hold(duration, position)
         self.async_write_ha_state()

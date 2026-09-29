@@ -5,6 +5,12 @@ duration; after that, automatic control resumes. This module keeps that
 state per cover (latched or not, when the clock started) in a dict the
 coordinator owns in ``hass.data``, so an options reload does not wipe an
 active override. It has no ``hass``: time comes from the clock.
+
+A **requested** hold (the Mode select's ``hold``, the ``hold`` service;
+runtime/mode.py) is a latch with a fixed end in ``hold_until``. It ends
+only then (or when the window goes auto or off): the clock rules of a
+detected override (the override duration, the restart-on-move option, the
+day rollover, switching detection off) do not apply to it.
 """
 
 from __future__ import annotations
@@ -52,6 +58,9 @@ class OverrideTracker:
         # Per-cover record of the allow_reset flag at latch time
         # (bookkeeping only; expiry itself is unconditional).
         self.reset_allowed: dict[str, bool] = state.setdefault("reset_allowed", {})
+        # The fixed end of each requested hold (a cover without one is a
+        # detected override: latch time + reset_duration).
+        self.hold_until: dict[str, dt.datetime] = state.setdefault("until", {})
         self.reset_duration = dt.timedelta(**reset_duration)
         self.logger = logger
 
@@ -76,6 +85,12 @@ class OverrideTracker:
         if entity_id not in self.manual_control_time or allow_reset:
             last_updated = new_state.last_updated
             self.manual_control_time[entity_id] = last_updated
+            if entity_id in self.hold_until:
+                # A person moved a cover under a requested hold: the hold
+                # lasts at least as long as a detected override would.
+                self.hold_until[entity_id] = max(
+                    self.hold_until[entity_id], last_updated + self.reset_duration
+                )
             self.logger.debug(
                 "Updating last updated for manual control to %s for %s. Allow reset:%s",
                 last_updated,
@@ -93,16 +108,48 @@ class OverrideTracker:
         """Mark cover as under manual control."""
         self.manual_control[cover] = True
 
+    def hold(self, cover: str, until: dt.datetime, now: dt.datetime) -> None:
+        """Hold ``cover`` until ``until`` (a requested hold, latched ``now``)."""
+        self.manual_control[cover] = True
+        self.manual_control_time[cover] = now
+        self.hold_until[cover] = until
+
+    def expires_at(self, cover: str) -> dt.datetime | None:
+        """When the cover's override ends, or None if it is not held.
+
+        A requested hold ends at its ``hold_until``; a detected override the
+        override duration after its latch time (the day rollover can end
+        it earlier).
+        """
+        if not self.is_cover_manual(cover):
+            return None
+        if (until := self.hold_until.get(cover)) is not None:
+            return until
+        latched_at = self.manual_control_time.get(cover)
+        if latched_at is None:
+            return None
+        return latched_at + self.reset_duration
+
     async def reset_if_needed(self) -> None:
         """Expire manual overrides whose duration elapsed.
 
         Every override expires after reset_duration; the reset toggle only
         controls whether later manual moves RESTART the clock (see
-        set_last_updated), never whether expiry happens at all.
+        set_last_updated), never whether expiry happens at all. A requested
+        hold expires at its own end.
         """
         current_time = self.clock.utcnow()
         manual_control_time_copy = dict(self.manual_control_time)
         for entity_id, last_updated in manual_control_time_copy.items():
+            if (until := self.hold_until.get(entity_id)) is not None:
+                if current_time >= until:
+                    self.logger.debug(
+                        "Ending the hold of %s: it was held until %s",
+                        entity_id,
+                        until,
+                    )
+                    self.reset(entity_id)
+                continue
             if current_time - last_updated > self.reset_duration:
                 self.logger.debug(
                     "Resetting manual override for %s, because duration has elapsed",
@@ -115,12 +162,23 @@ class OverrideTracker:
         self.manual_control[entity_id] = False
         self.manual_control_time.pop(entity_id, None)
         self.reset_allowed.pop(entity_id, None)
+        self.hold_until.pop(entity_id, None)
         self.logger.debug("Reset manual override for %s", entity_id)
 
     def reset_all(self) -> None:
-        """Clear every manual override (new day / deliberate resume)."""
+        """Clear every manual override and hold (Mode off / deliberate resume)."""
         for entity_id in list(self.manual_control):
             self.reset(entity_id)
+
+    def reset_detected(self) -> None:
+        """Clear every detected override; requested holds keep their end.
+
+        The day rollover and switching detection off end what a person's
+        move started, not a hold someone asked for until a given time.
+        """
+        for entity_id in list(self.manual_control):
+            if entity_id not in self.hold_until:
+                self.reset(entity_id)
 
     def is_cover_manual(self, entity_id: str) -> bool:
         """Check if a cover is under manual control."""
