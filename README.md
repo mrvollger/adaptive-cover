@@ -1,11 +1,12 @@
 ![Version](https://img.shields.io/github/v/release/mrvollger/adaptive-cover?style=for-the-badge)
+[![License: MIT](https://img.shields.io/github/license/mrvollger/adaptive-cover?style=for-the-badge)](LICENSE)
 
 ![logo](https://github.com/mrvollger/adaptive-cover/blob/main/images/logo.png#gh-light-mode-only)
 ![logo](https://github.com/mrvollger/adaptive-cover/blob/main/images/dark_logo.png#gh-dark-mode-only)
 
 # Adaptive Cover (MRV Fork)
 
-> **Fork notice:** This is a fork of [mrvollger/adaptive-cover](https://github.com/mrvollger/adaptive-cover) with additional features. Changes include "Next State Change" and "Last State Change Reason" sensors. To install via HACS, add `https://github.com/mrvollger/adaptive-cover` as a custom repository.
+> **Fork notice:** This is a fork of [basbruss/adaptive-cover](https://github.com/basbruss/adaptive-cover) with additional features. Changes include "Next State Change" and "Last State Change Reason" sensors. To install via HACS, add `https://github.com/mrvollger/adaptive-cover` as a custom repository.
 
 This Custom-Integration provides sensors for vertical and horizontal blinds based on the sun's position by calculating the position to filter out direct sunlight.
 
@@ -34,6 +35,7 @@ This integration builds upon the template sensor from this forum post [Automatic
   - [Features Planned](#features-planned)
     - [Simulation](#simulation)
     - [Blueprint (deprecated since v1.0.0)](#blueprint-deprecated-since-v100)
+  - [License](#license)
 
 ## New in v1.1.0 (this fork)
 
@@ -197,7 +199,7 @@ This mode is split up in two types of strategies; [Presence](https://github.com/
 
 - **Presence** (or no Presence Entity set):
   The objective is to reduce glare while providing daylight to the room. All calculation is done by the basic model for Horizontal and Vertical blinds. <br> <br>
-  If you added a weather entity, it will only use the above calculations if the weather state corresponds with the existence of direct sun rays. These states are `sunny`,`windy`, `partlycloudy`, and `cloudy` by default, but you can change the list of states in the weather options. If not equal to these states the position will default to the default value to allow more sunlight entering the room with minimizing the glare due to the weather condition. <br><br>
+  If you added a weather entity, it will only use the above calculations if the weather state corresponds with the existence of direct sun rays. These states are `sunny`, `partlycloudy`, `clear`, `windy`, and `windy-variant` by default, but you can change the list of states in the weather options. If not equal to these states the position will default to the default value to allow more sunlight entering the room with minimizing the glare due to the weather condition. <br><br>
   Tilted blinds will only deviate from the above approach if the inside temperature is above the maximum comfort temperature. In that case, the slats will be positioned at 45 degrees as this is [found optimal](https://www.mdpi.com/1996-1073/13/7/1731).
 
 ## Variables
@@ -208,7 +210,7 @@ This mode is split up in two types of strategies; [Presence](https://github.com/
 | ----------------------------- | ------- | ----- | -------------------------------------------------------------------------------------------------------- |
 | Entities                      | []      |       | Denotes entities controllable by the integration                                                         |
 | Window Azimuth                | 180     | 0-359 | The compass direction of the window, discoverable via [Open Street Map Compass](https://osmcompass.com/) |
-| Default Position              | 60      | 0-100 | Initial position of the cover in the absence of sunlight glare detection                                 |
+| Default Position              | 100     | 0-100 | Initial position of the cover in the absence of sunlight glare detection                                 |
 | Minimal Position              | 100     | 0-99  | Minimal opening position for the cover, suitable for partially closing certain cover types               |
 | Maximum Position              | 100     | 1-100 | Maximum opening position for the cover, suitable for partially opening certain cover types               |
 | Field of view Left            | 90      | 1-90  | Unobstructed viewing angle from window center to the left, in degrees                                    |
@@ -252,7 +254,7 @@ This mode is split up in two types of strategies; [Presence](https://github.com/
 | Minimum Delta Time                         | 2            |       | Minimum time gap between position change                                                       |
 | Start Time                                 | `"00:00:00"` |       | Earliest time a cover can be adjusted after midnight                                           |
 | Start Time Entity                          | None         |       | The earliest moment a cover may be changed after midnight. _Overrides the `start_time` value_  |
-| Manual Override Duration                   | `15 min`     |       | Minimum duration for manual control status to remain active                                    |
+| Manual Override Duration                   | `2 h`        |       | Minimum duration for manual control status to remain active                                    |
 | Manual Override reset Timer                | False        |       | Resets duration timer each time the position changes while the manual control status is active |
 | Manual Override Threshold                  | None         | 1-99  | Minimal position change to be recognized as manual change                                      |
 | Manual Override ignore intermediate states | False        |       | Ignore StateChangedEvents that have state `opening` or `closing`                               |
@@ -265,8 +267,8 @@ This mode is split up in two types of strategies; [Presence](https://github.com/
 | Variables                     | Default | Range | Example                                       | Description                                                                                                                                          |
 | ----------------------------- | ------- | ----- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Indoor Temperature Entity     | `None`  |       | `climate.living_room` \| `sensor.indoor_temp` |                                                                                                                                                      |
-| Minimum Comfort Temperature   | 21      | 0-86  |                                               |                                                                                                                                                      |
-| Maximum Comfort Temperature   | 25      | 0-86  |                                               |                                                                                                                                                      |
+| Minimum Comfort Temperature   | 22 °C / 72 °F | 0-86  |                                         | The default follows Home Assistant's unit system.                                                                                                    |
+| Maximum Comfort Temperature   | 24 °C / 75 °F | 0-86  |                                         | The default follows Home Assistant's unit system.                                                                                                    |
 | Outdoor Temperature Entity    | `None`  |       | `sensor.outdoor_temp`                         |                                                                                                                                                      |
 | Outdoor Temperature Threshold | `None`  |       |                                               | If the minimum outside temperature for summer mode is set and the outside temperature falls below this threshold, summer mode will not be activated. |
 | Presence Entity               | `None`  |       |                                               |                                                                                                                                                      |
@@ -324,9 +326,15 @@ When climate mode is setup you will also get these entities:
 
 ### Simulation
 
-![combined_simulation](custom_components/adaptive_cover/simulation/sim_plot.png)
+![combined_simulation](images/sim_plot.png)
+
+One simulated day: the sun angles (left axis) and the computed cover positions (right axis). An early version of the algorithm made this plot, so it shows the idea, not the exact output of the current release.
 
 ### Blueprint (deprecated since v1.0.0)
 
 This integration provides the option to download a blueprint to control the covers automatically by the provide sensor.
 By selecting the option the blueprints will be added to your local blueprints folder.
+
+## License
+
+Adaptive Cover is released under the [MIT License](LICENSE). The Lovelace card bundle (source in [`card/`](card/), shipped as `custom_components/adaptive_cover/www/adaptive-cover-card.js`) is also MIT-licensed; its [own license file](card/LICENSE) keeps the upstream card's copyright notice. Contributions are accepted under the same license (see [CONTRIBUTING.md](CONTRIBUTING.md)).

@@ -1,6 +1,7 @@
 # artifacts
 __pycache__
 .pytest*
+.ruff_cache/
 *.egg-info
 */build/*
 */dist/*
@@ -11,13 +12,19 @@ __pycache__
 .vscode
 coverage.xml
 
+# environments (pixi)
+.pixi/
+
+# node / vitest output (any level; root-level vitest runs write node_modules/.vite/)
+node_modules/
+card/dist/
+
+# local scratch notebooks (not part of the integration or the test suite)
+notebooks/
+API.ipynb
 
 # Home Assistant configuration
 config/*
 !config/configuration.yaml
-API.ipynb
 .github/.DS_Store
 .DS_Store
-notebooks/test_python.ipynb
-card/node_modules/
-card/dist/
