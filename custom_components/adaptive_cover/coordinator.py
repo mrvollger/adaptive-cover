@@ -1305,7 +1305,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 # start is not read as a human (house, 2026-09-29).
                 self._unconfirmed_sends[entity] = (
                     state,
-                    dt.datetime.now(dt.UTC),
+                    self.clock.utcnow(),
                     source,
                     reason,
                 )
@@ -1329,7 +1329,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         if sent is None:
             return False
         target, sent_at, source, reason = sent
-        if dt.datetime.now(dt.UTC) - sent_at > self.TARGET_TIMEOUT:
+        if self.clock.utcnow() - sent_at > self.TARGET_TIMEOUT:
             self._unconfirmed_sends.pop(entity_id, None)
             return False
         old_pos = self.state_change_data.old_state.attributes.get(
@@ -1340,6 +1340,10 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         if old_pos is None or old_pos == target:
             return False
         expected = "opening" if target > old_pos else "closing"
+        # Belt and braces: motion AGAINST our target is also caught right
+        # after this by the against-direction check (so no test can tell
+        # this guard apart; no mutation pins it). Skipping here keeps a
+        # human move from being logged as a late delivery.
         if self.state_change_data.new_state.state != expected:
             return False
         self._unconfirmed_sends.pop(entity_id, None)

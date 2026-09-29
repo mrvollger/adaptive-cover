@@ -630,6 +630,15 @@ MUTATIONS: list[Mutation] = [
         "        latched_at + manager.reset_duration\n",
         "        latched_at\n",
     ),
+    Mutation(
+        "M57",
+        "late_delivery_never_adopted",
+        COORD,
+        "_adopt_late_delivery",
+        "motion toward a failed-but-delivered command is never adopted as ours",
+        "        sent = self._unconfirmed_sends.get(entity_id)\n",
+        "        sent = None\n",
+    ),
 ]
 
 

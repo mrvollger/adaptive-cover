@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -586,7 +586,7 @@
+@@ -595,7 +595,7 @@
          still runs (as a catch-up, which respects manual overrides).
          """
          self._async_cancel_update_listener()

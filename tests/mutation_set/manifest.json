@@ -328,5 +328,12 @@
   "function": "override_until",
   "description": "override_until reports the latch time, not latch time + override duration",
   "patch": "M55_override_until_without_duration.patch"
+ },
+ {
+  "id": "M57",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "_adopt_late_delivery",
+  "description": "motion toward a failed-but-delivered command is never adopted as ours",
+  "patch": "M57_late_delivery_never_adopted.patch"
  }
 ]
