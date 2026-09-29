@@ -199,7 +199,7 @@ This mode is split up in two types of strategies; [Presence](https://github.com/
 
 - **Presence** (or no Presence Entity set):
   The objective is to reduce glare while providing daylight to the room. All calculation is done by the basic model for Horizontal and Vertical blinds. <br> <br>
-  If you added a weather entity, it will only use the above calculations if the weather state corresponds with the existence of direct sun rays. These states are `sunny`,`windy`, `partlycloudy`, and `cloudy` by default, but you can change the list of states in the weather options. If not equal to these states the position will default to the default value to allow more sunlight entering the room with minimizing the glare due to the weather condition. <br><br>
+  If you added a weather entity, it will only use the above calculations if the weather state corresponds with the existence of direct sun rays. These states are `sunny`, `partlycloudy`, `clear`, `windy`, and `windy-variant` by default, but you can change the list of states in the weather options. If not equal to these states the position will default to the default value to allow more sunlight entering the room with minimizing the glare due to the weather condition. <br><br>
   Tilted blinds will only deviate from the above approach if the inside temperature is above the maximum comfort temperature. In that case, the slats will be positioned at 45 degrees as this is [found optimal](https://www.mdpi.com/1996-1073/13/7/1731).
 
 ## Variables
@@ -210,7 +210,7 @@ This mode is split up in two types of strategies; [Presence](https://github.com/
 | ----------------------------- | ------- | ----- | -------------------------------------------------------------------------------------------------------- |
 | Entities                      | []      |       | Denotes entities controllable by the integration                                                         |
 | Window Azimuth                | 180     | 0-359 | The compass direction of the window, discoverable via [Open Street Map Compass](https://osmcompass.com/) |
-| Default Position              | 60      | 0-100 | Initial position of the cover in the absence of sunlight glare detection                                 |
+| Default Position              | 100     | 0-100 | Initial position of the cover in the absence of sunlight glare detection                                 |
 | Minimal Position              | 100     | 0-99  | Minimal opening position for the cover, suitable for partially closing certain cover types               |
 | Maximum Position              | 100     | 1-100 | Maximum opening position for the cover, suitable for partially opening certain cover types               |
 | Field of view Left            | 90      | 1-90  | Unobstructed viewing angle from window center to the left, in degrees                                    |
@@ -254,7 +254,7 @@ This mode is split up in two types of strategies; [Presence](https://github.com/
 | Minimum Delta Time                         | 2            |       | Minimum time gap between position change                                                       |
 | Start Time                                 | `"00:00:00"` |       | Earliest time a cover can be adjusted after midnight                                           |
 | Start Time Entity                          | None         |       | The earliest moment a cover may be changed after midnight. _Overrides the `start_time` value_  |
-| Manual Override Duration                   | `15 min`     |       | Minimum duration for manual control status to remain active                                    |
+| Manual Override Duration                   | `2 h`        |       | Minimum duration for manual control status to remain active                                    |
 | Manual Override reset Timer                | False        |       | Resets duration timer each time the position changes while the manual control status is active |
 | Manual Override Threshold                  | None         | 1-99  | Minimal position change to be recognized as manual change                                      |
 | Manual Override ignore intermediate states | False        |       | Ignore StateChangedEvents that have state `opening` or `closing`                               |
@@ -267,8 +267,8 @@ This mode is split up in two types of strategies; [Presence](https://github.com/
 | Variables                     | Default | Range | Example                                       | Description                                                                                                                                          |
 | ----------------------------- | ------- | ----- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Indoor Temperature Entity     | `None`  |       | `climate.living_room` \| `sensor.indoor_temp` |                                                                                                                                                      |
-| Minimum Comfort Temperature   | 21      | 0-86  |                                               |                                                                                                                                                      |
-| Maximum Comfort Temperature   | 25      | 0-86  |                                               |                                                                                                                                                      |
+| Minimum Comfort Temperature   | 22 °C / 72 °F | 0-86  |                                         | The default follows Home Assistant's unit system.                                                                                                    |
+| Maximum Comfort Temperature   | 24 °C / 75 °F | 0-86  |                                         | The default follows Home Assistant's unit system.                                                                                                    |
 | Outdoor Temperature Entity    | `None`  |       | `sensor.outdoor_temp`                         |                                                                                                                                                      |
 | Outdoor Temperature Threshold | `None`  |       |                                               | If the minimum outside temperature for summer mode is set and the outside temperature falls below this threshold, summer mode will not be activated. |
 | Presence Entity               | `None`  |       |                                               |                                                                                                                                                      |
