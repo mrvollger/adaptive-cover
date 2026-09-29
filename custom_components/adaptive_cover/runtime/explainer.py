@@ -343,7 +343,7 @@ class Explainer:
         """Append to the per-cover move log; return the entry.
 
         Answers "what moved this cover and why": source is adaptive /
-        startup / end_time / control_enabled / all_covers / manual, with
+        startup / end_time / control_enabled / all_covers / hold / manual, with
         the driving intent as reason where known.
         """
         entry: dict[str, Any] = {

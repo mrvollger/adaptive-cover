@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/runtime/mode.py b/custom_components/adaptive_cover/runtime/mode.py
+--- a/custom_components/adaptive_cover/runtime/mode.py
++++ b/custom_components/adaptive_cover/runtime/mode.py
+@@ -261,7 +261,7 @@
+         """
+         window = self.window
+         now = window.clock.utcnow()
+-        length = duration if duration is not None else window.manager.reset_duration
++        length = window.manager.reset_duration
+         until = now + length
+         window.controls.control = True
+         for entity in window.entities:

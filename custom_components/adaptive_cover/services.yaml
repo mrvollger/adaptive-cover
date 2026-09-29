@@ -13,6 +13,35 @@ get_forecast:
       selector:
         text:
 
+hold:
+  name: Hold
+  description: >-
+    Put windows on hold: automatic control pauses, and each window goes
+    back to Auto when its hold ends. Target windows' Mode selects directly
+    or by area or floor, or the house mode select for every window. Pick
+    Auto (or press Return to auto) to end a hold early.
+  target:
+    entity:
+      integration: adaptive_cover
+      domain: select
+  fields:
+    duration:
+      name: Duration
+      description: >-
+        How long to hold. Default: each window's manual override duration.
+      required: false
+      example: "04:00:00"
+      selector: { duration: }
+    position:
+      name: Position
+      description: >-
+        Move the covers to this position first (0 is closed, 100 is open),
+        then hold them there.
+      required: false
+      example: 0
+      selector:
+        number: { min: 0, max: 100, step: 1, unit_of_measurement: "%", mode: slider }
+
 change_settings:
   name: Change settings
   description: >-

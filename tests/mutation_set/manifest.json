@@ -365,6 +365,27 @@
   "patch": "M46_lift_drops_outlier.patch"
  },
  {
+  "id": "M47",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "async_handle_state_change",
+  "description": "gates ignore Mode off: the sun-tracking path moves a window whose Mode is off",
+  "patch": "M47_gates_ignore_mode_off.patch"
+ },
+ {
+  "id": "M48",
+  "file": "custom_components/adaptive_cover/runtime/mode.py",
+  "function": "ModeControl.hold",
+  "description": "hold ignores its duration: every hold lasts the override duration",
+  "patch": "M48_hold_ignores_its_duration.patch"
+ },
+ {
+  "id": "M51",
+  "file": "custom_components/adaptive_cover/runtime/mode.py",
+  "function": "restored_mode",
+  "description": "Mode restore ignores the legacy switch fallback: a window whose Toggle Control was off comes back in auto on the first boot after the flip",
+  "patch": "M51_mode_restore_ignores_switch_fallback.patch"
+ },
+ {
   "id": "M70",
   "file": "custom_components/adaptive_cover/settings/shadow.py",
   "function": "differing_keys",
@@ -394,10 +415,11 @@
  },
  {
   "id": "M55",
-  "file": "custom_components/adaptive_cover/entity_shared.py",
-  "function": "override_until",
+  "file": "custom_components/adaptive_cover/runtime/override_tracker.py",
+  "function": "OverrideTracker.expires_at",
   "description": "override_until reports the latch time, not latch time + override duration",
-  "patch": "M55_override_until_without_duration.patch"
+  "patch": "M55_override_until_without_duration.patch",
+  "deviation": "P5 flip: override_until (entity_shared.py) reads OverrideTracker.expires_at, which also knows a requested hold's end; the latch-time-plus-duration rule moved there."
  },
  {
   "id": "M56",

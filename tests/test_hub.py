@@ -118,20 +118,21 @@ async def test_house_mode_flips_all_entries(hass, mock_sun_entity):
     await hass.services.async_call(
         "homeassistant", "update_entity", {"entity_id": select_id}, blocking=True
     )
-    assert hass.states.get(select_id).state == "Adaptive"  # switches restore on
+    assert hass.states.get(select_id).state == "auto"  # every window restores auto
 
     await hass.services.async_call(
         "select",
         "select_option",
-        {"entity_id": select_id, "option": "Manual"},
+        {"entity_id": select_id, "option": "off"},
         blocking=True,
     )
     await hass.async_block_till_done()
 
-    # Every window's control is off: its Toggle Control switch reads off.
+    # Every window's Mode is off, and its Toggle Control alias reads off.
     for cover in ("cover.a", "cover.b"):
+        assert WindowHandle(hass, cover).mode == "off"
         assert WindowHandle(hass, cover).state("control").state == "off"
-    assert hass.states.get(select_id).state == "Manual"
+    assert hass.states.get(select_id).state == "off"
 
 
 def _manual_binary(hass, entry):

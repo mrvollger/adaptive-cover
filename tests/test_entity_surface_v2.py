@@ -88,7 +88,7 @@ WINDOW_SURFACE = {
     ("sensor", "End Sun"): (DIAG, True, "End sun"),
     ("sensor", "Next State Change"): (DIAG, True, "Next change"),
     ("sensor", "Last State Change"): (DIAG, True, "Last change"),
-    # config (functional until P5)
+    # config; the switches are hidden aliases since the P5 flip (HIDDEN)
     ("switch", "Toggle Control"): (CONFIG, True, "Automatic control"),
     ("switch", "Manual Override"): (CONFIG, True, "Manual override detection"),
     ("switch", "Climate Mode"): (CONFIG, True, "Climate mode"),
@@ -114,6 +114,17 @@ WINDOW_SURFACE = {
         True,
         "Privacy delay after sunset",
     ),
+}
+
+# Hidden by default but enabled (P5 flip): the switch aliases of the Mode
+# select and the house toggles (migration 1.5 hides existing rows).
+HIDDEN = {
+    ("switch", "Toggle Control"),
+    ("switch", "Manual Override"),
+    ("switch", "Climate Mode"),
+    ("switch", "Outside Temperature"),
+    ("switch", "Lux"),
+    ("switch", "Irradiance"),
 }
 
 # Hub: unique_id -> (entity_id of a fresh install, friendly name).
@@ -215,6 +226,8 @@ class TestFreshSurface:
         for key, (category, enabled, _name) in WINDOW_SURFACE.items():
             row = rows[key]
             assert row.entity_category == category, key
+            hidden = er.RegistryEntryHider.INTEGRATION if key in HIDDEN else None
+            assert row.hidden_by is hidden, key
             if enabled:
                 assert row.disabled_by is None, key
                 assert hass.states.get(row.entity_id) is not None, key
@@ -465,7 +478,7 @@ class TestMigration:
         await _setup(hass, entry)
 
         assert entry.state is ConfigEntryState.LOADED
-        assert (entry.version, entry.minor_version) == (1, 4)
+        assert (entry.version, entry.minor_version) == (1, 5)
         rows = _rows(hass, entry)
         # Identity is frozen: same unique_ids, same entity_ids.
         assert {
@@ -478,6 +491,8 @@ class TestMigration:
             assert row.entity_category == category, key
             expected = None if enabled else er.RegistryEntryDisabler.INTEGRATION
             assert row.disabled_by == expected, key
+            hidden = er.RegistryEntryHider.INTEGRATION if key in HIDDEN else None
+            assert row.hidden_by is hidden, key
             if enabled:
                 state = hass.states.get(row.entity_id)
                 assert state.attributes["friendly_name"] == f"Office Door {name}"
@@ -530,7 +545,7 @@ class TestMigration:
         hass.config_entries.async_update_entry(entry, minor_version=1)
         await _setup(hass, entry)
 
-        assert entry.minor_version == 4
+        assert entry.minor_version == 5
         assert _snapshot(hass, entry) == after_first
 
     async def test_user_reenabled_entity_stays_enabled(self, hass, cover_calls):
@@ -558,10 +573,10 @@ class TestMigration:
         """A downgrade from a later 1.x keeps working (minor bumps are
         backward compatible) and is not rewritten."""
         _set_world(hass)
-        entry = _entry(hass, minor_version=5)
+        entry = _entry(hass, minor_version=6)
         await _setup(hass, entry)
         assert entry.state is ConfigEntryState.LOADED
-        assert (entry.version, entry.minor_version) == (1, 5)
+        assert (entry.version, entry.minor_version) == (1, 6)
 
     async def test_newer_major_version_is_refused(self, hass, cover_calls):
         _set_world(hass)
@@ -702,7 +717,7 @@ async def test_live_house_upgrade(hass, cover_calls):
     # Every entry migrated and loaded.
     for entry in hass.config_entries.async_entries(DOMAIN):
         assert entry.state is ConfigEntryState.LOADED, entry.title
-        assert (entry.version, entry.minor_version) == (1, 4), entry.title
+        assert (entry.version, entry.minor_version) == (1, 5), entry.title
 
     # Identity is frozen: the same 318 (platform, unique_id) -> entity_id
     # rows, no more. ("X_Manual Override" is both a switch and a sensor.)
@@ -722,12 +737,17 @@ async def test_live_house_upgrade(hass, cover_calls):
     disabled = 0
     for row in rows:
         reg = ent_reg.async_get(row["entity_id"])
+        hidden = None
         if row["config_entry_id"] in window_ids:
             suffix = row["unique_id"].removeprefix(f"{row['config_entry_id']}_")
             category, enabled, _name = WINDOW_SURFACE[(reg.domain, suffix)]
+            if (reg.domain, suffix) in HIDDEN:
+                hidden = er.RegistryEntryHider.INTEGRATION
         else:
             category, enabled = None, True
         assert reg.entity_category == category, row["entity_id"]
+        # Migration 1.5 hides the 60 switch rows (15 windows x 4), enabled.
+        assert reg.hidden_by is hidden, row["entity_id"]
         if enabled:
             assert reg.disabled_by is None, row["entity_id"]
         else:

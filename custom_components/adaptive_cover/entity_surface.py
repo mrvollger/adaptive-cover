@@ -42,16 +42,25 @@ class SurfaceSpec:
     """How one entity role appears in HA.
 
     translation_key names the entity through strings.json ("<Device> <Role>").
-    category None means a primary entity.
+    category None means a primary entity. visible_default False hides the
+    entity (hidden_by integration) but keeps it enabled: the P5 switch
+    aliases.
     """
 
     translation_key: str | None
     category: EntityCategory | None = None
     enabled_default: bool = True
+    visible_default: bool = True
 
 
 _DIAG = EntityCategory.DIAGNOSTIC
 _CONFIG = EntityCategory.CONFIG
+
+
+def _alias(translation_key: str) -> SurfaceSpec:
+    """Return the surface of a hidden, enabled config switch (a P5 alias)."""
+    return SurfaceSpec(translation_key, _CONFIG, visible_default=False)
+
 
 # Per-window entities, keyed by (platform, unique_id suffix after the
 # "{entry_id}_" prefix). The suffixes are historical and frozen.
@@ -71,14 +80,15 @@ WINDOW_SURFACE: dict[tuple[str, str], SurfaceSpec] = {
     ("sensor", "End Sun"): SurfaceSpec("end_sun", _DIAG),
     ("sensor", "Next State Change"): SurfaceSpec("next_change", _DIAG),
     ("sensor", "Last State Change"): SurfaceSpec("last_change", _DIAG),
-    # Config: still functional until P5 replaces them with Mode and house
-    # settings.
-    ("switch", "Toggle Control"): SurfaceSpec("control_toggle", _CONFIG),
-    ("switch", "Manual Override"): SurfaceSpec("manual_toggle", _CONFIG),
-    ("switch", "Climate Mode"): SurfaceSpec("switch_mode", _CONFIG),
-    ("switch", "Outside Temperature"): SurfaceSpec("temp_toggle", _CONFIG),
-    ("switch", "Lux"): SurfaceSpec("lux_toggle", _CONFIG),
-    ("switch", "Irradiance"): SurfaceSpec("irradiance_toggle", _CONFIG),
+    # Config, hidden but enabled (P5 flip): aliases of the Mode select and
+    # the house toggles for one release, so automations keep working;
+    # removed in P8 (switch.py).
+    ("switch", "Toggle Control"): _alias("control_toggle"),
+    ("switch", "Manual Override"): _alias("manual_toggle"),
+    ("switch", "Climate Mode"): _alias("switch_mode"),
+    ("switch", "Outside Temperature"): _alias("temp_toggle"),
+    ("switch", "Lux"): _alias("lux_toggle"),
+    ("switch", "Irradiance"): _alias("irradiance_toggle"),
 }
 
 # Number entities: unique_id suffix f"number_{option_key}", translation key
@@ -108,6 +118,7 @@ def apply_surface(entity: Entity, spec: SurfaceSpec | None) -> None:
     entity._attr_translation_key = spec.translation_key
     entity._attr_entity_category = spec.category
     entity._attr_entity_registry_enabled_default = spec.enabled_default
+    entity._attr_entity_registry_visible_default = spec.visible_default
 
 
 def _surface_for_row(entry: ConfigEntry, row: er.RegistryEntry) -> SurfaceSpec | None:
@@ -127,6 +138,10 @@ def _user_touched(row: er.RegistryEntry) -> bool:
     A user who renamed, re-iconed, labeled, aliased, categorized or placed
     an entity uses it; the migration must not hide it from them. Hidden or
     disabled rows already carry a visibility choice.
+
+    Only an alias the user typed counts: Home Assistant lists the entity's
+    own name as a computed alias on every row (a non-string marker), which
+    made every row look user-touched.
     """
     return bool(
         row.disabled_by is not None
@@ -136,7 +151,7 @@ def _user_touched(row: er.RegistryEntry) -> bool:
         or row.area_id is not None
         or row.labels
         or row.categories
-        or any(row.aliases)
+        or any(isinstance(alias, str) and alias for alias in row.aliases)
     )
 
 
@@ -148,6 +163,9 @@ def async_apply_surface_to_registry(hass: HomeAssistant, entry: ConfigEntry) -> 
     - disabled_by: set to INTEGRATION only for roles that are disabled by
       default, and only when the row carries no user choice (see
       _user_touched). Rows are never enabled here.
+    - hidden_by: set to INTEGRATION for roles that are hidden by default
+      (the P5 switch aliases), under the same rule. Rows are never shown
+      here.
 
     Idempotent: a second run finds nothing to change. Returns the number of
     rows updated.
@@ -165,6 +183,8 @@ def async_apply_surface_to_registry(hass: HomeAssistant, entry: ConfigEntry) -> 
             changes["entity_category"] = spec.category
         if not spec.enabled_default and not _user_touched(row):
             changes["disabled_by"] = er.RegistryEntryDisabler.INTEGRATION
+        if not spec.visible_default and not _user_touched(row):
+            changes["hidden_by"] = er.RegistryEntryHider.INTEGRATION
         if changes:
             registry.async_update_entity(row.entity_id, **changes)
             updated += 1

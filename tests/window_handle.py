@@ -214,6 +214,18 @@ class WindowHandle:
         return state is not None and state.state != "unavailable"
 
     @property
+    def mode(self) -> str | None:
+        """The window's Mode: the Mode select's state (auto / hold / off)."""
+        state = self.state("mode")
+        return state.state if state is not None else None
+
+    @property
+    def hold_until(self) -> str | None:
+        """When the window's hold ends: the Mode select's ``until`` (local ISO)."""
+        state = self.state("mode")
+        return state.attributes.get("until") if state is not None else None
+
+    @property
     def manual_override(self) -> bool:
         """The Manual override binary sensor is on (any of its covers)."""
         state = self.state("manual_override")

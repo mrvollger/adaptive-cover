@@ -25,6 +25,7 @@ PURE_MODULES = [
     "explainer.py",
     "gates.py",
     "manual_detector.py",
+    "mode.py",
     "override_tracker.py",
     "schedule.py",
     "shade_config.py",

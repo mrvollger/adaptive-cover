@@ -48,7 +48,8 @@ custom_components/adaptive_cover/
 │   ├── command_tracker.py   # CommandTracker: commands in flight, travel latch, late delivery, arrival polls
 │   ├── decider.py           # Decider: basic vs climate position, interpolation / inverse transforms
 │   ├── manual_detector.py   # ManualDetector: motion-start, redirect-in-travel and landing rules
-│   ├── override_tracker.py  # OverrideTracker: per-cover manual latch + override clock (hass.data store)
+│   ├── override_tracker.py  # OverrideTracker: per-cover manual latch + override clock, requested holds' ends (hass.data store)
+│   ├── mode.py              # P5 flip: Mode auto/hold/off, ModeControl (select, alias, button, hold service), restore rule
 │   ├── end_of_day.py        # EndOfDay: end-time timer, catch-up close, retry of missed closes
 │   ├── events.py            # RefreshQueue: why the next refresh runs (entity, cover, startup, end time)
 │   └── explainer.py         # Explainer: next change, forecast, last change, move log, sensor attributes
@@ -67,22 +68,22 @@ custom_components/adaptive_cover/
 ├── shadow.py                # Config entry 1.4 (P5 shadow): lift into the hub, switch-state capture, settings_differ issue, provenance
 ├── repairs.py               # Fix flow of the "split" issue (multi-cover entry -> one window per cover)
 ├── const.py                 # All config keys, defaults, enums
-├── hub.py                   # "Adaptive Cover All" hub device (all-shades cover, house mode select, reset-all button)
+├── hub.py                   # "Adaptive Cover All" hub device (all-shades cover, house Mode select auto/hold/off/mixed, reset-all button)
 ├── cover.py                 # Cover platform: only the hub's aggregate cover
 ├── sensor.py                # Position %, solar times, control method, next/last change
 ├── binary_sensor.py         # Sun in front, manual override active
-├── switch.py                # Toggle switches (control, climate mode, lux, etc.)
-├── select.py                # Mode select: one control instead of several toggles
+├── switch.py                # Hidden switch aliases (P5): Toggle Control writes the Mode; the others still set ControlState
+├── select.py                # Mode select auto/hold/off (RestoreEntity, source of truth) + the hold entity service
 ├── number.py                # Live tunables that skip the options wizard
-├── button.py                # Reset manual override button
+├── button.py                # Return to auto button (Mode auto)
 ├── entity_shared.py         # Shared entity helpers (device info, Position window attributes)
-├── entity_surface.py        # Entity surface table (category, visibility, name key) + 1.2 migration + area copy
+├── entity_surface.py        # Entity surface table (category, visibility, name key) + 1.2/1.5 migrations + area copy
 ├── frontend.py              # Serves and auto-registers the bundled Lovelace card
 ├── logbook.py               # Logbook text for adaptive_cover_moved events
 ├── helpers.py               # Utility functions (safe state access, datetime parsing)
 ├── config_context_adapter.py # Logger adapter that tags logs with config name
 ├── diagnostics.py           # HA diagnostics export
-├── services.yaml            # get_forecast, change_settings, add_entry
+├── services.yaml            # get_forecast, hold (entity service on the Mode selects), change_settings, add_entry
 ├── manifest.json            # Integration metadata, version & requirements
 ├── strings.json             # English UI strings (source for translations/en.json)
 ├── icons.json               # MDI icon mappings
@@ -258,19 +259,21 @@ unique_id. 1.3 -> 1.4 (P5 shadow, `shadow.py`) lifts every window into
 house / floor / area profiles in the hub's options and a sparse
 `overrides` per window, recording the states of the switches P5 drops;
 the runtime still acts on the legacy keys, and each window raises a
-`settings_differ` repair issue when the two disagree. At setup the window
-device copies the physical cover's area if it has none.
+`settings_differ` repair issue when the two disagree. 1.4 -> 1.5 (P5
+flip) hides the six switches (hidden_by integration, still enabled): they
+are aliases of the Mode select and the house toggles for one release. At
+setup the window device copies the physical cover's area if it has none.
 
 | Platform | Name (unique_id suffix) | Visibility | Purpose |
 |----------|-------------------------|------------|---------|
 | sensor | Target position (`Cover Position`) | primary | Calculated position (0-100%); attributes include `window_key`, `cover_entity`, `cover_type`, `override_until`, `next_move`, `provenance` (non-house sources of the layered settings; P5) |
-| select | Mode (`mode_select`) | primary | Manual / Sun tracking / Sun + climate |
-| button | Return to auto (`Reset Manual Override`) | primary | Clear manual overrides and move back |
+| select | Mode (`mode_select`) | primary | `auto` / `hold` / `off` (P5 flip): the window's control state, restored (first boot: from the Toggle Control switch); attribute `until` while held. Entity service `adaptive_cover.hold(duration?, position?)` |
+| button | Return to auto (`Reset Manual Override`) | primary | Mode auto: end a hold (move back) or turn an off window on |
 | binary_sensor | Manual override (`Manual Override`) | diagnostic | Any cover under manual control? (attribute `until`) |
 | binary_sensor | Sun in front (`Sun Infront`) | diagnostic | Is sun within window FOV? |
 | sensor | Control method (`Control Method`) | diagnostic | "winter" / "summer" / "intermediate" |
 | sensor | Start sun, End sun, Next change, Last change | diagnostic, disabled by default | Solar times and the next/last change |
-| switch | Automatic control, Manual override detection, Climate mode, Outside temperature, Lux, Irradiance | config | Toggles (replaced by Mode and house settings in P5) |
+| switch | Automatic control, Manual override detection, Climate mode, Outside temperature, Lux, Irradiance | config, hidden (enabled) | Aliases until P8: Automatic control writes/mirrors the Mode; the others still set the window's ControlState (house settings `manual_detection`, `climate_on`, `use_*` in the stored layers) |
 | number | Eye height, seat distance, overhang, thresholds, privacy delay | config | Live tunables (removed in P5) |
 
 ## Manual Override Detection
@@ -291,15 +294,21 @@ device copies the physical cover's area if it has none.
    (local-date) clears any leftover override as a safety net.
 4. Override state lives in `hass.data[f"{DOMAIN}_manual_state"]` and
    survives options reloads; only an EXPLICIT manual-toggle off clears it.
+   Across a restart the Mode select restores a hold with its `until`.
 5. The scheduled end-of-day close bypasses manual overrides when it fires
    on time; a catch-up close (armed late after restart/reload) respects
    them. Undeliverable end-of-day closes (cover unavailable) retry when the
    cover returns.
+6. Since the P5 flip an override is the window's Mode `hold`. A requested
+   hold (Mode hold, `adaptive_cover.hold`) has a fixed end
+   (`OverrideTracker.hold_until`): the restart-clock option, the day
+   rollover and detection off do not end it; Mode auto or off does.
+   Mode `off` is no moves and no detection (the old Toggle Control off).
 
 Code: the rules in 2 are `ManualDetector` (runtime/manual_detector.py)
 over `CommandTracker` (runtime/command_tracker.py); 3 and 4 are
 `OverrideTracker` (runtime/override_tracker.py); 5 is `EndOfDay`
-(runtime/end_of_day.py).
+(runtime/end_of_day.py); 6 is `ModeControl` (runtime/mode.py).
 
 ## Development & Testing
 
@@ -386,7 +395,7 @@ the reference for `engine/numeric.py`.
 ## Patterns Worth Knowing
 
 - **Coordinator pattern**: single `DataUpdateCoordinator` per config entry, all entities subscribe
-- **RestoreEntity**: switches persist state across HA restarts
+- **RestoreEntity**: the Mode select (control state, a hold's end) and the switch aliases persist across HA restarts
 - **Executor offload**: solar calculations run in `hass.async_add_executor_job` to avoid blocking
 - **Contextual logging**: `ConfigContextAdapter` prepends config name to all log messages
 - **Service call throttling**: position delta + time delta + timing window gates before calling covers

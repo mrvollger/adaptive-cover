@@ -31,7 +31,10 @@ from astral import sun as astral_sun
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import Context, ServiceCall, State, callback
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import floor_registry as fr
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     MockUser,
@@ -472,6 +475,7 @@ class SimHouse:
         at: str | None = None,
         restore: bool = True,
         seed_states: dict[str, str] | None = None,
+        cold: bool = False,
     ) -> None:
         """Simulate an HA restart of every window, preserving the timeline.
 
@@ -482,6 +486,16 @@ class SimHouse:
         RestoreEntity defaults apply), then re-runs setup on the SAME
         entries and re-wins the fake cover services. Shade states persist
         in hass.states across the restart, as in real HA.
+
+        Seeding a window's Toggle Control switch (``toggle_control``) drops
+        that window's captured Mode select state: the window restarts as
+        on its first boot after the P5 flip, when the Mode select has no
+        state of its own and restores from that switch.
+
+        ``cold=True`` also drops the integration's in-memory manual-override
+        store, as a real Home Assistant process restart does (by default it
+        survives, as it does an entry reload): what the windows hold then
+        comes only from their restored entity states.
         """
         if at is not None:
             await self.advance_to(at)
@@ -498,8 +512,21 @@ class SimHouse:
         for entity_id, state_str in (seed_states or {}).items():
             seeded[entity_id] = State(entity_id, state_str)
         for entry in self.entries:
+            control = registry.async_get_entity_id(
+                "switch", DOMAIN, f"{entry.entry_id}_Toggle Control"
+            )
+            mode = registry.async_get_entity_id(
+                "select", DOMAIN, f"{entry.entry_id}_mode_select"
+            )
+            if control in (seed_states or {}) and mode is not None:
+                seeded.pop(mode, None)
+        for entry in self.entries:
             await self.hass.config_entries.async_unload(entry.entry_id)
         await self.hass.async_block_till_done()
+        if cold:
+            # contract: internal (a process restart empties hass.data; the
+            # override store is the one piece of it a reload keeps).
+            self.hass.data.pop(f"{DOMAIN}_manual_state", None)
         if seeded:
             mock_restore_cache(self.hass, list(seeded.values()))
         await self._setup_entry()
@@ -987,7 +1014,16 @@ class SimHouse:
     # ------------------------------------------------- entity-level controls
 
     async def toggle(self, key: str, on: bool, *, cover: str | None = None) -> None:
-        """Flip one of a window's switches through a REAL HA service call."""
+        """Flip one of a window's switches through a REAL HA service call.
+
+        ``toggle_control`` is the window's Mode since the P5 flip (the
+        switch is a hidden alias): on selects ``auto``, off selects ``off``.
+        """
+        if key == "toggle_control":
+            await self.select_option(
+                "mode_select", "auto" if on else "off", cover=cover
+            )
+            return
         await self.hass.services.async_call(
             "switch",
             "turn_on" if on else "turn_off",
@@ -1009,6 +1045,60 @@ class SimHouse:
             context=Context(user_id=SIM_USER_ID),
         )
         await self.hass.async_block_till_done()
+
+    async def hold(
+        self,
+        *,
+        cover: str | None = None,
+        area_id: str | None = None,
+        duration: dict | None = None,
+        position: int | None = None,
+    ) -> None:
+        """Call ``adaptive_cover.hold`` as a person would (a REAL service call).
+
+        Targets ``area_id`` when given, else one window's Mode select.
+        """
+        data: dict = (
+            {"area_id": area_id}
+            if area_id is not None
+            else {"entity_id": self.eid("select", "mode_select", cover=cover)}
+        )
+        if duration is not None:
+            data["duration"] = duration
+        if position is not None:
+            data["position"] = position
+        await self.hass.services.async_call(
+            DOMAIN,
+            "hold",
+            data,
+            blocking=True,
+            context=Context(user_id=SIM_USER_ID),
+        )
+        await self.hass.async_block_till_done()
+
+    def place(self, cover: str, area: str, *, floor: str | None = None) -> str:
+        """Put the window of ``cover`` in ``area`` (created, on ``floor``).
+
+        Sets the window device's area, as a person does in the device page.
+        Returns the area_id.
+        """
+        floor_id = None
+        if floor is not None:
+            floors = fr.async_get(self.hass)
+            found = floors.async_get_floor_by_name(floor)
+            floor_id = (found or floors.async_create(floor)).floor_id
+        areas = ar.async_get(self.hass)
+        area_entry = areas.async_get_area_by_name(area) or areas.async_create(
+            area, floor_id=floor_id
+        )
+        devices = dr.async_get(self.hass)
+        entry = self._entry_for(cover)
+        device = devices.async_get_device_by_identifier(
+            (DOMAIN, entry.entry_id), config_entry_id=entry.entry_id
+        )
+        assert device is not None, f"no window device for {cover}"
+        devices.async_update_device(device.id, area_id=area_entry.id)
+        return area_entry.id
 
     async def press(
         self, key: str = "reset_manual_override", *, cover: str | None = None
@@ -1052,6 +1142,10 @@ class SimHouse:
         await self.hass.async_block_till_done()
 
     # ------------------------------------------------------------ assertions
+
+    def local(self, hhmm: str) -> dt.datetime:
+        """The sim day's ``HH:MM`` in the house's time zone (tz-aware)."""
+        return self._local(hhmm)
 
     def _t(self, hhmm: str | None) -> dt.datetime | None:
         return None if hhmm is None else self._local(hhmm)

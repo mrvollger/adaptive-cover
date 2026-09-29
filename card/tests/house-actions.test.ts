@@ -10,19 +10,26 @@ import {
   canHold,
   climateState,
   dominantClimateMethod,
+  holdDuration,
   hubCanHold,
+  msUntilTonight,
   planClimate,
   planCovers,
+  planHold,
   planHouseCovers,
   planHouseMode,
   planReturnAll,
   planWindowsMode,
   runCalls,
+  windowMode,
+  windowStatus,
   type HouseScope,
 } from '../src/lib/house-actions';
 import {
+  HUB_MODE_SELECT,
   houseFixture,
   mixedHouse,
+  p5House,
   withStates,
   type HouseFixture,
   type HouseTestHass,
@@ -162,24 +169,103 @@ describe('room and window modes', () => {
     expect(planWindowsMode(hass, room('office'), 'hold')).toEqual([]);
   });
 
-  it('Hold selects "hold" on a P5 Mode select', () => {
-    const { fx, room } = setup();
-    const p5 = Object.fromEntries(
-      ['Office door', 'Office east', 'Office north'].map((t) => [
-        fx.eid(t, 'mode'),
-        { state: 'auto', attributes: { options: ['auto', 'hold', 'off'] } },
-      ]),
-    );
-    const hass = withStates(fx.hass, p5);
+  it('Hold on P5 Mode selects: one adaptive_cover.hold call for the room', () => {
+    const { fx, room } = setup(p5House);
+    const selects = ['Office door', 'Office east', 'Office north'].map((t) => fx.eid(t, 'mode'));
+    const hass = p5House(fx);
     expect(canHold(hass, room('office'))).toBe(true);
     expect(planWindowsMode(hass, room('office'), 'hold')).toEqual([
+      { domain: 'adaptive_cover', service: 'hold', data: { entity_id: selects } },
+    ]);
+    expect(planWindowsMode(hass, room('office'), 'off')[0].data.option).toBe('off');
+  });
+});
+
+describe('P5 Mode (auto / hold / off)', () => {
+  const byTitle = (fx: HouseFixture, model: HouseModel, title: string): HouseWindow =>
+    model.windows.find((w) => w.key === fx.keyOf(title))!;
+
+  it('reads the mode and the hold end from the Mode select', () => {
+    const { fx, hass, model } = setup((f) => p5House(f, mixedHouse(f)));
+    expect(windowMode(hass, byTitle(fx, model, 'Den west'))).toBe('off');
+    expect(windowMode(hass, byTitle(fx, model, 'Master door'))).toBe('hold');
+    expect(windowMode(hass, byTitle(fx, model, 'Master east'))).toBe('auto');
+    const until = hass.states[fx.eid('Master door', 'mode')].attributes.until;
+    expect(until).toBeTruthy();
+    expect(windowStatus(hass, byTitle(fx, model, 'Master door')).holdUntil).toBe(until);
+  });
+
+  it('Auto: one select_option to auto for Off and Hold windows (no button press)', () => {
+    const { fx, hass, model } = setup((f) => p5House(f, mixedHouse(f)));
+    const calls = planWindowsMode(hass, model.windows, 'auto');
+    expect(calls).toEqual([
       {
         domain: 'select',
         service: 'select_option',
-        data: { entity_id: Object.keys(p5), option: 'hold' },
+        data: {
+          entity_id: expect.arrayContaining(
+            ['Den west', 'Master door', 'Office north', 'Office east', 'Office door'].map((t) =>
+              fx.eid(t, 'mode'),
+            ),
+          ),
+          option: 'auto',
+        },
       },
     ]);
-    expect(planWindowsMode(hass, room('office'), 'off')[0].data.option).toBe('off');
+    expect(calls[0].data.entity_id).toHaveLength(5);
+  });
+
+  it('Hold with a duration: {hours, minutes, seconds}', () => {
+    const { fx, hass, model } = setup(p5House);
+    expect(planHold(hass, [byTitle(fx, model, 'Office north')], 4 * 3600_000)).toEqual([
+      {
+        domain: 'adaptive_cover',
+        service: 'hold',
+        data: {
+          entity_id: [fx.eid('Office north', 'mode')],
+          duration: { hours: 4, minutes: 0, seconds: 0 },
+        },
+      },
+    ]);
+    expect(holdDuration(5_430_400)).toEqual({ hours: 1, minutes: 30, seconds: 30 });
+    // Older surfaces have no hold: nothing to call.
+    const legacy = setup();
+    const office = byTitle(legacy.fx, legacy.model, 'Office north');
+    expect(planHold(legacy.hass, [office], 3600_000)).toEqual([]);
+  });
+
+  it('until tonight is the time left to the coming local midnight', () => {
+    const now = Date.parse('2026-09-29T10:40:00-06:00');
+    const ms = msUntilTonight(now);
+    expect(ms).toBeGreaterThan(0);
+    expect(ms).toBeLessThanOrEqual(24 * 3600_000);
+    const end = new Date(now + ms);
+    expect([end.getHours(), end.getMinutes(), end.getSeconds()]).toEqual([0, 0, 0]);
+  });
+
+  it('house: Hold and Off pick the house select; Return all to auto selects auto', () => {
+    const { hass, model, scope } = setup((f) => p5House(f, mixedHouse(f)));
+    expect(model.hub.modeSelect).toBe(HUB_MODE_SELECT);
+    expect(hubCanHold(hass, model.hub)).toBe(true);
+    const select = (option: string) => [
+      {
+        domain: 'select',
+        service: 'select_option',
+        data: { entity_id: [HUB_MODE_SELECT], option },
+      },
+    ];
+    expect(planHouseMode(hass, scope(), 'hold')).toEqual(select('hold'));
+    expect(planHouseMode(hass, scope(), 'off')).toEqual(select('off'));
+    expect(planHouseMode(hass, scope(), 'auto')).toEqual(select('auto'));
+    expect(planReturnAll(hass, scope())).toEqual(select('auto'));
+  });
+
+  it('hidden switch aliases: the Climate mode switch is still read, the control switch is not', () => {
+    const { fx, model, hass } = setup(p5House);
+    const w = model.windows.find((x) => x.key === fx.keyOf('Den west'))!;
+    expect(w.entities.climateSwitch).toBe(fx.eid('Den west', 'climateSwitch'));
+    expect(w.entities.controlSwitch).toBeUndefined();
+    expect(climateState(hass, model.windows)).toBe('on');
   });
 });
 

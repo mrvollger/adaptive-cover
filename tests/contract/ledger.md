@@ -662,3 +662,114 @@ The example below is inside an HTML comment. The checker ignores it.
   `build_cover` and `from_config` now take `clock=`, and the coordinator
   passes its own. Production uses `SYSTEM_CLOCK` for both, so nothing
   changes there; goldens, truth table and house replay unchanged.
+
+## L0024 · 2026-09-29 · Mode auto / hold / off, the hold service, hidden switch aliases (C7, P5 flip)
+- **Removed:**
+  - `tests/test_hub_behavior.py::test_house_mode_mixed_and_adaptive`
+  - implementation tier, listed for the record:
+    `tests/test_live_tunables.py::TestModeSelect::*`
+- **Renamed:** none
+- **Replacements:** `tests/test_hub_behavior.py::test_house_mode_mixed_and_auto`
+  (windows in different Modes show `mixed`; the house Auto turns an off
+  window back on AND ends another window's hold, both covers re-commanded:
+  the old test pinned that "Adaptive" skipped a held cover),
+  `tests/test_hub_behavior.py::test_house_mode_hold_and_off`,
+  `tests/test_hub_behavior.py::test_hold_service_on_the_house_select_holds_every_window`,
+  `tests/test_mode_select.py::*` (options, off stops moves and detection,
+  selected / detected / service holds and their ends, area target, bad
+  input, Return to auto, restore incl. the first-boot switch fallback and
+  the old option names, hidden aliases, the Toggle Control write-through)
+  and `tests/simulation/test_mode_and_hold.py::*` (the plan's "4 h hold on
+  area office", a detected move -> hold -> expiry -> auto, a selected hold,
+  off blocks moves and detection, hold and off across a cold restart).
+  Implementation tier: `tests/runtime/test_mode.py::*`.
+  Behavior-tier test bodies changed without changing ids:
+  `tests/simulation/test_harness_smoke.py::test_select_option_drives_mode`
+  (options `off` / `auto`); `tests/test_hub.py::test_house_mode_flips_all_entries`
+  (options `auto` / `off`, asserts each window's Mode);
+  `tests/test_entity_surface_v2.py::TestFreshSurface::test_categories_and_default_visibility`
+  (the six switches are hidden by the integration, enabled);
+  `TestMigration::test_migration_applies_surface_to_legacy_rows` (1.5, the
+  switch rows hidden), `TestMigration::test_migration_is_idempotent` (5),
+  `TestMigration::test_newer_minor_version_loads_unchanged` (1.6 is now the
+  newer version) and `test_live_house_upgrade` (1.5; the 60 switch rows of
+  the 15 windows hidden, still enabled); the version asserts (4 -> 5) in
+  `tests/test_migration_1_3.py::test_live_house_migrates_to_1_3`,
+  `test_multi_cover_entry_keeps_working_with_a_split_issue`,
+  `tests/test_shadow_settings.py::*` and
+  `tests/simulation/test_shadow_settings.py::*`. SimHouse keeps its call
+  sites: `toggle("toggle_control", on)` selects Mode `auto` / `off`, and a
+  `restart(seed_states=...)` that seeds a window's Toggle Control switch
+  drops that window's captured Mode, so the window restores as on its
+  first boot after the flip (from that switch). With that,
+  `tests/simulation/test_gates_and_windows.py::test_control_on_force_apply`
+  and the other `toggle_control` scenarios pass unchanged.
+- **Mutations re-targeted:** added M47 (`coordinator.py`
+  `async_handle_state_change`: the sun-tracking path ignores Mode off),
+  M48 (`runtime/mode.py` `ModeControl.hold`: every hold lasts the override
+  duration) and M51 (`runtime/mode.py` `restored_mode`: the first boot
+  ignores the Toggle Control switch). M55 re-anchored from
+  `entity_shared.override_until` to `OverrideTracker.expires_at` (same
+  description; the latch + duration rule moved there, next to a requested
+  hold's own end). M13 keeps its anchor (`ControlState.clears_overrides`);
+  switching detection off now ends only detected overrides.
+  Run with `--mutations M47,M48,M51,M55,M13 --jobs 3`: 5/5 killed, each
+  by the simulation and entity tiers.
+- **Contract change:** C7 (the window switches become the Mode select and
+  hidden aliases; the house select's vocabulary)
+- **Reason:** plan P5 v1.18.1 flip, batch 1 (Mode and Hold).
+  `CONFIG_ENTRY_MINOR_VERSION` is 5.
+  - The window's Mode select (unique_id `mode_select` kept) offers
+    `auto` / `hold` / `off` (translation-keyed) and is the source of truth
+    for its control state: a RestoreEntity whose `until` attribute carries
+    a hold's end across restarts. `runtime/mode.py` holds the rules:
+    `current_mode` (control off -> `off`; a held cover -> `hold`),
+    `restored_mode` (own state; the old options "Manual" -> off, "Sun
+    tracking" / "Sun + climate" -> auto; with no own state the Toggle
+    Control switch's last state from the restore cache; a hold whose end
+    passed -> auto) and `ModeControl` (select, alias, button, service).
+  - The climate choice the old options carried is the house `climate_on`
+    setting: migration 1.4 already recorded each window's Climate Mode
+    switch, which is exactly what the old select derived "Sun tracking" vs
+    "Sun + climate" from, so nothing is lost. The runtime still reads the
+    Climate Mode switch (hidden) until the runtime acts on `resolve()`.
+  - Hold: a detected manual move is Mode hold until latch + the override
+    duration (unchanged clock rules). Selecting hold holds every cover in
+    place for the override duration; `adaptive_cover.hold(duration?,
+    position?)` is an entity service on the Mode selects (area and floor
+    targets resolve to them) and on the house select (every window); with
+    `position` it commands that position first (source `hold`, our own
+    travel, never a manual move). A requested hold has a fixed end
+    (`OverrideTracker.hold_until`) that the restart-clock option, the day
+    rollover and switching detection off do not shorten; a person's move
+    under it extends it to at least a detected override's end. Mode auto
+    ends a hold and sends the target; off ends every hold.
+  - Off: no moves, no detection (as Toggle Control off). Auto from off is
+    the old switch-on: control on and a forced apply to covers that are
+    not held. Return to auto is Mode auto (it now also turns an off window
+    on).
+  - The six switches are hidden (hidden_by integration), still enabled:
+    new rows through the surface table (`visible_default`), existing rows
+    through migration 1.5 (`async_apply_surface_to_registry`, unless the
+    user already chose visibility or otherwise touched the row). Toggle
+    Control writes through to the Mode (on keeps holds, as it always did;
+    off is Mode off) and mirrors it; it no longer restores itself. The
+    other five still restore and set `ControlState`.
+  - The rule that keeps user-touched rows alone ignored nothing on HA
+    2026.x: HA lists the entity's own name as a computed alias on every
+    row, so every row looked "aliased by the user" and the migration could
+    never hide (or disable) a default row. Only string aliases count now.
+    No role was disabled or hidden by default before this change, so
+    nothing observable changes for the 1.2 migration.
+  - The house select offers `auto` / `hold` / `off` and the display-only
+    `mixed`; picking one sets every window's Mode (`auto` now ends holds;
+    the old "Adaptive" skipped held covers).
+  - Card: modes are read from the Mode select (`until` first), Auto is one
+    `select_option auto`, Hold one `adaptive_cover.hold` call with every
+    target select (rooms), the detail sheet has Hold 1 h / 2 h / 4 h /
+    until tonight, the house Return all to auto selects the house `auto`;
+    the hidden Climate mode switch is still discovered for the Climate
+    control. Bundle rebuilt.
+  - Goldens, truth table and house replay byte-identical: with no manual
+    action every window restores `auto`, which is the old Toggle Control
+    on.

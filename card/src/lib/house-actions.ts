@@ -1,5 +1,6 @@
 import type { HomeAssistant } from 'custom-card-helpers';
 
+import { INTEGRATION_DOMAIN } from '../const';
 import type { CoverPositionAttributes } from '../types';
 import type { GroupMode, HouseHub, HouseWindow, WindowMode } from './house-model';
 import { liveCoverPosition } from './trace-adapter';
@@ -7,30 +8,27 @@ import { liveCoverPosition } from './trace-adapter';
 /*
  * Mode mapping and service calls for the house card.
  *
- * Today's entity surface (before P5) has no Auto / Hold / Off select, so the
- * three modes are read from what exists:
+ * Since the P5 flip each window has a Mode select with the options
+ * auto / hold / off, and the house select has auto / hold / off / mixed:
  *
- * - Off:  the window's Mode select shows its manual option ("Manual"), or its
- *         Automatic control switch is off.
- * - Hold: the Manual override binary sensor is on (a manual move latched an
- *         override). Its `until` attribute is when auto takes over again.
- * - Auto: anything else.
+ * - The window's mode is its Mode select's state. A hold's end is the
+ *   select's `until` attribute (else the Manual override sensor's).
+ * - Off:  select.select_option → off.
+ * - Auto: select.select_option → auto. It turns control back on and ends a
+ *         hold (the shade goes back to its automatic position).
+ * - Hold: adaptive_cover.hold, an entity service on the Mode selects: one
+ *         call with every target select, optionally with a `duration`
+ *         (default: each window's manual-override time). The house Hold is
+ *         the house select's hold option.
  *
- * Actions:
- * - Off:  select.select_option → the manual option (else switch.turn_off on
- *         Automatic control).
- * - Auto: select.select_option → the window's automatic option for windows
- *         that are Off (the climate option when the window's Climate mode
- *         switch is on, else sun tracking), then button.press on Return to
- *         auto for every window that is not already Auto.
- * - Hold: only when the Mode select offers a "hold" option (P5); otherwise
- *         there is no service that creates a hold, and the card disables the
- *         Hold segment. A manual move (Open / Close) is what holds today.
+ * Older surfaces (before P5) are still read: a "Manual" select option or an
+ * Automatic control switch that is off is Off, a latched Manual override is
+ * Hold. There Auto selects the window's automatic option ("Sun + climate"
+ * when its Climate mode switch is on, else "Sun tracking") for Off windows,
+ * then presses Return to auto; there is no Hold.
  *
  * Group actions send one service call per (service, option), with every
  * target entity in one `entity_id` list, never one call per window.
- * The option matching is by name, so the P5 select (auto / hold / off) and
- * the P5 house select (Auto / Hold / Off / Mixed) work without a card change.
  */
 
 export interface ServiceCall {
@@ -148,15 +146,14 @@ export function windowStatus(hass: HomeAssistant, w: HouseWindow): WindowStatus 
 
   let holdUntil: string | null = null;
   if (mode === 'hold') {
-    const until = w.entities.manualOverride
-      ? hass.states[w.entities.manualOverride]?.attributes?.until
-      : undefined;
-    holdUntil =
-      typeof until === 'string' && until
-        ? until
-        : typeof attrs.override_until === 'string' && attrs.override_until
-          ? attrs.override_until
-          : null;
+    const candidates: unknown[] = [
+      w.entities.mode ? hass.states[w.entities.mode]?.attributes?.until : undefined,
+      w.entities.manualOverride
+        ? hass.states[w.entities.manualOverride]?.attributes?.until
+        : undefined,
+      attrs.override_until,
+    ];
+    holdUntil = candidates.find((c): c is string => typeof c === 'string' && c.length > 0) ?? null;
   }
 
   const sunId = w.entities.sunInFront;
@@ -182,6 +179,11 @@ export function windowStatus(hass: HomeAssistant, w: HouseWindow): WindowStatus 
     azimuth: num(attrs.azimuth_window ?? attrs.sun?.window_azimuth),
     available,
   };
+}
+
+/** True when a select has the P5 Mode options (an explicit auto and hold). */
+function isModeSelect(options: string[]): boolean {
+  return !!holdOption(options) && options.some((o) => AUTO_OPTION.test(o));
 }
 
 /** True when every window's Mode select can be set to hold (P5 surface). */
@@ -253,23 +255,65 @@ export function planWindowsMode(
 
   if (target === 'off') return planControl(hass, todo, false);
 
-  if (target === 'hold') {
-    const items = todo.flatMap((w) => {
-      const option = holdOption(selectOptions(hass, w.entities.mode));
-      return w.entities.mode && option ? [{ key: option, id: w.entities.mode }] : [];
-    });
-    return grouped(items, (option, ids) => selectCall(option, ids));
-  }
+  if (target === 'hold') return planHold(hass, todo);
 
-  // auto: control back on where it is off, then return to auto.
-  const calls = planControl(
-    hass,
-    todo.filter((w) => modes.get(w) === 'off'),
-    true,
+  // Auto on a P5 Mode select: one select_option; it also ends a hold.
+  const p5 = todo.filter((w) => isModeSelect(selectOptions(hass, w.entities.mode)));
+  const calls = grouped(
+    p5.map((w) => ({
+      key: autoOption(selectOptions(hass, w.entities.mode), false)!,
+      id: w.entities.mode!,
+    })),
+    (option, ids) => selectCall(option, ids),
   );
-  const buttons = todo.map((w) => w.entities.returnButton).filter((b): b is string => !!b);
+  // Older surfaces: control back on where it is off, then return to auto.
+  const legacy = todo.filter((w) => !p5.includes(w));
+  calls.push(
+    ...planControl(
+      hass,
+      legacy.filter((w) => modes.get(w) === 'off'),
+      true,
+    ),
+  );
+  const buttons = legacy.map((w) => w.entities.returnButton).filter((b): b is string => !!b);
   if (buttons.length > 0) calls.push(entityCall('button', 'press', buttons));
   return calls;
+}
+
+/** The `duration` of a hold call ({hours, minutes, seconds}) for `ms`. */
+export function holdDuration(ms: number): { hours: number; minutes: number; seconds: number } {
+  const total = Math.max(0, Math.round(ms / 1000));
+  return {
+    hours: Math.floor(total / 3600),
+    minutes: Math.floor((total % 3600) / 60),
+    seconds: total % 60,
+  };
+}
+
+/** Milliseconds from `nowMs` to the coming local midnight ("until tonight"). */
+export function msUntilTonight(nowMs: number): number {
+  const end = new Date(nowMs);
+  end.setHours(24, 0, 0, 0);
+  return end.getTime() - nowMs;
+}
+
+/**
+ * Hold `windows` (adaptive_cover.hold): one call with every Mode select that
+ * offers hold. `durationMs` omitted: each window's manual-override time.
+ * Windows already on hold are held again from now.
+ */
+export function planHold(
+  hass: HomeAssistant,
+  windows: HouseWindow[],
+  durationMs?: number,
+): ServiceCall[] {
+  const ids = windows
+    .filter((w) => !!holdOption(selectOptions(hass, w.entities.mode)))
+    .map((w) => w.entities.mode!);
+  if (ids.length === 0) return [];
+  const data: Record<string, unknown> = { entity_id: [...new Set(ids)] };
+  if (durationMs !== undefined) data.duration = holdDuration(durationMs);
+  return [{ domain: INTEGRATION_DOMAIN, service: 'hold', data }];
 }
 
 export interface HouseScope {
@@ -312,6 +356,11 @@ export function planHouseMode(
 export function planReturnAll(hass: HomeAssistant, scope: HouseScope): ServiceCall[] {
   const { hub, windows, useHub } = scope;
   if (!useHub) return planWindowsMode(hass, windows, 'auto');
+  // P5 house select: Auto sets every window's Mode to auto (holds end).
+  const hubOptions = selectOptions(hass, hub.modeSelect);
+  if (hub.modeSelect && isModeSelect(hubOptions)) {
+    return [selectCall(autoOption(hubOptions, false)!, [hub.modeSelect])];
+  }
   const calls: ServiceCall[] = [];
   const anyOff = windows.some((w) => windowMode(hass, w) === 'off');
   if (anyOff) {

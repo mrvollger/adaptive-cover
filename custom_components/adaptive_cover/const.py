@@ -14,8 +14,10 @@ DOMAIN = "adaptive_cover"
 #   1.4 (P5 shadow): the hub stores the lifted house / floor / area
 #             profiles, each window its sparse ``overrides`` (shadow.py);
 #             the legacy flat keys stay and the runtime still acts on them.
+#   1.5 (P5 flip): the six per-window switches are hidden (still enabled)
+#             aliases of the Mode select and the house toggles.
 CONFIG_ENTRY_VERSION = 1
-CONFIG_ENTRY_MINOR_VERSION = 4
+CONFIG_ENTRY_MINOR_VERSION = 5
 LOGGER = logging.getLogger(__package__)
 _LOGGER = logging.getLogger(__name__)
 

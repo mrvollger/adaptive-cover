@@ -38,16 +38,15 @@ def override_until(
 ) -> dt.datetime | None:
     """When the entry's manual override ends, or None if no cover is held.
 
-    Uses the same rule as the override expiry itself (latch time + override
-    duration). With several covers it is the latest expiry. The day
-    rollover at local midnight can end an override earlier.
+    Uses the same rule as the override expiry itself
+    (``OverrideTracker.expires_at``: latch time + override duration, or a
+    requested hold's own end). With several covers it is the latest
+    expiry. The day rollover at local midnight can end a detected override
+    earlier.
     """
     manager = coordinator.manager
     expiries = [
-        latched_at + manager.reset_duration
-        for cover in covers
-        if manager.is_cover_manual(cover)
-        and (latched_at := manager.manual_control_time.get(cover)) is not None
+        expiry for cover in covers if (expiry := manager.expires_at(cover)) is not None
     ]
     return max(expiries, default=None)
 

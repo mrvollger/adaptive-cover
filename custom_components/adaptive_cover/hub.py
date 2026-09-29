@@ -6,8 +6,9 @@ setup. Its entities fan out over all loaded coordinators:
 - cover.adaptive_cover_all: aggregate cover (avg of non-tilt positions;
   open/close/set all - marks each cover manually controlled, so adaptive
   ticks do not walk the command back)
-- select "Cover control mode": Manual / Adaptive / Mixed(display-only);
-  Adaptive respects existing manual overrides
+- select "Cover control mode": Auto / Hold / Off, and a display-only Mixed
+  when the windows differ; picking one sets every window's Mode (P5 flip).
+  The ``adaptive_cover.hold`` service on it holds every window
 - button "Return all shades to auto" (unique_id keeps the reset_all slug)
 
 Clean re-implementation of the upstream "All Blinds" concept (no dead
@@ -16,6 +17,7 @@ pipeline, no hardcoded language, typed access to coordinators).
 
 from __future__ import annotations
 
+import datetime as dt
 from typing import Any
 
 from homeassistant.components.button import ButtonEntity
@@ -26,20 +28,19 @@ from homeassistant.components.cover import (
 )
 from homeassistant.components.select import SelectEntity
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 
 from .const import DOMAIN
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_surface import HUB_SURFACE, HUB_UNIQUE_ID, apply_surface
 from .helpers import get_safe_attr
+from .runtime.mode import MODE_OPTIONS, Mode
 
 HUB_ENTRY_NAME = "Adaptive Cover All"
 CONF_IS_HUB = "is_hub"
 
-MODE_MANUAL = "Manual"
-MODE_ADAPTIVE = "Adaptive"
-MODE_MIXED = "Mixed"
+MODE_MIXED = "mixed"
+"""The house select's display-only option: the windows' Modes differ."""
 
 
 def is_hub_entry(entry) -> bool:
@@ -171,16 +172,16 @@ class AllShadesCover(CoverEntity):
 
 
 class HouseModeSelect(SelectEntity):
-    """Manual / Adaptive for the whole house, via each entry's switches.
+    """Auto / Hold / Off for the whole house: sets every window's Mode.
 
-    Polls: it has no coordinator, and the underlying per-entry toggles
-    can change at any time.
+    Polls: it has no coordinator, and the windows' Modes can change at any
+    time. The options are translation keys (``strings.json``).
     """
 
     _attr_has_entity_name = True
     _attr_should_poll = True
     _attr_icon = "mdi:home-automation"
-    _attr_options = [MODE_MANUAL, MODE_ADAPTIVE, MODE_MIXED]
+    _attr_options = [*MODE_OPTIONS, MODE_MIXED]
 
     def __init__(self, hass: HomeAssistant) -> None:
         """Initialize the house mode select."""
@@ -190,50 +191,34 @@ class HouseModeSelect(SelectEntity):
         self._attr_device_info = hub_device_info()
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """State the override contract where users will look for it."""
-        return {
-            "note": (
-                "Adaptive resumes control only for covers without an "
-                "active manual override"
-            )
-        }
-
-    @property
     def current_option(self) -> str | None:
-        """Manual/Adaptive when unanimous, Mixed otherwise."""
-        toggles = [
-            bool(coordinator.control_toggle)
+        """The windows' Mode when they agree, Mixed otherwise."""
+        modes = {
+            mode
             for coordinator in iter_coordinators(self.hass)
-        ]
-        if not toggles:
+            if (mode := coordinator.modes.mode) is not None
+        }
+        if not modes:
             return None
-        if all(toggles):
-            return MODE_ADAPTIVE
-        if not any(toggles):
-            return MODE_MANUAL
+        if len(modes) == 1:
+            return next(iter(modes)).value
         return MODE_MIXED
 
     async def async_select_option(self, option: str) -> None:
-        """Flip every entry's Toggle Control switch."""
+        """Set every window's Mode (Mixed is display-only)."""
         if option == MODE_MIXED:
-            return  # display-only state
-        registry = er.async_get(self.hass)
-        turn_on = option == MODE_ADAPTIVE
-        for entry_id in list(self.hass.data.get(DOMAIN, {})):
-            coordinator = self.hass.data[DOMAIN].get(entry_id)
-            if not isinstance(coordinator, AdaptiveDataUpdateCoordinator):
-                continue
-            switch_id = registry.async_get_entity_id(
-                "switch", DOMAIN, f"{entry_id}_Toggle Control"
-            )
-            if switch_id:
-                await self.hass.services.async_call(
-                    "switch",
-                    "turn_on" if turn_on else "turn_off",
-                    {"entity_id": switch_id},
-                    blocking=True,
-                )
+            return
+        mode = Mode(option)
+        for coordinator in iter_coordinators(self.hass):
+            await coordinator.modes.select(mode)
+        self.async_write_ha_state()
+
+    async def async_hold(
+        self, duration: dt.timedelta | None = None, position: int | None = None
+    ) -> None:
+        """``adaptive_cover.hold`` on the house: hold every window."""
+        for coordinator in iter_coordinators(self.hass):
+            await coordinator.modes.hold(duration, position)
         self.async_write_ha_state()
 
 

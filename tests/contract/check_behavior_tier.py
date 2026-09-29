@@ -114,6 +114,11 @@ RULES: list[tuple[str, str]] = [
     # sensor's provenance, and the diff repair issue, all through config
     # entries, registries, entity states and the issue registry.
     ("tests/test_shadow_settings.py::*", BEHAVIOR),
+    # P5 flip (C7): the Mode select (auto / hold / off), the hold entity
+    # service, the Mode's restore (incl. the first-boot switch fallback) and
+    # the hidden switch aliases, through entity states, registries, the
+    # restore cache and real service calls.
+    ("tests/test_mode_select.py::*", BEHAVIOR),
     # P5 layered settings: `resolve` is a contract v2 seam (ADR 0004).
     # Precedence, provenance, the lift's rules and the P5 guarantee on the
     # live snapshot (resolve(w) == legacy_flat(w)) are behavior; the purity

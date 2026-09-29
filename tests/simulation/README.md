@@ -91,12 +91,15 @@ async def test_my_scenario(hass, freezer):
   fake cover services, and keeps attributing commands to the rebuilt
   windows. With no changes it models saving the dialog unchanged (still a
   reload).
-- `await house.restart(at=None, restore=True, seed_states=None)` — HA
-  restart: optionally advance first, capture every window's entity states,
-  unload, seed `mock_restore_cache` (or `seed_states={entity_id: "off"}`
-  overrides; `restore=False` skips capture so defaults apply), set up
-  again on the same entries. The timeline and shade states persist across
-  the restart.
+- `await house.restart(at=None, restore=True, seed_states=None, cold=False)`
+  — HA restart: optionally advance first, capture every window's entity
+  states, unload, seed `mock_restore_cache` (or `seed_states={entity_id:
+  "off"}` overrides; `restore=False` skips capture so defaults apply), set
+  up again on the same entries. The timeline and shade states persist
+  across the restart. Seeding a window's `toggle_control` switch drops its
+  captured Mode, so the window restores as on its first boot after the P5
+  flip (from that switch). `cold=True` also drops the in-memory
+  manual-override store, as a real process restart does.
 
 ## Device faults
 
@@ -138,9 +141,19 @@ async def test_my_scenario(hass, freezer):
   service calls with a simulated-user context. The reset button returns
   at once (it does not wait for covers to land); should a press ever
   block, `press()` drives short sub-steps until it completes.
+  `toggle("toggle_control", on)` sets the window's Mode (P5 flip: the
+  switch is a hidden alias): on selects `auto`, off selects `off`.
+- `await house.hold(cover=, area_id=, duration=, position=)` — a REAL
+  `adaptive_cover.hold` call: one window's Mode select, or every window in
+  an area. `house.place(cover, "Office", floor="Upstairs")` puts a
+  window's device in an area (created on first use) and returns its id.
+- The window's Mode: `house.window().mode` (`auto` / `hold` / `off`) and
+  `house.window().hold_until` (the Mode select's `until`).
 
 ## Assertions
 
+- `house.local("HH:MM")` — that time on the sim day, tz-aware (for comparing
+  with attributes such as the Mode select's `until`).
 - `house.timeline` — every service call and cover state write, timestamped,
   attributed to `integration` / `human` / `device`.
 - `house.moves(entity, actor=, since=, until=, service=)` — service calls;

@@ -58,7 +58,7 @@ async def _house(hass, freezer) -> SimHouse:
     house = await SimHouse.create(
         hass, freezer, date=DATE, options={CONF_SUNSET_POS: 0}
     )
-    assert hub.minor_version == 4
+    assert hub.minor_version == 5
     assert "house" in hub.options
     return house
 
