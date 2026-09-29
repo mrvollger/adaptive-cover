@@ -68,7 +68,7 @@ _COVER_POSITION_SERVICES = {
 def _find_window_key(hass: HomeAssistant, cover: str) -> str:
     """The window key of the window driving ``cover`` (today: entry id)."""
     for entry in hass.config_entries.async_entries(DOMAIN):
-        if cover in entry.options.get(CONF_ENTITIES, []):
+        if cover in (entry.options.get(CONF_ENTITIES) or []):
             return entry.entry_id
     raise LookupError(f"No adaptive_cover window drives {cover}")
 
