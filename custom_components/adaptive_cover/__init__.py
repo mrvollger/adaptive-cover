@@ -190,6 +190,37 @@ async def async_initialize_integration(
     return True
 
 
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Migrate a config entry to the current schema version.
+
+    1.1 -> 1.2 (P1): apply the entity surface (categories and disabled
+    defaults) to the entry's existing registry rows; new rows get it from
+    the entity classes. User choices are kept (see entity_surface).
+
+    A newer MINOR version (after a downgrade) loads as is. A newer MAJOR
+    version is refused.
+    """
+    from .const import CONFIG_ENTRY_VERSION
+    from .entity_surface import async_apply_surface_to_registry
+
+    if entry.version > CONFIG_ENTRY_VERSION:
+        _LOGGER.error(
+            "Cannot load %s: config entry version %s.%s is newer than this "
+            "integration supports",
+            entry.title,
+            entry.version,
+            entry.minor_version,
+        )
+        return False
+    if entry.minor_version < 2:
+        updated = async_apply_surface_to_registry(hass, entry)
+        _LOGGER.debug(
+            "Migrated %s to 1.2: %s registry rows updated", entry.title, updated
+        )
+        hass.config_entries.async_update_entry(entry, minor_version=2)
+    return True
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Adaptive Cover from a config entry."""
     from .hub import is_hub_entry

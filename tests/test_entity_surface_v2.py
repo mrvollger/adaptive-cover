@@ -1,7 +1,9 @@
 """Entity surface v2 (P1; contract change C1 in docs/refactor_plan.md).
 
 Pins the per-window and hub entity surface: category, default visibility
-and "<Device> <Role>" names.
+and "<Device> <Role>" names; and the 1.1 -> 1.2 config-entry migration
+that applies the surface to EXISTING registry rows without overriding
+user choices.
 
 Public seams only: config entries, the entity/device/area registries,
 hass.states and the translation files. The expected surface below is
@@ -14,6 +16,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import EntityCategory
 from homeassistant.helpers import (
     entity_registry as er,
@@ -271,3 +274,200 @@ class TestTranslations:
         assert {spec.key: spec.name for spec in TUNABLES} == {
             key: value["name"] for key, value in numbers.items()
         }
+
+
+# -------------------------------------------------------------- migration
+
+# A legacy (1.1) entry as the live house has it: rows created by older
+# code, with their historical entity_ids, names and categories.
+LEGACY_ROWS = {
+    ("sensor", "Cover Position"): ("office_door_cover_position", None),
+    ("sensor", "Start Sun"): ("office_door_start_sun", None),
+    ("sensor", "End Sun"): ("office_door_end_sun", None),
+    ("sensor", "Control Method"): ("office_door_control_method", None),
+    ("sensor", "Next State Change"): ("office_door_next_state_change", None),
+    ("sensor", "Last State Change"): ("office_door_last_state_change", None),
+    ("binary_sensor", "Sun Infront"): ("office_door_sun_infront", None),
+    ("binary_sensor", "Manual Override"): ("office_door_manual_override", None),
+    ("switch", "Toggle Control"): ("office_door_toggle_control", None),
+    ("switch", "Manual Override"): ("office_door_manual_override", None),
+    ("switch", "Climate Mode"): ("office_door_climate_mode", None),
+    ("switch", "Outside Temperature"): ("office_door_outside_temperature", None),
+    ("switch", "Lux"): ("office_door_lux", None),
+    ("switch", "Irradiance"): ("office_door_irradiance", None),
+    ("button", "Reset Manual Override"): (
+        "office_door_reset_manual_override",
+        None,
+    ),
+    ("select", "mode_select"): ("office_door_mode", CONFIG),
+    **{
+        ("number", f"number_{spec.key}"): (f"office_door_{spec.key}", CONFIG)
+        for spec in TUNABLES
+    },
+}
+
+
+def _legacy_entry(hass, row_overrides=None):
+    """A 1.1 entry whose registry rows already exist (pre-P1 upgrade).
+
+    row_overrides: {(platform, suffix): {registry field: value}} applied
+    after the row is created, to model user choices.
+    """
+    row_overrides = row_overrides or {}
+    entry = _entry(hass, minor_version=1, **FULL_CLIMATE)
+    registry = er.async_get(hass)
+    for (platform, suffix), (object_id, category) in LEGACY_ROWS.items():
+        row = registry.async_get_or_create(
+            platform,
+            DOMAIN,
+            f"{entry.entry_id}_{suffix}",
+            config_entry=entry,
+            suggested_object_id=object_id,
+            entity_category=category,
+            has_entity_name=True,
+            original_name=suffix,
+        )
+        if changes := row_overrides.get((platform, suffix)):
+            registry.async_update_entity(row.entity_id, **changes)
+    return entry
+
+
+def _snapshot(hass, entry) -> dict:
+    """The registry fields the migration may touch, plus identity."""
+    return {
+        key: (
+            row.entity_id,
+            row.unique_id,
+            row.entity_category,
+            row.disabled_by,
+            row.hidden_by,
+            row.name,
+        )
+        for key, row in _rows(hass, entry).items()
+    }
+
+
+class TestMigration:
+    """Config entry 1.1 -> 1.2 applies the surface to existing rows."""
+
+    async def test_migration_applies_surface_to_legacy_rows(self, hass, cover_calls):
+        _set_world(hass)
+        entry = _legacy_entry(hass)
+        legacy_ids = {
+            key: (row.entity_id, row.unique_id)
+            for key, row in _rows(hass, entry).items()
+        }
+
+        await _setup(hass, entry)
+
+        assert entry.state is ConfigEntryState.LOADED
+        assert (entry.version, entry.minor_version) == (1, 2)
+        rows = _rows(hass, entry)
+        # Identity is frozen: same unique_ids, same entity_ids.
+        assert {
+            key: (row.entity_id, row.unique_id) for key, row in rows.items()
+        } == legacy_ids
+        # Only the old select/number categories and the four diagnostic
+        # sensors change visibly; everything lands on the plan's surface.
+        for key, (category, enabled, name) in WINDOW_SURFACE.items():
+            row = rows[key]
+            assert row.entity_category == category, key
+            expected = None if enabled else er.RegistryEntryDisabler.INTEGRATION
+            assert row.disabled_by == expected, key
+            if enabled:
+                state = hass.states.get(row.entity_id)
+                assert state.attributes["friendly_name"] == f"Office Door {name}"
+
+    async def test_migration_keeps_user_choices(self, hass, cover_calls):
+        _set_world(hass)
+        entry = _legacy_entry(
+            hass,
+            {
+                ("sensor", "Next State Change"): {"name": "Door next move"},
+                ("sensor", "Start Sun"): {"hidden_by": er.RegistryEntryHider.USER},
+                ("sensor", "Last State Change"): {
+                    "disabled_by": er.RegistryEntryDisabler.USER
+                },
+                ("sensor", "Control Method"): {
+                    "disabled_by": er.RegistryEntryDisabler.USER
+                },
+            },
+        )
+        await _setup(hass, entry)
+        rows = _rows(hass, entry)
+
+        # Renamed by the user: in use, stays enabled.
+        renamed = rows[("sensor", "Next State Change")]
+        assert renamed.disabled_by is None
+        assert renamed.name == "Door next move"
+        assert hass.states.get(renamed.entity_id) is not None
+        # Hidden by the user: visibility already chosen, stays enabled.
+        hidden = rows[("sensor", "Start Sun")]
+        assert hidden.disabled_by is None
+        assert hidden.hidden_by is er.RegistryEntryHider.USER
+        # Disabled by the user stays disabled BY THE USER, including a role
+        # that is enabled by default.
+        for key in (("sensor", "Last State Change"), ("sensor", "Control Method")):
+            assert rows[key].disabled_by is er.RegistryEntryDisabler.USER, key
+        # The untouched disabled-by-default role is disabled by the
+        # integration; categories apply regardless of user choices.
+        assert rows[("sensor", "End Sun")].disabled_by is (
+            er.RegistryEntryDisabler.INTEGRATION
+        )
+        for key, (category, _enabled, _name) in WINDOW_SURFACE.items():
+            assert rows[key].entity_category == category, key
+
+    async def test_migration_is_idempotent(self, hass, cover_calls):
+        _set_world(hass)
+        entry = _legacy_entry(hass)
+        await _setup(hass, entry)
+        after_first = _snapshot(hass, entry)
+
+        # Force the migration to run a second time on the migrated rows.
+        assert await hass.config_entries.async_unload(entry.entry_id)
+        hass.config_entries.async_update_entry(entry, minor_version=1)
+        await _setup(hass, entry)
+
+        assert entry.minor_version == 2
+        assert _snapshot(hass, entry) == after_first
+
+    async def test_user_reenabled_entity_stays_enabled(self, hass, cover_calls):
+        """After the upgrade the migration never runs again, so a sensor the
+        user turns back on survives restarts and reloads."""
+        _set_world(hass)
+        entry = _legacy_entry(hass)
+        await _setup(hass, entry)
+        registry = er.async_get(hass)
+        next_change = _rows(hass, entry)[("sensor", "Next State Change")]
+        assert next_change.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+
+        registry.async_update_entity(next_change.entity_id, disabled_by=None)
+        assert await hass.config_entries.async_reload(entry.entry_id)
+        await hass.async_block_till_done()
+
+        row = registry.async_get(next_change.entity_id)
+        assert row.disabled_by is None
+        assert hass.states.get(row.entity_id) is not None
+
+    async def test_newer_minor_version_loads_unchanged(self, hass, cover_calls):
+        """A downgrade from a later 1.x keeps working (minor bumps are
+        backward compatible) and is not rewritten."""
+        _set_world(hass)
+        entry = _entry(hass, minor_version=3)
+        await _setup(hass, entry)
+        assert entry.state is ConfigEntryState.LOADED
+        assert (entry.version, entry.minor_version) == (1, 3)
+
+    async def test_newer_major_version_is_refused(self, hass, cover_calls):
+        _set_world(hass)
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="From the future",
+            data={"name": "From the future", CONF_SENSOR_TYPE: SensorType.BLIND},
+            options={**COMMON_OPTIONS, CONF_ENTITIES: [COVER]},
+            version=2,
+            minor_version=1,
+        )
+        entry.add_to_hass(hass)
+        assert not await hass.config_entries.async_setup(entry.entry_id)
+        assert entry.state is ConfigEntryState.MIGRATION_ERROR
