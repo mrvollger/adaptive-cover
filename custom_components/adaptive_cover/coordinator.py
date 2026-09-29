@@ -204,6 +204,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self._cached_options = None
         self._basic_decision = None
         self._climate_decision = None
+        # This refresh's climate snapshot (climate_mode_data builds it once).
+        self._climate: ClimateCoverData | None = None
         self._gate_blocks: dict[str, str | None] = {}
         self.explainer = Explainer(self.logger)
 
@@ -494,13 +496,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             await self.async_handle_timed_refresh(options)
 
         normal_cover = self.normal_cover_state.cover
-        # Climate snapshot used for reasons, forecasting, and trace
+        # Climate snapshot used for reasons, forecasting, and trace: the one
+        # the climate decision used (built once, in climate_mode_data).
         climate_data_for_reason = None
         if self._climate_mode and self.controls.climate:
-            try:
-                climate_data_for_reason = self._climate_data()
-            except Exception:  # noqa: BLE001
-                climate_data_for_reason = None
+            climate_data_for_reason = self._climate
 
         # Run the solar_times method in a separate thread.
         # Compare CONFIGURED-local dates: the UTC date rolls over mid-evening
@@ -1045,15 +1045,14 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
     def climate_mode_data(self, options, cover_data):
         """Update climate mode data and control method."""
-        climate = self._climate_data()
+        climate = self._climate = self._climate_data()
         self._climate_decision = ClimateCoverState(cover_data, climate).get_decision()
         self.climate_state = round(self._climate_decision.position)
-        climate_data = ClimateCoverState(cover_data, climate).climate_data
         # Winter wins if both held (it was the later assignment); neither,
         # or the climate switch off, is intermediate again.
-        if climate_data.is_winter and self.switch_mode:
+        if climate.is_winter and self.switch_mode:
             self.control_method = "winter"
-        elif climate_data.is_summer and self.switch_mode:
+        elif climate.is_summer and self.switch_mode:
             self.control_method = "summer"
         else:
             self.control_method = "intermediate"
