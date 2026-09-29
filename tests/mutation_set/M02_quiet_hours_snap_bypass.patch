@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1124,8 +1124,6 @@
+@@ -1138,8 +1138,6 @@
          """
          if not self.quiet_start or not self.quiet_end:
              return True

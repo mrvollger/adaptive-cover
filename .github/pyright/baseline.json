@@ -1,6 +1,6 @@
 {
   "pyright": "1.1.414",
-  "total": 190,
+  "total": 187,
   "errors": [
     {
       "file": "custom_components/adaptive_cover/__init__.py",
@@ -304,12 +304,6 @@
     },
     {
       "file": "custom_components/adaptive_cover/coordinator.py",
-      "rule": "reportCallIssue",
-      "message": "Object of type \"object\" is not callable",
-      "count": 1
-    },
-    {
-      "file": "custom_components/adaptive_cover/coordinator.py",
       "rule": "reportGeneralTypeIssues",
       "message": "Expected class but received \"slice[type[str], type[int], None]\"",
       "count": 1
@@ -435,22 +429,10 @@
       "count": 1
     },
     {
-      "file": "custom_components/adaptive_cover/number.py",
-      "rule": "reportPrivateImportUsage",
-      "message": "\"EntityCategory\" is not exported from module \"homeassistant.helpers.entity\"",
-      "count": 1
-    },
-    {
       "file": "custom_components/adaptive_cover/options_spec.py",
       "rule": "reportCallIssue",
       "message": "Argument missing for parameter \"v\"",
       "count": 3
-    },
-    {
-      "file": "custom_components/adaptive_cover/select.py",
-      "rule": "reportPrivateImportUsage",
-      "message": "\"EntityCategory\" is not exported from module \"homeassistant.helpers.entity\"",
-      "count": 1
     },
     {
       "file": "custom_components/adaptive_cover/sensor.py",

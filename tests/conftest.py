@@ -60,20 +60,6 @@ COMMON_OPTIONS = {
 }
 
 
-@pytest.fixture
-def expected_lingering_timers() -> bool:
-    """Log timers left running after teardown instead of failing the test.
-
-    Since HA 2026.8, phcc's ``verify_cleanup`` inspects the test's own event
-    loop (earlier releases looked at a different loop and never saw these).
-    It exposes timers the integration does not cancel on unload: the
-    125 s arrival poll (``_schedule_arrival_poll``), point-in-time
-    trackers and the hub cover's polling interval. Remove this override
-    once unload cancels them (runtime split, P4).
-    """
-    return True
-
-
 @pytest.fixture(autouse=True)
 def auto_enable_custom_integrations(enable_custom_integrations):
     """Auto-enable custom integrations defined in the test dir."""
@@ -116,6 +102,19 @@ def mock_sun_entity(hass):
         "above_horizon",
         {"azimuth": 180.0, "elevation": 45.0},
     )
+
+
+@pytest.fixture
+def stub_sun_integration(hass, mock_sun_entity):
+    """Keep HA's real ``sun`` integration from loading as our dependency.
+
+    Starting a config flow loads adaptive_cover and with it ``sun``, whose
+    entry is created by an async import flow: our entry's first refresh can
+    then run before ``sun.sun`` exists. Its unload also removes ``sun.sun``
+    around the platform, leaking the platform's polling timer past
+    teardown. Marking it loaded and providing ``sun.sun`` avoids both.
+    """
+    hass.config.components.add("sun")
 
 
 @pytest.fixture

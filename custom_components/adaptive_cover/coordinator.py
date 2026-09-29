@@ -18,6 +18,7 @@ from homeassistant.const import (
     SERVICE_SET_COVER_TILT_POSITION,
 )
 from homeassistant.core import (
+    CALLBACK_TYPE,
     Context,
     Event,
     EventStateChangedData,
@@ -211,7 +212,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.target_call_time: dict[str, dt.datetime] = {}
         self._our_context_ids: deque[str] = deque(maxlen=64)
         self._sun_table = None
-        self._poll_cancels: dict[str, object] = {}
+        self._poll_cancels: dict[str, CALLBACK_TYPE] = {}
         self.ignore_intermediate_states = self.config_entry.options.get(
             CONF_MANUAL_IGNORE_INTERMEDIATE, False
         )
@@ -519,6 +520,19 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             return "in_travel"
         self.logger.debug("No wait for target call for %s", entity_id)
         return None
+
+    async def async_shutdown(self) -> None:
+        """Cancel every timer this coordinator armed (entry unload).
+
+        HA calls this on unload. Arrival polls and the end-of-day tracker
+        used to outlive the entry and fire against a dead coordinator.
+        """
+        for cancel in self._poll_cancels.values():
+            cancel()
+        self._poll_cancels.clear()
+        self._async_cancel_update_listener()
+        self._scheduled_time = None
+        await super().async_shutdown()
 
     @callback
     def _async_cancel_update_listener(self) -> None:

@@ -429,6 +429,7 @@ def test_english_is_the_only_language() -> None:
     assert sorted(p.name for p in (PACKAGE / "translations").iterdir()) == ["en.json"]
 
 
+@pytest.mark.usefixtures("stub_sun_integration")
 async def test_flow_strings_cover_every_form(hass, strings: dict[str, Any]) -> None:
     config_forms = await _config_flow_forms(hass)
     options_forms = await _options_flow_forms(hass)
