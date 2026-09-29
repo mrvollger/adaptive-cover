@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import _LOGGER, CONF_ENTITIES, DOMAIN
+from .const import _LOGGER, CONF_ENTITIES
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info
 from .entity_surface import apply_surface, window_surface
@@ -26,9 +26,7 @@ async def async_setup_entry(
     if is_hub_entry(config_entry):
         async_add_entities([ResetAllOverridesButton(hass)])
         return
-    coordinator: AdaptiveDataUpdateCoordinator = hass.data[DOMAIN][
-        config_entry.entry_id
-    ]
+    coordinator: AdaptiveDataUpdateCoordinator = config_entry.runtime_data
 
     reset_manual = AdaptiveCoverButton(
         config_entry,

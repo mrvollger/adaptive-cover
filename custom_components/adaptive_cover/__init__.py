@@ -68,14 +68,25 @@ SERVICE_CHANGE_SETTINGS = "change_settings"
 GET_FORECAST_SCHEMA = vol.Schema({vol.Required("config_entry"): str})
 
 
+def _window_coordinator(entry: ConfigEntry) -> AdaptiveDataUpdateCoordinator | None:
+    """Return the coordinator of a loaded window entry, or None.
+
+    HA drops ``runtime_data`` when the entry unloads; the hub entry never
+    has one.
+    """
+    coordinator = getattr(entry, "runtime_data", None)
+    if isinstance(coordinator, AdaptiveDataUpdateCoordinator):
+        return coordinator
+    return None
+
+
 def _resolve_entry(hass: HomeAssistant, reference: str) -> ConfigEntry:
-    """Find a config entry by entry_id, title, or internal name."""
+    """Find a config entry by entry_id, or a loaded window by title or name."""
     entry = hass.config_entries.async_get_entry(reference)
     if entry and entry.domain == DOMAIN:
         return entry
-    for entry_id in hass.data.get(DOMAIN, {}):
-        candidate = hass.config_entries.async_get_entry(entry_id)
-        if candidate and reference in (
+    for candidate in hass.config_entries.async_entries(DOMAIN):
+        if _window_coordinator(candidate) is not None and reference in (
             candidate.title,
             candidate.data.get("name"),
         ):
@@ -116,10 +127,11 @@ def _async_register_services(hass: HomeAssistant) -> None:
 
     async def handle_get_forecast(call: ServiceCall) -> ServiceResponse:
         entry = _resolve_entry(hass, call.data["config_entry"])
-        coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+        coordinator = _window_coordinator(entry)
         if coordinator is None:
             raise ServiceValidationError(f"Entry '{entry.title}' is not loaded")
-        return {"forecast": coordinator.forecast or []}
+        forecast: list[Any] = coordinator.forecast or []  # JSON-shaped entries
+        return {"forecast": forecast}
 
     hass.services.async_register(
         DOMAIN,
@@ -322,6 +334,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     await coordinator.async_config_entry_first_refresh()
+    entry.runtime_data = coordinator
+    # Index of the loaded windows' coordinators, for the hub and the Mode
+    # select, which still look them up here (P4 moves them next).
     hass.data[DOMAIN][entry.entry_id] = coordinator
     _async_register_services(hass)
     hass.async_create_task(_async_bootstrap_hub(hass))

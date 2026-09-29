@@ -17,7 +17,6 @@ from homeassistant.util import dt as dt_util
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info, window_attributes
 from .entity_surface import apply_surface, window_surface
@@ -31,9 +30,7 @@ async def async_setup_entry(
     """Initialize Adaptive Cover config entry."""
 
     name = config_entry.data["name"]
-    coordinator: AdaptiveDataUpdateCoordinator = hass.data[DOMAIN][
-        config_entry.entry_id
-    ]
+    coordinator: AdaptiveDataUpdateCoordinator = config_entry.runtime_data
 
     sensor = AdaptiveCoverSensorEntity(
         config_entry.entry_id, hass, config_entry, name, coordinator
