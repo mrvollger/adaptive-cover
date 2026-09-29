@@ -21,6 +21,8 @@ PURE_MODULES = [
     "command_tracker.py",
     "decider.py",
     "end_of_day.py",
+    "events.py",
+    "explainer.py",
     "gates.py",
     "manual_detector.py",
     "override_tracker.py",

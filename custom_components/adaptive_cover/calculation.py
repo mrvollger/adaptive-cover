@@ -195,15 +195,17 @@ class AdaptiveGeneralCover(ABC):
         *,
         sun: Sequence[Any],
         timezone: str,
+        clock: Clock = SYSTEM_CLOCK,
     ) -> Self:
         """Build the adapter from the window's options.
 
         ``sun`` is the solar (azimuth, elevation) now; ``timezone`` is HA's
-        configured time zone.
+        configured time zone; ``clock`` is the coordinator's.
         """
         cover = cls(
             hass=hass,
             logger=logger,
+            clock=clock,
             sol_azi=sun[0],
             sol_elev=sun[1],
             sunset_pos=geometry.sunset_pos,
@@ -898,9 +900,16 @@ def build_cover(
     *,
     sun: Sequence[Any],
     timezone: str,
+    clock: Clock = SYSTEM_CLOCK,
 ) -> AdaptiveGeneralCover:
-    """Build the adapter for ``cover_type`` from the window's options."""
+    """Build the adapter for ``cover_type`` from the window's options.
+
+    ``clock`` is where the adapter and its solar day read "now": the
+    coordinator passes its own.
+    """
     adapter = COVER_ADAPTERS.get(cover_type or "")
     if adapter is None:
         raise ValueError(f"Unknown cover type {cover_type!r}")
-    return adapter.from_config(hass, logger, geometry, sun=sun, timezone=timezone)
+    return adapter.from_config(
+        hass, logger, geometry, sun=sun, timezone=timezone, clock=clock
+    )

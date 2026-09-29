@@ -56,6 +56,13 @@
   "patch": "M64_control_method_sticks.patch"
  },
  {
+  "id": "M65",
+  "file": "custom_components/adaptive_cover/calculation.py",
+  "function": "build_cover",
+  "description": "the cover adapters read the system clock instead of the coordinator's",
+  "patch": "M65_adapters_ignore_coordinator_clock.patch"
+ },
+ {
   "id": "M60",
   "file": "custom_components/adaptive_cover/runtime/schedule.py",
   "function": "Schedule.after_start",

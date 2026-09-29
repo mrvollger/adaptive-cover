@@ -29,7 +29,6 @@ from .const import (
     CONF_SENSOR_TYPE,
     CONF_TEMP_HIGH,
     CONF_TEMP_LOW,
-    DOMAIN,
     SensorType,
 )
 from .coordinator import AdaptiveDataUpdateCoordinator
@@ -95,9 +94,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up number entities for one config entry."""
-    coordinator: AdaptiveDataUpdateCoordinator = hass.data[DOMAIN][
-        config_entry.entry_id
-    ]
+    coordinator: AdaptiveDataUpdateCoordinator = config_entry.runtime_data
     is_blind = config_entry.data.get(CONF_SENSOR_TYPE) == SensorType.BLIND
     is_climate = bool(config_entry.options.get(CONF_CLIMATE_MODE))
     # Climate thresholds are stored and compared in HA's temperature unit,

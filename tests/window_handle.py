@@ -325,9 +325,9 @@ def internal_coordinator(hass: HomeAssistant, window_key: str):
     """The window's live coordinator object. NOT a public surface.
 
     contract: internal. The single place the test suite knows where the
-    integration keeps its runtime objects (``hass.data`` today;
-    ``entry.runtime_data`` after refactor P4). Use it only for a fact no
-    entity, event, or service exposes, and mark the call site
-    ``# contract: internal (<reason>)``.
+    integration keeps its runtime objects (``entry.runtime_data`` since
+    refactor P4). Use it only for a fact no entity, event, or service
+    exposes, and mark the call site ``# contract: internal (<reason>)``.
     """
-    return hass.data.get(DOMAIN, {}).get(window_key)
+    entry = hass.config_entries.async_get_entry(window_key)
+    return getattr(entry, "runtime_data", None) if entry is not None else None

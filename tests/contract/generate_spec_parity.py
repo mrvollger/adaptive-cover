@@ -442,9 +442,9 @@ async def _walk_numbers(obs: Observations) -> None:
                     title="Spec parity",
                     data={"name": "Spec parity", "sensor_type": cover_type},
                     options={"climate_mode": climate == "on"},
+                    runtime_data=SimpleNamespace(),  # the window's coordinator
                 )
                 hass = _fake_hass(unit)
-                hass.data = {"adaptive_cover": {entry.entry_id: SimpleNamespace()}}
                 added: list[Any] = []
                 await number_platform.async_setup_entry(hass, entry, added.extend)
                 order = []
