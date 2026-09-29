@@ -1,5 +1,10 @@
 """Simulation regressions for coordinator fixes (2026-09 bug hunt)."""
 
+import datetime as dt
+
+from astral import sun as astral_sun
+from homeassistant.util import dt as dt_util
+
 from .harness import SimHouse
 
 A = "cover.left"
@@ -62,4 +67,23 @@ async def test_regression_overrides_survive_entry_reload(hass, freezer):
     )
     await house.advance_to("11:25")
     assert house.auto_moves("cover.shade", since="11:10") == []
+    await house.teardown()
+
+
+async def test_regression_next_change_uses_local_date(hass, freezer):
+    """Evening Next State Change names TOMORROW's sunrise, not the day after.
+
+    "Tomorrow" was derived from the UTC date. From 18:00 MDT on the UTC
+    date is already tomorrow, so at 21:11 the sensor named the sunrise two
+    local days out. Tomorrow is the configured local date plus one.
+    """
+    house = await SimHouse.create(hass, freezer, date="2026-03-20")
+    await house.advance_to("21:10")  # 03:10 UTC on 03-21
+
+    attrs = house.window().state("next_change").attributes
+    tomorrow_sunrise = astral_sun.sunrise(house.sun_data.observer, dt.date(2026, 3, 21))
+    assert attrs["event"] == "Sunrise + offset"
+    expected = dt_util.parse_datetime(attrs["expected_time"])
+    assert dt_util.as_local(expected).date() == dt.date(2026, 3, 21)
+    assert expected == tomorrow_sunrise
     await house.teardown()

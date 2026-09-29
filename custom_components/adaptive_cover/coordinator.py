@@ -564,9 +564,15 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         return time
 
     def _compute_next_event(self, cover_data, start, end):
-        """Find the next significant cover state change event."""
+        """Find the next significant cover state change event.
+
+        Today's sunrise/sunset come from the sun data (configured local
+        date); once passed, tomorrow's are asked for by the LOCAL date too.
+        The UTC date rolls over mid-evening in western timezones (18:00 in
+        Denver), which named the sunrise two local days out.
+        """
         now = dt.datetime.now(pytz.UTC)
-        tomorrow = now.date() + dt.timedelta(days=1)
+        tomorrow = self._now_local().date() + dt.timedelta(days=1)
         location = cover_data.sun_data.location
         events = []
 
