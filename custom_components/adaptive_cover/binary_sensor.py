@@ -13,10 +13,12 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
+from .const import CONF_ENTITIES, DOMAIN
 from .coordinator import AdaptiveDataUpdateCoordinator
-from .entity_shared import adaptive_cover_device_info
+from .entity_shared import adaptive_cover_device_info, override_until
+from .entity_surface import apply_surface, window_surface
 
 
 async def async_setup_entry(
@@ -71,19 +73,15 @@ class AdaptiveCoverBinarySensor(
         """Initialize the binary sensor."""
         super().__init__(coordinator=coordinator)
         self._key = key
-        self._attr_translation_key = key
+        self._config_entry = config_entry
         self._name = config_entry.data["name"]
         self._binary_name = binary_name
         self._attr_unique_id = f"{unique_id}_{binary_name}"
+        apply_surface(self, window_surface("binary_sensor", binary_name))
         self._device_id = unique_id
         self._state = state
         self._attr_device_class = device_class
         self._attr_device_info = adaptive_cover_device_info(config_entry)
-
-    @property
-    def name(self):
-        """Name of the entity."""
-        return self._binary_name
 
     @property
     def is_on(self) -> bool:
@@ -93,4 +91,9 @@ class AdaptiveCoverBinarySensor(
     @property
     def extra_state_attributes(self) -> Mapping[str, Any] | None:  # noqa: D102
         if self._key == "manual_override":
-            return {"manual_controlled": self.coordinator.data.states["manual_list"]}
+            covers = list(self._config_entry.options.get(CONF_ENTITIES) or [])
+            until = override_until(self.coordinator, covers)
+            return {
+                "manual_controlled": self.coordinator.data.states["manual_list"],
+                "until": dt_util.as_local(until).isoformat() if until else None,
+            }

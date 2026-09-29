@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/entity_surface.py b/custom_components/adaptive_cover/entity_surface.py
+--- a/custom_components/adaptive_cover/entity_surface.py
++++ b/custom_components/adaptive_cover/entity_surface.py
+@@ -65,7 +65,7 @@
+     ("binary_sensor", "Sun Infront"): SurfaceSpec("sun_motion", _DIAG),
+     ("sensor", "Control Method"): SurfaceSpec("control", _DIAG),
+     # Diagnostic, disabled by default.
+-    ("sensor", "Start Sun"): SurfaceSpec("start_sun", _DIAG, enabled_default=False),
++    ("sensor", "Start Sun"): SurfaceSpec("start_sun", _DIAG, enabled_default=True),
+     ("sensor", "End Sun"): SurfaceSpec("end_sun", _DIAG, enabled_default=False),
+     ("sensor", "Next State Change"): SurfaceSpec(
+         "next_change", _DIAG, enabled_default=False

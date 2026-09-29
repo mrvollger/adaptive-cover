@@ -32,10 +32,10 @@ from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 
 from .const import DOMAIN
 from .coordinator import AdaptiveDataUpdateCoordinator
+from .entity_surface import HUB_SURFACE, HUB_UNIQUE_ID, apply_surface
 from .helpers import get_safe_attr
 
 HUB_ENTRY_NAME = "Adaptive Cover All"
-HUB_UNIQUE_ID = "adaptive_cover_hub"
 CONF_IS_HUB = "is_hub"
 
 MODE_MANUAL = "Manual"
@@ -88,6 +88,7 @@ class AllShadesCover(CoverEntity):
         """Initialize the aggregate cover."""
         self.hass = hass
         self._attr_unique_id = f"{HUB_UNIQUE_ID}_cover"
+        apply_surface(self, HUB_SURFACE[("cover", "cover")])
         self._attr_device_info = hub_device_info()
 
     def _all_cover_entities(self) -> list[tuple[AdaptiveDataUpdateCoordinator, str]]:
@@ -183,12 +184,8 @@ class HouseModeSelect(SelectEntity):
         """Initialize the house mode select."""
         self.hass = hass
         self._attr_unique_id = f"{HUB_UNIQUE_ID}_house_mode"
+        apply_surface(self, HUB_SURFACE[("select", "house_mode")])
         self._attr_device_info = hub_device_info()
-
-    @property
-    def name(self):
-        """Name of the entity."""
-        return "Cover control mode"
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -248,15 +245,12 @@ class ResetAllOverridesButton(ButtonEntity):
     def __init__(self, hass: HomeAssistant) -> None:
         """Initialize the reset-all button."""
         self.hass = hass
-        self._attr_unique_id = f"{HUB_UNIQUE_ID}_reset_all"
-        self._attr_device_info = hub_device_info()
-
-    @property
-    def name(self):
-        """Name of the entity."""
         # Pressing this moves covers back to their adaptive positions, so
-        # the label says "resume", not "reset" (unique_id keeps the old slug).
-        return "Return all shades to auto"
+        # the label (translation key) says "return", not "reset"; the
+        # unique_id keeps the old reset_all slug.
+        self._attr_unique_id = f"{HUB_UNIQUE_ID}_reset_all"
+        apply_surface(self, HUB_SURFACE[("button", "reset_all")])
+        self._attr_device_info = hub_device_info()
 
     async def async_press(self) -> None:
         """Reset overrides everywhere and re-apply positions immediately.

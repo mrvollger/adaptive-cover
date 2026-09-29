@@ -43,6 +43,8 @@ CALC = "custom_components/adaptive_cover/calculation.py"
 SENSOR = "custom_components/adaptive_cover/sensor.py"
 BINARY = "custom_components/adaptive_cover/binary_sensor.py"
 INIT = "custom_components/adaptive_cover/__init__.py"
+SURFACE = "custom_components/adaptive_cover/entity_surface.py"
+SHARED = "custom_components/adaptive_cover/entity_shared.py"
 
 
 @dataclass
@@ -595,6 +597,33 @@ MUTATIONS: list[Mutation] = [
         "tilt entries routed to set_cover_position instead of set_cover_tilt_position",
         "                service = SERVICE_SET_COVER_TILT_POSITION",
         "                service = SERVICE_SET_COVER_POSITION",
+    ),
+    # ---- group H: P1 entity surface (M44-M51 are reserved by the plan) ----
+    Mutation(
+        "M52", "diagnostic_sensor_enabled_by_default", SURFACE, "WINDOW_SURFACE",
+        "Start sun sensor enabled by default instead of disabled",
+        '    ("sensor", "Start Sun"): SurfaceSpec("start_sun", _DIAG, enabled_default=False),',
+        '    ("sensor", "Start Sun"): SurfaceSpec("start_sun", _DIAG, enabled_default=True),',
+    ),
+    Mutation(
+        "M53", "migration_overrides_user_choice", SURFACE,
+        "async_apply_surface_to_registry",
+        "1.2 migration disables a disabled-by-default role even when the user "
+        "renamed, hid or disabled it",
+        "        if not spec.enabled_default and not _user_touched(row):\n",
+        "        if not spec.enabled_default:\n",
+    ),
+    Mutation(
+        "M54", "area_copy_overwrites_user_area", SURFACE, "async_copy_cover_area",
+        "window device takes the cover's area even when the user already set one",
+        "    if device is None or device.area_id is not None:\n",
+        "    if device is None:\n",
+    ),
+    Mutation(
+        "M55", "override_until_without_duration", SHARED, "override_until",
+        "override_until reports the latch time, not latch time + override duration",
+        "        latched_at + manager.reset_duration\n",
+        "        latched_at\n",
     ),
 ]
 

@@ -187,6 +187,7 @@ class TestPositionSensor:
         assert attrs["field_of_view"] == [90, 90]
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 class TestSunTimeSensors:
     """Gap sun-time-sensors: Start/End Sun honor the elevation band."""
 
@@ -261,6 +262,7 @@ def _next_event_cases():
     return cases
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 class TestNextChangeSensor:
     """Gap next-change-sensor, pinned against goldens/next_events.txt."""
 
@@ -292,6 +294,7 @@ class TestNextChangeSensor:
             assert dt_util.parse_datetime(state.attributes["expected_time"]) == when
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 class TestLastChangeSensor:
     """Gap last-change-sensor: 'old% -> new%: reason' for both change kinds."""
 
@@ -323,6 +326,7 @@ class TestLastChangeSensor:
         assert state.attributes["changed_at"] is not None
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 class TestStateReason:
     """Gap state-reason, surfaced via the next-change sensor attributes."""
 
