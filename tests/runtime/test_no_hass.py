@@ -19,6 +19,7 @@ RUNTIME_DIR = (
 )
 PURE_MODULES = [
     "command_tracker.py",
+    "decider.py",
     "end_of_day.py",
     "gates.py",
     "manual_detector.py",

@@ -33,6 +33,7 @@ from custom_components.adaptive_cover.const import (
 from custom_components.adaptive_cover.migration import options_1_3
 from custom_components.adaptive_cover.repairs import async_create_fix_flow
 from custom_components.adaptive_cover.runtime.shade_config import ShadeConfig
+from custom_components.adaptive_cover.settings.spec import OPTS
 from custom_components.adaptive_cover.window_cover import split_issue_id
 
 from .test_entity_surface_v2 import _entry, _load_live_house, _set_world, _setup
@@ -114,6 +115,9 @@ def test_migration_only_adds_keys(window):
     assert written.pop(CONF_COVER_ENTITY) == cover
     assert set(written) == WRITTEN[window["title"]]
     assert set(written.values()) == {None}
+    # every spec option is now stored: nothing a later layer resolves
+    # (P5) falls back to a spec default
+    assert {opt.key for opt in OPTS} <= set(after)
 
 
 async def test_live_house_migrates_to_1_3(hass, cover_calls):

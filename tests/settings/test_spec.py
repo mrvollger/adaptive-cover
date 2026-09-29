@@ -111,8 +111,9 @@ PLAN_TABLE: dict[str, tuple[Scope, Level | None, set[Level]]] = {
     "delta_time": (Scope.RECURRING, H, set()),
     # internal: the control strategy ("basic"), never shown
     "mode": (Scope.INTERNAL, None, set()),
-    # internal: the cover again as a list, for older versions (ADR 0002)
-    "group": (Scope.INTERNAL, None, set()),
+    # never on a form: the cover again as a list, for older versions
+    # (ADR 0002); one-time window identity like cover_entity_id
+    "group": (Scope.ONE_TIME, W, set()),
 }
 
 # Drift the spec still carries (see spec.py "legacy"). Removing an entry is

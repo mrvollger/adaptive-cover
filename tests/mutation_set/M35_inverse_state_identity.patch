@@ -1,9 +1,12 @@
-diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
---- a/custom_components/adaptive_cover/coordinator.py
-+++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1278,4 +1278,4 @@
+diff --git a/custom_components/adaptive_cover/runtime/decider.py b/custom_components/adaptive_cover/runtime/decider.py
+--- a/custom_components/adaptive_cover/runtime/decider.py
++++ b/custom_components/adaptive_cover/runtime/decider.py
+@@ -20,7 +20,7 @@
  
- def inverse_state(state: int) -> int:
+ def inverse_state(state: float) -> float:
      """Inverse state."""
 -    return 100 - state
 +    return state
+ 
+ 
+ class Decider:

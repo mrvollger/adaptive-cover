@@ -1015,10 +1015,10 @@ class SimHouse:
     ) -> None:
         """Press one of a window's buttons through a REAL HA service call.
 
-        The reset button waits (real-time polls) for covers to land; those
-        polls only progress when the frozen clock moves, so this drives
-        30-second sub-steps (landing shades as they arrive) until the press
-        completes. Sim time may advance by up to a few minutes.
+        The reset button returns at once. Should a press ever block (a
+        handler that polls in real time only progresses when the frozen
+        clock moves), this drives 30-second sub-steps, landing shades as
+        they arrive, until the press completes.
         """
         entity_id = self.eid("button", key, cover=cover)
         task = self.hass.loop.create_task(

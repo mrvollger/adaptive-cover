@@ -2,7 +2,7 @@ diff --git a/custom_components/adaptive_cover/runtime/gates.py b/custom_componen
 --- a/custom_components/adaptive_cover/runtime/gates.py
 +++ b/custom_components/adaptive_cover/runtime/gates.py
 @@ -105,7 +105,7 @@
-         allows the move.
+         the move.
          """
          if position is not None:
 -            condition = abs(position - state) >= config.min_change

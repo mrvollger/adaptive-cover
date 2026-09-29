@@ -121,6 +121,7 @@ async def test_press_reset_button_resumes_auto(hass, freezer):
     await house.press()  # default: reset_manual_override
     moves = house.auto_moves(SHADE, since=latched_at)
     assert moves, "reset button never re-commanded the overridden cover"
+    await house.advance_to("11:20")  # the press does not wait for the landing
     assert house.position(SHADE) == moves[-1].position
     await house.teardown()
 

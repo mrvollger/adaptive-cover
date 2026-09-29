@@ -30,7 +30,7 @@ The Python environment is managed with [pixi](https://pixi.sh). `pixi.toml` and 
 pixi install          # create the environment from pixi.lock
 pixi run test         # the full pytest suite, in parallel (pytest -n auto)
 pixi run lint         # ruff lint and format checks
-pixi run typecheck    # pyright (basic with a baseline; strict and zero errors on engine/ and runtime/)
+pixi run typecheck    # pyright (basic with a baseline; strict and zero errors on engine/, runtime/, settings/resolve.py and settings/lift.py)
 pixi run mutations    # the mutation kill matrix (tests/mutation_set/)
 ```
 
@@ -140,7 +140,7 @@ A scenario should fail when the behavior breaks. Before you commit it, break the
 A mutation is a small, deliberate bug. The mutation set proves that the test tiers catch real regressions. The kill bar is **100%**: a mutation that no test catches means a test is missing.
 
 1. Add a `Mutation(...)` entry to `MUTATIONS` in [`tests/mutation_set/make_patches.py`](tests/mutation_set/make_patches.py):
-   - `id`: the next free `M##`. The plan reserves M44 to M51 for specific phases (see [`docs/refactor_plan.md`](docs/refactor_plan.md)).
+   - `id`: the next free `M##`. The plan reserves M44 and M47 to M51 for specific phases (see [`docs/refactor_plan.md`](docs/refactor_plan.md)).
    - `slug`, `file` and `function`: where the bug goes.
    - `description`: one line that says what the bug does. Once merged, the description does not change.
    - `old` and `new`: an exact text replacement. `old` must occur exactly once in the current file.

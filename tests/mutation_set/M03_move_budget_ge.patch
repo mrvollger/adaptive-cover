@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/runtime/gates.py b/custom_components/adaptive_cover/runtime/gates.py
 --- a/custom_components/adaptive_cover/runtime/gates.py
 +++ b/custom_components/adaptive_cover/runtime/gates.py
-@@ -203,7 +203,7 @@
+@@ -198,7 +198,7 @@
              if now - t < dt.timedelta(hours=1)
          ]
          self._move_history[entity] = history

@@ -35,11 +35,46 @@
   "patch": "M05_start_time_precedence_swap.patch"
  },
  {
+  "id": "M62",
+  "file": "custom_components/adaptive_cover/runtime/schedule.py",
+  "function": "Schedule.after_start",
+  "description": "the fixed start time is not recorded, so start-after-end goes unreported",
+  "patch": "M62_fixed_start_not_recorded.patch"
+ },
+ {
+  "id": "M63",
+  "file": "custom_components/adaptive_cover/runtime/gates.py",
+  "function": "GatePolicy.position_delta_ok",
+  "description": "the delta gate's snap list leaves out the privacy position",
+  "patch": "M63_delta_gate_snap_list_drops_privacy.patch"
+ },
+ {
+  "id": "M64",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "climate_mode_data",
+  "description": "control_method keeps the last season when neither winter nor summer applies",
+  "patch": "M64_control_method_sticks.patch"
+ },
+ {
+  "id": "M60",
+  "file": "custom_components/adaptive_cover/runtime/schedule.py",
+  "function": "Schedule.after_start",
+  "description": "an unreadable start entity with no fixed start counts as started",
+  "patch": "M60_unreadable_start_entity_counts_as_started.patch"
+ },
+ {
   "id": "M06",
   "file": "custom_components/adaptive_cover/runtime/schedule.py",
   "function": "Schedule.end_time",
   "description": "drop the 00:00-means-next-midnight normalization",
   "patch": "M06_midnight_end_time_normalization.patch"
+ },
+ {
+  "id": "M61",
+  "file": "custom_components/adaptive_cover/runtime/schedule.py",
+  "function": "Schedule.end_time",
+  "description": "an end-time entity at 00:00 means the start of today (only the fixed end_time is normalized)",
+  "patch": "M61_midnight_end_entity_not_normalized.patch"
  },
  {
   "id": "M07",
@@ -188,7 +223,7 @@
   "function": "_sunrise_offset",
   "description": "sunrise-offset fallback falls back to 0 instead of sunset_offset",
   "patch": "M27_sunrise_fallback_zero.patch",
-  "deviation": "roadmap filed this under engine/geometry.py; the fallback actually lives in runtime/shade_config._sunrise_offset (moved there from coordinator.common_data in P3, ledger L0010)."
+  "deviation": "roadmap filed this under engine/geometry.py; the fallback actually lives in runtime/shade_config._sunrise_offset (moved there from coordinator.common_data in P3, ledger L0017)."
  },
  {
   "id": "M28",
@@ -196,7 +231,7 @@
   "function": "CoverGeometry.from_options",
   "description": "'offset or DEFAULT' coercion so privacy_offset=0 becomes 30",
   "patch": "M28_privacy_offset_or_coercion.patch",
-  "deviation": "roadmap filed this under engine/geometry.py; the None-check actually lives in runtime/shade_config.CoverGeometry.from_options (moved there from coordinator._apply_extended_config in P3, ledger L0010)."
+  "deviation": "roadmap filed this under engine/geometry.py; the None-check actually lives in runtime/shade_config.CoverGeometry.from_options (moved there from coordinator._apply_extended_config in P3, ledger L0017)."
  },
  {
   "id": "M29",
@@ -244,31 +279,31 @@
  },
  {
   "id": "M35",
-  "file": "custom_components/adaptive_cover/coordinator.py",
+  "file": "custom_components/adaptive_cover/runtime/decider.py",
   "function": "inverse_state",
   "description": "100 - state -> state",
   "patch": "M35_inverse_state_identity.patch"
  },
  {
   "id": "M36",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "interpolate_states",
+  "file": "custom_components/adaptive_cover/runtime/decider.py",
+  "function": "Decider.interpolate",
   "description": "np.interp xp/fp argument swap",
   "patch": "M36_interp_xp_fp_swap.patch",
   "deviation": "P2 replaced np.interp with engine.numeric.interp (same semantics); the swap is anchored on the helper call."
  },
  {
   "id": "M37",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "interpolate_states",
+  "file": "custom_components/adaptive_cover/runtime/decider.py",
+  "function": "Decider.interpolate",
   "description": "interpolation endpoint snap-to-0/100 removed",
   "patch": "M37_interp_endpoint_snap_removed.patch",
   "deviation": "P2 replaced np.interp with engine.numeric.interp (same semantics); re-anchored on the helper call."
  },
  {
   "id": "M38",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "_transform_state",
+  "file": "custom_components/adaptive_cover/runtime/decider.py",
+  "function": "Decider.transform",
   "description": "inverse-skipped-when-interp rule inverted (apply both transforms)",
   "patch": "M38_inverse_applied_with_interp.patch"
  },
@@ -307,6 +342,20 @@
   "function": "async_set_manual_position",
   "description": "tilt entries routed to set_cover_position instead of set_cover_tilt_position",
   "patch": "M43_tilt_routed_to_position.patch"
+ },
+ {
+  "id": "M45",
+  "file": "custom_components/adaptive_cover/settings/resolve.py",
+  "function": "resolve_with_provenance",
+  "description": "area and floor precedence swapped: a floor value beats the area's",
+  "patch": "M45_area_floor_precedence_swapped.patch"
+ },
+ {
+  "id": "M46",
+  "file": "custom_components/adaptive_cover/settings/lift.py",
+  "function": "_OptionLift._windows",
+  "description": "the lift drops a window's outlier: it resolves to the inherited value",
+  "patch": "M46_lift_drops_outlier.patch"
  },
  {
   "id": "M52",

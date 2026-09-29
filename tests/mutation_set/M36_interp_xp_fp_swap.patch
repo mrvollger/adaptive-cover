@@ -1,9 +1,9 @@
-diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
---- a/custom_components/adaptive_cover/coordinator.py
-+++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1255,7 +1255,7 @@
-             normal_range = list(map(int, self.config.interp_list))
-             new_range = list(map(int, self.config.interp_list_new))
+diff --git a/custom_components/adaptive_cover/runtime/decider.py b/custom_components/adaptive_cover/runtime/decider.py
+--- a/custom_components/adaptive_cover/runtime/decider.py
++++ b/custom_components/adaptive_cover/runtime/decider.py
+@@ -90,7 +90,7 @@
+             normal_range = list(map(int, config.interp_list))
+             new_range = list(map(int, config.interp_list_new))
          if new_range:
 -            state = interp(state, normal_range, new_range)
 +            state = interp(state, new_range, normal_range)

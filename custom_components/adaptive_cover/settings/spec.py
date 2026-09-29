@@ -571,8 +571,10 @@ OPTS: Final[tuple[Opt, ...]] = (
     Opt(CONF_MODE, Kind.INTERNAL, Group.NONE, Scope.INTERNAL, None,
         default=STRATEGY_MODE_BASIC, baseline=True),
     # The cover again, as the list older versions read: written with
-    # cover_entity_id by settings/normalize.py until P8 (ADR 0002).
-    Opt(CONF_ENTITIES, Kind.INTERNAL, Group.NONE, Scope.INTERNAL, None),
+    # cover_entity_id by settings/normalize.py until P8 (ADR 0002). Never on
+    # a form, but one-time window identity like the cover itself (the P5
+    # lift keeps it in the window's setup). [] is the runtime's fallback.
+    Opt(CONF_ENTITIES, Kind.INTERNAL, Group.NONE, ONE, W, default=[]),
 )
 # fmt: on
 

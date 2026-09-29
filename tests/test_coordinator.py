@@ -16,7 +16,7 @@ import pytest
 from custom_components.adaptive_cover.config_context_adapter import (
     ConfigContextAdapter,
 )
-from custom_components.adaptive_cover.coordinator import inverse_state
+from custom_components.adaptive_cover.runtime.decider import inverse_state
 from custom_components.adaptive_cover.runtime.override_tracker import (
     OverrideTracker as AdaptiveCoverManager,
 )

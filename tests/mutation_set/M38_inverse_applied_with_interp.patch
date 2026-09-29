@@ -1,12 +1,12 @@
-diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
---- a/custom_components/adaptive_cover/coordinator.py
-+++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1240,7 +1240,7 @@
+diff --git a/custom_components/adaptive_cover/runtime/decider.py b/custom_components/adaptive_cover/runtime/decider.py
+--- a/custom_components/adaptive_cover/runtime/decider.py
++++ b/custom_components/adaptive_cover/runtime/decider.py
+@@ -75,7 +75,7 @@
                  "Inverse state is not supported with interpolation, you can inverse the state by arranging the list from high to low"
              )
  
--        if self._inverse_state and not self._use_interpolation:
-+        if self._inverse_state:
+-        if self.inverse and not self.use_interpolation:
++        if self.inverse:
              state = inverse_state(state)
              self.logger.debug("Inversed position: %s", state)
          return state

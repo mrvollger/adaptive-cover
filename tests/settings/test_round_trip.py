@@ -29,7 +29,6 @@ from custom_components.adaptive_cover.const import (
     CONF_CLIMATE_MODE,
     CONF_COVER_ENTITY,
     CONF_ENABLE_BLIND_SPOT,
-    CONF_END_ENTITY,
     CONF_ENTITIES,
     CONF_FOV_LEFT,
     CONF_FOV_RIGHT,
@@ -39,7 +38,6 @@ from custom_components.adaptive_cover.const import (
     CONF_MAX_ELEVATION,
     CONF_MIN_ELEVATION,
     CONF_MODE,
-    CONF_START_ENTITY,
     CONF_WEATHER_ENTITY,
     DOMAIN,
     SensorType,
@@ -251,9 +249,6 @@ async def test_real_flows_round_trip(hass, seed, cover_type):
     values.update({CONF_INTERP: True, CONF_ENABLE_BLIND_SPOT: True})
     values[CONF_CLIMATE_MODE] = True
     values[CONF_WEATHER_ENTITY] = "weather.round_trip"
-    # No start/end-time entity: one that does not exist stops the update
-    # loop (runtime/schedule.py compares the time with None).
-    del values[CONF_START_ENTITY], values[CONF_END_ENTITY]
     entry = await _wizard(hass, cover_type, values)
     await hass.async_block_till_done()
     stored = dict(entry.options)
