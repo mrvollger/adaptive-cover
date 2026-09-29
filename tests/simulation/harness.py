@@ -68,6 +68,7 @@ from tests.characterization.golden_lib import (
     patch_sun_data,
 )
 from tests.conftest import COMMON_OPTIONS
+from tests.window_handle import WindowHandle, internal_coordinator
 
 SIM_USER_ID = "simulated-human"
 
@@ -212,7 +213,10 @@ class SimHouse:
         self.shades: dict[str, FakeShade] = {}
         self.timeline: list[TimelineEvent] = []
         self.entry: MockConfigEntry | None = None
-        self.coordinator = None
+        self.windows: dict[str, WindowHandle] = {}
+        # Last coordinator seen, for command attribution only (see
+        # _actor_for); tests observe the house through self.windows.
+        self._coordinator = None
         self.sun_data: SimSunData | None = None
         self._patch = None
         self.now: dt.datetime | None = None  # tz-aware local sim time
@@ -289,6 +293,8 @@ class SimHouse:
             self.shades[entity_id] = shade
             self._write_shade_state(shade, "open" if shade.position else "closed",
                                     Context(), actor="device", record=False)
+            # Built before setup so it records the startup command too.
+            self.windows[entity_id] = WindowHandle(hass, entity_id)
 
         self._register_services()
 
@@ -361,7 +367,7 @@ class SimHouse:
         """
         assert await self.hass.config_entries.async_setup(self.entry.entry_id)
         await self.hass.async_block_till_done()
-        self.coordinator = self.hass.data[DOMAIN][self.entry.entry_id]
+        self._remember_coordinator()
         self._register_services()
         await self.hass.async_block_till_done()
 
@@ -379,6 +385,8 @@ class SimHouse:
         if self._patch is not None:
             self._patch.stop()
             self._patch = None
+        for window in self.windows.values():
+            window.close()
 
     # ------------------------------------------------------------- lifecycle
 
@@ -424,9 +432,9 @@ class SimHouse:
 
         Merges ``option_changes`` into entry.options, waits for the entry
         reload to complete, re-registers the fake cover services (the hub
-        bootstrap steals them on setup) and re-points self.coordinator at
-        the rebuilt one. Called with NO changes it models saving the
-        options dialog unchanged (still a reload).
+        bootstrap steals them on setup) and remembers the rebuilt
+        coordinator for command attribution. Called with NO changes it
+        models saving the options dialog unchanged (still a reload).
         """
         changed = self.hass.config_entries.async_update_entry(
             self.entry, options={**self.entry.options, **option_changes}
@@ -434,11 +442,25 @@ class SimHouse:
         if not changed:
             await self.hass.config_entries.async_reload(self.entry.entry_id)
         await self.hass.async_block_till_done()
-        self.coordinator = self.hass.data[DOMAIN][self.entry.entry_id]
+        self._remember_coordinator()
         self._register_services()
         await self.hass.async_block_till_done()
 
     # ------------------------------------------------------- internal helpers
+
+    def _live_coordinator(self):
+        """The entry's running coordinator, if any.
+
+        contract: internal (the own-context seam, is_own_context, lives on
+        the coordinator; refactor P4 moves it to the CoverActuator). Used
+        ONLY to attribute cover commands to the integration.
+        """
+        if self.entry is None:
+            return None
+        return internal_coordinator(self.hass, self.entry.entry_id)
+
+    def _remember_coordinator(self) -> None:
+        self._coordinator = self._live_coordinator()
 
     def _localize(self, naive: dt.datetime) -> dt.datetime:
         """pytz-localize handling DST folds and spring-forward gaps."""
@@ -473,15 +495,10 @@ class SimHouse:
         if ctx is not None and getattr(ctx, "user_id", None) == SIM_USER_ID:
             return "human"
         # Commands can fire DURING entry setup/reload (startup positioning,
-        # catch-up close) before self.coordinator is (re)assigned — and
-        # after a reload self.coordinator briefly points at the STALE
-        # object. Check the live coordinator from hass.data as well.
-        live = (
-            self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id)
-            if self.entry is not None
-            else None
-        )
-        for coordinator in (live, self.coordinator):
+        # catch-up close) before the remembered coordinator is (re)assigned
+        # — and after a reload it briefly points at the STALE object. Check
+        # the live coordinator as well.
+        for coordinator in (self._live_coordinator(), self._coordinator):
             if coordinator is not None and is_integration_context(
                 coordinator, ctx
             ):
@@ -784,6 +801,14 @@ class SimHouse:
         await self.hass.async_block_till_done()
 
     # ------------------------------------------------------ entity accessors
+
+    def window(self, cover: str | None = None) -> WindowHandle:
+        """The WindowHandle of one simulated cover (default: the first).
+
+        Role-based public reads: target, is_manual, manual_override,
+        available, move_blocked_by, moves (provenance), teardowns, ...
+        """
+        return self.windows[cover or next(iter(self.shades))]
 
     def eid(self, domain: str, key: str) -> str:
         """Resolve one of the entry's entities by unique-id suffix.
