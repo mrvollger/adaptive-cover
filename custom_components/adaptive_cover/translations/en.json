@@ -243,6 +243,11 @@
         "title": "Range Adjustment",
         "description": "Adjust the values at which your Cover effectively opens or closes. Ideal for Covers that don't fully open at 0% or close at 100%. \n The first two sliders are for a 2 point adjustment, the list options are for a multiple point adjustment"
       }
+    },
+    "error": {
+      "max_elevation_not_above_min": "The maximum elevation must be greater than the minimum elevation.",
+      "blind_spot_right_not_above_left": "The blind spot's right edge must be greater than its left edge.",
+      "interp_lists_differ": "The custom interpolation list must have as many values as the interpolation list."
     }
   },
   "options": {
@@ -391,6 +396,9 @@
           }
         }
       }
+    },
+    "error": {
+      "max_elevation_not_above_min": "The maximum elevation must be greater than the minimum elevation."
     }
   },
   "selector": {

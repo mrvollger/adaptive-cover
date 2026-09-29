@@ -98,8 +98,8 @@ def _async_register_services(hass: HomeAssistant) -> None:
         supports_response=SupportsResponse.ONLY,
     )
 
-    from .options_spec import (
-        DEFAULT_OPTIONS,
+    from .settings.schema import (
+        add_entry_baseline,
         add_entry_schema,
         change_settings_schema,
     )
@@ -153,7 +153,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
                 "sensor_type", source.data.get("sensor_type", "cover_blind")
             )
         else:
-            options = dict(DEFAULT_OPTIONS)
+            options = add_entry_baseline()
             sensor_type = call.data.get("sensor_type", "cover_blind")
         options.update(overrides)
         options[CONF_ENTITIES] = covers

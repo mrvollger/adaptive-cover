@@ -102,3 +102,29 @@ The example below is inside an HTML comment. The checker ignores it.
   closing minutes later (dusk open-then-close lines removed).
   35 of 90 replay goldens changed (+14 / -66 lines), all in these categories.
 
+
+## L0004 · 2026-09-29 · One option spec generates every settings surface (C3)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins in `tests/contract/test_spec_parity.py::*`
+  (every surface, against `tests/contract/spec_parity.json`) and
+  `tests/settings/test_spec.py::*` (the plan's one-time/recurring table,
+  the remaining drift list, form-to-service round trip)
+- **Mutations re-targeted:** none (M39's anchor in
+  `__init__.handle_change_settings` did not move)
+- **Contract change:** C3
+- **Reason:** P3 replaces the hand-written wizard, options, service and
+  number schemas with one table (`settings/spec.py`, built by
+  `settings/schema.py`). `spec_parity.json` is byte-identical before and
+  after: every key keeps its kind, default, range, unit and placement.
+  Drift between surfaces that existed before is now listed per row
+  (`legacy`) and pinned by `test_legacy_drift_is_exactly_the_listed_entries`;
+  the drift fixes that follow each remove entries with their own ledger
+  entry. `options_spec.py` is removed; the options flow's nine unreachable
+  per-page steps went in the commit before (a static step-graph walk from
+  `init` reaches none of them). Cross-field errors now use translation keys
+  (`config.error.*`, `options.error.*`) instead of English sentences as
+  keys; the fields they mark are unchanged. Five
+  `tests/test_units_and_defaults.py` default tests now read the wizard's
+  forms through a real flow instead of module-level schema constants (same
+  ids, same assertions). Goldens, truth table and house replay unchanged.

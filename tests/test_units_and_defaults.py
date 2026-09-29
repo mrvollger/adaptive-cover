@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 
 import pytest
+from homeassistant import config_entries
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util.unit_system import METRIC_SYSTEM, US_CUSTOMARY_SYSTEM
 from pytest_homeassistant_custom_component.common import (
@@ -18,13 +19,6 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from custom_components.adaptive_cover.config_flow import (
-    AUTOMATION_CONFIG,
-    OPTIONS,
-    VERTICAL_OPTIONS,
-    WEATHER_OPTIONS,
-    climate_options_for,
-)
 from custom_components.adaptive_cover.const import (
     CONF_CLIMATE_MODE,
     CONF_DEFAULT_HEIGHT,
@@ -33,16 +27,18 @@ from custom_components.adaptive_cover.const import (
     CONF_EYE_HEIGHT,
     CONF_HEIGHT_WIN,
     CONF_MANUAL_OVERRIDE_DURATION,
+    CONF_MODE,
     CONF_OCCUPIED_DISTANCE,
     CONF_SENSOR_TYPE,
     CONF_TEMP_ENTITY,
     CONF_TEMP_HIGH,
     CONF_TEMP_LOW,
+    CONF_WEATHER_ENTITY,
     CONF_WEATHER_STATE,
     DOMAIN,
     SensorType,
 )
-from custom_components.adaptive_cover.options_spec import DEFAULT_OPTIONS
+from custom_components.adaptive_cover.settings.schema import add_entry_baseline
 
 from .conftest import COMMON_OPTIONS
 
@@ -56,6 +52,29 @@ def _default_of(schema, key):
             default = marker.default
             return default() if callable(default) else default
     raise KeyError(key)
+
+
+async def _wizard_forms(hass) -> dict:
+    """The setup wizard's forms for a blind, by step id (climate pages on)."""
+    forms = {}
+    flow = hass.config_entries.flow
+    result = await flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result = await flow.async_configure(
+        result["flow_id"], {"name": "Defaults", CONF_MODE: SensorType.BLIND}
+    )
+    forms[result["step_id"]] = result["data_schema"]
+    for user_input in (
+        {CONF_CLIMATE_MODE: True},
+        {},
+        {CONF_TEMP_ENTITY: TEMP, CONF_WEATHER_ENTITY: "weather.home"},
+    ):
+        result = await flow.async_configure(result["flow_id"], user_input)
+        forms[result["step_id"]] = result["data_schema"]
+    flow.async_abort(result["flow_id"])
+    assert set(forms) == {"vertical", "automation", "climate", "weather"}
+    return forms
 
 
 async def _setup_climate_entry(hass, *, low, high, reading, unit):
@@ -157,33 +176,41 @@ async def test_sane_thresholds_do_not_warn(hass, mock_sun_entity, caplog):
     ("system", "expected"),
     [(US_CUSTOMARY_SYSTEM, (72, 75)), (METRIC_SYSTEM, (22, 24))],
 )
-def test_regression_threshold_defaults_follow_unit_system(hass, system, expected):
+@pytest.mark.usefixtures("stub_sun_integration")
+async def test_regression_threshold_defaults_follow_unit_system(hass, system, expected):
     hass.config.units = system
-    schema = climate_options_for(hass)
+    schema = (await _wizard_forms(hass))["climate"]
     assert (
         _default_of(schema, CONF_TEMP_LOW),
         _default_of(schema, CONF_TEMP_HIGH),
     ) == expected
 
 
-def test_regression_default_position_fully_open():
+@pytest.mark.usefixtures("stub_sun_integration")
+async def test_regression_default_position_fully_open(hass):
     """Wizard and add_entry service agree: 100 (the wizard said 60)."""
-    assert _default_of(OPTIONS, CONF_DEFAULT_HEIGHT) == 100
-    assert DEFAULT_OPTIONS[CONF_DEFAULT_HEIGHT] == 100
+    schema = (await _wizard_forms(hass))["vertical"]
+    assert _default_of(schema, CONF_DEFAULT_HEIGHT) == 100
+    assert add_entry_baseline()[CONF_DEFAULT_HEIGHT] == 100
 
 
-def test_regression_manual_override_default_two_hours():
-    wizard = _default_of(AUTOMATION_CONFIG, CONF_MANUAL_OVERRIDE_DURATION)
+@pytest.mark.usefixtures("stub_sun_integration")
+async def test_regression_manual_override_default_two_hours(hass):
+    schema = (await _wizard_forms(hass))["automation"]
+    wizard = _default_of(schema, CONF_MANUAL_OVERRIDE_DURATION)
     assert wizard == {"hours": 2, "minutes": 0, "seconds": 0}
-    assert DEFAULT_OPTIONS[CONF_MANUAL_OVERRIDE_DURATION] == wizard
+    assert add_entry_baseline()[CONF_MANUAL_OVERRIDE_DURATION] == wizard
 
 
-def test_regression_sunny_conditions_exclude_cloudy():
-    states = _default_of(WEATHER_OPTIONS, CONF_WEATHER_STATE)
+@pytest.mark.usefixtures("stub_sun_integration")
+async def test_regression_sunny_conditions_exclude_cloudy(hass):
+    states = _default_of((await _wizard_forms(hass))["weather"], CONF_WEATHER_STATE)
     assert "cloudy" not in states
     assert {"sunny", "partlycloudy", "clear"} <= set(states)
 
 
-def test_glare_defaults_prefilled_for_vertical_covers():
-    assert _default_of(VERTICAL_OPTIONS, CONF_EYE_HEIGHT) == 1.2
-    assert _default_of(VERTICAL_OPTIONS, CONF_OCCUPIED_DISTANCE) == 2.0
+@pytest.mark.usefixtures("stub_sun_integration")
+async def test_glare_defaults_prefilled_for_vertical_covers(hass):
+    schema = (await _wizard_forms(hass))["vertical"]
+    assert _default_of(schema, CONF_EYE_HEIGHT) == 1.2
+    assert _default_of(schema, CONF_OCCUPIED_DISTANCE) == 2.0
