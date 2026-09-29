@@ -20,6 +20,10 @@ it appears. The surfaces are:
   (what the HA service UI shows);
 - ``number``: the live number entities.
 
+The ``forms`` block records the field order of every form and section (the
+order the UI shows). For the service schemas and the number entities it
+records the sorted key set instead: their order is not user-visible.
+
 Every surface is read through the code that serves it (the flow handlers,
 the service registration, the number platform setup), driven with small
 fakes, so the snapshot follows the code wherever the schemas come from.
@@ -386,8 +390,10 @@ async def _walk_services(obs: Observations) -> None:
                 described = describe(validator)
                 described["required"] = isinstance(marker, vol.Required)
                 obs.add_field(name, str(marker.schema), described, ctx)
+            # Sorted: a service schema's key order is not user-visible (the
+            # HA service UI renders services.yaml, not the schema).
             obs.forms[name].update(
-                {c: tuple(str(m.schema) for m in schema.schema) for c in ctx}
+                {c: tuple(sorted(str(m.schema) for m in schema.schema)) for c in ctx}
             )
 
         # The baseline an entry gets from add_entry without copy_from.
@@ -458,7 +464,9 @@ async def _walk_numbers(obs: Observations) -> None:
                     obs.add_field(
                         "number", key, described, [(cover_type, climate, unit)]
                     )
-                obs.forms["number"][(cover_type, climate, unit)] = tuple(order)
+                # Sorted: creation order is not user-visible (HA lists a
+                # device's entities by name).
+                obs.forms["number"][(cover_type, climate, unit)] = tuple(sorted(order))
 
 
 # ---------------------------------------------------------------- collapse
