@@ -17,7 +17,11 @@ from custom_components.adaptive_cover.const import (
     CONF_FOV_RIGHT,
     CONF_HEIGHT_WIN,
     CONF_MANUAL_OVERRIDE_DURATION,
+    CONF_DELTA_POSITION,
     CONF_MAX_ELEVATION,
+    CONF_PRIVACY_MODE,
+    CONF_PRIVACY_OFFSET,
+    CONF_PRIVACY_POSITION,
     CONF_RETURN_SUNSET,
     CONF_START_ENTITY,
     CONF_START_TIME,
@@ -309,5 +313,41 @@ async def test_regression_fixed_start_after_end_is_reported(hass, freezer, caplo
     assert "Start time is after end time" in caplog.text
     assert house.auto_moves("cover.shade", since="07:00") == [], (
         "the window is never open: start 21:00 is after end 20:00"
+    )
+    await house.teardown()
+
+
+async def test_regression_small_move_to_privacy_passes_delta_gate(hass, freezer):
+    """The privacy position is a snap position for the delta gate too.
+
+    The quiet-hours, budget and throttle gates let the privacy position
+    through, but the position-delta gate's own list left it out: a privacy
+    position within delta_position of the evening position never went out.
+    """
+    house = await SimHouse.create(
+        hass,
+        freezer,
+        date="2026-03-20",
+        initial_position=35,
+        # A north window: the sun never enters, the default rules all day.
+        options={
+            CONF_AZIMUTH: 0,
+            CONF_FOV_LEFT: 10,
+            CONF_FOV_RIGHT: 10,
+            CONF_DEFAULT_HEIGHT: 30,
+            CONF_SUNSET_POS: 30,
+            CONF_DELTA_POSITION: 10,
+            CONF_PRIVACY_MODE: True,
+            CONF_PRIVACY_OFFSET: 0,
+            CONF_PRIVACY_POSITION: 35,
+        },
+    )
+    await house.advance_to("12:00")
+    assert house.position("cover.shade") == 30, "no daytime default position"
+    await house.advance_to("21:00")
+    evening = [m.position for m in house.auto_moves("cover.shade", since="18:00")]
+    assert evening == [35], (
+        f"privacy position 5 away from 30 was held back: {evening}, "
+        f"blocked by {house.window().move_blocked_by}"
     )
     await house.teardown()

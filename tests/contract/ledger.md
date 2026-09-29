@@ -304,3 +304,22 @@ The example below is inside an HTML comment. The checker ignores it.
   This changes only that error log; which moves go out is unchanged, and
   goldens, truth table and house replay are unchanged (the house's fixed
   06:00 start is before its end).
+
+## L0013 · 2026-09-29 · The delta gate uses the same snap positions as the other gates (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins
+  `tests/simulation/test_regressions.py::test_regression_small_move_to_privacy_passes_delta_gate`
+  and `tests/runtime/test_gates.py::test_regression_privacy_position_passes_the_delta_gate`
+- **Mutations re-targeted:** none re-anchored (M01's line is unchanged).
+  Added M63 (the delta gate's snap list leaves out the privacy position).
+- **Contract change:** C5
+- **Reason:** defect fix listed in the plan's P4 ("the snap-position list is
+  the same in both checks"). The time throttle, quiet hours and move budget
+  let every snap position through (sunset, default, privacy, 0, 100), but
+  the position-delta gate kept its own list without the privacy position.
+  A privacy position closer than `delta_position` to the evening position
+  was therefore never sent. `GatePolicy.position_delta_ok` now asks
+  `is_snap_position`. Goldens, truth table and house replay unchanged: the
+  privacy golden days and the house use privacy position 0, which was
+  already a snap position.

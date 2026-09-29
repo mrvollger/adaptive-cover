@@ -182,6 +182,19 @@ MUTATIONS: list[Mutation] = [
         "            return now >= time\n        return True",
     ),
     Mutation(
+        "M63",
+        "delta_gate_snap_list_drops_privacy",
+        GATES,
+        "GatePolicy.position_delta_ok",
+        "the delta gate's snap list leaves out the privacy position",
+        "            if self.is_snap_position(state, config):\n"
+        "                condition = True\n"
+        "            return condition",
+        "            if state in [config.sunset_pos, config.default_height, 0, 100]:\n"
+        "                condition = True\n"
+        "            return condition",
+    ),
+    Mutation(
         "M60",
         "unreadable_start_entity_counts_as_started",
         SCHEDULE,

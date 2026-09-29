@@ -42,6 +42,13 @@
   "patch": "M62_fixed_start_not_recorded.patch"
  },
  {
+  "id": "M63",
+  "file": "custom_components/adaptive_cover/runtime/gates.py",
+  "function": "GatePolicy.position_delta_ok",
+  "description": "the delta gate's snap list leaves out the privacy position",
+  "patch": "M63_delta_gate_snap_list_drops_privacy.patch"
+ },
+ {
   "id": "M60",
   "file": "custom_components/adaptive_cover/runtime/schedule.py",
   "function": "Schedule.after_start",
