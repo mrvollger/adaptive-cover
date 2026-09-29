@@ -105,9 +105,7 @@ async def test_fresh_setup_positions_covers(
     sat at their stale position until the next sun change. The fix defers
     the flag, so the switch's restore-refresh performs the startup move.
     (The command itself is measured via target_call because the hub
-    bootstrap replaces any pre-setup service mock during setup. The mock
-    is still registered so a startup command sent before the cover
-    component loads is delivered instead of raising ServiceNotFound.)
+    bootstrap replaces any pre-setup service mock during setup.)
     """
     _set_cover(hass, 60)
     await _setup(hass, cover_entry)
