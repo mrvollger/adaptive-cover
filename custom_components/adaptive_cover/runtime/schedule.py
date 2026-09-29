@@ -94,8 +94,7 @@ class Schedule:
             self.logger.debug(
                 "Start time: %s, now: %s, now >= time: %s", time, now, now >= time
             )
-            # Not recorded in last_start: the coordinator's line here was a
-            # no-op expression (a P4 ledgered fix, not this move).
+            self.last_start = time
             return now >= time
         return True
 

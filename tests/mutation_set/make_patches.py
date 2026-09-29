@@ -143,8 +143,7 @@ MUTATIONS: list[Mutation] = [
         "            self.logger.debug(\n"
         '                "Start time: %s, now: %s, now >= time: %s", time, now, now >= time\n'
         "            )\n"
-        "            # Not recorded in last_start: the coordinator's line here was a\n"
-        "            # no-op expression (a P4 ledgered fix, not this move).\n"
+        "            self.last_start = time\n"
         "            return now >= time\n"
         "        return True",
         "        if config.start_time is not None:\n"
@@ -153,8 +152,7 @@ MUTATIONS: list[Mutation] = [
         "            self.logger.debug(\n"
         '                "Start time: %s, now: %s, now >= time: %s", time, now, now >= time\n'
         "            )\n"
-        "            # Not recorded in last_start: the coordinator's line here was a\n"
-        "            # no-op expression (a P4 ledgered fix, not this move).\n"
+        "            self.last_start = time\n"
         "            return now >= time\n"
         "        if config.start_time_entity is not None:\n"
         "            time = self._read_time(config.start_time_entity, now.date())\n"
@@ -171,6 +169,17 @@ MUTATIONS: list[Mutation] = [
         "                )\n"
         "                return False\n"
         "        return True",
+    ),
+    Mutation(
+        "M62",
+        "fixed_start_not_recorded",
+        SCHEDULE,
+        "Schedule.after_start",
+        "the fixed start time is not recorded, so start-after-end goes unreported",
+        "            self.last_start = time\n"
+        "            return now >= time\n"
+        "        return True",
+        "            return now >= time\n        return True",
     ),
     Mutation(
         "M60",

@@ -145,6 +145,17 @@ def test_no_times_is_always_in_window():
     assert Schedule(FakeStates()).in_window(config(), at("03:00")) is True
 
 
+def test_regression_fixed_start_is_recorded(caplog):
+    """The fixed start feeds the start-after-end check (it never did)."""
+    caplog.set_level(logging.ERROR)
+    cfg = config(**{CONF_START_TIME: "21:00:00", CONF_END_TIME: "20:00:00"})
+    schedule = Schedule(FakeStates())
+    assert schedule.in_window(cfg, at("12:00")) is False
+    assert schedule.last_start == at("21:00")
+    schedule.in_window(cfg, at("12:05"))
+    assert "Start time is after end time" in caplog.text
+
+
 def test_start_after_end_is_logged(caplog):
     caplog.set_level(logging.ERROR)
     states = FakeStates(shade_start="22:00:00")

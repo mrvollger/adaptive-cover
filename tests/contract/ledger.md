@@ -285,3 +285,22 @@ The example below is inside an HTML comment. The checker ignores it.
   state names another date keeps it. Goldens, truth table and house replay
   unchanged: the house uses the fixed `end_time` 00:00, which behaves as
   before.
+
+## L0012 · 2026-09-29 · The fixed start time feeds the start-after-end check (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins
+  `tests/simulation/test_regressions.py::test_regression_fixed_start_after_end_is_reported`
+  and `tests/runtime/test_schedule.py::test_regression_fixed_start_is_recorded`
+- **Mutations re-targeted:** M05 re-anchored (its fixed-start block now
+  records the start; description unchanged). Added M62 (the fixed start is
+  not recorded).
+- **Contract change:** C5
+- **Reason:** defect fix listed in the plan's P4 ("the `after_start_time`
+  no-op"). The fixed-start path read the start time but its "record it"
+  line was a bare expression, so `Schedule.last_start` only ever held an
+  entity start and the "Start time is after end time" error never fired for
+  a fixed start. The fixed path now records the start like the entity path.
+  This changes only that error log; which moves go out is unchanged, and
+  goldens, truth table and house replay are unchanged (the house's fixed
+  06:00 start is before its end).

@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/runtime/schedule.py b/custom_components/adaptive_cover/runtime/schedule.py
 --- a/custom_components/adaptive_cover/runtime/schedule.py
 +++ b/custom_components/adaptive_cover/runtime/schedule.py
-@@ -74,6 +74,15 @@
+@@ -74,6 +74,14 @@
          start entity (unavailable, or not a time) falls back to the fixed
          start time; with no fixed start, control has not started yet.
          """
@@ -11,13 +11,12 @@ diff --git a/custom_components/adaptive_cover/runtime/schedule.py b/custom_compo
 +            self.logger.debug(
 +                "Start time: %s, now: %s, now >= time: %s", time, now, now >= time
 +            )
-+            # Not recorded in last_start: the coordinator's line here was a
-+            # no-op expression (a P4 ledgered fix, not this move).
++            self.last_start = time
 +            return now >= time
          if config.start_time_entity is not None:
              time = self._read_time(config.start_time_entity, now.date())
              if time is not None:
-@@ -88,15 +97,6 @@
+@@ -88,14 +96,6 @@
                      "Start entity %s unreadable: not started", config.start_time_entity
                  )
                  return False
@@ -27,8 +26,7 @@ diff --git a/custom_components/adaptive_cover/runtime/schedule.py b/custom_compo
 -            self.logger.debug(
 -                "Start time: %s, now: %s, now >= time: %s", time, now, now >= time
 -            )
--            # Not recorded in last_start: the coordinator's line here was a
--            # no-op expression (a P4 ledgered fix, not this move).
+-            self.last_start = time
 -            return now >= time
          return True
  

@@ -1,6 +1,7 @@
 """Simulation regressions for coordinator fixes (2026-09 bug hunt)."""
 
 import datetime as dt
+import logging
 
 import pytest
 from astral import sun as astral_sun
@@ -11,6 +12,7 @@ from custom_components.adaptive_cover.const import (
     CONF_DEFAULT_HEIGHT,
     CONF_DISTANCE,
     CONF_END_ENTITY,
+    CONF_END_TIME,
     CONF_FOV_LEFT,
     CONF_FOV_RIGHT,
     CONF_HEIGHT_WIN,
@@ -287,4 +289,25 @@ async def test_regression_midnight_end_entity_means_coming_midnight(hass, freeze
     ]
     assert closes, "no close at the coming midnight"
     assert closes[0].time.day == 21, f"close fired on the wrong day: {closes}"
+    await house.teardown()
+
+
+async def test_regression_fixed_start_after_end_is_reported(hass, freezer, caplog):
+    """A fixed start time after the end time is reported, like an entity one.
+
+    The fixed-start path never recorded the start it read (its line was a
+    no-op), so the "start after end" check only ever saw entity starts.
+    """
+    caplog.set_level(logging.ERROR, logger="custom_components.adaptive_cover")
+    house = await SimHouse.create(
+        hass,
+        freezer,
+        date="2026-03-20",
+        options={CONF_START_TIME: "21:00:00", CONF_END_TIME: "20:00:00"},
+    )
+    await house.advance_to("12:00")
+    assert "Start time is after end time" in caplog.text
+    assert house.auto_moves("cover.shade", since="07:00") == [], (
+        "the window is never open: start 21:00 is after end 20:00"
+    )
     await house.teardown()
