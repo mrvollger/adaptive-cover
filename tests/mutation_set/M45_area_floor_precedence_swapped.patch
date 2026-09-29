@@ -1,0 +1,13 @@
+diff --git a/custom_components/adaptive_cover/settings/resolve.py b/custom_components/adaptive_cover/settings/resolve.py
+--- a/custom_components/adaptive_cover/settings/resolve.py
++++ b/custom_components/adaptive_cover/settings/resolve.py
+@@ -299,8 +299,8 @@
+         (Source.LEGACY, window.legacy),
+         (Source.WINDOW, window.values),
+         (Source.WINDOW, window.setup),
++        (Source.FLOOR, floor.values),
+         (Source.AREA, area.values),
+-        (Source.FLOOR, floor.values),
+         (Source.HOUSE, profiles.house.values),
+     )
+     values: dict[str, Any] = {}

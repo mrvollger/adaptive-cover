@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/settings/lift.py b/custom_components/adaptive_cover/settings/lift.py
+--- a/custom_components/adaptive_cover/settings/lift.py
++++ b/custom_components/adaptive_cover/settings/lift.py
+@@ -354,7 +354,7 @@
+             elif _same(win.value, inherited):
+                 continue
+             elif Level.WINDOW in self.allowed:
+-                placed.overrides[win.key] = win.value
++                continue
+             else:
+                 placed.legacy[win.key] = win.value
+         return placed
