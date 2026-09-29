@@ -445,6 +445,21 @@ async def test_reconfigure_changes_setup_and_keeps_recurring_settings(hass):
         assert entry.options[key] == before[key]
 
 
+async def test_reconfigure_keeps_the_shadow_overrides(hass):
+    """Reconfigure must keep the window's P5 `overrides` (migration 1.4).
+
+    Dropping them would make the next setup re-adopt the window and absorb
+    the edit, so a real difference could never raise the settings repair.
+    """
+    overrides = {"window_key": "w", "values": {"sunset_position": 5}, "legacy": {}}
+    entry = _window(hass, OTHER, overrides=overrides)
+    result = await start_reconfigure(hass, entry)
+    result = await submit(hass, result, {**prefilled(result), CONF_HEIGHT_WIN: 2.2})
+    assert result["reason"] == "reconfigure_successful"
+    await hass.async_block_till_done()
+    assert entry.options["overrides"] == overrides
+
+
 async def test_reconfigure_changes_the_cover_type(hass):
     entry = _window(hass, OTHER)
     result = await start_reconfigure(hass, entry)

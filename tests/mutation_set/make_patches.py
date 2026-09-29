@@ -58,6 +58,8 @@ DECIDER = "custom_components/adaptive_cover/runtime/decider.py"
 WINDOW_COVER = "custom_components/adaptive_cover/window_cover.py"
 SCHEMA = "custom_components/adaptive_cover/settings/schema.py"
 CONFIG_FLOW = "custom_components/adaptive_cover/config_flow.py"
+SETTINGS_SHADOW = "custom_components/adaptive_cover/settings/shadow.py"
+SHADOW = "custom_components/adaptive_cover/shadow.py"
 
 
 @dataclass
@@ -699,6 +701,31 @@ MUTATIONS: list[Mutation] = [
         "            elif Level.WINDOW in self.allowed:\n"
         "                placed.overrides[win.key] = win.value\n",
         "            elif Level.WINDOW in self.allowed:\n                continue\n",
+    ),
+    # P5 shadow release (v1.18.0): the diff repair and the switch capture.
+    Mutation(
+        "M70",
+        "shadow_diff_ignores_layered_key",
+        SETTINGS_SHADOW,
+        "differing_keys",
+        "the shadow comparison ignores a differing key: only one-time options "
+        "are compared, so a changed recurring option raises no repair issue",
+        "        opt.key for opt in spec if not same_value(resolved[opt.key], "
+        "legacy[opt.key])\n",
+        "        opt.key\n"
+        "        for opt in spec\n"
+        "        if opt.home is Level.WINDOW\n"
+        "        and not same_value(resolved[opt.key], legacy[opt.key])\n",
+    ),
+    Mutation(
+        "M71",
+        "switch_capture_ignores_restored_state",
+        SHADOW,
+        "_switch_state",
+        "the lift ignores a switch's restored state and records its initial "
+        "state instead (a switch the user turned on is lost at the flip)",
+        "    return stored.state.state == STATE_ON\n",
+        "    return switch.initial\n",
     ),
     # ---- group H: P1 entity surface ----------------------------------------
     Mutation(

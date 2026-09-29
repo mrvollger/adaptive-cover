@@ -56,9 +56,13 @@ custom_components/adaptive_cover/
 │   ├── spec.py              # OPTS: one row per option (kind, default, range, unit, one-time/recurring, surfaces, legacy drift)
 │   ├── schema.py            # Wizard pages, options sections, service schemas, number ranges
 │   ├── normalize.py         # The window's one cover: cover_entity_id + group: [cover] (both written until P8)
-│   └── validate.py          # Cross-field checks (elevation order, blind-spot order, interp lists)
+│   ├── validate.py          # Cross-field checks (elevation order, blind-spot order, interp lists)
+│   ├── resolve.py           # P5: pure layered resolver (window > area > floor > house > default) + provenance
+│   ├── lift.py              # P5: pure lift of flat legacy options into house/floor/area/window layers
+│   └── shadow.py            # P5 shadow: dropped-switch settings, stored-layer (de)serialization, compare, adopt
 ├── window_cover.py          # One cover per window (ADR 0002): cover_problem guard, registry-id unique_id, split issue
 ├── migration.py             # Config entry 1.3: fallbacks written into options, cover_entity_id, unique_id
+├── shadow.py                # Config entry 1.4 (P5 shadow): lift into the hub, switch-state capture, settings_differ issue, provenance
 ├── repairs.py               # Fix flow of the "split" issue (multi-cover entry -> one window per cover)
 ├── const.py                 # All config keys, defaults, enums
 ├── hub.py                   # "Adaptive Cover All" hub device (all-shades cover, house mode select, reset-all button)
@@ -246,12 +250,16 @@ are frozen; categories and default visibility come from one table in
 rows without overriding user choices. 1.2 -> 1.3 (P3, `migration.py`)
 writes every option the entry reads through a code fallback into its
 options, the cover as `cover_entity_id`, and the cover's registry id as
-unique_id. At setup the window device copies the physical cover's area if
-it has none.
+unique_id. 1.3 -> 1.4 (P5 shadow, `shadow.py`) lifts every window into
+house / floor / area profiles in the hub's options and a sparse
+`overrides` per window, recording the states of the switches P5 drops;
+the runtime still acts on the legacy keys, and each window raises a
+`settings_differ` repair issue when the two disagree. At setup the window
+device copies the physical cover's area if it has none.
 
 | Platform | Name (unique_id suffix) | Visibility | Purpose |
 |----------|-------------------------|------------|---------|
-| sensor | Target position (`Cover Position`) | primary | Calculated position (0-100%); attributes include `window_key`, `cover_entity`, `cover_type`, `override_until`, `next_move` |
+| sensor | Target position (`Cover Position`) | primary | Calculated position (0-100%); attributes include `window_key`, `cover_entity`, `cover_type`, `override_until`, `next_move`, `provenance` (non-house sources of the layered settings; P5) |
 | select | Mode (`mode_select`) | primary | Manual / Sun tracking / Sun + climate |
 | button | Return to auto (`Reset Manual Override`) | primary | Clear manual overrides and move back |
 | binary_sensor | Manual override (`Manual Override`) | diagnostic | Any cover under manual control? (attribute `until`) |

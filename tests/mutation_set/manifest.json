@@ -358,6 +358,20 @@
   "patch": "M46_lift_drops_outlier.patch"
  },
  {
+  "id": "M70",
+  "file": "custom_components/adaptive_cover/settings/shadow.py",
+  "function": "differing_keys",
+  "description": "the shadow comparison ignores a differing key: only one-time options are compared, so a changed recurring option raises no repair issue",
+  "patch": "M70_shadow_diff_ignores_layered_key.patch"
+ },
+ {
+  "id": "M71",
+  "file": "custom_components/adaptive_cover/shadow.py",
+  "function": "_switch_state",
+  "description": "the lift ignores a switch's restored state and records its initial state instead (a switch the user turned on is lost at the flip)",
+  "patch": "M71_switch_capture_ignores_restored_state.patch"
+ },
+ {
   "id": "M52",
   "file": "custom_components/adaptive_cover/entity_surface.py",
   "function": "WINDOW_SURFACE",

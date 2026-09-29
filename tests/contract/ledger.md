@@ -578,3 +578,67 @@ The example below is inside an HTML comment. The checker ignores it.
   add and reconfigure per type; needs the new error and abort strings;
   the wizard's step strings are gone). Goldens, truth table and house
   replay unchanged.
+
+## L0022 · 2026-09-29 · Shadow release: migration 1.4 lifts the house, diff repair, provenance (C6, C7)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins `tests/test_shadow_settings.py::*`
+  (migration 1.4 on the live snapshot: the stored house, floor and area
+  profiles and each window's overrides and legacy values, the recorded
+  switch states, zero `settings_differ` issues, the Position sensor's
+  `provenance`, idempotence, a window added after the lift, a hub created
+  at 1.4 is not lifted, the lift does not reload a running window) and
+  `tests/simulation/test_shadow_settings.py::*` (a legacy option changed
+  through the options form still drives the window and raises one
+  `settings_differ` issue listing the key; a dropped switch flipped after
+  the lift raises it too; both clear when the values agree again).
+  Implementation tier: `tests/settings/test_shadow.py::*`.
+- **Mutations re-targeted:** added M70 (`settings/shadow.py`
+  `differing_keys`: the comparison ignores a differing recurring key;
+  killed by the simulation and entity tiers) and M71 (`shadow.py`
+  `_switch_state`: the lift records a switch's initial state instead of
+  its restored one; killed by the entity tier). M44 and M47-M51 stay
+  reserved by the plan.
+- **Contract change:** C6 (second half: the lift is stored and compared
+  at runtime; the runtime still acts on the legacy keys) and C7 (first
+  step: the states of the switches P5 drops are recorded as layered
+  settings; the switches still drive the runtime)
+- **Reason:** plan P5, v1.18.0 shadow release (ADR 0003).
+  `CONFIG_ENTRY_MINOR_VERSION` is 4. Migration 1.4 (`shadow.py`) lifts
+  every enabled window into the hub entry's options (`house`, `floors`,
+  `areas`, `temperature_unit`) and writes each window's sparse
+  `overrides` (`{window_key, values, legacy}`); the legacy flat keys are
+  untouched and windows only get the version bump. The lift reads the
+  windows' options as migration 1.3 stores them, their placement (window
+  device area, else the cover's area) and the states of the dropped
+  switches (Climate Mode, Outside Temperature, Lux, Irradiance, Manual
+  Override) as five new house-level settings (`climate_on`,
+  `use_outside_temp`, `use_lux`, `use_irradiance`, `manual_detection`;
+  `settings/shadow.py` `TOGGLE_OPTS`, outside `OPTS`, so no form, service
+  or `spec_parity.json` changes). Switch states come from the restore
+  cache when the switches are not up (HA loads it before any integration
+  sets up; a switch restores from exactly that record). Every window
+  setup, options-only-`overrides` update and dropped-switch change
+  resolves the window and raises one non-fixable `settings_differ`
+  repair issue listing the differing keys, deleted when they agree. An
+  update that only writes `overrides` no longer reloads the window. The
+  Position sensor gains `provenance`: the options whose value comes from
+  an area, a floor, a window override or a legacy value, mapped to that
+  source (house, default and one-time values are left out); None until
+  the house is lifted. On the live snapshot the lift finds the expected
+  profiles plus one wrinkle of migration 1.3: 13 windows store `None`
+  privacy offset/position (the runtime's fallback), so the house takes
+  `None` and Master south / Family south keep 30 / 0 as legacy values.
+  Behavior-tier test bodies changed without changing ids (1.4 is now
+  current): in `tests/test_entity_surface_v2.py`,
+  `TestMigration::test_migration_applies_surface_to_legacy_rows`,
+  `TestMigration::test_migration_is_idempotent` and
+  `test_live_house_upgrade` expect 1.4, and
+  `TestMigration::test_newer_minor_version_loads_unchanged` uses 1.5 as
+  the newer version; in `tests/test_migration_1_3.py`,
+  `test_live_house_migrates_to_1_3` expects 1.4, compares the window
+  options without `overrides` and the hub's leftover options key by key
+  (1.4 adds the lifted layers), and
+  `test_multi_cover_entry_keeps_working_with_a_split_issue` expects 1.4.
+  Goldens, truth table and house replay unchanged (the replay's hub is
+  created at 1.4, so it is not lifted; nothing the runtime reads changed).

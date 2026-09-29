@@ -1,8 +1,9 @@
 """Structural guard: the settings resolver and lift stay pure (P5).
 
-``resolve.py`` and ``lift.py`` are tested without Home Assistant, like
-``engine/``: no ``homeassistant`` import, no ``hass``, and no clock reads
-(the lift and every resolve are functions of their inputs only).
+``resolve.py``, ``lift.py`` and ``shadow.py`` are tested without Home
+Assistant, like ``engine/``: no ``homeassistant`` import, no ``hass``, and
+no clock reads (the lift and every resolve are functions of their inputs
+only).
 """
 
 import ast
@@ -16,7 +17,7 @@ SETTINGS_DIR = (
     / "adaptive_cover"
     / "settings"
 )
-PURE_MODULES = ["resolve.py", "lift.py"]
+PURE_MODULES = ["resolve.py", "lift.py", "shadow.py"]
 CLOCK_CALLS = {"now", "utcnow", "today", "time", "monotonic"}
 CLOCK_MODULES = {"datetime", "time"}
 

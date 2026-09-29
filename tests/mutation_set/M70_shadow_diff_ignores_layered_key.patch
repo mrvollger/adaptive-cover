@@ -1,0 +1,15 @@
+diff --git a/custom_components/adaptive_cover/settings/shadow.py b/custom_components/adaptive_cover/settings/shadow.py
+--- a/custom_components/adaptive_cover/settings/shadow.py
++++ b/custom_components/adaptive_cover/settings/shadow.py
+@@ -347,7 +347,10 @@
+ ) -> tuple[str, ...]:
+     """Return the options (in spec order) whose resolved value is not the legacy one."""
+     return tuple(
+-        opt.key for opt in spec if not same_value(resolved[opt.key], legacy[opt.key])
++        opt.key
++        for opt in spec
++        if opt.home is Level.WINDOW
++        and not same_value(resolved[opt.key], legacy[opt.key])
+     )
+ 
+ 

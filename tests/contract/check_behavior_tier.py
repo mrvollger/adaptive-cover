@@ -109,6 +109,11 @@ RULES: list[tuple[str, str]] = [
     # changes" is checked with ShadeConfig.from_options, P3's resolve();
     # P5 re-targets it to settings/resolve.py.
     ("tests/test_migration_1_3.py::*", BEHAVIOR),
+    # P5 shadow release: migration 1.4 on the live snapshot (the lifted
+    # layers, the recorded switch states, zero diff issues), the Position
+    # sensor's provenance, and the diff repair issue, all through config
+    # entries, registries, entity states and the issue registry.
+    ("tests/test_shadow_settings.py::*", BEHAVIOR),
     # P5 layered settings: `resolve` is a contract v2 seam (ADR 0004).
     # Precedence, provenance, the lift's rules and the P5 guarantee on the
     # live snapshot (resolve(w) == legacy_flat(w)) are behavior; the purity

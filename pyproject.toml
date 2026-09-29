@@ -93,4 +93,5 @@ strict = [
   "custom_components/adaptive_cover/runtime",
   "custom_components/adaptive_cover/settings/resolve.py",
   "custom_components/adaptive_cover/settings/lift.py",
+  "custom_components/adaptive_cover/settings/shadow.py",
 ]

@@ -463,3 +463,12 @@ def lift(
             for window in windows
         },
     )
+
+
+def same_value(a: Any, b: Any) -> bool:
+    """Return whether two option values are the same setting.
+
+    The lift's equality: 30 and 30.0 match, a bool never matches a number,
+    lists and dicts compare by content.
+    """
+    return _same(a, b)
