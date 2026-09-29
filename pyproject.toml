@@ -5,6 +5,10 @@
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+filterwarnings = [
+  # Deprecations raised from our own package fail the run (P0 target: 0).
+  "error::DeprecationWarning:custom_components\\.adaptive_cover",
+]
 
 # ---------------------------------------------------------------------------
 # Ruff: the single ruff configuration (was .ruff.toml). Rule set based on
