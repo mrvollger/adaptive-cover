@@ -35,11 +35,14 @@ custom_components/adaptive_cover/
 ├── __init__.py              # Entry point: platform setup, services, event listeners
 ├── coordinator.py           # Core: update loop, gates, cover service calls, manual override tracking
 ├── calculation.py           # HA adapters: build engine inputs, delegate to engine/
-├── engine/                  # Pure math and strategy (no HA imports, no clock reads)
+├── engine/                  # Pure math and strategy (no HA imports, no clock reads; pyright strict)
 │   ├── models.py            # Typed inputs/outputs (CoverConfig, SunSnapshot, Decision, ...)
 │   ├── geometry.py          # Gamma/FOV/elevation, per-cover-type %, overhang, glare-safe height
+│   ├── numeric.py           # clip/interp: scalar stand-ins for np.clip/np.interp
 │   └── evaluate.py          # evaluate(config, sun, ctx, climate=None) -> Decision
-├── sun.py                   # Astral-based solar table (5-minute points)
+├── runtime/                 # Runtime building blocks (P2: the clock; P4: the coordinator split)
+│   └── clock.py             # Clock protocol + HassClock: the only module that reads "now"
+├── sun.py                   # Astral-based solar table (SolarDay, 5-minute points, stdlib only)
 ├── config_flow.py           # Multi-step UI configuration (setup + options)
 ├── options_spec.py          # Changeable options for the change_settings service
 ├── const.py                 # All config keys, defaults, enums
@@ -139,7 +142,9 @@ cover state change ────┘         ▼
 
 **`NormalCoverState`** / **`ClimateCoverState`** (calculation.py) — Strategy classes that evaluate whether to use calculated position, default position, or sunset position based on sun validity and climate conditions.
 
-**`SunData`** (sun.py) — Wraps astral library. Generates daily solar position data at 5-minute intervals. Provides sunrise/sunset, azimuth/elevation lists.
+**`SunData`** (sun.py) — Wraps astral library. Generates daily solar position data at 5-minute intervals (`solar_day() -> SolarDay`, cached per local date). `times` is a tuple of tz-aware local datetimes (289 points; 277/301 on DST days); `solar_azimuth`/`solar_elevation` are lists; plus `sunrise()`/`sunset()`/`location`. `nearest_index()` finds the nearest point with `bisect` in UTC.
+
+**`Clock`** (runtime/clock.py) — Where "now" comes from. The coordinator owns one (`coordinator.clock`; `coordinator.default_clock` is the test seam) and hands it to its override manager, cover adapters and `SunData`. Production uses `HassClock` (`dt_util`, which `freezer` freezes).
 
 ### Config Flow (config_flow.py)
 
@@ -248,7 +253,7 @@ Environment and tasks come from `pixi.toml` (see `CONTRIBUTING.md`):
 pixi install          # environment from pixi.lock
 pixi run test         # full pytest suite, parallel (pytest -n auto)
 pixi run lint         # ruff
-pixi run typecheck    # pyright
+pixi run typecheck    # pyright (strict and zero errors on engine/)
 pixi run mutations    # mutation kill matrix (tests/mutation_set/)
 pixi run pytest tests/simulation -q   # one tier or file
 ```
@@ -299,20 +304,27 @@ own npm toolchain in `card/` (`npm test`, `npm run typecheck`,
 
 - Every bug fix gets a `test_regression_<slug>` naming the commit, in
   its own commit.
-- Time is always an input; never call `datetime.now()` in logic.
+- Time is always an input; never call `datetime.now()` in logic. Outside
+  `runtime/clock.py` nothing reads the wall clock: use the coordinator's
+  `clock` (`tests/engine/test_purity.py` scans for it).
 - New tests reach the integration through public surfaces only (entity
   states, registries, services, SimHouse helpers) — no `hass.data`,
   coordinator attributes or private attributes.
 
 ## Dependencies
 
-- **astral** — solar position calculations
-- **pandas** — time series (5-min interval generation); declared in the manifest
-- **numpy** — trigonometry, interpolation, clipping; imported but not declared
-- **pytz** — time zones in `coordinator.py`; imported but not declared
+- **astral** — solar position calculations; the only manifest requirement
 - **voluptuous** — config schema validation (ships with HA)
+- **python-dateutil** — time-string parsing in `helpers.py`; not declared,
+  it ships with HA core (hass-nabucasa -> pycognito -> boto3 -> botocore)
 
-pandas, numpy and pytz are removed in P2 (ADR 0005).
+pandas, numpy and pytz were removed in P2 (ADR 0005): the day table uses
+the standard library, trigonometry uses `math` (`engine/numeric.py` has
+`clip`/`interp`, checked against numpy) and time zones come from
+`dt_util` / `zoneinfo`. `tests/engine/test_purity.py` fails on any other third-party
+import. The test environment still has numpy (pytest-homeassistant-custom-
+component pins it) and pytz (astral 2.2 needs it); only tests use numpy, as
+the reference for `engine/numeric.py`.
 
 ## Patterns Worth Knowing
 
@@ -380,7 +392,9 @@ rm -rf /tmp/adaptive-cover
 All math and strategy logic lives in a pure package: no `homeassistant`
 imports, no wall-clock reads, no entity access (enforced by
 `tests/engine/test_purity.py`). `calculation.py` classes are thin HA
-adapters that build typed inputs and delegate.
+adapters that build typed inputs and delegate. Since P2 the package is
+scalar `math` (no numpy) and pyright-strict with zero errors
+(`pixi run typecheck` allows no baseline there).
 
 - `models.py` — `CoverConfig`, `SunSnapshot`, `TimeContext`, `ClimateInputs`,
   `Overhang`, `GlareModel`, `PrivacyConfig`, `Decision(position, intent, trace)`
