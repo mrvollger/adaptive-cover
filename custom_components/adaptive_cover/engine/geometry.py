@@ -14,6 +14,11 @@ from numpy import radians as rad
 
 from .models import BlindSpot, CoverConfig, SunSnapshot, TimeContext
 
+# When the sun leaves a window less than this before the sunset position
+# begins, the sunset position starts right away. Without it such a window
+# opens to the default and closes again minutes later (dusk open-then-close).
+DUSK_LEAD = timedelta(minutes=30)
+
 
 def gamma(window_azimuth: float, solar_azimuth: float) -> float:
     """Relative angle between window normal and sun (surface solar azimuth)."""
@@ -172,9 +177,31 @@ def admit_no_glare_percentage(config: CoverConfig, sun: SunSnapshot) -> float:
     )
 
 
-def default_position(config: CoverConfig, ctx: TimeContext) -> float:
-    """Rest position: sunset position after dark, default otherwise."""
-    if sunset_valid(config, ctx):
+def dusk_lead_active(config: CoverConfig, sun: SunSnapshot, ctx: TimeContext) -> bool:
+    """Check whether the sun left the window within DUSK_LEAD of dusk.
+
+    True while the sun is out of the window, the sunset position begins
+    within DUSK_LEAD, and the sun was still in the window when that lead
+    began (``ctx.sun_at_dusk_lead``). A sun that left earlier has had the
+    cover resting at the default for a while: the configured sunset time
+    stands. Unknown (None) never engages.
+    """
+    if ctx.sun_at_dusk_lead is None or sun_in_fov(config, sun):
+        return False
+    starts = ctx.sunset_utc + timedelta(minutes=config.sunset_offset_min)
+    if not starts - DUSK_LEAD <= ctx.now_utc <= starts:
+        return False
+    return sun_in_fov(config, ctx.sun_at_dusk_lead)
+
+
+def default_position(config: CoverConfig, sun: SunSnapshot, ctx: TimeContext) -> float:
+    """Rest position: sunset position after dark or at dusk, default otherwise.
+
+    Dusk: when the sun leaves the window less than DUSK_LEAD before the
+    sunset position begins, the sunset position starts right away. Resting
+    at the default first opened the cover for a few minutes, then closed it.
+    """
+    if sunset_valid(config, ctx) or dusk_lead_active(config, sun, ctx):
         return config.sunset_position
     return config.default_position
 

@@ -425,7 +425,9 @@ def _basic_reason(config: CoverConfig, sun: SunSnapshot, ctx: TimeContext) -> st
     """Human-readable reason, byte-identical to get_state_reason()."""
     if engine_geometry.direct_sun_valid(config, sun, ctx):
         return f"Sun in window (azi {sun.azimuth:.0f}°, elev {sun.elevation:.0f}°)"
-    if engine_geometry.sunset_valid(config, ctx):
+    if engine_geometry.sunset_valid(config, ctx) or engine_geometry.dusk_lead_active(
+        config, sun, ctx
+    ):
         return "Sunset position"
     if sun.elevation < 0:
         return "Sun below horizon"
@@ -498,6 +500,16 @@ def render_scenario(scenario: Scenario) -> str:
 
     sunrise_utc = sun_data.sunrise().replace(tzinfo=None)
     sunset_utc = sun_data.sunset().replace(tzinfo=None)
+    # Mirrors the adapter: the sun DUSK_LEAD before the sunset position.
+    lead_start = (
+        sunset_utc
+        + dt.timedelta(minutes=scenario.sunset_off)
+        - engine_geometry.DUSK_LEAD
+    ).replace(tzinfo=dt.UTC)
+    sun_at_dusk_lead = SunSnapshot(
+        azimuth=astral_sun.azimuth(sun_data.observer, lead_start),
+        elevation=astral_sun.elevation(sun_data.observer, lead_start),
+    )
 
     for i, ts in enumerate(sun_data.times):
         sun = SunSnapshot(
@@ -508,6 +520,7 @@ def render_scenario(scenario: Scenario) -> str:
             now_utc=ts.tz_convert("UTC").tz_localize(None).to_pydatetime(),
             sunrise_utc=sunrise_utc,
             sunset_utc=sunset_utc,
+            sun_at_dusk_lead=sun_at_dusk_lead,
         )
         decision = engine_evaluate(config, sun, ctx, inputs)
         pos = round(float(decision.position))

@@ -17,6 +17,7 @@ from custom_components.adaptive_cover.const import (
     CONF_MANUAL_OVERRIDE_RESET,
     CONF_MANUAL_THRESHOLD,
 )
+from custom_components.adaptive_cover.engine.geometry import DUSK_LEAD
 
 from .harness import SimHouse
 
@@ -461,22 +462,22 @@ async def test_day_two_solar_schedule(hass, freezer):
     )
 
     # Day two runs a full schedule: the shade reopens during the day and
-    # closes again after the DAY-TWO sunset.
+    # closes again at the DAY-TWO dusk. The sun leaves this south window
+    # right before sunset, so the close starts then (DUSK_LEAD).
     day_two = house.tz.localize(dt.datetime(2026, 3, 21, 0, 0))
     sunset_local = sunset_day2.astimezone(house.tz)
+    dusk = sunset_local - DUSK_LEAD
     await house.advance_to("21:00")
     reopened = [
         ev
         for ev in moves_on_or_after(house, SHADE, day_two)
-        if ev.position > 0 and ev.time < sunset_local
+        if ev.position > 0 and ev.time < dusk
     ]
     assert reopened, "no day-two daytime tracking commands"
-    closes = [
-        ev for ev in moves_on_or_after(house, SHADE, sunset_local) if ev.position == 0
-    ]
+    closes = [ev for ev in moves_on_or_after(house, SHADE, dusk) if ev.position == 0]
     assert closes, (
-        "no close after the day-two sunset; day-two evening timeline: "
-        f"{[ev for ev in house.timeline if ev.time >= sunset_local]}"
+        "no close at the day-two dusk; day-two evening timeline: "
+        f"{[ev for ev in house.timeline if ev.time >= dusk]}"
     )
     assert house.position(SHADE) == 0
     await house.teardown()

@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/engine/evaluate.py b/custom_components/adaptive_cover/engine/evaluate.py
 --- a/custom_components/adaptive_cover/engine/evaluate.py
 +++ b/custom_components/adaptive_cover/engine/evaluate.py
-@@ -99,7 +99,7 @@
+@@ -102,7 +102,7 @@
          if valid:
              if climate.is_summer:
                  trace.append("summer, away: close fully")

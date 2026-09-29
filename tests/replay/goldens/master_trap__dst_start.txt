@@ -44,9 +44,6 @@
 03-08 18:00:00 MDT  input  sensor.upstairs_indoor_temperature = 74.0 °F
 03-08 19:00:00 MDT  cmd    set_cover_position cover.master_trap_shades 0
 03-08 19:00:00 MDT  sensor 0 (calculated)
-03-08 19:25:00 MDT  cmd    set_cover_position cover.master_trap_shades 99
-03-08 19:25:00 MDT  sensor 99 (default)
-03-08 19:45:00 MDT  cmd    set_cover_position cover.master_trap_shades 0
-03-08 19:45:00 MDT  sensor 0 (sunset)
+03-08 19:25:00 MDT  sensor 0 (sunset)
 03-08 21:00:00 MDT  input  sensor.upstairs_indoor_temperature = 71.5 °F
 03-09 00:30:00 MDT  end    shade at 0

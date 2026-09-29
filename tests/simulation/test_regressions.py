@@ -9,8 +9,13 @@ from homeassistant.util import dt as dt_util
 from custom_components.adaptive_cover.const import (
     CONF_AZIMUTH,
     CONF_DEFAULT_HEIGHT,
+    CONF_DISTANCE,
     CONF_FOV_LEFT,
     CONF_FOV_RIGHT,
+    CONF_HEIGHT_WIN,
+    CONF_MAX_ELEVATION,
+    CONF_SUNSET_OFFSET,
+    CONF_SUNSET_POS,
 )
 
 from .harness import SimHouse
@@ -129,4 +134,42 @@ async def test_regression_small_snap_move_sent_once(hass, freezer, start, snap):
     commands = [ev.position for ev in house.auto_moves("cover.shade")]
     assert commands == [snap]
     assert house.position("cover.shade") == snap
+    await house.teardown()
+
+
+async def test_regression_dusk_no_open_then_close(hass, freezer):
+    """Leanne's door, summer solstice: no open-then-close at dusk.
+
+    The sun leaves the 235° window at about 20:15 MDT; the sunset position
+    (5%) begins at sunset - 30 min, about 20:32. The shade used to open to
+    the 97% default at 20:15 and close to 5% at 20:35. With the sun gone
+    and dusk less than DUSK_LEAD away, it goes straight to the sunset
+    position.
+    """
+    house = await SimHouse.create(
+        hass,
+        freezer,
+        date="2026-06-21",
+        start_at="16:00",
+        initial_position=97,
+        options={
+            CONF_AZIMUTH: 235,
+            CONF_FOV_LEFT: 60,
+            CONF_FOV_RIGHT: 60,
+            CONF_MAX_ELEVATION: 50,
+            CONF_HEIGHT_WIN: 2.1,
+            CONF_DISTANCE: 0.2,
+            CONF_DEFAULT_HEIGHT: 97,
+            CONF_SUNSET_POS: 5,
+            CONF_SUNSET_OFFSET: -30,
+        },
+    )
+    await house.advance_to("19:45")
+    assert house.window().target < 10  # tracking the low evening sun
+    await house.advance_to("21:30")
+
+    evening = [ev.position for ev in house.auto_moves("cover.shade", since="19:50")]
+    assert 97 not in evening, f"opened to the default before dusk: {evening}"
+    assert evening[-1] == 5
+    assert house.window().target == 5
     await house.teardown()

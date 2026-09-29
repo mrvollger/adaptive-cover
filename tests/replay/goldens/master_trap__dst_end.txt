@@ -43,10 +43,7 @@
 11-01 15:40:00 MST  sensor 1 (calculated)
 11-01 16:50:00 MST  cmd    set_cover_position cover.master_trap_shades 0
 11-01 16:50:00 MST  sensor 0 (calculated)
-11-01 17:25:00 MST  cmd    set_cover_position cover.master_trap_shades 99
-11-01 17:25:00 MST  sensor 99 (default)
-11-01 17:40:00 MST  cmd    set_cover_position cover.master_trap_shades 0
-11-01 17:40:00 MST  sensor 0 (sunset)
+11-01 17:25:00 MST  sensor 0 (sunset)
 11-01 18:00:00 MST  input  sensor.upstairs_indoor_temperature = 74.0 °F
 11-01 21:00:00 MST  input  sensor.upstairs_indoor_temperature = 71.5 °F
 11-02 00:30:00 MST  end    shade at 0
