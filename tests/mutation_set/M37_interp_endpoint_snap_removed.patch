@@ -1,8 +1,8 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1761,10 +1761,6 @@
-             new_range = list(map(int, self.new_list))
+@@ -1731,10 +1731,6 @@
+             new_range = list(map(int, self.config.interp_list_new))
          if new_range:
              state = interp(state, normal_range, new_range)
 -            if state == new_range[0]:
@@ -11,4 +11,4 @@ diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components
 -                state = 100
          return state
  
-     @property
+     # The switch platform sets these by name (setattr); the state lives in

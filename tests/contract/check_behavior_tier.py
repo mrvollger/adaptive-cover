@@ -113,6 +113,12 @@ RULES: list[tuple[str, str]] = [
     # edge cases of private helpers; the SunData contract pins (277/289/301
     # points, astral values) are behavior tier in test_regression_fixes.py.
     ("tests/test_time_helpers.py::*", IMPLEMENTATION),
+    # P4 coordinator split: unit tests of the runtime components with fakes.
+    # Later P4 PRs reshape the components (one cover per window, a typed
+    # event queue), so these are implementation tier; the no-hass guard is
+    # a structural check like test_purity.
+    ("tests/runtime/test_no_hass.py::*", TOOLING),
+    ("tests/runtime/*", IMPLEMENTATION),
 ]
 
 

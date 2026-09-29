@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -997,7 +997,7 @@
+@@ -974,7 +974,7 @@
              else "current_position"
          )
          position = event.new_state.attributes.get(pos_attr)

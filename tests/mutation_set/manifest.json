@@ -85,8 +85,8 @@
  },
  {
   "id": "M13",
-  "file": "custom_components/adaptive_cover/coordinator.py",
-  "function": "_update_manager_and_covers",
+  "file": "custom_components/adaptive_cover/runtime/shade_config.py",
+  "function": "ControlState.clears_overrides",
   "description": "swap the None (restart: preserve) and False (toggle-off: clear) branches",
   "patch": "M13_toggle_none_false_branch_swap.patch"
  },

@@ -29,6 +29,7 @@ from homeassistant.util import dt as dt_util
 
 from .config_context_adapter import ConfigContextAdapter
 from .runtime.clock import SYSTEM_CLOCK, Clock
+from .runtime.shade_config import ControlState, ControlToggle, ShadeConfig
 
 from .calculation import (
     AdaptiveHorizontalCover,
@@ -54,23 +55,14 @@ from .const import (
     CONF_BLIND_SPOT_RIGHT,
     CONF_CLIMATE_MODE,
     CONF_DEFAULT_HEIGHT,
-    CONF_DELTA_POSITION,
-    CONF_DELTA_TIME,
     CONF_DISTANCE,
     CONF_ENABLE_BLIND_SPOT,
     CONF_ENABLE_MAX_POSITION,
     CONF_ENABLE_MIN_POSITION,
-    CONF_END_ENTITY,
-    CONF_END_TIME,
-    CONF_ENTITIES,
     CONF_FOV_LEFT,
     CONF_FOV_RIGHT,
     CONF_HEIGHT_WIN,
     CONF_INTERP,
-    CONF_INTERP_END,
-    CONF_INTERP_LIST,
-    CONF_INTERP_LIST_NEW,
-    CONF_INTERP_START,
     CONF_INVERSE_STATE,
     CONF_IRRADIANCE_ENTITY,
     CONF_IRRADIANCE_THRESHOLD,
@@ -78,11 +70,7 @@ from .const import (
     CONF_LUX_ENTITY,
     CONF_LUX_THRESHOLD,
     CONF_MANUAL_IGNORE_INTERMEDIATE,
-    CONF_MANUAL_OVERRIDE_DURATION,
-    CONF_MANUAL_OVERRIDE_RESET,
-    CONF_MANUAL_THRESHOLD,
     CONF_MAX_ELEVATION,
-    CONF_MAX_MOVES_HOUR,
     CONF_MAX_POSITION,
     CONF_MIN_ELEVATION,
     CONF_MIN_POSITION,
@@ -93,21 +81,16 @@ from .const import (
     CONF_PRIVACY_MODE,
     CONF_PRIVACY_OFFSET,
     CONF_PRIVACY_POSITION,
-    CONF_QUIET_END,
-    CONF_QUIET_START,
     CONF_OUTSIDE_THRESHOLD,
     CONF_OUTSIDETEMP_ENTITY,
     CONF_PRESENCE_ENTITY,
     CONF_RETURN_SUNSET,
-    CONF_START_ENTITY,
-    CONF_START_TIME,
     CONF_SUNRISE_OFFSET,
     CONF_SUNSET_OFFSET,
     CONF_SUNSET_POS,
     CONF_TEMP_ENTITY,
     CONF_TEMP_HIGH,
     CONF_TEMP_LOW,
-    DEFAULT_MANUAL_OVERRIDE_DURATION,
     CONF_TILT_DEPTH,
     CONF_TILT_DISTANCE,
     CONF_TILT_MODE,
@@ -207,25 +190,15 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.logger.set_config_name(self.config_entry.data.get("name"))
         self._cover_type = self.config_entry.data.get("sensor_type")
         self._climate_mode = self.config_entry.options.get(CONF_CLIMATE_MODE, False)
-        self._switch_mode = True if self._climate_mode else False
+        self.controls = ControlState(climate=True if self._climate_mode else False)
         self._inverse_state = self.config_entry.options.get(CONF_INVERSE_STATE, False)
         self._use_interpolation = self.config_entry.options.get(CONF_INTERP, False)
         self._track_end_time = self.config_entry.options.get(CONF_RETURN_SUNSET)
-        self._temp_toggle = None
-        self._control_toggle = None
-        self._manual_toggle = None
-        self._lux_toggle = None
-        self._irradiance_toggle = None
         self._start_time = None
         self._sun_end_time = None
         self._sun_start_time = None
-        # self._end_time = None
-        self.manual_reset = self.config_entry.options.get(
-            CONF_MANUAL_OVERRIDE_RESET, False
-        )
-        self.manual_duration = self.config_entry.options.get(
-            CONF_MANUAL_OVERRIDE_DURATION, DEFAULT_MANUAL_OVERRIDE_DURATION
-        )
+        # Re-read on every refresh (_update_options).
+        self.config = ShadeConfig.from_options(self.config_entry.options)
         self.state_change = False
         self.cover_state_change = False
         self.first_refresh = False
@@ -240,7 +213,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # rebuild the coordinator) do not silently wipe active overrides.
         _manual_store = self.hass.data.setdefault(f"{DOMAIN}_manual_state", {})
         self.manager = AdaptiveCoverManager(
-            self.manual_duration,
+            self.config.manual_duration,
             self.logger,
             persisted_state=_manual_store.setdefault(self.config_entry.entry_id, {}),
             clock=self.clock,
@@ -427,7 +400,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 entity_id,
             )
             self.manager.mark_manual_control(entity_id)
-            self.manager.set_last_updated(entity_id, new_state, self.manual_reset)
+            self.manager.set_last_updated(
+                entity_id, new_state, self.config.manual_reset
+            )
             self.record_move_provenance(
                 entity_id,
                 new_state.attributes.get(
@@ -453,7 +428,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             # this latch the move was swallowed as a motor echo and the
             # next sun tick reverted it.
             self.manager.mark_manual_control(entity_id)
-            self.manager.set_last_updated(entity_id, new_state, self.manual_reset)
+            self.manager.set_last_updated(
+                entity_id, new_state, self.config.manual_reset
+            )
             self.record_move_provenance(
                 entity_id,
                 new_state.attributes.get(
@@ -783,7 +760,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         normal_cover = self.normal_cover_state.cover
         # Climate snapshot used for reasons, forecasting, and trace
         climate_data_for_reason = None
-        if self._climate_mode and self._switch_mode:
+        if self._climate_mode and self.controls.climate:
             try:
                 climate_data_for_reason = ClimateCoverData(
                     *self.get_climate_data(options)
@@ -862,7 +839,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
         # Active decision (intent + trace) for explanations
         active_decision = (
-            self._climate_decision if self._switch_mode else self._basic_decision
+            self._climate_decision if self.controls.climate else self._basic_decision
         )
 
         # Compute next event
@@ -1014,9 +991,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     self.state_change_data,
                     state,
                     self._cover_type,
-                    self.manual_reset,
+                    self.config.manual_reset,
                     self.wait_for_target,
-                    self.manual_threshold,
+                    self.config.manual_threshold,
                 )
         # A human just took over: record it with provenance
         if event and not was_manual and self.manager.is_cover_manual(event.entity_id):
@@ -1170,13 +1147,13 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         allowed through: arriving at a rest position is the one move worth
         making at night.
         """
-        if not self.quiet_start or not self.quiet_end:
+        if not self.config.quiet_start or not self.config.quiet_end:
             return True
         if self._is_snap_position(state, options):
             return True
         now = self._now_local().time()
-        start = get_datetime_from_str(self.quiet_start).time()
-        end = get_datetime_from_str(self.quiet_end).time()
+        start = get_datetime_from_str(self.config.quiet_start).time()
+        end = get_datetime_from_str(self.config.quiet_end).time()
         if start <= end:
             quiet = start <= now < end
         else:  # window crosses midnight
@@ -1191,7 +1168,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         Snap positions bypass the budget so day-phase transitions always
         happen; only incremental tracking moves are rationed.
         """
-        if not self.max_moves_hour:
+        if not self.config.max_moves_hour:
             return True
         if self._is_snap_position(state, options):
             return True
@@ -1202,17 +1179,17 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             if now - t < dt.timedelta(hours=1)
         ]
         self._move_history[entity] = history
-        if len(history) >= self.max_moves_hour:
+        if len(history) >= self.config.max_moves_hour:
             self.logger.debug(
                 "Move budget (%s/h) exhausted for %s: skipping tracking move",
-                self.max_moves_hour,
+                self.config.max_moves_hour,
                 entity,
             )
             return False
         return True
 
     def _record_move(self, entity) -> None:
-        if self.max_moves_hour:
+        if self.config.max_moves_hour:
             self._move_history.setdefault(entity, []).append(self.clock.utcnow())
 
     async def async_force_apply(
@@ -1350,7 +1327,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
     def _active_intent(self) -> str | None:
         """Intent of the currently-active decision, for provenance."""
-        decision = self._climate_decision if self._switch_mode else self._basic_decision
+        decision = (
+            self._climate_decision if self.controls.climate else self._basic_decision
+        )
         return str(decision.intent) if decision else None
 
     def _format_last_move(self, entity) -> str | None:
@@ -1366,27 +1345,14 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         return line + ")"
 
     def _update_options(self, options):
-        """Update options."""
-        self.entities = options.get(CONF_ENTITIES, [])
-        self.min_change = options.get(CONF_DELTA_POSITION, 1)
-        self.time_threshold = options.get(CONF_DELTA_TIME, 2)
-        self.start_time = options.get(CONF_START_TIME)
-        self.start_time_entity = options.get(CONF_START_ENTITY)
-        self.end_time = options.get(CONF_END_TIME)
-        self.end_time_entity = options.get(CONF_END_ENTITY)
-        self.manual_reset = options.get(CONF_MANUAL_OVERRIDE_RESET, False)
-        self.manual_duration = options.get(
-            CONF_MANUAL_OVERRIDE_DURATION, DEFAULT_MANUAL_OVERRIDE_DURATION
-        )
-        self.manual_threshold = options.get(CONF_MANUAL_THRESHOLD)
-        self.start_value = options.get(CONF_INTERP_START)
-        self.end_value = options.get(CONF_INTERP_END)
-        self.normal_list = options.get(CONF_INTERP_LIST)
-        self.new_list = options.get(CONF_INTERP_LIST_NEW)
-        self.quiet_start = options.get(CONF_QUIET_START)
-        self.quiet_end = options.get(CONF_QUIET_END)
-        self.max_moves_hour = options.get(CONF_MAX_MOVES_HOUR)
+        """Re-read the options this refresh uses."""
+        self.config = ShadeConfig.from_options(options)
         self._warn_if_threshold_unit_looks_wrong(options)
+
+    @property
+    def entities(self) -> list[str]:
+        """The covers this window drives (the hub reads this too)."""
+        return self.config.entities
 
     def _warn_if_threshold_unit_looks_wrong(self, options) -> None:
         """Warn once when climate thresholds look like the other unit.
@@ -1420,17 +1386,17 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             )
 
     def _update_manager_and_covers(self):
-        self.manager.reset_duration = dt.timedelta(**self.manual_duration)
+        self.manager.reset_duration = dt.timedelta(**self.config.manual_duration)
         self.logger.debug(
             "Manual override duration from config: %s → timedelta: %s",
-            self.manual_duration,
+            self.config.manual_duration,
             self.manager.reset_duration,
         )
         self.manager.add_covers(self.entities)
         # Only an EXPLICIT off clears overrides. During startup/reload the
         # toggle is still None (switches restore after the first refresh),
         # and treating that as off wiped overrides on every options edit.
-        if self._manual_toggle is False:
+        if self.controls.clears_overrides:
             self.logger.debug("Manual toggle is off, clearing all manual overrides")
             for entity in self.manager.manual_controlled:
                 self.manager.reset(entity)
@@ -1509,9 +1475,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     def after_start_time(self):
         """Check if time is after start time."""
         now = self._now_local()
-        if self.start_time_entity is not None:
+        if self.config.start_time_entity is not None:
             time = get_datetime_from_str(
-                get_safe_state(self.hass, self.start_time_entity),
+                get_safe_state(self.hass, self.config.start_time_entity),
                 default_date=now.date(),
             )
             self.logger.debug(
@@ -1519,8 +1485,10 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             )
             self._start_time = time
             return now >= time
-        if self.start_time is not None:
-            time = get_datetime_from_str(self.start_time, default_date=now.date())
+        if self.config.start_time is not None:
+            time = get_datetime_from_str(
+                self.config.start_time, default_date=now.date()
+            )
 
             self.logger.debug(
                 "Start time: %s, now: %s, now >= time: %s", time, now, now >= time
@@ -1534,13 +1502,13 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         """Get end time (naive, in HA's configured timezone, today)."""
         time = None
         today = self._now_local().date()
-        if self.end_time_entity is not None:
+        if self.config.end_time_entity is not None:
             time = get_datetime_from_str(
-                get_safe_state(self.hass, self.end_time_entity),
+                get_safe_state(self.hass, self.config.end_time_entity),
                 default_date=today,
             )
-        elif self.end_time is not None:
-            time = get_datetime_from_str(self.end_time, default_date=today)
+        elif self.config.end_time is not None:
+            time = get_datetime_from_str(self.config.end_time, default_date=today)
             if time.time() == dt.time(0, 0):
                 time = time + dt.timedelta(days=1)
         return time
@@ -1583,14 +1551,14 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         """Check cover positions to reduce calls."""
         position = self._get_current_position(entity)
         if position is not None:
-            condition = abs(position - state) >= self.min_change
+            condition = abs(position - state) >= self.config.min_change
             self.logger.debug(
                 "Entity: %s,  position: %s, state: %s, delta position: %s, min_change: %s, condition: %s",
                 entity,
                 position,
                 state,
                 abs(position - state),
-                self.min_change,
+                self.config.min_change,
                 condition,
             )
             if state in [
@@ -1613,13 +1581,15 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         now = self.clock.utcnow()
         last_sent = self.target_call_time.get(entity)
         if last_sent is not None:
-            condition = now - last_sent >= dt.timedelta(minutes=self.time_threshold)
+            condition = now - last_sent >= dt.timedelta(
+                minutes=self.config.time_threshold
+            )
             self.logger.debug(
                 "Entity: %s, time since our last command: %s, threshold: %s, "
                 "condition: %s",
                 entity,
                 now - last_sent,
-                self.time_threshold,
+                self.config.time_threshold,
                 condition,
             )
             return condition
@@ -1668,7 +1638,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             options.get(CONF_WEATHER_ENTITY),
             options.get(CONF_WEATHER_STATE),
             options.get(CONF_OUTSIDETEMP_ENTITY),
-            self._temp_toggle,
+            self.controls.outside_temp,
             self._cover_type,
             options.get(CONF_TRANSPARENT_BLIND),
             options.get(CONF_LUX_ENTITY),
@@ -1676,8 +1646,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             options.get(CONF_LUX_THRESHOLD),
             options.get(CONF_IRRADIANCE_THRESHOLD),
             options.get(CONF_OUTSIDE_THRESHOLD),
-            self._lux_toggle,
-            self._irradiance_toggle,
+            self.controls.lux,
+            self.controls.irradiance,
         ]
 
     def climate_mode_data(self, options, cover_data):
@@ -1723,9 +1693,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             "Basic position: %s; Climate position: %s; Using climate position? %s",
             self.default_state,
             self.climate_state,
-            self._switch_mode,
+            self.controls.climate,
         )
-        if self._switch_mode:
+        if self.controls.climate:
             state = self.climate_state
         else:
             state = self.default_state
@@ -1754,11 +1724,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         """Interpolate states."""
         normal_range = [0, 100]
         new_range = []
-        if self.start_value and self.end_value:
-            new_range = [self.start_value, self.end_value]
-        if self.normal_list and self.new_list:
-            normal_range = list(map(int, self.normal_list))
-            new_range = list(map(int, self.new_list))
+        if self.config.interp_start and self.config.interp_end:
+            new_range = [self.config.interp_start, self.config.interp_end]
+        if self.config.interp_list and self.config.interp_list_new:
+            normal_range = list(map(int, self.config.interp_list))
+            new_range = list(map(int, self.config.interp_list_new))
         if new_range:
             state = interp(state, normal_range, new_range)
             if state == new_range[0]:
@@ -1767,59 +1737,18 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 state = 100
         return state
 
-    @property
-    def switch_mode(self):
-        """Let switch toggle climate mode."""
-        return self._switch_mode
-
-    @switch_mode.setter
-    def switch_mode(self, value):
-        self._switch_mode = value
-
-    @property
-    def temp_toggle(self):
-        """Let switch toggle between inside or outside temperature."""
-        return self._temp_toggle
-
-    @temp_toggle.setter
-    def temp_toggle(self, value):
-        self._temp_toggle = value
-
-    @property
-    def control_toggle(self):
-        """Toggle automation."""
-        return self._control_toggle
-
-    @control_toggle.setter
-    def control_toggle(self, value):
-        self._control_toggle = value
-
-    @property
-    def manual_toggle(self):
-        """Toggle automation."""
-        return self._manual_toggle
-
-    @manual_toggle.setter
-    def manual_toggle(self, value):
-        self._manual_toggle = value
-
-    @property
-    def lux_toggle(self):
-        """Toggle automation."""
-        return self._lux_toggle
-
-    @lux_toggle.setter
-    def lux_toggle(self, value):
-        self._lux_toggle = value
-
-    @property
-    def irradiance_toggle(self):
-        """Toggle automation."""
-        return self._irradiance_toggle
-
-    @irradiance_toggle.setter
-    def irradiance_toggle(self, value):
-        self._irradiance_toggle = value
+    # The switch platform sets these by name (setattr); the state lives in
+    # self.controls.
+    switch_mode = ControlToggle[bool]("climate")
+    """Let switch toggle climate mode."""
+    temp_toggle = ControlToggle[bool | None]("outside_temp")
+    """Let switch toggle between inside or outside temperature."""
+    control_toggle = ControlToggle[bool | None]("control")
+    """Toggle automation."""
+    manual_toggle = ControlToggle[bool | None]("manual")
+    """Toggle manual-override detection."""
+    lux_toggle = ControlToggle[bool | None]("lux")
+    irradiance_toggle = ControlToggle[bool | None]("irradiance")
 
 
 class AdaptiveCoverManager:

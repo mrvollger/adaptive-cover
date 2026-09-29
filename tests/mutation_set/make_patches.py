@@ -45,6 +45,7 @@ BINARY = "custom_components/adaptive_cover/binary_sensor.py"
 INIT = "custom_components/adaptive_cover/__init__.py"
 SURFACE = "custom_components/adaptive_cover/entity_surface.py"
 SHARED = "custom_components/adaptive_cover/entity_shared.py"
+SHADE_CONFIG = "custom_components/adaptive_cover/runtime/shade_config.py"
 
 
 @dataclass
@@ -67,8 +68,8 @@ MUTATIONS: list[Mutation] = [
         COORD,
         "check_position_delta",
         ">= min_change -> > (move exactly at threshold now blocked)",
-        "            condition = abs(position - state) >= self.min_change",
-        "            condition = abs(position - state) > self.min_change",
+        "            condition = abs(position - state) >= self.config.min_change",
+        "            condition = abs(position - state) > self.config.min_change",
     ),
     Mutation(
         "M02",
@@ -76,12 +77,12 @@ MUTATIONS: list[Mutation] = [
         COORD,
         "check_quiet_hours",
         "remove the snap-position early return (evening close swallowed in quiet window)",
-        "        if not self.quiet_start or not self.quiet_end:\n"
+        "        if not self.config.quiet_start or not self.config.quiet_end:\n"
         "            return True\n"
         "        if self._is_snap_position(state, options):\n"
         "            return True\n"
         "        now = self._now_local().time()",
-        "        if not self.quiet_start or not self.quiet_end:\n"
+        "        if not self.config.quiet_start or not self.config.quiet_end:\n"
         "            return True\n"
         "        now = self._now_local().time()",
     ),
@@ -91,8 +92,8 @@ MUTATIONS: list[Mutation] = [
         COORD,
         "check_move_budget",
         ">= max_moves_hour -> > (one extra move per rolling hour)",
-        "        if len(history) >= self.max_moves_hour:",
-        "        if len(history) > self.max_moves_hour:",
+        "        if len(history) >= self.config.max_moves_hour:",
+        "        if len(history) > self.config.max_moves_hour:",
     ),
     Mutation(
         "M04",
@@ -117,9 +118,9 @@ MUTATIONS: list[Mutation] = [
         COORD,
         "after_start_time",
         "static CONF_START_TIME wins over the start-time entity (precedence swap)",
-        "        if self.start_time_entity is not None:\n"
+        "        if self.config.start_time_entity is not None:\n"
         "            time = get_datetime_from_str(\n"
-        "                get_safe_state(self.hass, self.start_time_entity),\n"
+        "                get_safe_state(self.hass, self.config.start_time_entity),\n"
         "                default_date=now.date(),\n"
         "            )\n"
         "            self.logger.debug(\n"
@@ -127,8 +128,10 @@ MUTATIONS: list[Mutation] = [
         "            )\n"
         "            self._start_time = time\n"
         "            return now >= time\n"
-        "        if self.start_time is not None:\n"
-        "            time = get_datetime_from_str(self.start_time, default_date=now.date())\n"
+        "        if self.config.start_time is not None:\n"
+        "            time = get_datetime_from_str(\n"
+        "                self.config.start_time, default_date=now.date()\n"
+        "            )\n"
         "\n"
         "            self.logger.debug(\n"
         '                "Start time: %s, now: %s, now >= time: %s", time, now, now >= time\n'
@@ -136,17 +139,19 @@ MUTATIONS: list[Mutation] = [
         "            self._start_time\n"
         "            return now >= time\n"
         "        return True",
-        "        if self.start_time is not None:\n"
-        "            time = get_datetime_from_str(self.start_time, default_date=now.date())\n"
+        "        if self.config.start_time is not None:\n"
+        "            time = get_datetime_from_str(\n"
+        "                self.config.start_time, default_date=now.date()\n"
+        "            )\n"
         "\n"
         "            self.logger.debug(\n"
         '                "Start time: %s, now: %s, now >= time: %s", time, now, now >= time\n'
         "            )\n"
         "            self._start_time\n"
         "            return now >= time\n"
-        "        if self.start_time_entity is not None:\n"
+        "        if self.config.start_time_entity is not None:\n"
         "            time = get_datetime_from_str(\n"
-        "                get_safe_state(self.hass, self.start_time_entity),\n"
+        "                get_safe_state(self.hass, self.config.start_time_entity),\n"
         "                default_date=now.date(),\n"
         "            )\n"
         "            self.logger.debug(\n"
@@ -162,11 +167,11 @@ MUTATIONS: list[Mutation] = [
         COORD,
         "_end_time",
         "drop the 00:00-means-next-midnight normalization",
-        "            time = get_datetime_from_str(self.end_time, default_date=today)\n"
+        "            time = get_datetime_from_str(self.config.end_time, default_date=today)\n"
         "            if time.time() == dt.time(0, 0):\n"
         "                time = time + dt.timedelta(days=1)\n"
         "        return time",
-        "            time = get_datetime_from_str(self.end_time, default_date=today)\n"
+        "            time = get_datetime_from_str(self.config.end_time, default_date=today)\n"
         "        return time",
     ),
     Mutation(
@@ -228,17 +233,17 @@ MUTATIONS: list[Mutation] = [
         COORD,
         "_update_manager_and_covers",
         "override duration unit blown up 60x (minutes behave like hours)",
-        "        self.manager.reset_duration = dt.timedelta(**self.manual_duration)",
-        "        self.manager.reset_duration = dt.timedelta(**self.manual_duration) * 60",
+        "        self.manager.reset_duration = dt.timedelta(**self.config.manual_duration)",
+        "        self.manager.reset_duration = dt.timedelta(**self.config.manual_duration) * 60",
     ),
     Mutation(
         "M13",
         "toggle_none_false_branch_swap",
-        COORD,
-        "_update_manager_and_covers",
+        SHADE_CONFIG,
+        "ControlState.clears_overrides",
         "swap the None (restart: preserve) and False (toggle-off: clear) branches",
-        "        if self._manual_toggle is False:",
-        "        if self._manual_toggle is None:",
+        "        return self.manual is False",
+        "        return self.manual is None",
     ),
     # ---- group C: end-of-day close lifecycle ---------------------------
     Mutation(
