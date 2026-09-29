@@ -76,18 +76,18 @@ CONFIG = EntityCategory.CONFIG
 # The suffixes are the historical, frozen unique_id suffixes.
 WINDOW_SURFACE = {
     # primary
-    ("sensor", "Cover Position"): (None, True, "Target position"),
+    ("sensor", "Cover Position"): (None, True, "Position"),
     ("select", "mode_select"): (None, True, "Mode"),
     ("button", "Reset Manual Override"): (None, True, "Return to auto"),
     # diagnostic, enabled
     ("binary_sensor", "Manual Override"): (DIAG, True, "Manual override"),
     ("binary_sensor", "Sun Infront"): (DIAG, True, "Sun in front"),
     ("sensor", "Control Method"): (DIAG, True, "Control method"),
-    # diagnostic, disabled by default
-    ("sensor", "Start Sun"): (DIAG, False, "Start sun"),
-    ("sensor", "End Sun"): (DIAG, False, "End sun"),
-    ("sensor", "Next State Change"): (DIAG, False, "Next change"),
-    ("sensor", "Last State Change"): (DIAG, False, "Last change"),
+    # diagnostic, enabled while the card still reads them (disabled in P6)
+    ("sensor", "Start Sun"): (DIAG, True, "Start sun"),
+    ("sensor", "End Sun"): (DIAG, True, "End sun"),
+    ("sensor", "Next State Change"): (DIAG, True, "Next change"),
+    ("sensor", "Last State Change"): (DIAG, True, "Last change"),
     # config (functional until P5)
     ("switch", "Toggle Control"): (CONFIG, True, "Automatic control"),
     ("switch", "Manual Override"): (CONFIG, True, "Manual override detection"),
@@ -511,11 +511,9 @@ class TestMigration:
         # that is enabled by default.
         for key in (("sensor", "Last State Change"), ("sensor", "Control Method")):
             assert rows[key].disabled_by is er.RegistryEntryDisabler.USER, key
-        # The untouched disabled-by-default role is disabled by the
-        # integration; categories apply regardless of user choices.
-        assert rows[("sensor", "End Sun")].disabled_by is (
-            er.RegistryEntryDisabler.INTEGRATION
-        )
+        # Untouched rows stay enabled (no role is disabled by default yet);
+        # categories apply regardless of user choices.
+        assert rows[("sensor", "End Sun")].disabled_by is None
         for key, (category, _enabled, _name) in WINDOW_SURFACE.items():
             assert rows[key].entity_category == category, key
 
@@ -541,8 +539,11 @@ class TestMigration:
         await _setup(hass, entry)
         registry = er.async_get(hass)
         next_change = _rows(hass, entry)[("sensor", "Next State Change")]
-        assert next_change.disabled_by is er.RegistryEntryDisabler.INTEGRATION
-
+        # No role is disabled by default yet; simulate the P6 state where the
+        # integration disabled it, then the user turned it back on.
+        registry.async_update_entity(
+            next_change.entity_id, disabled_by=er.RegistryEntryDisabler.INTEGRATION
+        )
         registry.async_update_entity(next_change.entity_id, disabled_by=None)
         assert await hass.config_entries.async_reload(entry.entry_id)
         await hass.async_block_till_done()
@@ -730,7 +731,7 @@ async def test_live_house_upgrade(hass, cover_calls):
         else:
             assert reg.disabled_by is er.RegistryEntryDisabler.INTEGRATION
             disabled += 1
-    assert disabled == 15 * 4
+    assert disabled == 0  # nothing disabled until the card stops reading them (P6)
 
     # Areas: the owner's stay; the others come from the physical cover.
     dev_reg = dr.async_get(hass)
@@ -750,7 +751,7 @@ async def test_live_house_upgrade(hass, cover_calls):
         assert window.attributes["window_key"] == entry["entry_id"]
         assert window.attributes["cover_entity"] == cover
         friendly = window.state("position").attributes["friendly_name"]
-        assert friendly == f"{device.name_by_user or device.name} Target position"
+        assert friendly == f"{device.name_by_user or device.name} Position"
 
 
 # ---------------------------------------------------- position attributes

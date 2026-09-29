@@ -310,15 +310,8 @@
   "id": "M52",
   "file": "custom_components/adaptive_cover/entity_surface.py",
   "function": "WINDOW_SURFACE",
-  "description": "Start sun sensor enabled by default instead of disabled",
-  "patch": "M52_diagnostic_sensor_enabled_by_default.patch"
- },
- {
-  "id": "M53",
-  "file": "custom_components/adaptive_cover/entity_surface.py",
-  "function": "async_apply_surface_to_registry",
-  "description": "1.2 migration disables a disabled-by-default role even when the user renamed, hid or disabled it",
-  "patch": "M53_migration_overrides_user_choice.patch"
+  "description": "Start sun sensor disabled by default while the card still reads it",
+  "patch": "M52_card_sensor_disabled_by_default.patch"
  },
  {
   "id": "M54",

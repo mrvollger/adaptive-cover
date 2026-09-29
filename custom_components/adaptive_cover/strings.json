@@ -708,7 +708,7 @@
         "name": "Start sun"
       },
       "target_position": {
-        "name": "Target position"
+        "name": "Position"
       }
     },
     "switch": {

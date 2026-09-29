@@ -64,15 +64,13 @@ WINDOW_SURFACE: dict[tuple[str, str], SurfaceSpec] = {
     ("binary_sensor", "Manual Override"): SurfaceSpec("manual_override", _DIAG),
     ("binary_sensor", "Sun Infront"): SurfaceSpec("sun_motion", _DIAG),
     ("sensor", "Control Method"): SurfaceSpec("control", _DIAG),
-    # Diagnostic, disabled by default.
-    ("sensor", "Start Sun"): SurfaceSpec("start_sun", _DIAG, enabled_default=False),
-    ("sensor", "End Sun"): SurfaceSpec("end_sun", _DIAG, enabled_default=False),
-    ("sensor", "Next State Change"): SurfaceSpec(
-        "next_change", _DIAG, enabled_default=False
-    ),
-    ("sensor", "Last State Change"): SurfaceSpec(
-        "last_change", _DIAG, enabled_default=False
-    ),
+    # Diagnostic, enabled for now: the dashboard card still reads the sun
+    # and change sensors. They become disabled-by-default once the card reads
+    # the Position attributes instead (P6).
+    ("sensor", "Start Sun"): SurfaceSpec("start_sun", _DIAG),
+    ("sensor", "End Sun"): SurfaceSpec("end_sun", _DIAG),
+    ("sensor", "Next State Change"): SurfaceSpec("next_change", _DIAG),
+    ("sensor", "Last State Change"): SurfaceSpec("last_change", _DIAG),
     # Config: still functional until P5 replaces them with Mode and house
     # settings.
     ("switch", "Toggle Control"): SurfaceSpec("control_toggle", _CONFIG),
