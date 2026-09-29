@@ -1,0 +1,66 @@
+---
+# Slow or drift-detecting checks that do not gate pull requests.
+# Kept out of ci.yml on purpose: GitHub disables a workflow with a schedule
+# after 60 days without repository activity, and that must never disable CI.
+name: Nightly
+
+on:
+  schedule:
+    - cron: "23 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PIXI_VERSION: v0.81.0 # keep >= requires-pixi in pixi.toml
+  FORCE_COLOR: "1"
+
+jobs:
+  mutations:
+    name: Mutation kill matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the runner applies patches in git worktrees
+      - uses: prefix-dev/setup-pixi@v0.10.2
+        with:
+          pixi-version: ${{ env.PIXI_VERSION }}
+          environments: default
+          locked: true
+          cache: true
+          cache-write: false
+      - name: Run all mutations
+        run: >-
+          pixi run python tests/mutation_set/run_mutations.py
+          --jobs 4 --report mutation_report.json
+      - name: Upload the report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: mutation-report
+          path: mutation_report.json
+          if-no-files-found: error
+
+  newest-ha:
+    name: Tests on the newest HA release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: prefix-dev/setup-pixi@v0.10.2
+        with:
+          pixi-version: ${{ env.PIXI_VERSION }}
+          run-install: false
+          cache: false
+      # Re-resolve the `latest` environment past pixi.lock. If this job
+      # fails, a new HA release broke us: fix it, then commit the output of
+      # `pixi update -e latest` so the PR matrix tests that release too.
+      - name: Resolve the newest pytest-homeassistant-custom-component
+        run: pixi update -e latest
+      - name: Show the versions under test
+        run: pixi list -e latest "homeassistant|pandas|numpy"
+      - name: pytest -n auto
+        run: pixi run -e latest test

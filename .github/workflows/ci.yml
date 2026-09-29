@@ -1,0 +1,128 @@
+---
+# Every push to main and every pull request. Target wall time: < 6 minutes
+# (pixi environments and npm downloads are cached; jobs run in parallel).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  PIXI_VERSION: v0.81.0 # keep >= requires-pixi in pixi.toml
+  FORCE_COLOR: "1"
+
+jobs:
+  python:
+    name: Python (HA ${{ matrix.ha }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Minimum supported HA (hacs.json): phcc 0.13.354 -> HA 2026.8.0.
+          - ha: "2026.8 minimum"
+            environment: default
+          # Newest phcc/HA in pixi.lock. The nightly workflow re-resolves it.
+          - ha: latest
+            environment: latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: prefix-dev/setup-pixi@v0.10.2
+        with:
+          pixi-version: ${{ env.PIXI_VERSION }}
+          environments: ${{ matrix.environment }}
+          locked: true
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      - name: pytest -n auto
+        run: pixi run -e ${{ matrix.environment }} test
+      # The checks below depend on the minimum HA only; run them once.
+      - name: pyright (fails on errors not in the baseline)
+        if: ${{ !cancelled() && matrix.environment == 'default' }}
+        run: pixi run typecheck
+      - name: Mutation patches still apply
+        if: ${{ !cancelled() && matrix.environment == 'default' }}
+        run: pixi run python tests/mutation_set/make_patches.py --check
+      - name: Behavior tier has no silent removals
+        if: ${{ !cancelled() && matrix.environment == 'default' }}
+        run: pixi run python tests/contract/check_behavior_tier.py
+
+  ruff:
+    name: Ruff
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: prefix-dev/setup-pixi@v0.10.2
+        with:
+          pixi-version: ${{ env.PIXI_VERSION }}
+          environments: default
+          locked: true
+          cache: true
+          cache-write: false
+      - name: ruff check
+        run: pixi run ruff check --output-format=github .
+      - name: ruff format --check
+        if: ${{ !cancelled() }}
+        run: pixi run ruff format --check .
+
+  card:
+    name: Card
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: card
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24 # custom-card-helpers needs node >= 24 / npm >= 11
+          cache: npm
+          cache-dependency-path: card/package-lock.json
+      - name: npm ci
+        id: install
+        run: npm ci
+      - name: eslint + prettier
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run lint
+      - name: tsc
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run typecheck
+      - name: vitest
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm test
+      - name: Committed bundle matches a fresh build
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run check-bundle
+
+  hassfest:
+    name: Hassfest
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: home-assistant/actions/hassfest@master
+
+  hacs:
+    name: HACS validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hacs/action@main
+        with:
+          category: integration
+          # Repository settings, not code: this fork has issues disabled and
+          # no topics. Drop the ignore once both are set on GitHub.
+          ignore: issues topics
