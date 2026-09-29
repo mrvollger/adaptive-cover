@@ -3,13 +3,17 @@
 Quiet-hours and move-budget gating are pinned at behavior level by the
 simulation days in tests/simulation/test_gates_and_windows.py
 (test_quiet_hours_midnight_span_snap_bypass, test_move_budget).
+
+Everything is observed through the window's public surface (WindowHandle)
+except the travel-window latch itself: no entity exposes whether OUR
+command is still in flight, so those reads are marked
+``# contract: internal`` (refactor P4's CommandTracker will own them).
 """
 
 from __future__ import annotations
 
 import datetime as dt
 
-from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     async_mock_service,
@@ -29,17 +33,18 @@ from custom_components.adaptive_cover.const import (
 )
 
 from .conftest import COMMON_OPTIONS
+from .window_handle import WindowHandle, internal_coordinator
 
 COVER = "cover.test_cover"
 
 
-def _manual_override_sensor(hass, entry):
-    """The entry's Manual Override binary sensor state (entity surface)."""
-    eid = er.async_get(hass).async_get_entity_id(
-        "binary_sensor", DOMAIN, f"{entry.entry_id}_Manual Override"
-    )
-    assert eid is not None
-    return hass.states.get(eid)
+def _awaiting_target(hass, entry) -> bool:
+    """Whether OUR last command to COVER is still in flight.
+
+    contract: internal (travel-window latch; no entity exposes an
+    in-flight command)
+    """
+    return internal_coordinator(hass, entry.entry_id).wait_for_target[COVER]
 
 
 async def test_privacy_closes_after_dusk(hass, mock_sun_data, mock_sun_entity):
@@ -59,6 +64,7 @@ async def test_privacy_closes_after_dusk(hass, mock_sun_data, mock_sun_entity):
         },
     )
     entry.add_to_hass(hass)
+    window = WindowHandle(hass, COVER)
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
 
@@ -66,27 +72,26 @@ async def test_privacy_closes_after_dusk(hass, mock_sun_data, mock_sun_entity):
     # the sun instead of closing for privacy, so the transition into the
     # privacy window below is what must command the close.
     now = dt.datetime.now(dt.UTC)
-    mock_sun_data.sunset.return_value = now + dt.timedelta(hours=4)
-    mock_sun_data.sunrise.return_value = now - dt.timedelta(hours=12)
+    mock_sun_data.sunset_at = now + dt.timedelta(hours=4)
+    mock_sun_data.sunrise_at = now - dt.timedelta(hours=12)
 
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    coordinator = hass.data[DOMAIN][entry.entry_id]
     # Land the startup move so its travel window clears.
     hass.states.async_set(
-        COVER, "open", {"current_position": coordinator.target_call[COVER]}
+        COVER, "open", {"current_position": window.last_command}
     )
     await hass.async_block_till_done()
     calls = async_mock_service(hass, "cover", "set_cover_position")
 
     # Sunset was 40 minutes ago, sunrise long past: privacy window active.
-    mock_sun_data.sunset.return_value = now - dt.timedelta(minutes=40)
+    mock_sun_data.sunset_at = now - dt.timedelta(minutes=40)
     hass.states.async_set(
         "sun.sun", "below_horizon", {"azimuth": 300.0, "elevation": -8.0}
     )
     await hass.async_block_till_done()
 
-    assert coordinator.data.states["state"] == 7
+    assert window.target == 7
     assert len(calls) == 1
     assert calls[0].data == {"entity_id": COVER, "position": 7}
 
@@ -114,27 +119,27 @@ async def test_privacy_offset_zero_engages_at_sunset(
         },
     )
     entry.add_to_hass(hass)
+    window = WindowHandle(hass, COVER)
     hass.states.async_set(COVER, "open", {"current_position": 60})
 
     # Sunset still ahead at setup: the fixed startup refresh tracks the
     # sun; the move commanded after sunset is the behavior under test.
     now = dt.datetime.now(dt.UTC)
-    mock_sun_data.sunset.return_value = now + dt.timedelta(hours=4)
-    mock_sun_data.sunrise.return_value = now - dt.timedelta(hours=12)
+    mock_sun_data.sunset_at = now + dt.timedelta(hours=4)
+    mock_sun_data.sunrise_at = now - dt.timedelta(hours=12)
 
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    coordinator = hass.data[DOMAIN][entry.entry_id]
     # Land the startup move so its travel window clears.
     hass.states.async_set(
-        COVER, "open", {"current_position": coordinator.target_call[COVER]}
+        COVER, "open", {"current_position": window.last_command}
     )
     await hass.async_block_till_done()
     calls = async_mock_service(hass, "cover", "set_cover_position")
 
     # Sunset 10 minutes ago with privacy_offset=0: already inside the
     # privacy window; an `offset or 30` coercion would still be waiting.
-    mock_sun_data.sunset.return_value = now - dt.timedelta(minutes=10)
+    mock_sun_data.sunset_at = now - dt.timedelta(minutes=10)
     hass.states.async_set(
         "sun.sun", "below_horizon", {"azimuth": 300.0, "elevation": -8.0}
     )
@@ -173,20 +178,20 @@ async def test_sunrise_offset_falls_back_to_sunset_offset(
         options=options,
     )
     entry.add_to_hass(hass)
+    window = WindowHandle(hass, COVER)
     hass.states.async_set(COVER, "open", {"current_position": 60})
 
     now = dt.datetime.now(dt.UTC)
-    mock_sun_data.sunrise.return_value = now + dt.timedelta(minutes=30)
-    mock_sun_data.sunset.return_value = now + dt.timedelta(hours=8)
+    mock_sun_data.sunrise_at = now + dt.timedelta(minutes=30)
+    mock_sun_data.sunset_at = now + dt.timedelta(hours=8)
 
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    coordinator = hass.data[DOMAIN][entry.entry_id]
     # The fixed startup refresh already tracks the sun (the inherited -60
     # offset released the before-sunrise hold); land that move so its
     # travel window clears before the nudge under test.
     hass.states.async_set(
-        COVER, "open", {"current_position": coordinator.target_call[COVER]}
+        COVER, "open", {"current_position": window.last_command}
     )
     await hass.async_block_till_done()
     calls = async_mock_service(hass, "cover", "set_cover_position")
@@ -226,8 +231,8 @@ async def test_privacy_beats_winter_open(hass, mock_sun_data, mock_sun_entity):
     hass.states.async_set("sensor.indoor", "17.0")  # cold: winter mode
 
     now = dt.datetime.now(dt.UTC)
-    mock_sun_data.sunset.return_value = now - dt.timedelta(minutes=40)
-    mock_sun_data.sunrise.return_value = now - dt.timedelta(hours=12)
+    mock_sun_data.sunset_at = now - dt.timedelta(minutes=40)
+    mock_sun_data.sunrise_at = now - dt.timedelta(hours=12)
 
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
@@ -237,8 +242,7 @@ async def test_privacy_beats_winter_open(hass, mock_sun_data, mock_sun_entity):
     )
     await hass.async_block_till_done()
 
-    coordinator = hass.data[DOMAIN][entry.entry_id]
-    assert coordinator.data.states["state"] == 0  # privacy, not winter-100
+    assert WindowHandle(hass, COVER).target == 0  # privacy, not winter-100
 
 
 async def test_regression_target_latch_tolerance(
@@ -258,34 +262,35 @@ async def test_regression_target_latch_tolerance(
         },
     )
     entry.add_to_hass(hass)
+    window = WindowHandle(hass, COVER)
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    coordinator = hass.data[DOMAIN][entry.entry_id]
 
     hass.states.async_set(
         "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
     )
     await hass.async_block_till_done()
-    target = coordinator.target_call[COVER]
+    target = window.last_command
 
     # Motor lands 2 off the target: within tolerance -> latch clears
     hass.states.async_set(COVER, "open", {"current_position": target - 2})
     await hass.async_block_till_done()
-    assert coordinator.wait_for_target[COVER] is False
+    assert _awaiting_target(hass, entry) is False  # contract: internal (latch)
 
     # Now a human move MUST latch the override
     hass.states.async_set(COVER, "open", {"current_position": 5})
     await hass.async_block_till_done()
-    assert _manual_override_sensor(hass, entry).state == "on"
+    assert window.manual_override
 
 
 async def test_regression_target_latch_expiry(
-    hass, mock_sun_data, mock_sun_entity
+    hass, freezer, mock_sun_data, mock_sun_entity
 ):
     """Cover never approaches the target: after TARGET_TIMEOUT the latch
     expires and human moves are manual again (not swallowed forever)."""
+    freezer.move_to("2026-03-20 18:00:00+00:00")  # daytime; no midnight
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={"name": "Latch Expiry", CONF_SENSOR_TYPE: SensorType.BLIND},
@@ -298,27 +303,25 @@ async def test_regression_target_latch_expiry(
         },
     )
     entry.add_to_hass(hass)
+    window = WindowHandle(hass, COVER)
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    coordinator = hass.data[DOMAIN][entry.entry_id]
 
     hass.states.async_set(
         "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
     )
     await hass.async_block_till_done()
-    assert coordinator.wait_for_target[COVER] is True
+    assert _awaiting_target(hass, entry) is True  # contract: internal (latch)
 
-    # Simulate the command having been sent long ago
-    coordinator.target_call_time[COVER] = dt.datetime.now(dt.UTC) - dt.timedelta(
-        minutes=10
-    )
+    # The command was sent long ago: ten minutes pass with no landing.
+    freezer.tick(dt.timedelta(minutes=10))
     # Human parks it far from target: expiry clears latch, move is manual
     hass.states.async_set(COVER, "open", {"current_position": 5})
     await hass.async_block_till_done()
-    assert coordinator.wait_for_target[COVER] is False
-    assert _manual_override_sensor(hass, entry).state == "on"
+    assert _awaiting_target(hass, entry) is False  # contract: internal (latch)
+    assert window.manual_override
 
 
 async def test_user_context_move_latches_even_mid_window(
@@ -340,17 +343,18 @@ async def test_user_context_move_latches_even_mid_window(
         },
     )
     entry.add_to_hass(hass)
+    window = WindowHandle(hass, COVER)
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    coordinator = hass.data[DOMAIN][entry.entry_id]
 
     hass.states.async_set(
         "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
     )
     await hass.async_block_till_done()
-    assert coordinator.wait_for_target[COVER] is True  # window armed
+    # Window armed.
+    assert _awaiting_target(hass, entry) is True  # contract: internal (latch)
 
     hass.states.async_set(
         COVER,
@@ -360,8 +364,8 @@ async def test_user_context_move_latches_even_mid_window(
     )
     await hass.async_block_till_done()
 
-    assert _manual_override_sensor(hass, entry).state == "on"
-    assert coordinator.wait_for_target[COVER] is False
+    assert window.manual_override
+    assert _awaiting_target(hass, entry) is False  # contract: internal (latch)
 
 
 async def test_no_recommand_while_awaiting_target(
@@ -381,15 +385,15 @@ async def test_no_recommand_while_awaiting_target(
         },
     )
     entry.add_to_hass(hass)
+    window = WindowHandle(hass, COVER)
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    coordinator = hass.data[DOMAIN][entry.entry_id]
     # Land the startup move (fixed first refresh) so its travel window
     # clears; the in-flight command under test is the nudge's own.
     hass.states.async_set(
-        COVER, "open", {"current_position": coordinator.target_call[COVER]}
+        COVER, "open", {"current_position": window.last_command}
     )
     await hass.async_block_till_done()
     calls = async_mock_service(hass, "cover", "set_cover_position")
@@ -414,10 +418,7 @@ async def test_no_recommand_while_awaiting_target(
     await hass.async_block_till_done()
 
     assert len(calls) == 1  # no stacking
-    assert (
-        coordinator.data.attributes["move_blocked_by"].get(COVER)
-        == "awaiting_target"
-    )
+    assert window.move_blocked_by == "awaiting_target"
 
 
 async def test_poll_forced_when_landing_report_missing(
@@ -447,13 +448,12 @@ async def test_poll_forced_when_landing_report_missing(
     hass.states.async_set(COVER, "open", {"current_position": 60})
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    coordinator = hass.data[DOMAIN][entry.entry_id]
 
     hass.states.async_set(
         "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
     )
     await hass.async_block_till_done()
-    assert coordinator.wait_for_target[COVER] is True
+    assert _awaiting_target(hass, entry) is True  # contract: internal (latch)
 
     # No landing report ever arrives; jump past TARGET_TIMEOUT + margin
     async_fire_time_changed(hass, dt_util.utcnow() + dt.timedelta(seconds=130))
@@ -481,21 +481,21 @@ async def test_no_poll_when_cover_arrived(hass, mock_sun_data, mock_sun_entity):
         },
     )
     entry.add_to_hass(hass)
+    window = WindowHandle(hass, COVER)
     async_mock_service(hass, "cover", "set_cover_position")
     update_calls = async_mock_service(hass, "homeassistant", "update_entity")
     hass.states.async_set(COVER, "open", {"current_position": 60})
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    coordinator = hass.data[DOMAIN][entry.entry_id]
 
     hass.states.async_set(
         "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
     )
     await hass.async_block_till_done()
-    target = coordinator.target_call[COVER]
+    target = window.last_command
     hass.states.async_set(COVER, "open", {"current_position": target})
     await hass.async_block_till_done()
-    assert coordinator.wait_for_target[COVER] is False
+    assert _awaiting_target(hass, entry) is False  # contract: internal (latch)
 
     async_fire_time_changed(hass, dt_util.utcnow() + dt.timedelta(seconds=130))
     await hass.async_block_till_done()
@@ -524,31 +524,31 @@ async def test_regression_manual_latch_on_movement_start(
         },
     )
     entry.add_to_hass(hass)
+    window = WindowHandle(hass, COVER)
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    coordinator = hass.data[DOMAIN][entry.entry_id]
 
     hass.states.async_set(
         "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
     )
     await hass.async_block_till_done()
-    assert coordinator.wait_for_target[COVER] is True
-    target = coordinator.target_call[COVER]
+    assert _awaiting_target(hass, entry) is True  # contract: internal (latch)
+    target = window.last_command
 
     # Cover lands on our target: window clears, cover is auto-controlled.
     hass.states.async_set(COVER, "open", {"current_position": target})
     await hass.async_block_till_done()
-    assert coordinator.wait_for_target[COVER] is False
-    assert _manual_override_sensor(hass, entry).state == "off"
+    assert _awaiting_target(hass, entry) is False  # contract: internal (latch)
+    assert not window.manual_override
 
     # Human starts moving it: state flips to "closing" but position still
     # reads the old value (no landing report yet, no user context - e.g. a
     # paired remote). Manual must latch NOW, not minutes later.
     hass.states.async_set(COVER, "closing", {"current_position": target})
     await hass.async_block_till_done()
-    assert _manual_override_sensor(hass, entry).state == "on"
+    assert window.manual_override
 
 
 async def test_regression_no_latch_when_movement_is_ours(
@@ -567,22 +567,23 @@ async def test_regression_no_latch_when_movement_is_ours(
         },
     )
     entry.add_to_hass(hass)
+    window = WindowHandle(hass, COVER)
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    coordinator = hass.data[DOMAIN][entry.entry_id]
 
     hass.states.async_set(
         "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 44.0}
     )
     await hass.async_block_till_done()
-    assert coordinator.wait_for_target[COVER] is True  # our command in flight
+    # Our command is in flight.
+    assert _awaiting_target(hass, entry) is True  # contract: internal (latch)
 
     # Device reports travel toward OUR target: not a human act.
     hass.states.async_set(COVER, "closing", {"current_position": 60})
     await hass.async_block_till_done()
-    assert _manual_override_sensor(hass, entry).state == "off"
+    assert not window.manual_override
 
 
 async def test_regression_resume_button_rename_keeps_unique_id(

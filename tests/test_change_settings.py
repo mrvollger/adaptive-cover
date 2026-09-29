@@ -25,6 +25,7 @@ from custom_components.adaptive_cover.const import (
 )
 
 from .conftest import COMMON_OPTIONS
+from .window_handle import internal_coordinator
 
 COVER = "cover.test_cover"
 
@@ -82,9 +83,11 @@ async def test_change_settings_persists_and_reloads(
         [CONF_OVERHANG_DEPTH, CONF_OVERHANG_HEIGHT, CONF_EYE_HEIGHT,
          CONF_PRIVACY_MODE]
     )
-    # Reload picked it up: the cover adapter now has the overhang
-    coordinator = hass.data[DOMAIN][entry.entry_id]
-    cover_data = coordinator.get_blind_data(coordinator.config_entry.options)
+    # Reload picked it up: the cover adapter now has the overhang.
+    # contract: internal (no entity exposes the adapter's overhang/privacy
+    # config; the P5 Position `provenance` attribute will)
+    coordinator = internal_coordinator(hass, entry.entry_id)
+    cover_data = coordinator.get_blind_data(entry.options)
     assert cover_data.overhang is not None
     assert cover_data.privacy is not None and cover_data.privacy.enabled
 

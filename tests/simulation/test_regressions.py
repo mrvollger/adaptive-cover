@@ -21,9 +21,8 @@ async def test_regression_group_remote_latches_both_covers(hass, freezer):
     await house.user_moves(B, 100, via="remote")
     await house.advance_to("11:20")
 
-    coord = house.coordinator
-    assert coord.manager.is_cover_manual(A), "left cover override dropped"
-    assert coord.manager.is_cover_manual(B), "right cover override dropped"
+    assert house.window(A).is_manual, "left cover override dropped"
+    assert house.window(B).is_manual, "right cover override dropped"
     assert house.auto_moves(A, since="11:10") == []
     assert house.auto_moves(B, since="11:10") == []
     await house.teardown()
@@ -41,11 +40,11 @@ async def test_regression_override_clears_on_new_day(hass, freezer):
     await house.advance_to("15:00")
     await house.user_moves("cover.shade", 100, via="remote")
     await house.advance_to("23:00")
-    assert house.coordinator.manager.is_cover_manual("cover.shade")
+    assert house.window("cover.shade").is_manual
 
     # Cross midnight into the next solar day: auto control resumes.
     await house.advance_to("10:00")  # next day
-    assert not house.coordinator.manager.is_cover_manual("cover.shade")
+    assert not house.window("cover.shade").is_manual
     await house.teardown()
 
 
@@ -54,13 +53,13 @@ async def test_regression_overrides_survive_entry_reload(hass, freezer):
     house = await SimHouse.create(hass, freezer, date="2026-03-20")
     await house.advance_to("11:10")
     await house.user_moves("cover.shade", 100, via="remote")
-    assert house.coordinator.manager.is_cover_manual("cover.shade")
+    assert house.window("cover.shade").is_manual
 
     # The user opens the options dialog and saves it unchanged: the entry
     # reloads and the coordinator is rebuilt.
     await house.set_options()
 
-    assert house.coordinator.manager.is_cover_manual("cover.shade"), (
+    assert house.window("cover.shade").is_manual, (
         "entry reload wiped the manual override"
     )
     await house.advance_to("11:25")

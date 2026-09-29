@@ -286,6 +286,15 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.state_change = True
         await self.async_request_refresh()
 
+    def is_own_context(self, context: Context | None) -> bool:
+        """Return True when ``context`` belongs to a cover command WE issued.
+
+        Every command this coordinator sends carries a fresh Context whose
+        id is remembered; an echo of that command (the cover's intermediate
+        state written inside the service call) carries the same context.
+        """
+        return context is not None and context.id in self._our_context_ids
+
     async def async_check_cover_state_change(
         self, event: Event[EventStateChangedData]
     ) -> None:
@@ -323,10 +332,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         entity_id = data["entity_id"]
         # Our own command echoing back (service context preserved):
         # bookkeeping only - never manual, never a full refresh.
-        if (
-            event.context is not None
-            and event.context.id in self._our_context_ids
-        ):
+        if self.is_own_context(event.context):
             self.process_entity_state_change(own_context=True)
             return
         # A change carrying a user id is a HUMAN act (dashboard click,

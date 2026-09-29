@@ -40,7 +40,7 @@ async def test_on_time_close_overrides_active_manual(hass, freezer):
     )
     await house.advance_to("17:30")
     await house.user_moves(SHADE, 100, via="remote")
-    assert house.coordinator.manager.is_cover_manual(SHADE)
+    assert house.window(SHADE).is_manual
 
     await house.advance_to("19:00")
     assert house.position(SHADE) == 0, (

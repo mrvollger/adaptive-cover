@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
@@ -20,6 +21,7 @@ from custom_components.adaptive_cover.const import (
 )
 
 from .conftest import COMMON_OPTIONS
+from .window_handle import WindowHandle
 
 TEMPLATE_COVER = "cover.template_cover"
 
@@ -72,7 +74,9 @@ async def test_add_entry_from_template(hass, template_entry, mock_sun_entity):
     assert entry.options[CONF_AZIMUTH] == 280  # override applied
     assert entry.options[CONF_DISTANCE] == 0.2  # template value kept
     assert entry.options[CONF_ENTITIES] == ["cover.new_cover"]
-    assert entry.entry_id in hass.data[DOMAIN]  # loaded and running
+    # Loaded and running: the new window serves its Position sensor.
+    assert entry.state is ConfigEntryState.LOADED
+    assert WindowHandle(hass, "cover.new_cover").available
 
 
 async def test_add_entry_defaults_without_template(
