@@ -75,8 +75,8 @@ SIM_USER_ID = "simulated-human"
 class SimSunData(FakeSunData):
     """FakeSunData that can regenerate itself IN PLACE for a new local date.
 
-    calculation.py holds a reference to the single patched instance, so a
-    multi-day simulation mutates this object rather than swapping it: after
+    calculation.sun_data_factory hands every adapter this single instance,
+    so a multi-day simulation mutates this object rather than swapping it: after
     ``regenerate_for`` day-two ``sunset()``/``sunrise()``, solar-time
     sensors, and forecasts all read day-two astral data.
     """

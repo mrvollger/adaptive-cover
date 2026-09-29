@@ -33,6 +33,12 @@ from .engine.models import (
 from .helpers import get_domain, get_safe_attr, get_safe_state
 from .sun import SunData
 
+# Seam: how every cover adapter builds its solar day, called as
+# ``sun_data_factory(timezone, hass)``. Production always uses the real
+# SunData; tests assign a fake factory here instead of patching the import
+# (see tests/characterization/golden_lib.patch_sun_data).
+sun_data_factory = SunData
+
 
 def get_state_reason(cover, climate_data=None):
     """Return human-readable reason for the cover's current position."""
@@ -162,7 +168,7 @@ class AdaptiveGeneralCover(ABC):
 
     def __post_init__(self):
         """Add solar data to dataset."""
-        self.sun_data = SunData(self.timezone, self.hass)
+        self.sun_data = sun_data_factory(self.timezone, self.hass)
 
     # --- engine input builders ---
 

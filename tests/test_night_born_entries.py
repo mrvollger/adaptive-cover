@@ -31,6 +31,7 @@ from custom_components.adaptive_cover.const import (
 )
 from custom_components.adaptive_cover.sun import SunData
 
+from .characterization.golden_lib import use_real_sun_data
 from .conftest import COMMON_OPTIONS
 
 COVER = "cover.night_cover"
@@ -43,11 +44,8 @@ NIGHT_UTC = "2026-07-04 05:15:00"
 
 @pytest.fixture
 def real_sun_data():
-    """Give this module the REAL SunData (undo the autouse mock)."""
-    import custom_components.adaptive_cover.calculation as calc
-
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(calc, "SunData", SunData)
+    """Give this module the REAL SunData (undo the autouse flat sun)."""
+    with use_real_sun_data():
         yield
 
 

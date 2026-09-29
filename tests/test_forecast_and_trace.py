@@ -80,8 +80,8 @@ async def test_forecast_includes_privacy_window(
     """With privacy on, the schedule contains privacy entries."""
     now = dt.datetime.now(dt.UTC)
     # Sunset in the recent past so part of the table falls in the window
-    mock_sun_data.sunset.return_value = now - dt.timedelta(hours=2)
-    mock_sun_data.sunrise.return_value = now - dt.timedelta(hours=14)
+    mock_sun_data.sunset_at = now - dt.timedelta(hours=2)
+    mock_sun_data.sunrise_at = now - dt.timedelta(hours=14)
     coordinator = await _setup(hass, _entry(hass, **{CONF_PRIVACY_MODE: True}))
     forecast = coordinator.data.attributes["forecast_today"]
     intents = {e["intent"] for e in forecast}

@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import logging
 from types import SimpleNamespace
-from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -38,7 +37,7 @@ from custom_components.adaptive_cover.const import (
 from custom_components.adaptive_cover.helpers import get_safe_attr
 
 from ..conftest import COMMON_OPTIONS
-from .golden_lib import SLC, FakeSunData
+from .golden_lib import SLC, FakeSunData, patch_sun_data
 
 COVER = "cover.test_cover"
 
@@ -211,10 +210,7 @@ def test_regression_bbca2e9_predict_position_timezone():
     sun_data = FakeSunData(SLC["lat"], SLC["lon"], SLC["tz"], date)
     logger = ConfigContextAdapter(logging.getLogger("predict"))
     logger.set_config_name("Predict")
-    with patch(
-        "custom_components.adaptive_cover.calculation.SunData",
-        return_value=sun_data,
-    ):
+    with patch_sun_data(sun_data):
         cover = AdaptiveVerticalCover(
             hass=SimpleNamespace(),
             logger=logger,

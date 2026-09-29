@@ -66,8 +66,8 @@ async def test_privacy_closes_after_dusk(hass, mock_sun_data, mock_sun_entity):
     # the sun instead of closing for privacy, so the transition into the
     # privacy window below is what must command the close.
     now = dt.datetime.now(dt.UTC)
-    mock_sun_data.sunset.return_value = now + dt.timedelta(hours=4)
-    mock_sun_data.sunrise.return_value = now - dt.timedelta(hours=12)
+    mock_sun_data.sunset_at = now + dt.timedelta(hours=4)
+    mock_sun_data.sunrise_at = now - dt.timedelta(hours=12)
 
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
@@ -80,7 +80,7 @@ async def test_privacy_closes_after_dusk(hass, mock_sun_data, mock_sun_entity):
     calls = async_mock_service(hass, "cover", "set_cover_position")
 
     # Sunset was 40 minutes ago, sunrise long past: privacy window active.
-    mock_sun_data.sunset.return_value = now - dt.timedelta(minutes=40)
+    mock_sun_data.sunset_at = now - dt.timedelta(minutes=40)
     hass.states.async_set(
         "sun.sun", "below_horizon", {"azimuth": 300.0, "elevation": -8.0}
     )
@@ -119,8 +119,8 @@ async def test_privacy_offset_zero_engages_at_sunset(
     # Sunset still ahead at setup: the fixed startup refresh tracks the
     # sun; the move commanded after sunset is the behavior under test.
     now = dt.datetime.now(dt.UTC)
-    mock_sun_data.sunset.return_value = now + dt.timedelta(hours=4)
-    mock_sun_data.sunrise.return_value = now - dt.timedelta(hours=12)
+    mock_sun_data.sunset_at = now + dt.timedelta(hours=4)
+    mock_sun_data.sunrise_at = now - dt.timedelta(hours=12)
 
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
@@ -134,7 +134,7 @@ async def test_privacy_offset_zero_engages_at_sunset(
 
     # Sunset 10 minutes ago with privacy_offset=0: already inside the
     # privacy window; an `offset or 30` coercion would still be waiting.
-    mock_sun_data.sunset.return_value = now - dt.timedelta(minutes=10)
+    mock_sun_data.sunset_at = now - dt.timedelta(minutes=10)
     hass.states.async_set(
         "sun.sun", "below_horizon", {"azimuth": 300.0, "elevation": -8.0}
     )
@@ -176,8 +176,8 @@ async def test_sunrise_offset_falls_back_to_sunset_offset(
     hass.states.async_set(COVER, "open", {"current_position": 60})
 
     now = dt.datetime.now(dt.UTC)
-    mock_sun_data.sunrise.return_value = now + dt.timedelta(minutes=30)
-    mock_sun_data.sunset.return_value = now + dt.timedelta(hours=8)
+    mock_sun_data.sunrise_at = now + dt.timedelta(minutes=30)
+    mock_sun_data.sunset_at = now + dt.timedelta(hours=8)
 
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
@@ -226,8 +226,8 @@ async def test_privacy_beats_winter_open(hass, mock_sun_data, mock_sun_entity):
     hass.states.async_set("sensor.indoor", "17.0")  # cold: winter mode
 
     now = dt.datetime.now(dt.UTC)
-    mock_sun_data.sunset.return_value = now - dt.timedelta(minutes=40)
-    mock_sun_data.sunrise.return_value = now - dt.timedelta(hours=12)
+    mock_sun_data.sunset_at = now - dt.timedelta(minutes=40)
+    mock_sun_data.sunrise_at = now - dt.timedelta(hours=12)
 
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
