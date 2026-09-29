@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/entity_surface.py b/custom_components/adaptive_cover/entity_surface.py
+--- a/custom_components/adaptive_cover/entity_surface.py
++++ b/custom_components/adaptive_cover/entity_surface.py
+@@ -203,7 +203,7 @@
+     """
+     dev_reg = dr.async_get(hass)
+     device = dev_reg.async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+-    if device is None or device.area_id is not None:
++    if device is None:
+         return None
+     area_id = cover_area_id(hass, entry.options.get(CONF_ENTITIES) or [])
+     if area_id is None:

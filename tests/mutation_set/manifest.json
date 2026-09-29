@@ -305,5 +305,33 @@
   "function": "async_set_manual_position",
   "description": "tilt entries routed to set_cover_position instead of set_cover_tilt_position",
   "patch": "M43_tilt_routed_to_position.patch"
+ },
+ {
+  "id": "M52",
+  "file": "custom_components/adaptive_cover/entity_surface.py",
+  "function": "WINDOW_SURFACE",
+  "description": "Start sun sensor enabled by default instead of disabled",
+  "patch": "M52_diagnostic_sensor_enabled_by_default.patch"
+ },
+ {
+  "id": "M53",
+  "file": "custom_components/adaptive_cover/entity_surface.py",
+  "function": "async_apply_surface_to_registry",
+  "description": "1.2 migration disables a disabled-by-default role even when the user renamed, hid or disabled it",
+  "patch": "M53_migration_overrides_user_choice.patch"
+ },
+ {
+  "id": "M54",
+  "file": "custom_components/adaptive_cover/entity_surface.py",
+  "function": "async_copy_cover_area",
+  "description": "window device takes the cover's area even when the user already set one",
+  "patch": "M54_area_copy_overwrites_user_area.patch"
+ },
+ {
+  "id": "M55",
+  "file": "custom_components/adaptive_cover/entity_shared.py",
+  "function": "override_until",
+  "description": "override_until reports the latch time, not latch time + override duration",
+  "patch": "M55_override_until_without_duration.patch"
  }
 ]
