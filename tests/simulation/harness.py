@@ -25,9 +25,8 @@ from __future__ import annotations
 import asyncio
 import datetime as dt
 from dataclasses import dataclass
+from zoneinfo import ZoneInfo
 
-import pandas as pd
-import pytz
 from astral import sun as astral_sun
 from homeassistant.core import Context, ServiceCall, State, callback
 from homeassistant.exceptions import HomeAssistantError
@@ -65,6 +64,8 @@ from tests.characterization.golden_lib import (
     STEP_MINUTES,
     FakeSunData,
     is_integration_context,
+    local_day_points,
+    local_midnight,
     patch_sun_data,
 )
 from tests.conftest import COMMON_OPTIONS
@@ -82,22 +83,55 @@ class SimSunData(FakeSunData):
     sensors, and forecasts all read day-two astral data.
     """
 
-    def regenerate_for(self, date: pd.Timestamp) -> None:
+    def regenerate_for(self, date: dt.date | dt.datetime | str) -> None:
         """Recompute times/azimuth/elevation/date in place for ``date``."""
-        self.date = date
-        self.times = pd.date_range(
-            start=date,
-            end=date + pd.Timedelta(days=1),
-            freq=f"{STEP_MINUTES}min",
-            tz=self.timezone,
-            name="time",
-        )
-        self.solar_azimuth = [
-            astral_sun.azimuth(self.observer, t.to_pydatetime()) for t in self.times
-        ]
+        self.date = local_midnight(date)
+        self.times = local_day_points(self.date.date(), self.timezone, STEP_MINUTES)
+        self.solar_azimuth = [astral_sun.azimuth(self.observer, t) for t in self.times]
         self.solar_elevation = [
-            astral_sun.elevation(self.observer, t.to_pydatetime()) for t in self.times
+            astral_sun.elevation(self.observer, t) for t in self.times
         ]
+
+
+class LocalZone:
+    """Local time for the simulated clock: pytz's model, built on zoneinfo.
+
+    The simulation steps in real (UTC) time and shows local wall time. pytz
+    gave each local datetime a fixed-offset tzinfo (MDT or MST), so
+    comparing and subtracting them worked in real time even across the
+    repeated hour when DST ends. zoneinfo datetimes that share a tzinfo
+    compare and subtract by wall time instead (PEP 495). LocalZone keeps
+    pytz's model: ``localize`` and ``normalize`` return datetimes with a
+    fixed-offset tzinfo named like the zone's abbreviation.
+    """
+
+    def __init__(self, key: str) -> None:
+        self.zone = ZoneInfo(key)
+
+    @staticmethod
+    def _fixed(naive: dt.datetime, reading: dt.datetime) -> dt.datetime:
+        return naive.replace(
+            tzinfo=dt.timezone(reading.utcoffset(), reading.tzname()), fold=0
+        )
+
+    def normalize(self, when: dt.datetime) -> dt.datetime:
+        """The same instant as local wall time (pytz ``normalize``)."""
+        local = when.astimezone(self.zone)
+        return self._fixed(local.replace(tzinfo=None), local)
+
+    def localize(self, naive: dt.datetime) -> dt.datetime:
+        """A local wall time: the standard reading of a repeated time, the DST
+        reading of a skipped one (pytz ``is_dst=False`` / ``is_dst=True``)."""
+        first = naive.replace(tzinfo=self.zone, fold=0)
+        second = naive.replace(tzinfo=self.zone, fold=1)
+        if first.utcoffset() == second.utcoffset():
+            return self._fixed(naive, first)
+        repeated = first.astimezone(dt.UTC).astimezone(self.zone).replace(
+            tzinfo=None
+        ) == naive.replace(tzinfo=None)
+        if repeated:  # DST ends: take the standard-time reading
+            return self._fixed(naive, first if not first.dst() else second)
+        return self._fixed(naive, first if first.dst() else second)  # DST starts
 
 
 @dataclass
@@ -217,8 +251,8 @@ class SimHouse:
         self.hass = hass
         self.freezer = freezer
         self.location = location
-        self.tz = pytz.timezone(location["tz"])
-        self.date = pd.Timestamp(date)
+        self.tz = LocalZone(location["tz"])
+        self.date = local_midnight(date)
         self.step = dt.timedelta(minutes=step_minutes)
         self.shades: dict[str, FakeShade] = {}
         self.timeline: list[TimelineEvent] = []
@@ -476,13 +510,8 @@ class SimHouse:
         self._coordinator = self._live_coordinator()
 
     def _localize(self, naive: dt.datetime) -> dt.datetime:
-        """pytz-localize handling DST folds and spring-forward gaps."""
-        try:
-            return self.tz.localize(naive, is_dst=None)
-        except pytz.exceptions.AmbiguousTimeError:
-            return self.tz.localize(naive, is_dst=False)  # take the fold
-        except pytz.exceptions.NonExistentTimeError:
-            return self.tz.localize(naive, is_dst=True)
+        """Localize, handling DST folds and spring-forward gaps (LocalZone)."""
+        return self.tz.localize(naive)
 
     def _local(self, hhmm: str, *, day_offset: int = 0) -> dt.datetime:
         h, m = (int(x) for x in hhmm.split(":")[:2])
@@ -788,7 +817,7 @@ class SimHouse:
         self.now = self.tz.normalize(self.now + self.step)
         self.freezer.move_to(self.now)
         if self.now.date() != self.sun_data.date.date():
-            self.sun_data.regenerate_for(pd.Timestamp(self.now.date()))
+            self.sun_data.regenerate_for(self.now.date())
         if not self._timers_held:
             async_fire_time_changed(self.hass, self.now)
         await self.hass.async_block_till_done()

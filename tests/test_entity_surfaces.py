@@ -21,7 +21,7 @@ import re
 from freezegun import freeze_time
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
-import pandas as pd
+from zoneinfo import ZoneInfo
 import pytest
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
@@ -123,7 +123,7 @@ def cover_calls(hass):
 
 def _fake_solar_day(date="2026-03-20"):
     """A real astral day as the sun provider (overrides the autouse flat sun)."""
-    sun = FakeSunData(SLC["lat"], SLC["lon"], SLC["tz"], pd.Timestamp(date))
+    sun = FakeSunData(SLC["lat"], SLC["lon"], SLC["tz"], date)
     return sun, patch_sun_data(sun)
 
 
@@ -205,10 +205,7 @@ class TestSunTimeSensors:
             )
         ]
         assert valid, "expected at least one in-window row"
-        return (
-            sun.times[valid[0]].to_pydatetime(),
-            sun.times[valid[-1]].to_pydatetime(),
-        )
+        return sun.times[valid[0]], sun.times[valid[-1]]
 
     @freeze_time("2026-03-20 18:00:00")  # 12:00 in America/Denver
     async def test_sun_time_sensors_honor_band(
@@ -275,7 +272,9 @@ class TestNextChangeSensor:
         self, hass, cover_calls, now_str, event_name, time_str, pos
     ):
         await hass.config.async_set_time_zone(SLC["tz"])
-        local_now = pd.Timestamp(now_str, tz=SLC["tz"]).to_pydatetime()
+        local_now = dt.datetime.fromisoformat(now_str).replace(
+            tzinfo=ZoneInfo(SLC["tz"])
+        )
         _sun, patcher = _fake_solar_day()
         with freeze_time(local_now), patcher:
             _set_sun(hass)

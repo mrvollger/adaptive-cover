@@ -1,42 +1,12 @@
 {
   "pyright": "1.1.414",
-  "total": 187,
+  "total": 163,
   "errors": [
     {
       "file": "custom_components/adaptive_cover/__init__.py",
       "rule": "reportReturnType",
       "message": "Type \"dict[str, str | list[str | SupportsRichComparisonT@sorted]]\" is not assignable to return type \"ServiceResponse\"",
       "count": 1
-    },
-    {
-      "file": "custom_components/adaptive_cover/calculation.py",
-      "rule": "reportAttributeAccessIssue",
-      "message": "Cannot access attribute \"to_pydatetime\" for class \"Index*\"",
-      "count": 2
-    },
-    {
-      "file": "custom_components/adaptive_cover/calculation.py",
-      "rule": "reportAttributeAccessIssue",
-      "message": "Cannot access attribute \"to_pydatetime\" for class \"MultiIndex\"",
-      "count": 2
-    },
-    {
-      "file": "custom_components/adaptive_cover/calculation.py",
-      "rule": "reportAttributeAccessIssue",
-      "message": "Cannot access attribute \"to_pydatetime\" for class \"RangeIndex*\"",
-      "count": 2
-    },
-    {
-      "file": "custom_components/adaptive_cover/calculation.py",
-      "rule": "reportAttributeAccessIssue",
-      "message": "Cannot access attribute \"to_pydatetime\" for class \"int\"",
-      "count": 2
-    },
-    {
-      "file": "custom_components/adaptive_cover/calculation.py",
-      "rule": "reportAttributeAccessIssue",
-      "message": "Cannot access attribute \"to_pydatetime\" for class \"tuple[Unknown, ...]\"",
-      "count": 2
     },
     {
       "file": "custom_components/adaptive_cover/calculation.py",
@@ -299,6 +269,12 @@
     {
       "file": "custom_components/adaptive_cover/coordinator.py",
       "rule": "reportArgumentType",
+      "message": "Argument of type \"float | Unknown | Literal[100, 0]\" cannot be assigned to parameter \"state\" of type \"int\" in function \"inverse_state\"",
+      "count": 1
+    },
+    {
+      "file": "custom_components/adaptive_cover/coordinator.py",
+      "rule": "reportArgumentType",
       "message": "Argument of type \"str | None\" cannot be assigned to parameter \"string\" of type \"str\" in function \"get_datetime_from_str\"",
       "count": 2
     },
@@ -359,61 +335,7 @@
     {
       "file": "custom_components/adaptive_cover/coordinator.py",
       "rule": "reportReturnType",
-      "message": "Type \"int | Unknown | None\" is not assignable to return type \"int\"",
-      "count": 1
-    },
-    {
-      "file": "custom_components/adaptive_cover/engine/evaluate.py",
-      "rule": "reportOperatorIssue",
-      "message": "Operator \"<\" not supported for types \"float\" and \"float | None\"",
-      "count": 1
-    },
-    {
-      "file": "custom_components/adaptive_cover/engine/evaluate.py",
-      "rule": "reportOperatorIssue",
-      "message": "Operator \">\" not supported for types \"float\" and \"float | None\"",
-      "count": 1
-    },
-    {
-      "file": "custom_components/adaptive_cover/engine/evaluate.py",
-      "rule": "reportOptionalMemberAccess",
-      "message": "\"position\" is not a known attribute of \"None\"",
-      "count": 2
-    },
-    {
-      "file": "custom_components/adaptive_cover/engine/evaluate.py",
-      "rule": "reportReturnType",
-      "message": "Type \"float | None\" is not assignable to return type \"float\"",
-      "count": 2
-    },
-    {
-      "file": "custom_components/adaptive_cover/engine/geometry.py",
-      "rule": "reportArgumentType",
-      "message": "Argument of type \"float | None\" cannot be assigned to parameter \"x\" of type \"ConvertibleToFloat\" in function \"__new__\"",
-      "count": 2
-    },
-    {
-      "file": "custom_components/adaptive_cover/engine/geometry.py",
-      "rule": "reportOperatorIssue",
-      "message": "Operator \"-\" not supported for types \"Literal[90]\" and \"float | None\"",
-      "count": 1
-    },
-    {
-      "file": "custom_components/adaptive_cover/engine/geometry.py",
-      "rule": "reportOperatorIssue",
-      "message": "Operator \"/\" not supported for types \"float | None\" and \"float | None\"",
-      "count": 1
-    },
-    {
-      "file": "custom_components/adaptive_cover/engine/geometry.py",
-      "rule": "reportOperatorIssue",
-      "message": "Operator \"/\" not supported for types \"float\" and \"float | None\"",
-      "count": 3
-    },
-    {
-      "file": "custom_components/adaptive_cover/engine/geometry.py",
-      "rule": "reportOptionalOperand",
-      "message": "Operator \"-\" not supported for \"None\"",
+      "message": "Type \"int | float | Unknown | None\" is not assignable to return type \"int\"",
       "count": 1
     },
     {
@@ -439,12 +361,6 @@
       "rule": "reportArgumentType",
       "message": "Argument of type \"Unknown | None\" cannot be assigned to parameter \"x\" of type \"ConvertibleToInt\" in function \"__new__\"",
       "count": 2
-    },
-    {
-      "file": "custom_components/adaptive_cover/sun.py",
-      "rule": "reportReturnType",
-      "message": "Type \"tuple[DatetimeIndex | None, list[Unknown] | None, list[Unknown] | None]\" is not assignable to return type \"tuple[DatetimeIndex, list[Unknown], list[Unknown]]\"",
-      "count": 1
     },
     {
       "file": "custom_components/adaptive_cover/switch.py",

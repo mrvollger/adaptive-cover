@@ -6,10 +6,7 @@ import asyncio
 import datetime as dt
 from collections import deque
 from dataclasses import dataclass
-from functools import lru_cache
 
-import numpy as np
-import pytz
 from homeassistant.components.cover import DOMAIN as COVER_DOMAIN
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -28,8 +25,10 @@ from homeassistant.core import (
 )
 from homeassistant.helpers.event import async_call_later, async_track_point_in_time
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.util import dt as dt_util
 
 from .config_context_adapter import ConfigContextAdapter
+from .runtime.clock import SYSTEM_CLOCK, Clock
 
 from .calculation import (
     AdaptiveHorizontalCover,
@@ -42,6 +41,8 @@ from .calculation import (
     get_state_reason,
 )
 from .engine.models import GlareModel, Overhang, PrivacyConfig
+from .engine.numeric import interp
+from .sun import nearest_index
 from .const import (
     _LOGGER,
     ATTR_POSITION,
@@ -123,15 +124,45 @@ from .helpers import (
 )
 
 
-@lru_cache(maxsize=8)
-def cached_timezone(name: str):
-    """Return the pytz timezone by name, cached.
+# Seam: the clock a coordinator reads when none is passed in. Production
+# keeps Home Assistant's clock (dt_util, which the tests' freezer fixture
+# freezes); a test may assign a fake here, like calculation.sun_data_factory.
+default_clock: Clock = SYSTEM_CLOCK
 
-    pytz reads a zoneinfo file on first construction — blocking I/O that
-    must not run in the event loop. async_setup_entry primes this cache
-    from an executor; every later call is a dict lookup.
+
+def cached_timezone(name: str) -> dt.tzinfo:
+    """Return the time zone by name, cached (``dt_util.get_time_zone``).
+
+    The first construction reads a zoneinfo file: blocking I/O that must
+    not run in the event loop. async_setup_entry primes this cache from an
+    executor; every later call is a dict lookup.
+
+    Raises
+    ------
+    KeyError
+        For an unknown name, like pytz's UnknownTimeZoneError (a KeyError)
+        before P2. Home Assistant validates its configured zone, so this
+        does not happen in practice.
+
     """
-    return pytz.timezone(name)
+    zone = dt_util.get_time_zone(name)
+    if zone is None:
+        raise KeyError(name)
+    return zone
+
+
+def localize_standard(naive: dt.datetime, tz: dt.tzinfo) -> dt.datetime:
+    """Attach ``tz`` to a naive local time, standard time where it is ambiguous.
+
+    What pytz's ``localize()`` did (``is_dst=False``): a repeated wall time
+    (the hour DST ends) takes the standard-time reading, a skipped one (the
+    hour DST starts) the offset from before the jump.
+    """
+    first = naive.replace(tzinfo=tz, fold=0)
+    second = naive.replace(tzinfo=tz, fold=1)
+    if first.utcoffset() == second.utcoffset():
+        return first
+    return first if not first.dst() else second
 
 
 @dataclass
@@ -163,8 +194,14 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     TARGET_TOLERANCE = 3  # percent: close enough counts as arrived
     TARGET_TIMEOUT = dt.timedelta(seconds=120)  # travel-time upper bound
 
-    def __init__(self, hass: HomeAssistant) -> None:  # noqa: D107
+    def __init__(self, hass: HomeAssistant, clock: Clock | None = None) -> None:
+        """Initialize the coordinator.
+
+        ``clock`` is where every "now" comes from (see runtime/clock.py);
+        None means the module's ``default_clock``.
+        """
         super().__init__(hass, LOGGER, name=DOMAIN)
+        self.clock: Clock = clock if clock is not None else default_clock
 
         self.logger = ConfigContextAdapter(_LOGGER)
         self.logger.set_config_name(self.config_entry.data.get("name"))
@@ -206,6 +243,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self.manual_duration,
             self.logger,
             persisted_state=_manual_store.setdefault(self.config_entry.entry_id, {}),
+            clock=self.clock,
         )
         self.wait_for_target = {}
         self.target_call = {}
@@ -484,8 +522,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             )
             sent_at = self.target_call_time.get(entity_id)
             expired = (
-                sent_at is None
-                or dt.datetime.now(dt.UTC) - sent_at > self.TARGET_TIMEOUT
+                sent_at is None or self.clock.utcnow() - sent_at > self.TARGET_TIMEOUT
             )
             if arrived:
                 self.wait_for_target[entity_id] = False
@@ -579,12 +616,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             times = sun_data.times
             azimuths = sun_data.solar_azimuth
             elevations = sun_data.solar_elevation
-        _ = times
-        # Convert target_time to same timezone as sun data times for correct indexing
-        target_tz = target_time
-        if times.tz is not None and target_time.tzinfo is not None:
-            target_tz = target_time.astimezone(times.tz)
-        idx = times.get_indexer([target_tz], method="nearest")[0]
+        # Nearest table point to the tz-aware target, compared as instants
+        # (the table is in local time, the target usually UTC).
+        idx = nearest_index(times, target_time)
         if idx < 0 or idx >= len(times):
             return int(cover_data.h_def)
         return cover_data.calculate_percentage_at(azimuths[idx], elevations[idx])
@@ -594,7 +628,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         if time is None:
             return None
         if time.tzinfo is None:
-            return time.replace(tzinfo=pytz.UTC)
+            return time.replace(tzinfo=dt.UTC)
         return time
 
     def _compute_next_event(self, cover_data, start, end):
@@ -605,7 +639,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         The UTC date rolls over mid-evening in western timezones (18:00 in
         Denver), which named the sunrise two local days out.
         """
-        now = dt.datetime.now(pytz.UTC)
+        now = self.clock.utcnow()
         tomorrow = self._now_local().date() + dt.timedelta(days=1)
         location = cover_data.sun_data.location
         events = []
@@ -660,7 +694,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             end_t = self._end_time
             if end_t.tzinfo is None:
                 local_tz = cached_timezone(self.hass.config.time_zone)
-                end_t = local_tz.localize(end_t)
+                end_t = localize_standard(end_t, local_tz)
             if end_t > now:
                 events.append(
                     (
@@ -854,7 +888,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self._last_change_data = {
                 "old_position": self._previous_state,
                 "new_position": state,
-                "time": dt.datetime.now(pytz.UTC),
+                "time": self.clock.utcnow(),
                 "reason": reason,
             }
         self._previous_state = state
@@ -883,7 +917,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     self._last_change_data = {
                         "old_position": old_pos if old_pos is not None else state,
                         "new_position": new_pos,
-                        "time": dt.datetime.now(pytz.UTC),
+                        "time": self.clock.utcnow(),
                         "reason": change_reason,
                     }
 
@@ -1106,7 +1140,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             sent_at = self.target_call_time.get(entity)
             if (
                 sent_at is not None
-                and dt.datetime.now(dt.UTC) - sent_at <= self.TARGET_TIMEOUT
+                and self.clock.utcnow() - sent_at <= self.TARGET_TIMEOUT
             ):
                 # One command in flight is enough; never stack re-sends.
                 return "awaiting_target"
@@ -1170,7 +1204,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             return True
         if self._is_snap_position(state, options):
             return True
-        now = dt.datetime.now(dt.UTC)
+        now = self.clock.utcnow()
         history = [
             t
             for t in self._move_history.get(entity, [])
@@ -1188,7 +1222,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
     def _record_move(self, entity) -> None:
         if self.max_moves_hour:
-            self._move_history.setdefault(entity, []).append(dt.datetime.now(dt.UTC))
+            self._move_history.setdefault(entity, []).append(self.clock.utcnow())
 
     async def async_force_apply(
         self, source: str = "user", reason: str | None = None
@@ -1242,7 +1276,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
             self.wait_for_target[entity] = True
             self.target_call[entity] = state
-            self.target_call_time[entity] = dt.datetime.now(dt.UTC)
+            self.target_call_time[entity] = self.clock.utcnow()
             self.logger.debug(
                 "Set wait for target %s and target call %s",
                 self.wait_for_target,
@@ -1369,7 +1403,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         the driving intent as reason where known.
         """
         entry = {
-            "time": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
+            "time": self.clock.utcnow().isoformat(timespec="seconds"),
             "position": position,
             "source": source,
             "reason": reason,
@@ -1529,7 +1563,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         every start/end/quiet window by the offset.
         """
         tz = cached_timezone(self.hass.config.time_zone)
-        return dt.datetime.now(tz).replace(tzinfo=None)
+        return self.clock.now(tz).replace(tzinfo=None)
 
     @property
     def check_adaptive_time(self):
@@ -1643,7 +1677,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         devices chatter (link-quality updates, forced polls bump
         last_updated without any movement). Only our own commands count.
         """
-        now = dt.datetime.now(dt.UTC)
+        now = self.clock.utcnow()
         last_sent = self.target_call_time.get(entity)
         if last_sent is not None:
             condition = now - last_sent >= dt.timedelta(minutes=self.time_threshold)
@@ -1793,7 +1827,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             normal_range = list(map(int, self.normal_list))
             new_range = list(map(int, self.new_list))
         if new_range:
-            state = np.interp(state, normal_range, new_range)
+            state = interp(state, normal_range, new_range)
             if state == new_range[0]:
                 state = 0
             if state == new_range[-1]:
@@ -1859,14 +1893,20 @@ class AdaptiveCoverManager:
     """Track position changes."""
 
     def __init__(
-        self, reset_duration: dict[str:int], logger, persisted_state: dict | None = None
+        self,
+        reset_duration: dict[str:int],
+        logger,
+        persisted_state: dict | None = None,
+        clock: Clock = SYSTEM_CLOCK,
     ) -> None:
         """Initialize the AdaptiveCoverManager.
 
         persisted_state lets override bookkeeping survive an entry reload
         (options edits reload the entry and rebuild the coordinator): pass a
-        dict owned by hass.data and the manager mutates it in place.
+        dict owned by hass.data and the manager mutates it in place. clock
+        is the coordinator's (runtime/clock.py).
         """
+        self.clock = clock
         self.covers: set[str] = set()
 
         state = persisted_state if persisted_state is not None else {}
@@ -1973,7 +2013,7 @@ class AdaptiveCoverManager:
         controls whether later manual moves RESTART the clock (see
         set_last_updated), never whether expiry happens at all.
         """
-        current_time = dt.datetime.now(dt.UTC)
+        current_time = self.clock.utcnow()
         manual_control_time_copy = dict(self.manual_control_time)
         for entity_id, last_updated in manual_control_time_copy.items():
             if current_time - last_updated > self.reset_duration:

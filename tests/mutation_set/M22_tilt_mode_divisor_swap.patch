@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_components/adaptive_cover/engine/geometry.py
 --- a/custom_components/adaptive_cover/engine/geometry.py
 +++ b/custom_components/adaptive_cover/engine/geometry.py
-@@ -277,8 +277,8 @@
+@@ -310,8 +310,8 @@
      """Tilt position as % (mode1: 0-90 deg range; mode2: 0-180 deg)."""
      angle = tilt_slat_angle(config, sun)
      if config.tilt_mode == "mode1":

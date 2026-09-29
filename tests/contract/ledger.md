@@ -102,3 +102,29 @@ The example below is inside an HTML comment. The checker ignores it.
   closing minutes later (dusk open-then-close lines removed).
   35 of 90 replay goldens changed (+14 / -66 lines), all in these categories.
 
+
+## L0004 · 2026-09-29 · SunData without pandas: SolarDay, same values (C2, P2)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none. `tests/test_regression_fixes.py::test_regression_sun_data_public_api_intact`
+  keeps its id and now pins the C2 types: `times` is a tuple of tz-aware
+  datetimes (was a pandas `DatetimeIndex`); `solar_azimuth` and
+  `solar_elevation` stay lists. New pins:
+  - `tests/test_regression_fixes.py::test_sun_data_day_points_follow_real_time[normal_day]`
+  - `tests/test_regression_fixes.py::test_sun_data_day_points_follow_real_time[dst_start]`
+  - `tests/test_regression_fixes.py::test_sun_data_day_points_follow_real_time[dst_end]`
+  - `tests/test_regression_fixes.py::test_sun_data_values_are_astral_at_each_point`
+  - `tests/test_regression_fixes.py::test_sun_data_solar_day_is_the_snapshot`
+- **Mutations re-targeted:** M36 and M37 re-anchored from `np.interp` onto
+  `engine.numeric.interp` in coordinator.py `interpolate_states` (descriptions
+  unchanged, a `deviation` note added). M30 and M31 re-anchored onto the
+  narrowed lines in engine/evaluate.py (`evaluate`, `_apply_limits`) for
+  pyright strict. No new mutations.
+- **Contract change:** C2
+- **Reason:** P2 removes pandas, numpy and pytz (ADR 0005). SunData builds
+  its day with a UTC stepper (289 points, 277 on the day DST starts, 301 on
+  the day it ends) and exposes it as `SunData.solar_day() -> SolarDay`;
+  `times`, `solar_azimuth`, `solar_elevation`, `sunrise()`, `sunset()` and
+  `location` keep their names and values. Nearest-point lookups use `bisect`
+  in UTC with pandas' tie rule. The goldens, the truth table and all 90
+  house-replay goldens are byte-identical; no pinned output changed.

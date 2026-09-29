@@ -16,7 +16,6 @@ pipeline, no hardcoded language, typed access to coordinators).
 
 from __future__ import annotations
 
-import datetime as dt
 from typing import Any
 
 from homeassistant.components.button import ButtonEntity
@@ -149,13 +148,16 @@ class AllShadesCover(CoverEntity):
         button or per-entry reset.
         """
         position = round(kwargs["position"])
-        now = dt.datetime.now(dt.UTC)
-        for coordinator, entity in self._all_cover_entities():
-            await coordinator.async_set_manual_position(
-                entity, position, source="all_covers", reason="whole-house gesture"
-            )
-            coordinator.manager.mark_manual_control(entity)
-            coordinator.manager.manual_control_time[entity] = now
+        targets = self._all_cover_entities()
+        if targets:
+            # One latch time for the whole gesture, read before any command.
+            now = targets[0][0].clock.utcnow()
+            for coordinator, entity in targets:
+                await coordinator.async_set_manual_position(
+                    entity, position, source="all_covers", reason="whole-house gesture"
+                )
+                coordinator.manager.mark_manual_control(entity)
+                coordinator.manager.manual_control_time[entity] = now
         if self.entity_id:  # skip when not added to hass (bare instance)
             self.async_write_ha_state()
 

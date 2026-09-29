@@ -18,12 +18,6 @@ python = ">=3.14.2,<3.15"
 ruff = "==0.16.9" # keep in sync with .pre-commit-config.yaml
 pyright = "==1.1.414"
 
-[pypi-dependencies]
-# Runtime requirements of the integration (manifest.json requirements)
-pandas = ">=2.2"
-# pytz is imported by coordinator.py but not declared in manifest.json;
-# pandas 3 no longer pulls it in. Removed together with pandas in P2.
-pytz = "*"
 
 # ---------------------------------------------------------------------------
 # Home Assistant versions under test
@@ -49,6 +43,6 @@ latest = ["latest"]
 test = { cmd = "pytest -n auto", description = "Run the test suite in parallel" }
 lint = { cmd = "ruff check . && ruff format --check .", description = "Ruff lint + format check" }
 format = { cmd = "ruff format . && ruff check --fix .", description = "Apply ruff format and autofixes" }
-typecheck = { cmd = "python .github/pyright/check_baseline.py", description = "pyright (basic); fails only on errors not in the baseline" }
+typecheck = { cmd = "python .github/pyright/check_baseline.py", description = "pyright (basic; strict with zero errors on engine/); fails on errors not in the baseline" }
 typecheck-baseline = { cmd = "python .github/pyright/check_baseline.py --write", description = "Rewrite the pyright baseline (after fixing errors or reformatting)" }
 mutations = { cmd = "python tests/mutation_set/run_mutations.py --jobs 4", description = "Run the mutation kill matrix" }
