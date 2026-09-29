@@ -398,7 +398,9 @@
       }
     },
     "error": {
-      "max_elevation_not_above_min": "The maximum elevation must be greater than the minimum elevation."
+      "max_elevation_not_above_min": "The maximum elevation must be greater than the minimum elevation.",
+      "blind_spot_right_not_above_left": "The blind spot's right edge must be greater than its left edge.",
+      "interp_lists_differ": "The custom interpolation list must have as many values as the interpolation list."
     }
   },
   "selector": {

@@ -47,7 +47,12 @@ from .settings.schema import (
     wizard_type_schema,
 )
 from .settings.spec import OPTS_BY_KEY
-from .settings.validate import blind_spot_order, elevation_order, interp_lengths
+from .settings.validate import (
+    blind_spot_order,
+    cross_field_errors,
+    elevation_order,
+    interp_lengths,
+)
 
 SENSOR_TYPE_MENU = [SensorType.BLIND, SensorType.AWNING, SensorType.TILT]
 
@@ -297,7 +302,9 @@ class OptionsFlowHandler(OptionsFlow):
             for key in CLEARABLE_KEYS & self._shown_keys:
                 if key not in flat:
                     flat[key] = None
-            if errors := elevation_order(flat):
+            # The wizard's cross-field checks, on the options as they would
+            # be saved.
+            if errors := cross_field_errors({**self.options, **flat}):
                 return self.async_show_form(
                     step_id="init",
                     data_schema=self._build_schema(section_fields),

@@ -193,3 +193,20 @@ The example below is inside an HTML comment. The checker ignores it.
   (only possible with a wrong-unit value) now shows as invalid in the
   options form until corrected. Goldens, truth table and house replay
   unchanged.
+
+## L0008 · 2026-09-29 · The options form runs the wizard's cross-field checks (C3)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins
+  `tests/test_one_page_options.py::test_regression_options_form_runs_every_cross_field_check[interp_lists_differ]`
+  and `[blind_spot_reversed]`
+- **Mutations re-targeted:** none
+- **Contract change:** C3
+- **Reason:** defect fix found while merging the elevation checks into one
+  validator. The one-page options form checked only the elevation order,
+  so it saved interpolation lists of different lengths (np.interp then
+  raises on every update and the window stops moving) and a blind spot
+  whose right edge is left of its left edge; the wizard always rejected
+  both. The options form now runs every rule in `settings/validate.py` on
+  the options as they would be saved, and shows the error at form level.
+  `spec_parity.json`, goldens, truth table and house replay unchanged.

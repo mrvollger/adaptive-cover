@@ -60,10 +60,7 @@ from custom_components.adaptive_cover.const import (
     DOMAIN,
     SensorType,
 )
-from custom_components.adaptive_cover.settings.validate import (
-    ERROR_ELEVATION_ORDER,
-    ERROR_KEYS,
-)
+from custom_components.adaptive_cover.settings.validate import ERROR_KEYS
 
 PACKAGE = Path(__file__).resolve().parents[1] / "custom_components" / "adaptive_cover"
 STRINGS_PATH = PACKAGE / "strings.json"
@@ -459,11 +456,11 @@ async def test_flow_strings_cover_every_form(hass, strings: dict[str, Any]) -> N
         needs.add_form("config", result)
     for result in options_forms:
         needs.add_form("options", result)
-    # Cross-field errors (settings/validate.py): the wizard runs every rule;
-    # the options form runs the elevation rule.
+    # Cross-field errors (settings/validate.py): the wizard and the options
+    # form run every rule.
     for key in ERROR_KEYS:
         needs.need(f"config.error.{key}")
-    needs.need(f"options.error.{ERROR_ELEVATION_ORDER}")
+        needs.need(f"options.error.{key}")
 
     have = {
         key
