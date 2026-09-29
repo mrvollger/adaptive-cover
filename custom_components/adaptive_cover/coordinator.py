@@ -29,6 +29,7 @@ from homeassistant.util import dt as dt_util
 
 from .config_context_adapter import ConfigContextAdapter
 from .runtime.clock import SYSTEM_CLOCK, Clock
+from .runtime.gates import CoverFacts, GatePolicy
 from .runtime.schedule import Schedule
 from .runtime.shade_config import ControlState, ControlToggle, ShadeConfig
 
@@ -102,7 +103,6 @@ from .const import (
     LOGGER,
 )
 from .helpers import (
-    get_datetime_from_str,
     get_safe_attr,
     get_safe_state,
 )
@@ -202,6 +202,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.schedule = Schedule(
             lambda entity_id: get_safe_state(self.hass, entity_id), self.logger
         )
+        self.gates = GatePolicy(self.logger)
         self.state_change = False
         self.cover_state_change = False
         self.first_refresh = False
@@ -239,7 +240,6 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
         self._cached_options = None
         self._previous_state = None
-        self._move_history: dict[str, list[dt.datetime]] = {}
         self._basic_decision = None
         self._climate_decision = None
         self.forecast: list[dict] | None = None
@@ -744,7 +744,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
         # Handle types of changes
         if self.state_change:
-            await self.async_handle_state_change(state, options)
+            await self.async_handle_state_change(state)
         if self.cover_state_change:
             # Drain ALL queued cover events: concurrent moves (a room-group
             # remote driving several covers) each deserve manual detection.
@@ -756,7 +756,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 self.state_change_data = cover_event
                 await self.async_handle_cover_state_change(state)
         if self.first_refresh:
-            await self.async_handle_first_refresh(state, options)
+            await self.async_handle_first_refresh(state)
         if self.timed_refresh:
             await self.async_handle_timed_refresh(options)
 
@@ -948,11 +948,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             },
         )
 
-    async def async_handle_state_change(self, state: int, options):
+    async def async_handle_state_change(self, state: int):
         """Handle state change from tracked entities."""
         if self.control_toggle:
             for cover in self.entities:
-                await self.async_handle_call_service(cover, state, options)
+                await self.async_handle_call_service(cover, state)
         else:
             self.logger.debug("State change but control toggle is off")
         self.state_change = False
@@ -1017,7 +1017,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.cover_state_change = False
         self.logger.debug("Cover state change handled")
 
-    async def async_handle_first_refresh(self, state: int, options):
+    async def async_handle_first_refresh(self, state: int):
         """Handle first refresh."""
         if self.control_toggle is None:
             # The first refresh runs before the switch platform restores,
@@ -1032,7 +1032,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 if (
                     self.check_adaptive_time
                     and not self.manager.is_cover_manual(cover)
-                    and self.check_position_delta(cover, state, options)
+                    and self.gates.position_delta_ok(
+                        cover, self._get_current_position(cover), state, self.config
+                    )
                 ):
                     await self.async_set_position(
                         cover, state, source="startup", reason=self._active_intent()
@@ -1084,9 +1086,22 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.timed_refresh = False
         self.logger.debug("Timed refresh handled")
 
-    async def async_handle_call_service(self, entity, state: int, options):
+    async def async_handle_call_service(self, entity, state: int):
         """Handle call service."""
-        gate = self._first_blocking_gate(entity, state, options)
+        gate = self.gates.first_blocking_gate(
+            entity,
+            state,
+            self.config,
+            CoverFacts(
+                is_manual=lambda: self.manager.is_cover_manual(entity),
+                awaiting_target=lambda: self._awaiting_target(entity),
+                in_time_window=lambda: self.check_adaptive_time,
+                position=lambda: self._get_current_position(entity),
+                last_command=lambda: self.target_call_time.get(entity),
+            ),
+            now=self.clock.utcnow(),
+            now_local=self._now_local(),
+        )
         self._gate_blocks[entity] = gate
         if gate is None:
             await self.async_set_position(
@@ -1097,103 +1112,20 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 "Move of %s to %s blocked by gate: %s", entity, state, gate
             )
 
-    def _first_blocking_gate(self, entity, state: int, options) -> str | None:
-        """Return the first gate that blocks this move, or None if allowed.
+    def _awaiting_target(self, entity) -> bool:
+        """Return True while our last command to ``entity`` is travelling.
 
-        Precedence (also the documented order): manual override > time
-        window > position delta > time throttle > quiet hours > move budget.
-        Exposed per cover in the 'move_blocked_by' attribute so 'why didn't
-        it move?' is answerable from the UI.
+        A latch older than TARGET_TIMEOUT is stale: it is cleared here.
         """
-        if self.manager.is_cover_manual(entity):
-            return "manual_override"
         if self.wait_for_target.get(entity):
             sent_at = self.target_call_time.get(entity)
             if (
                 sent_at is not None
                 and self.clock.utcnow() - sent_at <= self.TARGET_TIMEOUT
             ):
-                # One command in flight is enough; never stack re-sends.
-                return "awaiting_target"
+                return True
             self.wait_for_target[entity] = False
-        if not self.check_adaptive_time:
-            return "outside_time_window"
-        if not self.check_position_delta(entity, state, options):
-            return "position_delta"
-        if not self.check_time_delta(entity) and not self._is_snap_position(
-            state, options
-        ):
-            # Snap positions (sunset/default/privacy/0/100) bypass the time
-            # throttle like they bypass every other rate gate: the evening
-            # close must not be swallowed because the shade moved recently.
-            return "time_throttle"
-        if not self.check_quiet_hours(state, options):
-            return "quiet_hours"
-        if not self.check_move_budget(entity, state, options):
-            return "move_budget"
-        return None
-
-    def _is_snap_position(self, state: int, options) -> bool:
-        """Positions that always deserve a move (endpoints, rest positions)."""
-        return state in [
-            options.get(CONF_SUNSET_POS),
-            options.get(CONF_DEFAULT_HEIGHT),
-            options.get(CONF_PRIVACY_POSITION),
-            0,
-            100,
-        ]
-
-    def check_quiet_hours(self, state: int, options) -> bool:
-        """Block tracking moves during the configured quiet window.
-
-        Snap positions (fully open/closed, default, sunset, privacy) are
-        allowed through: arriving at a rest position is the one move worth
-        making at night.
-        """
-        if not self.config.quiet_start or not self.config.quiet_end:
-            return True
-        if self._is_snap_position(state, options):
-            return True
-        now = self._now_local().time()
-        start = get_datetime_from_str(self.config.quiet_start).time()
-        end = get_datetime_from_str(self.config.quiet_end).time()
-        if start <= end:
-            quiet = start <= now < end
-        else:  # window crosses midnight
-            quiet = now >= start or now < end
-        if quiet:
-            self.logger.debug("Quiet hours (%s-%s): skipping tracking move", start, end)
-        return not quiet
-
-    def check_move_budget(self, entity, state: int, options) -> bool:
-        """Cap tracking moves per entity per hour (motor noise / wear).
-
-        Snap positions bypass the budget so day-phase transitions always
-        happen; only incremental tracking moves are rationed.
-        """
-        if not self.config.max_moves_hour:
-            return True
-        if self._is_snap_position(state, options):
-            return True
-        now = self.clock.utcnow()
-        history = [
-            t
-            for t in self._move_history.get(entity, [])
-            if now - t < dt.timedelta(hours=1)
-        ]
-        self._move_history[entity] = history
-        if len(history) >= self.config.max_moves_hour:
-            self.logger.debug(
-                "Move budget (%s/h) exhausted for %s: skipping tracking move",
-                self.config.max_moves_hour,
-                entity,
-            )
-            return False
-        return True
-
-    def _record_move(self, entity) -> None:
-        if self.config.max_moves_hour:
-            self._move_history.setdefault(entity, []).append(self.clock.utcnow())
+        return False
 
     async def async_force_apply(
         self, source: str = "user", reason: str | None = None
@@ -1271,7 +1203,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 )
                 self.wait_for_target[entity] = False
                 return False
-            self._record_move(entity)
+            self.gates.record_move(entity, self.clock.utcnow(), self.config)
             self.record_move_provenance(entity, state, source, reason)
             self._schedule_arrival_poll(entity)
         return True
@@ -1495,54 +1427,6 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         if position is not None:
             return position != state
         self.logger.debug("Position of %s unknown; commanding %s anyway", entity, state)
-        return True
-
-    def check_position_delta(self, entity, state: int, options):
-        """Check cover positions to reduce calls."""
-        position = self._get_current_position(entity)
-        if position is not None:
-            condition = abs(position - state) >= self.config.min_change
-            self.logger.debug(
-                "Entity: %s,  position: %s, state: %s, delta position: %s, min_change: %s, condition: %s",
-                entity,
-                position,
-                state,
-                abs(position - state),
-                self.config.min_change,
-                condition,
-            )
-            if state in [
-                options.get(CONF_SUNSET_POS),
-                options.get(CONF_DEFAULT_HEIGHT),
-                0,
-                100,
-            ]:
-                condition = True
-            return condition
-        return True
-
-    def check_time_delta(self, entity):
-        """Throttle: allow only when enough time passed since OUR last command.
-
-        Throttling on the entity's last_updated starved covers whose
-        devices chatter (link-quality updates, forced polls bump
-        last_updated without any movement). Only our own commands count.
-        """
-        now = self.clock.utcnow()
-        last_sent = self.target_call_time.get(entity)
-        if last_sent is not None:
-            condition = now - last_sent >= dt.timedelta(
-                minutes=self.config.time_threshold
-            )
-            self.logger.debug(
-                "Entity: %s, time since our last command: %s, threshold: %s, "
-                "condition: %s",
-                entity,
-                now - last_sent,
-                self.config.time_threshold,
-                condition,
-            )
-            return condition
         return True
 
     @property

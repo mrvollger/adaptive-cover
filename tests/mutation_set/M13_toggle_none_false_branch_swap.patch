@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/runtime/shade_config.py b/custom_components/adaptive_cover/runtime/shade_config.py
 --- a/custom_components/adaptive_cover/runtime/shade_config.py
 +++ b/custom_components/adaptive_cover/runtime/shade_config.py
-@@ -123,7 +123,7 @@
+@@ -134,7 +134,7 @@
          toggle is still None (switches restore after the first refresh),
          and treating that as off wiped overrides on every options edit.
          """

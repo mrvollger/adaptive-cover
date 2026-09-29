@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1389,7 +1389,7 @@
+@@ -1321,7 +1321,7 @@
              )
  
      def _update_manager_and_covers(self):

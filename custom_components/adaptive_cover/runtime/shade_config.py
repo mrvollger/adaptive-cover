@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from typing import Any, Protocol, Self, overload
 
 from ..const import (
+    CONF_DEFAULT_HEIGHT,
     CONF_DELTA_POSITION,
     CONF_DELTA_TIME,
     CONF_END_ENTITY,
@@ -30,10 +31,12 @@ from ..const import (
     CONF_MANUAL_OVERRIDE_RESET,
     CONF_MANUAL_THRESHOLD,
     CONF_MAX_MOVES_HOUR,
+    CONF_PRIVACY_POSITION,
     CONF_QUIET_END,
     CONF_QUIET_START,
     CONF_START_ENTITY,
     CONF_START_TIME,
+    CONF_SUNSET_POS,
     DEFAULT_MANUAL_OVERRIDE_DURATION,
 )
 
@@ -69,6 +72,11 @@ class ShadeConfig:
     quiet_start: str | None
     quiet_end: str | None
     max_moves_hour: int | None
+    sunset_pos: float | None
+    """Position after sunset; with the next two, a snap position."""
+    default_height: float | None
+    """Position when the sun is not in front of the window."""
+    privacy_position: float | None
 
     @classmethod
     def from_options(cls, options: Mapping[str, Any]) -> ShadeConfig:
@@ -93,6 +101,9 @@ class ShadeConfig:
             quiet_start=options.get(CONF_QUIET_START),
             quiet_end=options.get(CONF_QUIET_END),
             max_moves_hour=options.get(CONF_MAX_MOVES_HOUR),
+            sunset_pos=options.get(CONF_SUNSET_POS),
+            default_height=options.get(CONF_DEFAULT_HEIGHT),
+            privacy_position=options.get(CONF_PRIVACY_POSITION),
         )
 
 

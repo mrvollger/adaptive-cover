@@ -7,6 +7,7 @@ import dataclasses
 import pytest
 
 from custom_components.adaptive_cover.const import (
+    CONF_DEFAULT_HEIGHT,
     CONF_DELTA_POSITION,
     CONF_DELTA_TIME,
     CONF_END_ENTITY,
@@ -20,10 +21,12 @@ from custom_components.adaptive_cover.const import (
     CONF_MANUAL_OVERRIDE_RESET,
     CONF_MANUAL_THRESHOLD,
     CONF_MAX_MOVES_HOUR,
+    CONF_PRIVACY_POSITION,
     CONF_QUIET_END,
     CONF_QUIET_START,
     CONF_START_ENTITY,
     CONF_START_TIME,
+    CONF_SUNSET_POS,
     DEFAULT_MANUAL_OVERRIDE_DURATION,
 )
 from custom_components.adaptive_cover.runtime.shade_config import (
@@ -53,6 +56,9 @@ def test_defaults_when_options_are_empty():
         "quiet_start",
         "quiet_end",
         "max_moves_hour",
+        "sunset_pos",
+        "default_height",
+        "privacy_position",
     ]
     assert {name: getattr(config, name) for name in unset} == dict.fromkeys(unset)
 
@@ -77,6 +83,9 @@ def test_defaults_when_options_are_empty():
         (CONF_QUIET_START, "quiet_start", "22:00:00"),
         (CONF_QUIET_END, "quiet_end", "06:00:00"),
         (CONF_MAX_MOVES_HOUR, "max_moves_hour", 4),
+        (CONF_SUNSET_POS, "sunset_pos", 0),
+        (CONF_DEFAULT_HEIGHT, "default_height", 60),
+        (CONF_PRIVACY_POSITION, "privacy_position", 35),
     ],
 )
 def test_each_option_lands_in_its_field(key, field, value):

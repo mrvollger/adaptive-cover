@@ -1,12 +1,12 @@
-diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
---- a/custom_components/adaptive_cover/coordinator.py
-+++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1543,7 +1543,7 @@
+diff --git a/custom_components/adaptive_cover/runtime/gates.py b/custom_components/adaptive_cover/runtime/gates.py
+--- a/custom_components/adaptive_cover/runtime/gates.py
++++ b/custom_components/adaptive_cover/runtime/gates.py
+@@ -149,7 +149,7 @@
                  condition,
              )
              return condition
 -        return True
 +        return False
  
-     @property
-     def pos_sun(self):
+     def is_snap_position(self, state: int, config: ShadeConfig) -> bool:
+         """Positions that always deserve a move (endpoints, rest positions)."""

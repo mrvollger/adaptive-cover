@@ -47,6 +47,7 @@ SURFACE = "custom_components/adaptive_cover/entity_surface.py"
 SHARED = "custom_components/adaptive_cover/entity_shared.py"
 SHADE_CONFIG = "custom_components/adaptive_cover/runtime/shade_config.py"
 SCHEDULE = "custom_components/adaptive_cover/runtime/schedule.py"
+GATES = "custom_components/adaptive_cover/runtime/gates.py"
 
 
 @dataclass
@@ -66,52 +67,50 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M01",
         "delta_gate_ge",
-        COORD,
-        "check_position_delta",
+        GATES,
+        "GatePolicy.position_delta_ok",
         ">= min_change -> > (move exactly at threshold now blocked)",
-        "            condition = abs(position - state) >= self.config.min_change",
-        "            condition = abs(position - state) > self.config.min_change",
+        "            condition = abs(position - state) >= config.min_change",
+        "            condition = abs(position - state) > config.min_change",
     ),
     Mutation(
         "M02",
         "quiet_hours_snap_bypass",
-        COORD,
-        "check_quiet_hours",
+        GATES,
+        "GatePolicy.quiet_hours_ok",
         "remove the snap-position early return (evening close swallowed in quiet window)",
-        "        if not self.config.quiet_start or not self.config.quiet_end:\n"
+        "        if not config.quiet_start or not config.quiet_end:\n"
         "            return True\n"
-        "        if self._is_snap_position(state, options):\n"
+        "        if self.is_snap_position(state, config):\n"
         "            return True\n"
-        "        now = self._now_local().time()",
-        "        if not self.config.quiet_start or not self.config.quiet_end:\n"
+        "        now = now_local.time()",
+        "        if not config.quiet_start or not config.quiet_end:\n"
         "            return True\n"
-        "        now = self._now_local().time()",
+        "        now = now_local.time()",
     ),
     Mutation(
         "M03",
         "move_budget_ge",
-        COORD,
-        "check_move_budget",
+        GATES,
+        "GatePolicy.move_budget_ok",
         ">= max_moves_hour -> > (one extra move per rolling hour)",
-        "        if len(history) >= self.config.max_moves_hour:",
-        "        if len(history) > self.config.max_moves_hour:",
+        "        if len(history) >= config.max_moves_hour:",
+        "        if len(history) > config.max_moves_hour:",
     ),
     Mutation(
         "M04",
         "time_delta_default_false",
-        COORD,
-        "check_time_delta",
+        GATES,
+        "GatePolicy.time_delta_ok",
         "no-previous-command branch return True -> return False",
         "            return condition\n"
         "        return True\n"
         "\n"
-        "    @property\n"
-        "    def pos_sun(self):",
+        "    def is_snap_position(",
         "            return condition\n"
         "        return False\n"
         "\n"
-        "    @property\n"
-        "    def pos_sun(self):",
+        "    def is_snap_position(",
     ),
     Mutation(
         "M05",
@@ -188,18 +187,18 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M07",
         "gate_order_delta_before_manual",
-        COORD,
-        "_first_blocking_gate",
+        GATES,
+        "GatePolicy.first_blocking_gate",
         "evaluate position-delta before the manual-override check "
         "(move_blocked_by names the wrong gate)",
-        "        if self.manager.is_cover_manual(entity):\n"
+        "        if cover.is_manual():\n"
         '            return "manual_override"\n'
-        "        if self.wait_for_target.get(entity):",
-        "        if not self.check_position_delta(entity, state, options):\n"
+        "        if cover.awaiting_target():",
+        "        if not self.position_delta_ok(entity, cover.position(), state, config):\n"
         '            return "position_delta"\n'
-        "        if self.manager.is_cover_manual(entity):\n"
+        "        if cover.is_manual():\n"
         '            return "manual_override"\n'
-        "        if self.wait_for_target.get(entity):",
+        "        if cover.awaiting_target():",
     ),
     # ---- group B: manual override detection ----------------------------
     Mutation(
