@@ -532,5 +532,12 @@
   "function": "AdaptiveDataUpdateCoordinator._climate_data",
   "description": "the previous season is ignored: every climate decision uses the plain threshold rule, whatever the hysteresis",
   "patch": "M111_season_previous_ignored.patch"
+ },
+ {
+  "id": "M120",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "async_check_cover_state_change",
+  "description": "a cover's first state (its integration started late) does not trigger a decision",
+  "patch": "M120_late_cover_waits_for_sun.patch"
  }
 ]

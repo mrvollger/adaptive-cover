@@ -968,6 +968,15 @@ MUTATIONS: list[Mutation] = [
         "            previous_season=self._season,\n",
         "            previous_season=None,\n",
     ),
+    Mutation(
+        "M120",
+        "late_cover_waits_for_sun",
+        COORD,
+        "async_check_cover_state_change",
+        "a cover's first state (its integration started late) does not trigger a decision",
+        "                self.events.push(RefreshEvent.ENTITY_CHANGED)\n                await self.async_refresh()\n",
+        "                pass\n",
+    ),
 ]
 
 
