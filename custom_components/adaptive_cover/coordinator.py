@@ -24,6 +24,7 @@ from homeassistant.core import (
     State,
 )
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.event import async_call_later, async_track_point_in_time
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
@@ -382,6 +383,13 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         data = event.data
         if data["old_state"] is None:
             self.logger.debug("Old state is None")
+            if data["new_state"] is not None:
+                # The cover's first state: its integration finished starting
+                # after ours (boot) or it was just added. Decide now instead
+                # of waiting for the next sun update, which is slow at night;
+                # the usual gates still decide whether anything moves.
+                self.events.push(RefreshEvent.ENTITY_CHANGED)
+                await self.async_refresh()
             return
         if data["new_state"] is None:
             self.logger.debug("New state is None")
@@ -925,6 +933,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # raw state. "unknown" stays commandable - a shade that has not
         # reported since a restart must still get the end-of-day close.
         current = self.hass.states.get(entity)
+        if current is None and er.async_get(self.hass).async_get(entity):
+            # Registered but not set up yet (e.g. Zigbee still starting at
+            # boot): not an error. Command it when its first state arrives.
+            self.logger.debug("%s has no state yet; waiting for it", entity)
+            return False
         if current is None:
             if entity not in self._missing_warned:
                 self._missing_warned.add(entity)

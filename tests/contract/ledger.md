@@ -1206,3 +1206,12 @@ The example below is inside an HTML comment. The checker ignores it.
     goldens, truth table and house replay unchanged.
   - Card: the house and room sheets list the setting (the house number,
     unit-aware range); bundle rebuilt.
+
+## L0040 · 2026-09-29 · A late cover is positioned when it appears; registered covers are not "missing" (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none. New pin:
+  `tests/simulation/test_device_failures.py::test_regression_late_cover_positioned_when_it_appears`
+- **Mutations re-targeted:** none; M120 added (the first-state decision removed).
+- **Contract change:** C5
+- **Reason:** at the 2026-09-29 19:16 boot the windows set up before Zigbee created their covers: each logged "no such entity (renamed or removed?)" and skipped its command until the next sun update. A cover that is in the entity registry but has no state yet is now waited for quietly (debug), and a cover's first state triggers a normal decision (every gate still applies). A cover that is not in the registry at all (renamed or removed) is still skipped and reported once. No pinned output changed.

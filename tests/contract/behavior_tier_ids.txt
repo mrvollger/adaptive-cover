@@ -1992,6 +1992,7 @@ tests/simulation/test_device_failures.py::test_late_delivery_window_still_sees_h
 tests/simulation/test_device_failures.py::test_no_position_event_no_latch
 tests/simulation/test_device_failures.py::test_pending_end_snap_real_retry[control-off]
 tests/simulation/test_device_failures.py::test_pending_end_snap_real_retry[control-on]
+tests/simulation/test_device_failures.py::test_regression_late_cover_positioned_when_it_appears
 tests/simulation/test_device_failures.py::test_regression_late_delivery_not_manual
 tests/simulation/test_device_failures.py::test_regression_missing_cover_not_commanded
 tests/simulation/test_device_failures.py::test_service_raise_non_fatal
