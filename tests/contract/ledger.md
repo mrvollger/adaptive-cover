@@ -835,7 +835,7 @@ The example below is inside an HTML comment. The checker ignores it.
   fix (no row hidden) and checks that a row with a typed alias stays
   visible. Goldens, truth table and house replay unchanged.
 
-## L0028 · 2026-09-29 · A late cover is positioned when it appears; registered covers are not "missing" (C5)
+## L0040 · 2026-09-29 · A late cover is positioned when it appears; registered covers are not "missing" (C5)
 - **Removed:** none
 - **Renamed:** none
 - **Replacements:** none. New pin:
