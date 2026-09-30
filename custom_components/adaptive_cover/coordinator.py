@@ -136,6 +136,9 @@ class StateChangedData:
     entity_id: str
     old_state: State | None
     new_state: State | None
+    inherited: str | None = None
+    """What the report is to a travel under way before this coordinator saw
+    it start: "continues", "landed" or None (CommandTracker.note_report)."""
 
 
 @dataclass
@@ -226,6 +229,12 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self._force_poll,
             self.logger,
         )
+        # A cover already moving now is finishing a move this coordinator
+        # did not see start (a restart or reload mid-travel): its landing
+        # is not a manual move.
+        for cover in self.entities:
+            if (current := hass.states.get(cover)) is not None:
+                self.commands.first_sight(cover, current.state)
         self.detector = ManualDetector(self.manager, self.commands, self.logger)
         # The window's Mode (auto / hold / off): the Mode select, the house
         # select, the Return to auto buttons and the hold service change it
@@ -383,17 +392,16 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 # after ours (boot) or it was just added. Decide now instead
                 # of waiting for the next sun update, which is slow at night;
                 # the usual gates still decide whether anything moves.
+                self.commands.first_sight(data["entity_id"], new_state.state)
                 self.events.push(RefreshEvent.ENTITY_CHANGED)
                 await self.async_refresh()
             return
         if new_state is None:
             self.logger.debug("New state is None")
             return
-        self.state_change_data = StateChangedData(
-            data["entity_id"], old_state, new_state
-        )
         if old_state.state in ("unknown", "unavailable"):
             self.logger.debug("Old state is %s, not processing", old_state.state)
+            self.commands.first_sight(data["entity_id"], new_state.state)
             # Device just came back: deliver any end-of-day close that
             # could not be sent while it was away.
             pending = self.end_of_day.take_retry(data["entity_id"], self.control_toggle)
@@ -412,16 +420,27 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self.logger.debug("New state is %s, not processing", new_state.state)
             return
         entity_id = data["entity_id"]
+        # A change carrying a user id is a HUMAN act (dashboard click,
+        # user-run service): it always counts as manual - clear any travel
+        # window so it can never be swallowed as a motor echo. (Our own
+        # commands carry no user id.)
+        if event.context is not None and event.context.user_id is not None:
+            self.commands.release(entity_id)
+        self.state_change_data = StateChangedData(
+            entity_id,
+            old_state,
+            new_state,
+            self.commands.note_report(entity_id, new_state.state),
+        )
         # Our own command echoing back (service context preserved):
         # bookkeeping only - never manual, never a full refresh.
         if self.is_own_context(event.context):
             self.process_entity_state_change(own_context=True)
             return
-        # A change carrying a user id is a HUMAN act (dashboard click,
-        # user-run service): it always counts as manual - clear any travel
-        # window so it can never be swallowed as a motor echo.
-        if event.context is not None and event.context.user_id is not None:
-            self.commands.release(entity_id)
+        if self.state_change_data.inherited == "continues":
+            # Still finishing the move it had before this coordinator saw
+            # it (a restart or reload mid-travel): no start, no landing.
+            return
         # Foreign movement STARTING (opening/closing we didn't command) is a
         # human act the moment the motor spins. These shades report position
         # only at journey end, so waiting for the landing report leaves a
@@ -515,6 +534,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 else "current_tilt_position"
             ),
             own_context,
+            ends_inherited=event.inherited == "landed",
         )
 
     async def async_shutdown(self) -> None:
@@ -778,8 +798,21 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 else "current_position"
             )
             new_position = event.new_state.attributes.get(pos_attr)
+            if event.inherited == "landed":
+                # It landed a move of unknown provenance, under way before
+                # this coordinator saw it (a restart or reload mid-travel;
+                # house, 2026-09-30): never a manual move. Decide again
+                # instead; the usual gates apply.
+                self.logger.debug(
+                    "%s landed at %s from a travel under way before this "
+                    "window started: not manual, deciding again",
+                    event.entity_id,
+                    new_position,
+                )
+                if self.control_toggle:
+                    await self.async_handle_call_service(event.entity_id, state)
             # A human just took over: record it with provenance
-            if self.detector.landed(
+            elif self.detector.landed(
                 event.entity_id,
                 event.new_state,
                 new_position,

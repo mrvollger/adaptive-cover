@@ -187,6 +187,37 @@ async def test_restart_preserves_timeline_and_restores_switches(hass, freezer):
     await house.teardown()
 
 
+async def test_restart_mid_travel_mechanics(hass, freezer):
+    """stop_motor(), restart(covers_late=True) and device_reports().
+
+    The motor stops silently where it is; the cover has no state while
+    the window sets up; the device's reports come with a device context
+    and, with ``position``, move the shade on its way.
+    """
+    house = await SimHouse.create(hass, freezer, date="2026-03-20")
+    await house.advance_to("11:00")
+    here = house.position(SHADE)
+    assert here > 0
+    await house.user_moves(SHADE, 0, via="remote")
+    house.stop_motor(SHADE)
+    reports = len(house.timeline)
+    await house.advance_to("11:10")
+    assert house.position(SHADE) == here, "a stopped motor still landed"
+    assert hass.states.get(SHADE).state == "closing"
+    assert len(house.timeline) == reports, "a stopped motor reported"
+
+    await house.restart(covers_late=True)
+    assert hass.states.get(SHADE) is None, "the cover had a state at setup"
+    await house.shade_goes_unavailable(SHADE)
+    await house.device_reports(SHADE, "closing", position=40)
+    state = hass.states.get(SHADE)
+    assert (state.state, state.attributes["current_position"]) == ("closing", 40)
+    assert house.timeline[-1].actor == "device"
+    await house.device_reports(SHADE)
+    assert hass.states.get(SHADE).state == "open"
+    await house.teardown()
+
+
 # ------------------------------------------------------------ sun & timers
 
 

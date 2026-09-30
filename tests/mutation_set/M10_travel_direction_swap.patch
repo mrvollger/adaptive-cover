@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/runtime/command_tracker.py b/custom_components/adaptive_cover/runtime/command_tracker.py
 --- a/custom_components/adaptive_cover/runtime/command_tracker.py
 +++ b/custom_components/adaptive_cover/runtime/command_tracker.py
-@@ -230,7 +230,7 @@
+@@ -301,7 +301,7 @@
          if report in MOTION and self.wait_for_target.get(entity):
              target = self.target_call.get(entity)
              if target is not None and old_pos is not None and target != old_pos:

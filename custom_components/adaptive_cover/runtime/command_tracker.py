@@ -4,9 +4,10 @@ When the coordinator sends a position, the cover travels for up to
 ``TARGET_TIMEOUT``. During that travel window its reports are echoes of
 our command, not human moves. This module keeps that per-cover state (the
 travel latch, the target, when it was sent, our context ids, sends that
-raised but may still arrive) and classifies cover reports against it. It
-has no ``hass``: time comes from the clock, and the arrival poll goes
-through callables the coordinator provides.
+raised but may still arrive, travels already under way when the
+coordinator started) and classifies cover reports against it. It has no
+``hass``: time comes from the clock, and the arrival poll goes through
+callables the coordinator provides.
 """
 
 from __future__ import annotations
@@ -38,6 +39,15 @@ class UnconfirmedSend(NamedTuple):
     sent_at: dt.datetime
     source: str
     reason: str | None
+
+
+class InheritedTravel(NamedTuple):
+    """A travel under way before the coordinator could see it start."""
+
+    direction: str
+    """``opening`` or ``closing``."""
+    seen_at: dt.datetime
+    """When the coordinator first saw the cover moving."""
 
 
 class CommandTracker:
@@ -72,6 +82,9 @@ class CommandTracker:
         # Sends that raised but may still have reached the motor. See
         # adopt_late_delivery.
         self._unconfirmed_sends: dict[str, UnconfirmedSend] = {}
+        # Travels already under way when this coordinator first saw the
+        # cover. See first_sight.
+        self._inherited: dict[str, InheritedTravel] = {}
 
     # ------------------------------------------------------------ sending
 
@@ -113,8 +126,53 @@ class CommandTracker:
         self._unconfirmed_sends.pop(entity, None)
 
     def release(self, entity: str) -> None:
-        """Clear the travel latch: whatever the cover does now is not ours."""
+        """Clear the travel latch: whatever the cover does now is not ours.
+
+        Nor is it the end of an inherited travel (first_sight): a person
+        acts.
+        """
         self.wait_for_target[entity] = False
+        self._inherited.pop(entity, None)
+
+    # --------------------------------------------------- inherited travel
+
+    def first_sight(self, entity: str, report: str) -> None:
+        """Note what a cover is doing when the coordinator first sees it.
+
+        That is at setup, and when a cover reports after it had no state or
+        was unknown or unavailable (Zigbee starts after us at boot). The
+        coordinator did not see the cover's current move start: a cover
+        already ``opening``/``closing`` is finishing a move of unknown
+        provenance, ours from before a restart or reload, or anyone's.
+        Judged against a coordinator that never sent it, its landing read
+        as a manual move (house, 2026-09-30). note_report follows it until
+        it lands. A cover at rest has nothing under way.
+        """
+        if report in MOTION:
+            self._inherited[entity] = InheritedTravel(report, self.clock.utcnow())
+        else:
+            self._inherited.pop(entity, None)
+
+    def note_report(self, entity: str, report: str) -> str | None:
+        """Follow an inherited travel (first_sight) through one cover report.
+
+        Returns "continues" for motion in the inherited travel's direction,
+        "landed" for the settled report that ends it, else None. Motion the
+        other way is someone reversing the shade: it ends the inherited
+        travel, and the usual rules judge it. An inherited travel lasts at
+        most TARGET_TIMEOUT, so a stale restored ``opening`` cannot hide a
+        person's move minutes later.
+        """
+        travel = self._inherited.get(entity)
+        if travel is None:
+            return None
+        if self.clock.utcnow() - travel.seen_at > self.TARGET_TIMEOUT:
+            del self._inherited[entity]
+            return None
+        if report == travel.direction:
+            return "continues"
+        del self._inherited[entity]
+        return None if report in MOTION else "landed"
 
     # ---------------------------------------------------------- questions
 
@@ -152,6 +210,7 @@ class CommandTracker:
         report: str,
         position: int | None,
         own_context: bool = False,
+        ends_inherited: bool = False,
     ) -> str | None:
         """Classify a cover report against the command in flight.
 
@@ -161,7 +220,8 @@ class CommandTracker:
         "foreign_landing" (a definitive position report inside the travel
         window that is NOT our target — someone redirected the cover).
         Arrival and expiry clear the travel latch, and so does a foreign
-        landing.
+        landing. ``ends_inherited``: the report lands a travel that was
+        under way before our command (note_report), not ours.
         """
         if self.wait_for_target.get(entity):
             target = self.target_call.get(entity)
@@ -202,6 +262,17 @@ class CommandTracker:
                 )
                 return "expired"
             if not own_context and settled and position is not None:
+                if ends_inherited:
+                    # The move under way before our command (a restart or
+                    # reload mid-travel) has landed; ours still travels.
+                    self.logger.debug(
+                        "Landing at %s ends the travel %s had before our "
+                        "command; still waiting for %s",
+                        position,
+                        entity,
+                        target,
+                    )
+                    return "in_travel"
                 # Definitive landing inside the travel window that is not
                 # our target: a human stopped or redirected the cover.
                 # Leaving the wait latched here swallowed the manual move

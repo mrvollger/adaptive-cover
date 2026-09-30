@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/runtime/command_tracker.py b/custom_components/adaptive_cover/runtime/command_tracker.py
 --- a/custom_components/adaptive_cover/runtime/command_tracker.py
 +++ b/custom_components/adaptive_cover/runtime/command_tracker.py
-@@ -144,7 +144,7 @@
+@@ -202,7 +202,7 @@
          target = self.target_call.get(entity)
          if target is None:
              return False

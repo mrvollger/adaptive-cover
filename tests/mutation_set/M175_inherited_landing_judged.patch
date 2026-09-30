@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -798,7 +798,7 @@
+                 else "current_position"
+             )
+             new_position = event.new_state.attributes.get(pos_attr)
+-            if event.inherited == "landed":
++            if False:
+                 # It landed a move of unknown provenance, under way before
+                 # this coordinator saw it (a restart or reload mid-travel;
+                 # house, 2026-09-30): never a manual move. Decide again

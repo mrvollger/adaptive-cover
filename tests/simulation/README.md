@@ -109,7 +109,11 @@ async def test_my_scenario(hass, freezer):
   `restore=False` skips capture so defaults apply), set up again on the
   same house entry. The timeline and shade states persist across the
   restart. `cold=True` also drops the in-memory manual-override store, as
-  a real process restart does.
+  a real process restart does. `covers_late=True` is the house's boot
+  order (Zigbee starts after the integration): the covers are registered
+  but have no state while the windows set up; drive HA's `unavailable`
+  placeholder with `shade_goes_unavailable` and the device's reports with
+  `device_reports`.
 - `await house.teardown()` — unloads and removes the house entry (and its
   entities' restore-cache records): a second SimHouse created later in
   the same test is then the one house.
@@ -127,6 +131,13 @@ async def test_my_scenario(hass, freezer):
   this shade raises once (default `HomeAssistantError`) before any travel.
 - `await house.shade_goes_unavailable(entity)` /
   `await house.shade_returns(entity)` — network outage and return.
+- `house.stop_motor(entity)` — the motor stops where it is and reports
+  nothing (a restart cutting a journey short); the entity keeps its last
+  state, and the next command moves the shade normally.
+- `await house.device_reports(entity, state=None, position=None)` — the
+  device reports `state` (default: at rest) with a fresh device context:
+  an attribute report, or the state the cover's integration restores at
+  boot. `position` first moves the shade there (a report on its way).
 
 ## Entities (never hard-code entity_ids)
 
@@ -212,5 +223,7 @@ documented in `tests/contract/README.md`.
 
 `test_symptoms.py` pins the two 2026-09 field symptoms (manual overrides
 reverted; end-of-day close missed); `test_regressions.py` pins the
-coordinator fixes that came out of that bug hunt; `test_harness_smoke.py`
+coordinator fixes that came out of that bug hunt;
+`test_restart_mid_travel.py` pins that a move under way at a restart or
+reload is not a manual move (house, 2026-09-30), while a person still is; `test_harness_smoke.py`
 proves each harness extension's mechanism with one minimal scenario.

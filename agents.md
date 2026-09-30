@@ -302,7 +302,12 @@ phase of the upgrade from v1.19.x (`consolidate.py`); migration 3.1
    differs from OUR commanded target; or a landing that differs from the
    computed state when idle. Landings matching our own commanded target
    (±`TARGET_TOLERANCE`) are never manual, even if the computed state
-   drifted during travel.
+   drifted during travel. A move already under way when the window first
+   sees its cover (a restart or reload mid-travel: the cover is first seen
+   `opening`/`closing`, at setup or back from missing/unavailable) has
+   unknown provenance: its reports in that direction and its landing, for
+   at most `TARGET_TIMEOUT`, are never manual, and the landing makes the
+   window decide again. Motion the other way still latches.
 3. Every override expires after `CONF_MANUAL_OVERRIDE_DURATION` and
    auto-control resumes (user intent: a manual move wins for ~the
    configured window, e.g. 1.5-2 h). `CONF_MANUAL_OVERRIDE_RESET` only

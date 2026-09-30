@@ -1242,6 +1242,122 @@ MUTATIONS: list[Mutation] = [
         "OLDEST_MINOR: Final = 2\n",
         "OLDEST_MINOR: Final = 1\n",
     ),
+    # ---- group M: a move under way at a restart or reload (M170+) ------
+    Mutation(
+        "M170",
+        "moving_cover_inherits_nothing",
+        COMMANDS,
+        "CommandTracker.first_sight",
+        "a cover first seen moving has nothing under way: the landing of a "
+        "move cut short by a restart latches as manual",
+        "            self._inherited[entity] = InheritedTravel(report, self.clock.utcnow())\n",
+        "            self._inherited.pop(entity, None)\n",
+    ),
+    Mutation(
+        "M171",
+        "inherited_travel_never_expires",
+        COMMANDS,
+        "CommandTracker.note_report",
+        "an inherited travel never expires: a stale restored motion state "
+        "hides a person's move minutes later",
+        "        if self.clock.utcnow() - travel.seen_at > self.TARGET_TIMEOUT:\n"
+        "            del self._inherited[entity]\n"
+        "            return None\n",
+        "",
+    ),
+    Mutation(
+        "M172",
+        "inherited_travel_either_direction",
+        COMMANDS,
+        "CommandTracker.note_report",
+        "motion either way continues the inherited travel: a person reversing "
+        "the shade right after a restart is not seen",
+        "        if report == travel.direction:\n",
+        "        if report in MOTION:\n",
+    ),
+    Mutation(
+        "M173",
+        "inherited_landing_is_foreign",
+        COMMANDS,
+        "CommandTracker.classify_report",
+        "the landing of the move under way before our command is a foreign "
+        "landing inside our travel window (latched as a redirect)",
+        "                if ends_inherited:\n",
+        "                if False:\n",
+    ),
+    Mutation(
+        "M174",
+        "inherited_motion_is_a_start",
+        COORD,
+        "async_check_cover_state_change",
+        "a report on the way of the move under way at a restart is judged as "
+        "a motion start (latched as manual)",
+        '        if self.state_change_data.inherited == "continues":\n',
+        "        if False:\n",
+    ),
+    Mutation(
+        "M175",
+        "inherited_landing_judged",
+        COORD,
+        "async_handle_cover_state_change",
+        "the landing of the move under way at a restart is judged by the "
+        "landing check (latched as manual)",
+        '            if event.inherited == "landed":\n',
+        "            if False:\n",
+    ),
+    Mutation(
+        "M176",
+        "inherited_landing_not_redecided",
+        COORD,
+        "async_handle_cover_state_change",
+        "the landing of the move under way does not decide again: the shade "
+        "waits for the next sun update",
+        "                if self.control_toggle:\n"
+        "                    await self.async_handle_call_service(event.entity_id, state)\n",
+        "                pass\n",
+    ),
+    Mutation(
+        "M177",
+        "setup_ignores_moving_cover",
+        COORD,
+        "AdaptiveDataUpdateCoordinator.__init__",
+        "the window does not look at its cover at setup: the landing of a move "
+        "under way at a restart or reload latches as a redirect",
+        "                self.commands.first_sight(cover, current.state)\n",
+        "                pass\n",
+    ),
+    Mutation(
+        "M178",
+        "returning_cover_not_looked_at",
+        COORD,
+        "async_check_cover_state_change",
+        "a cover back from unavailable is not looked at: the move ZHA restores "
+        "at boot latches as manual when it lands",
+        '            self.logger.debug("Old state is %s, not processing", old_state.state)\n'
+        '            self.commands.first_sight(data["entity_id"], new_state.state)\n',
+        '            self.logger.debug("Old state is %s, not processing", old_state.state)\n',
+    ),
+    Mutation(
+        "M179",
+        "first_state_not_looked_at",
+        COORD,
+        "async_check_cover_state_change",
+        "a cover's first state is not looked at: a move it restores at boot "
+        "latches as a redirect when it lands",
+        '                self.commands.first_sight(data["entity_id"], new_state.state)\n',
+        "",
+    ),
+    Mutation(
+        "M180",
+        "person_keeps_inherited_travel",
+        COMMANDS,
+        "CommandTracker.release",
+        "a change with a user id does not end the inherited travel: a "
+        "person's move in its direction is not seen",
+        "        self.wait_for_target[entity] = False\n"
+        "        self._inherited.pop(entity, None)\n",
+        "        self.wait_for_target[entity] = False\n",
+    ),
 ]
 
 

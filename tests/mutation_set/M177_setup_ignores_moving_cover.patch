@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -234,7 +234,7 @@
+         # is not a manual move.
+         for cover in self.entities:
+             if (current := hass.states.get(cover)) is not None:
+-                self.commands.first_sight(cover, current.state)
++                pass
+         self.detector = ManualDetector(self.manager, self.commands, self.logger)
+         # The window's Mode (auto / hold / off): the Mode select, the house
+         # select, the Return to auto buttons and the hold service change it

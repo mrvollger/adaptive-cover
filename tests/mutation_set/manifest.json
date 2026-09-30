@@ -700,5 +700,82 @@
   "function": "OLDEST_MINOR",
   "description": "the upgrade moves entries older than 1.2 (their registry rows never got the P1 surface)",
   "patch": "M162_upgrade_takes_entries_older_than_1_2.patch"
+ },
+ {
+  "id": "M170",
+  "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+  "function": "CommandTracker.first_sight",
+  "description": "a cover first seen moving has nothing under way: the landing of a move cut short by a restart latches as manual",
+  "patch": "M170_moving_cover_inherits_nothing.patch"
+ },
+ {
+  "id": "M171",
+  "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+  "function": "CommandTracker.note_report",
+  "description": "an inherited travel never expires: a stale restored motion state hides a person's move minutes later",
+  "patch": "M171_inherited_travel_never_expires.patch"
+ },
+ {
+  "id": "M172",
+  "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+  "function": "CommandTracker.note_report",
+  "description": "motion either way continues the inherited travel: a person reversing the shade right after a restart is not seen",
+  "patch": "M172_inherited_travel_either_direction.patch"
+ },
+ {
+  "id": "M173",
+  "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+  "function": "CommandTracker.classify_report",
+  "description": "the landing of the move under way before our command is a foreign landing inside our travel window (latched as a redirect)",
+  "patch": "M173_inherited_landing_is_foreign.patch"
+ },
+ {
+  "id": "M174",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "async_check_cover_state_change",
+  "description": "a report on the way of the move under way at a restart is judged as a motion start (latched as manual)",
+  "patch": "M174_inherited_motion_is_a_start.patch"
+ },
+ {
+  "id": "M175",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "async_handle_cover_state_change",
+  "description": "the landing of the move under way at a restart is judged by the landing check (latched as manual)",
+  "patch": "M175_inherited_landing_judged.patch"
+ },
+ {
+  "id": "M176",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "async_handle_cover_state_change",
+  "description": "the landing of the move under way does not decide again: the shade waits for the next sun update",
+  "patch": "M176_inherited_landing_not_redecided.patch"
+ },
+ {
+  "id": "M177",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "AdaptiveDataUpdateCoordinator.__init__",
+  "description": "the window does not look at its cover at setup: the landing of a move under way at a restart or reload latches as a redirect",
+  "patch": "M177_setup_ignores_moving_cover.patch"
+ },
+ {
+  "id": "M178",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "async_check_cover_state_change",
+  "description": "a cover back from unavailable is not looked at: the move ZHA restores at boot latches as manual when it lands",
+  "patch": "M178_returning_cover_not_looked_at.patch"
+ },
+ {
+  "id": "M179",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "async_check_cover_state_change",
+  "description": "a cover's first state is not looked at: a move it restores at boot latches as a redirect when it lands",
+  "patch": "M179_first_state_not_looked_at.patch"
+ },
+ {
+  "id": "M180",
+  "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+  "function": "CommandTracker.release",
+  "description": "a change with a user id does not end the inherited travel: a person's move in its direction is not seen",
+  "patch": "M180_person_keeps_inherited_travel.patch"
  }
 ]

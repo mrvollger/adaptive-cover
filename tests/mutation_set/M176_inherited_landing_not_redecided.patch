@@ -1,0 +1,13 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -809,8 +809,7 @@
+                     event.entity_id,
+                     new_position,
+                 )
+-                if self.control_toggle:
+-                    await self.async_handle_call_service(event.entity_id, state)
++                pass
+             # A human just took over: record it with provenance
+             elif self.detector.landed(
+                 event.entity_id,
