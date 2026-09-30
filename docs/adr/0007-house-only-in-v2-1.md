@@ -4,6 +4,7 @@
 - **Date:** 2026-09-29
 - **Delivered in:** P8 (v2.1.0)
 - **Amends:** [ADR 0001](0001-house-entry-and-window-subentries.md) (the window subentry's data shape; the house's version after P8) and [ADR 0006](0006-window-subentries-in-v2.md) (it deferred the reshape to P8). The rest of both stands.
+- **Amended by:** [ADR 0008](0008-upgrade-from-1-19-in-one-start.md) (2026-09-30): v2.1 moves a v1.19.x house's window entries into the house at its first start, so "No consolidation in v2.1" no longer holds; the nag stays for window entries next to a 3.x house or with no house.
 - **Source:** [`docs/refactor_plan.md`](../refactor_plan.md), "P8", "Migration of the live house"; Home Assistant 2026.8.0 and 2026.9.4 (`config_entries.py`)
 
 ## Context
