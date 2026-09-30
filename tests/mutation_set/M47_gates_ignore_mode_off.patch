@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -701,7 +701,7 @@
+@@ -756,7 +756,7 @@
  
      async def async_handle_state_change(self, state: int):
          """Handle state change from tracked entities (Mode off: no moves)."""

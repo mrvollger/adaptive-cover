@@ -65,6 +65,8 @@ SHADOW = "custom_components/adaptive_cover/shadow.py"
 MODE = "custom_components/adaptive_cover/runtime/mode.py"
 LAYERS = "custom_components/adaptive_cover/layers.py"
 HOUSE_SETTINGS = "custom_components/adaptive_cover/house_settings.py"
+CONSOLIDATE = "custom_components/adaptive_cover/consolidate.py"
+HOUSE = "custom_components/adaptive_cover/house.py"
 
 
 @dataclass
@@ -943,6 +945,57 @@ MUTATIONS: list[Mutation] = [
         "picking another cover type saves at once instead of showing its geometry",
         "        if filled or cover_type != self.cover_type:\n",
         "        if filled:\n",
+    ),
+    # P7 (v2.0): the house entry with window subentries; consolidation.
+    Mutation(
+        "M100",
+        "consolidation_drops_subentry_link",
+        CONSOLIDATE,
+        "async_reparent_window",
+        "consolidation moves an entity row to the house entry without its "
+        "window subentry (HA then drops it when the device moves)",
+        '            changes["config_subentry_id"] = subentry_id\n',
+        '            changes["config_subentry_id"] = None\n',
+    ),
+    Mutation(
+        "M101",
+        "resolved_settings_change_after_consolidation",
+        CONSOLIDATE,
+        "_async_add_subentry",
+        "the window subentry loses the window's stored overrides: after "
+        "consolidation it re-adopts them from the legacy keys, so an edit made "
+        "since the P5 flip is lost",
+        "        data=_frozen(window_subentry_data(entry.entry_id, entry.data, "
+        "entry.options)),\n",
+        "        data=_frozen(\n"
+        "            window_subentry_data(\n"
+        '                entry.entry_id, entry.data, {**entry.options, "overrides": None}\n'
+        "            )\n"
+        "        ),\n",
+    ),
+    Mutation(
+        "M102",
+        "listener_rebuilds_every_window",
+        HOUSE,
+        "HouseRuntime.async_sync",
+        "the house's update listener rebuilds every window, not only the "
+        "changed one (plan M49)",
+        "                if runtime.seen == self._seen(subentry_id):\n"
+        "                    continue\n",
+        "                if runtime.seen == self._seen(subentry_id):\n"
+        "                    await self._async_stop_window(subentry_id)\n"
+        "                    await self._async_start_window(subentry_id)\n"
+        "                    continue\n",
+    ),
+    Mutation(
+        "M103",
+        "consolidation_leaves_the_device_unmoved",
+        CONSOLIDATE,
+        "async_reparent_window",
+        "consolidation moves a window's entities but leaves its device on the "
+        "window entry (plan M50)",
+        "    if moved is None and legacy is not None:\n",
+        "    if False:\n",
     ),
 ]
 

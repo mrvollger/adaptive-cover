@@ -53,6 +53,7 @@ from custom_components.adaptive_cover.const import (
 from custom_components.adaptive_cover.settings.validate import ERROR_ELEVATION_ORDER
 
 from .window_form import (
+    add_legacy_house,
     add_window,
     collapsed,
     prefilled,
@@ -118,6 +119,16 @@ AUTOMATION_STEP_INPUT = {
 
 
 pytestmark = pytest.mark.usefixtures("stub_sun_integration")
+
+
+@pytest.fixture(autouse=True)
+def legacy_model(hass):
+    """Pin the window-entry flows: a house that still has window entries (P7).
+
+    A fresh install creates the house with subentries instead
+    (tests/test_house_subentries.py).
+    """
+    add_legacy_house(hass)
 
 
 @pytest.fixture(autouse=True)

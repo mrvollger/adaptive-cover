@@ -31,6 +31,7 @@ from homeassistant.helpers import (
 from homeassistant.helpers.entity import Entity
 
 from .const import CONF_ENTITIES, DOMAIN
+from .windows import WindowLike
 
 # Hub unique_ids are f"{HUB_UNIQUE_ID}_{suffix}". Defined here (hub.py
 # imports it) so this module does not import the hub.
@@ -249,16 +250,16 @@ def cover_area_id(hass: HomeAssistant, covers: Iterable[str]) -> str | None:
 
 
 @callback
-def async_copy_cover_area(hass: HomeAssistant, entry: ConfigEntry) -> str | None:
+def async_copy_cover_area(hass: HomeAssistant, entry: WindowLike) -> str | None:
     """Give the window device its physical cover's area if it has none.
 
     Never overwrites an area already on the device (the user's choice).
     Returns the area_id that was set, or None.
     """
+    from .windows import window_device
+
     dev_reg = dr.async_get(hass)
-    device = dev_reg.async_get_device_by_identifier(
-        (DOMAIN, entry.entry_id), config_entry_id=entry.entry_id
-    )
+    device = window_device(hass, entry)
     if device is None or device.area_id is not None:
         return None
     area_id = cover_area_id(hass, entry.options.get(CONF_ENTITIES) or [])

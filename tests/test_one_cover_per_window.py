@@ -33,10 +33,20 @@ from custom_components.adaptive_cover.const import (
 
 from .conftest import COMMON_OPTIONS
 from .test_config_flow import AUTOMATION_STEP_INPUT, VERTICAL_STEP_INPUT
-from .window_form import add_window, start_add, submit
+from .window_form import add_legacy_house, add_window, start_add, submit
 
 TAKEN = "cover.taken"
 FREE = "cover.free"
+
+
+@pytest.fixture(autouse=True)
+def legacy_model(hass):
+    """Pin the window-entry flows: a house that still has window entries (P7).
+
+    A fresh install creates the house with subentries instead
+    (tests/test_house_subentries.py).
+    """
+    add_legacy_house(hass)
 
 
 @pytest.fixture(autouse=True)

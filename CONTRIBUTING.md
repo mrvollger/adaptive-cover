@@ -32,6 +32,7 @@ pixi run test         # the full pytest suite, in parallel (pytest -n auto)
 pixi run lint         # ruff lint and format checks
 pixi run typecheck    # pyright (basic with a baseline; strict and zero errors on engine/, runtime/, settings/resolve.py and settings/lift.py)
 pixi run mutations    # the mutation kill matrix (tests/mutation_set/)
+pixi run test-house-model  # the simulation tier with every SimHouse in the house model (P7)
 ```
 
 - Run one tier or one file with `pixi run pytest <path>`, for example `pixi run pytest tests/simulation -q`.

@@ -67,7 +67,10 @@ custom_components/adaptive_cover/
 ├── migration.py             # Config entry 1.3: fallbacks written into options, cover_entity_id, unique_id
 ├── shadow.py                # Config entry 1.4 (P5): lift into the hub (also a never-lifted house at setup), switch-state capture, adoption
 ├── layers.py                # P5 flip: what a window acts on (resolved every refresh), sparse window edits, profiles, propagation
-├── repairs.py               # Fix flow of the "split" issue (multi-cover entry -> one window per cover)
+├── repairs.py               # Fix flows: "split" (multi-cover entry -> one window per cover), "consolidate" (P7: dry run, backup, move)
+├── windows.py               # P7: WindowEntry (a window entry or a house "window" subentry, read the same way), lookups, async_update_window
+├── house.py                 # P7: HouseRuntime (house entry runtime_data): one coordinator per window subentry, isolated setup, subentry listener
+├── consolidate.py           # P7: move window entries into house subentries (plan, snapshot, re-parent rows, resumable) + the repair issue
 ├── const.py                 # All config keys, defaults, enums
 ├── hub.py                   # "Adaptive Cover All" hub device (all-shades cover, house Mode select auto/hold/off/mixed, reset-all button)
 ├── house_settings.py        # P5 flip: the house settings on the hub (Climate + toggle switches, threshold/duration/geometry numbers, end/quiet times)
@@ -119,8 +122,10 @@ tests/
   entry + window subentries, 0002 one cover per window, 0003 settings
   precedence (window override → area → floor → house → spec default) and
   the one-time vs recurring rule, 0004 refactor contract v2 + behavior
-  tier/mutation gate, 0005 drop pandas/numpy/pytz. A new design decision
-  gets a new ADR; an accepted ADR is superseded, not rewritten.
+  tier/mutation gate, 0005 drop pandas/numpy/pytz, 0006 (proposed, P7)
+  window subentries in v2.0: verbatim storage, versions, move order. A
+  new design decision gets a new ADR; an accepted ADR is superseded, not
+  rewritten.
 - `CONTRIBUTING.md` — the how-to for everything in "Development & Testing".
 
 ## Core Architecture
@@ -180,7 +185,9 @@ cover state change ────┘         ▼
 
 **`Decider`** (runtime/decider.py, P4 batch 3) — Picks the basic or climate position and applies the output transforms (interpolation, or inversion; the min/max clamp stays in the engine). `coordinator.state` and `_transform_state` delegate to `self.decider`, so tracking moves, the forecast and the end-of-day close share one transform chain.
 
-**`Explainer`** / **`RefreshQueue`** (runtime/, P4 batch 4) — `self.explainer` builds what the entities explain (next change event, today's forecast, last change, the move log and the Position sensor's explanation attributes); `coordinator.forecast`, `move_log` and `record_move_provenance` forward to it. `self.events` replaces the four refresh flags: each `RefreshEvent` (ENTITY_CHANGED, COVER_CHANGED, STARTUP, END_TIME) stays pending until its handler marks it done, and cover reports queue in order. Each window entry's coordinator is `entry.runtime_data`; `hass.data[DOMAIN][entry_id]` remains only as an index for the hub and the Mode select until they move too.
+**`Explainer`** / **`RefreshQueue`** (runtime/, P4 batch 4) — `self.explainer` builds what the entities explain (next change event, today's forecast, last change, the move log and the Position sensor's explanation attributes); `coordinator.forecast`, `move_log` and `record_move_provenance` forward to it. `self.events` replaces the four refresh flags: each `RefreshEvent` (ENTITY_CHANGED, COVER_CHANGED, STARTUP, END_TIME) stays pending until its handler marks it done, and cover reports queue in order. Each window entry's coordinator is `entry.runtime_data`; `hass.data[DOMAIN][window_key]` is the index of every loaded window's coordinator (entries and subentries) for the hub, the services and `layers`.
+
+**`WindowEntry`** / **`HouseRuntime`** (windows.py, house.py; P7, ADR 0001/0006) — Two config models run until P8. *Legacy*: one config entry per window (1.x) plus the hub. *House*: the hub is the house entry (2.x) and each window is a `window` config subentry storing the entry's data and options verbatim (`{window_key, data, options}`). `WindowEntry` reads both the same way (`entry_id` = the window key = the old entry_id or a new window's subentry_id); the coordinator, the platforms and `layers`/`shadow` take a `WindowEntry` (or a legacy `ConfigEntry`) and write through `windows.async_update_window`. The house entry's `runtime_data` is a `HouseRuntime`: `async_build_window` per subentry (shared with legacy setup), entities added per platform with `config_subentry_id`, window devices `via_device_id` → house device, a failing window gets a `window_setup_failed_<key>` repair issue and a retry, and the house update listener (`async_sync`) starts/stops/rebuilds only the subentries that changed (an `overrides`-only change re-resolves in place). A fresh install creates the house with subentries; a 1.x house keeps window entries until the owner fixes the `consolidate_house` repair (`consolidate.py`).
 
 ### Config Flow (config_flow.py)
 
@@ -207,6 +214,15 @@ options form and `add_entry` (`cover`, or the older `covers` with one item)
 refuse a cover another enabled window drives (`window_cover.cover_problem`).
 A new entry's unique_id is its cover's entity-registry id. An entry with
 several covers keeps working and gets a fixable `split_window` repair issue.
+
+P7 flows: the flow's version is 2. A fresh install's user step creates the
+house entry (2.1) with the window as its first subentry; on a 2.x house it
+adds a subentry and ends with `window_added`; on a 1.x house it creates a
+1.5 window entry as before. `WindowSubentryFlow` is "Add window" (the same
+one-screen form; `consolidate_first` on a 1.x house) and a subentry's
+Reconfigure (the whole form incl. the exceptions, stored sparsely). The
+house entry's options flow is `HouseOptionsFlow` (step `house`): every
+house-level setting, stored through `layers.async_set_profile`.
 
 ## Solar Algorithm Details
 

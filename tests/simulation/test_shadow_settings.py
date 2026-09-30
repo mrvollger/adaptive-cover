@@ -56,8 +56,9 @@ def _differ_issues(hass) -> dict[str, dict[str, str]]:
 
 async def _house(hass, freezer) -> SimHouse:
     hub = _pre_p5_hub(hass)
+    # A house from before P5 has window entries (the legacy model).
     house = await SimHouse.create(
-        hass, freezer, date=DATE, options={CONF_SUNSET_POS: 0}
+        hass, freezer, date=DATE, options={CONF_SUNSET_POS: 0}, model="legacy"
     )
     assert hub.minor_version == 5
     assert "house" in hub.options

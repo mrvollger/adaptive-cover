@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
+--- a/custom_components/adaptive_cover/consolidate.py
++++ b/custom_components/adaptive_cover/consolidate.py
+@@ -432,7 +432,7 @@
+             or row.config_subentry_id != subentry_id
+         ):
+             changes["config_entry_id"] = house.entry_id
+-            changes["config_subentry_id"] = subentry_id
++            changes["config_subentry_id"] = None
+         if moved is not None and row.device_id != moved.id:
+             # A restart recreated the device on the entry: join the moved one.
+             changes["device_id"] = moved.id

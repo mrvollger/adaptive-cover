@@ -7,7 +7,7 @@ get_forecast:
   fields:
     config_entry:
       name: Config entry
-      description: Config entry ID or title of the Adaptive Cover instance.
+      description: The window key (its config entry ID, kept when the house is consolidated) or the window's title.
       required: true
       example: "SE south shades"
       selector:
@@ -149,7 +149,7 @@ change_settings:
   fields:
     config_entry:
       name: Config entry
-      description: Entry ID, title, or internal name of the instance.
+      description: The window key (its config entry ID, kept when the house is consolidated), title, or internal name of the window.
       required: true
       example: "SE south shades"
     name:

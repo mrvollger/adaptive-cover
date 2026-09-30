@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
+import os
 from dataclasses import dataclass
 from zoneinfo import ZoneInfo
 
@@ -61,6 +62,8 @@ from custom_components.adaptive_cover.const import (
     CONF_WEATHER_ENTITY,
     CONF_WEATHER_STATE,
     DOMAIN,
+    HOUSE_ENTRY_MINOR_VERSION,
+    HOUSE_ENTRY_VERSION,
     SensorType,
 )
 from tests.characterization.golden_lib import (
@@ -76,6 +79,24 @@ from tests.conftest import COMMON_OPTIONS
 from tests.window_handle import WindowHandle, internal_coordinator
 
 SIM_USER_ID = "simulated-human"
+
+# The config model every SimHouse starts in (P7): "legacy" (a config entry
+# per window) or "house" (one house entry, a window subentry per cover).
+# ``ADAPTIVE_COVER_SIM_MODEL=house pytest tests/simulation`` runs the whole
+# simulation tier in the house model (pixi task ``test-house-model``).
+SIM_MODEL = os.environ.get("ADAPTIVE_COVER_SIM_MODEL", "legacy")
+if SIM_MODEL not in ("legacy", "house"):
+    raise ValueError(f"ADAPTIVE_COVER_SIM_MODEL={SIM_MODEL!r}: legacy or house")
+
+
+def _window_rows(hass, window_key: str) -> list[er.RegistryEntry]:
+    """A window's registry rows: its unique_id prefix (either model)."""
+    prefix = f"{window_key}_"
+    return [
+        row
+        for row in er.async_get(hass).entities.values()
+        if row.platform == DOMAIN and row.unique_id.startswith(prefix)
+    ]
 
 
 class SimSunData(FakeSunData):
@@ -260,9 +281,17 @@ class SimHouse:
         self.step = dt.timedelta(minutes=step_minutes)
         self.shades: dict[str, FakeShade] = {}
         self.timeline: list[TimelineEvent] = []
-        # One window (config entry) per cover, in the order of `covers`.
+        # The config model (P7): "legacy" runs one config entry per window,
+        # "house" one house entry with a window subentry per cover.
+        self.model = SIM_MODEL
+        # The config entries the house sets up: the window entries (legacy),
+        # or the house entry (house).
         self.entries: list[MockConfigEntry] = []
-        self._entry_by_cover: dict[str, MockConfigEntry] = {}
+        self.house_entry: MockConfigEntry | None = None
+        # One window per cover, in the order of `covers`: its window key
+        # (the legacy entry_id, or the subentry's key).
+        self._keys: list[str] = []
+        self._key_by_cover: dict[str, str] = {}
         self.windows: dict[str, WindowHandle] = {}
         # Last coordinators seen, for command attribution only (see
         # _actor_for); tests observe the house through self.windows.
@@ -274,15 +303,29 @@ class SimHouse:
         self.presence_entity = self.PRESENCE_SENSOR
 
     @property
-    def entry(self) -> MockConfigEntry | None:
-        """The first window's config entry (the only one with one cover)."""
-        return self.entries[0] if self.entries else None
+    def entry(self):
+        """The first window: its config entry, or its view in the house (P7).
 
-    def _entry_for(self, cover: str | None) -> MockConfigEntry:
-        """The config entry of the window driving ``cover`` (default: first)."""
-        if cover is None:
-            return self.entries[0]
-        return self._entry_by_cover[cover]
+        Either way ``entry_id`` is the window key and ``options`` / ``data``
+        what the window stores.
+        """
+        return self._entry_for(None) if self._keys else None
+
+    def _key_for(self, cover: str | None) -> str:
+        """The window key of the window driving ``cover`` (default: first)."""
+        return self._keys[0] if cover is None else self._key_by_cover[cover]
+
+    def _entry_for(self, cover: str | None):
+        """The window driving ``cover`` (default: first): entry or house view."""
+        from custom_components.adaptive_cover.windows import find_window
+
+        key = self._key_for(cover)
+        entry = self.hass.config_entries.async_get_entry(key)
+        if entry is not None:
+            return entry
+        window = find_window(self.hass, key)
+        assert window is not None, f"no window {key}"
+        return window
 
     # ------------------------------------------------------------------ setup
 
@@ -302,6 +345,7 @@ class SimHouse:
         initial_position: int = 100,
         travel_seconds: int = 120,
         climate: dict | None = None,
+        model: str | None = None,
     ) -> SimHouse:
         """Build the house, freeze the clock, and set up the integration.
 
@@ -326,11 +370,16 @@ class SimHouse:
           presence_domain="zone"|"binary_sensor"|"input_boolean"|
           "device_tracker" (default) parameterizes the presence entity's
           domain (zone expects a count like "2"; binary_sensor "on"/"off").
+
+        model: "legacy" (a config entry per window) or "house" (one house
+        entry with a window subentry per cover, P7); default SIM_MODEL.
         """
         location = location or dict(SLC)
         self = cls(
             hass, freezer, date=date, location=location, step_minutes=step_minutes
         )
+        if model is not None:
+            self.model = model
 
         # Entity service calls validate context.user_id against hass.auth,
         # so the simulated human must exist as a real (owner) user.
@@ -412,6 +461,7 @@ class SimHouse:
                 if "outside_threshold" in climate:
                     climate_opts[CONF_OUTSIDE_THRESHOLD] = climate["outside_threshold"]
 
+        windows: list[tuple[str | None, dict, dict]] = []
         for index, cover in enumerate(list(covers) or [None]):
             opts = {
                 **COMMON_OPTIONS,
@@ -422,17 +472,78 @@ class SimHouse:
                 **(options or {}),
             }
             name = "Sim House" if index == 0 else f"Sim House {index + 1}"
-            entry = MockConfigEntry(
-                domain=DOMAIN,
-                data={"name": name, CONF_SENSOR_TYPE: cover_type},
-                options=opts,
-            )
-            entry.add_to_hass(hass)
-            self.entries.append(entry)
-            if cover:
-                self._entry_by_cover[cover] = entry
+            windows.append((cover, {"name": name, CONF_SENSOR_TYPE: cover_type}, opts))
+        if self.model == "house":
+            self._add_house(windows)
+        else:
+            for cover, data, opts in windows:
+                entry = MockConfigEntry(domain=DOMAIN, data=data, options=opts)
+                entry.add_to_hass(hass)
+                self.entries.append(entry)
+                self._add_key(cover, entry.entry_id)
         await self._setup_entry()
         return self
+
+    def _add_key(self, cover: str | None, key: str) -> None:
+        self._keys.append(key)
+        if cover:
+            self._key_by_cover[cover] = key
+
+    def _add_house(self, windows: list[tuple[str | None, dict, dict]]) -> None:
+        """The house model (P7): one house entry, a window subentry per cover."""
+        from custom_components.adaptive_cover.hub import (
+            CONF_IS_HUB,
+            HUB_ENTRY_NAME,
+            HUB_UNIQUE_ID,
+        )
+
+        house = MockConfigEntry(
+            domain=DOMAIN,
+            title=HUB_ENTRY_NAME,
+            unique_id=HUB_UNIQUE_ID,
+            data={"name": HUB_ENTRY_NAME, CONF_IS_HUB: True},
+            options={},
+            version=HOUSE_ENTRY_VERSION,
+            minor_version=HOUSE_ENTRY_MINOR_VERSION,
+            subentries_data=[
+                {
+                    "data": {"data": data, "options": opts},
+                    "subentry_type": "window",
+                    "title": data["name"],
+                    "unique_id": None,
+                }
+                for _cover, data, opts in windows
+            ],
+        )
+        house.add_to_hass(self.hass)
+        self.house_entry = house
+        self.entries.append(house)
+        for (cover, _data, _opts), subentry_id in zip(
+            windows, list(house.subentries), strict=True
+        ):
+            self._add_key(cover, subentry_id)
+
+    async def consolidate(self) -> None:
+        """Consolidate the house (P7): the owner fixes the "Consolidate" repair.
+
+        Every window entry becomes a subentry of the house entry (the hub);
+        the window keys, entity_ids and the timeline stay. Afterwards the
+        house runs in the house model.
+        """
+        from tests.consolidation import consolidate_via_repair
+
+        await consolidate_via_repair(self.hass)
+        house = next(
+            entry
+            for entry in self.hass.config_entries.async_entries(DOMAIN)
+            if entry.data.get("is_hub")
+        )
+        self.model = "house"
+        self.house_entry = house
+        self.entries = [house]
+        self._remember_coordinator()
+        self._register_services()
+        await self.hass.async_block_till_done()
 
     async def _setup_entry(self) -> None:
         """Set the windows up and win the cover services back from the hub.
@@ -502,22 +613,18 @@ class SimHouse:
         registry = er.async_get(self.hass)
         seeded: dict[str, State] = {}
         if restore:
-            for entry in self.entries:
-                for reg_entry in er.async_entries_for_config_entry(
-                    registry, entry.entry_id
-                ):
+            for key in self._keys:
+                for reg_entry in _window_rows(self.hass, key):
                     state = self.hass.states.get(reg_entry.entity_id)
                     if state is not None:
                         seeded[reg_entry.entity_id] = state
         for entity_id, state_str in (seed_states or {}).items():
             seeded[entity_id] = State(entity_id, state_str)
-        for entry in self.entries:
+        for key in self._keys:
             control = registry.async_get_entity_id(
-                "switch", DOMAIN, f"{entry.entry_id}_Toggle Control"
+                "switch", DOMAIN, f"{key}_Toggle Control"
             )
-            mode = registry.async_get_entity_id(
-                "select", DOMAIN, f"{entry.entry_id}_mode_select"
-            )
+            mode = registry.async_get_entity_id("select", DOMAIN, f"{key}_mode_select")
             if control in (seed_states or {}) and mode is not None:
                 seeded.pop(mode, None)
         for entry in self.entries:
@@ -543,18 +650,21 @@ class SimHouse:
         services are re-won and the rebuilt coordinators remembered for
         command attribution.
         """
-        for entry in self.entries:
-            if option_changes:
+        if option_changes:
+            for key in self._keys:
                 await self.hass.services.async_call(
                     DOMAIN,
                     "change_settings",
-                    {"config_entry": entry.entry_id, **option_changes},
+                    {"config_entry": key, **option_changes},
                     blocking=True,
                     context=Context(user_id=SIM_USER_ID),
                 )
-            else:
+                await self.hass.async_block_till_done()
+        else:
+            # The house model reloads the house entry: every window.
+            for entry in self.entries:
                 await self.hass.config_entries.async_reload(entry.entry_id)
-            await self.hass.async_block_till_done()
+                await self.hass.async_block_till_done()
         self._remember_coordinator()
         self._register_services()
         await self.hass.async_block_till_done()
@@ -568,9 +678,7 @@ class SimHouse:
         the coordinator; refactor P4 moves it to the CoverActuator). Used
         ONLY to attribute cover commands to the integration.
         """
-        live = (
-            internal_coordinator(self.hass, entry.entry_id) for entry in self.entries
-        )
+        live = (internal_coordinator(self.hass, key) for key in self._keys)
         return [coordinator for coordinator in live if coordinator is not None]
 
     def _remember_coordinator(self) -> None:
@@ -992,13 +1100,12 @@ class SimHouse:
         picks the window (default: the first). Never hard-code
         sim_house_-slugged entity_ids in tests.
         """
-        entry = self._entry_for(cover)
-        registry = er.async_get(self.hass)
+        window_key = self._key_for(cover)
         target = key.lower()
-        for reg_entry in er.async_entries_for_config_entry(registry, entry.entry_id):
+        for reg_entry in _window_rows(self.hass, window_key):
             if reg_entry.domain != domain:
                 continue
-            suffix = reg_entry.unique_id.removeprefix(f"{entry.entry_id}_")
+            suffix = reg_entry.unique_id.removeprefix(f"{window_key}_")
             if suffix.lower().replace(" ", "_") == target:
                 return reg_entry.entity_id
         raise KeyError(f"No {domain} entity with unique-id suffix '{key}'")
@@ -1100,9 +1207,20 @@ class SimHouse:
             area, floor_id=floor_id
         )
         devices = dr.async_get(self.hass)
-        entry = self._entry_for(cover)
-        device = devices.async_get_device_by_identifier(
-            (DOMAIN, entry.entry_id), config_entry_id=entry.entry_id
+        window_key = self._key_for(cover)
+        owners = [window_key, *(e.entry_id for e in self.entries)]
+        device = next(
+            (
+                found
+                for owner in owners
+                if (
+                    found := devices.async_get_device_by_identifier(
+                        (DOMAIN, window_key), config_entry_id=owner
+                    )
+                )
+                is not None
+            ),
+            None,
         )
         assert device is not None, f"no window device for {cover}"
         devices.async_update_device(device.id, area_id=area_entry.id)

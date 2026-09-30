@@ -25,7 +25,9 @@ from typing import Any
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import Entity
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import restore_state
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -38,6 +40,7 @@ from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info
 from .entity_surface import apply_surface, window_surface
 from .runtime.mode import MODE_OPTIONS, Mode, restored_mode
+from .windows import WindowEntry, WindowLike, as_window
 
 ATTR_UNTIL = "until"
 LEGACY_CONTROL_SWITCH = "Toggle Control"
@@ -52,10 +55,25 @@ async def async_setup_entry(
     from .hub import HouseModeSelect, is_hub_entry
 
     if is_hub_entry(config_entry):
+        from .house import async_setup_house_platform
+
         async_add_entities([HouseModeSelect(hass)])
+        await async_setup_house_platform(
+            hass, config_entry, Platform.SELECT, window_entities
+        )
         return
-    coordinator: AdaptiveDataUpdateCoordinator = config_entry.runtime_data
-    async_add_entities([AdaptiveCoverModeSelect(config_entry, coordinator)])
+    async_add_entities(
+        window_entities(hass, as_window(config_entry), config_entry.runtime_data)
+    )
+
+
+def window_entities(
+    hass: HomeAssistant,
+    config_entry: WindowEntry,
+    coordinator: AdaptiveDataUpdateCoordinator,
+) -> list[Entity]:
+    """Return one window's Mode select."""
+    return [AdaptiveCoverModeSelect(config_entry, coordinator)]
 
 
 def _parse_until(value: Any) -> dt.datetime | None:
@@ -85,7 +103,7 @@ class AdaptiveCoverModeSelect(
 
     def __init__(
         self,
-        config_entry: ConfigEntry,
+        config_entry: WindowLike,
         coordinator: AdaptiveDataUpdateCoordinator,
     ) -> None:
         """Initialize the mode select."""

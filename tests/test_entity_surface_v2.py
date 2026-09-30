@@ -600,13 +600,14 @@ class TestMigration:
         assert (entry.version, entry.minor_version) == (1, 6)
 
     async def test_newer_major_version_is_refused(self, hass, cover_calls):
+        # 2.x is the house entry since P7 (ADR 0001): the next major is 3.
         _set_world(hass)
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="From the future",
             data={"name": "From the future", CONF_SENSOR_TYPE: SensorType.BLIND},
             options={**COMMON_OPTIONS, CONF_ENTITIES: [COVER]},
-            version=2,
+            version=3,
             minor_version=1,
         )
         entry.add_to_hass(hass)

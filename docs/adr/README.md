@@ -9,6 +9,7 @@ An ADR records one design decision: the problem, the choice, and what follows fr
 | [0003](0003-settings-precedence.md) | Settings precedence and the one-time vs recurring rule | Accepted | 2026-09-28 | P5 (v1.18.x), UI in P6 |
 | [0004](0004-refactor-contract-v2.md) | Refactor contract v2, behavior-tier ledger and mutation gate | Accepted | 2026-09-28 | P0 (v1.14.0), then every release |
 | [0005](0005-drop-pandas-numpy-pytz.md) | Drop pandas, numpy and pytz | Accepted | 2026-09-28 | P2 (v1.15.x) |
+| [0006](0006-window-subentries-in-v2.md) | Window subentries in v2.0: storage, versions and the move order (amends 0001) | Proposed | 2026-09-29 | P7 (v2.0.0) |
 
 ## Writing a new ADR
 

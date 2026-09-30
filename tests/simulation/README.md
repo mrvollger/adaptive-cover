@@ -49,6 +49,15 @@ async def test_my_scenario(hass, freezer):
   `house.entries` all of them. A config entry that drives several covers
   (from before P3) is not a SimHouse shape: its "split" repair and legacy
   behavior are pinned in `tests/test_migration_1_3.py`.
+- `model="legacy"|"house"` (P7) — the config model. `legacy` (the default)
+  runs one config entry per window; `house` runs one house entry (2.x) with
+  a `window` subentry per cover. Then `house.entries` is `[house entry]`
+  and `house.entry` the first window's view (`entry_id` = its window key,
+  `options` = what it stores). `ADAPTIVE_COVER_SIM_MODEL=house` makes
+  `house` the default: `pixi run test-house-model` runs the whole tier
+  that way. `await house.consolidate()` fixes the "Consolidate" repair
+  mid-scenario (legacy → house, same keys and entities); the house replay
+  uses it (`tests/replay`, `test_house_replay_consolidated`).
 - `start_at="04:00"` — when the sim (and HA) starts. A daytime value
   (`"13:00"`) models HA starting mid-day with the sun already actionable,
   for startup/catch-up scenarios.

@@ -128,6 +128,14 @@ RULES: list[tuple[str, str]] = [
     # states, registries, the hub's config entry and the diagnostics.
     ("tests/test_house_settings.py::*", BEHAVIOR),
     ("tests/test_get_profile.py::*", BEHAVIOR),  # get_profile responses (C6)
+    # P7 (C8): the house entry with window subentries (fresh install, Add
+    # window, Reconfigure, delete, isolation, services, house options) and
+    # the consolidation of the live snapshot through its repair fix flow
+    # (identity, settings, Mode/hold, resume, card discovery), through
+    # config entries and subentries, registries, entity states and the
+    # diagnostics download. The crash injection patches one internal step.
+    ("tests/test_house_subentries.py::*", BEHAVIOR),
+    ("tests/test_consolidation.py::*", BEHAVIOR),
     # P5 layered settings: `resolve` is a contract v2 seam (ADR 0004).
     # Precedence, provenance, the lift's rules and the P5 guarantee on the
     # live snapshot (resolve(w) == legacy_flat(w)) are behavior; the purity

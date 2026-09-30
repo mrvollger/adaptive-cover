@@ -1068,3 +1068,84 @@ The example below is inside an HTML comment. The checker ignores it.
     `time.py`), stored as "HH:MM:SS" in the house profile like the hub
     numbers; a change reaches every window at once, without a reload.
   - Goldens, truth table and house replay unchanged.
+
+## L0032 · 2026-09-29 · One house entry with window subentries; the "Consolidate" repair (C8, P7)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none retired. New pins:
+  `tests/test_house_subentries.py::*` (a fresh install creates the house
+  entry 2.1 with the window as its `window` subentry: key = subentry_id,
+  entities on the subentry, one device per window with `via_device_id` to
+  the house device and the cover's area; "Add window" adds one and leaves
+  the other windows running; the config flow adds one to a 2.x house and
+  ends with `window_added`; a cover in use is refused; a 1.x house answers
+  `consolidate_first`; Reconfigure rebuilds that window alone and stores an
+  exception sparsely; deleting a subentry removes that window alone; a
+  broken window gets a `window_setup_failed_*` issue while the house runs;
+  `add_entry`, `change_settings` and `get_forecast` reach subentry windows;
+  the house options are the house settings),
+  `tests/test_consolidation.py::*` (the live snapshot through the repair
+  fix flow: every entity row, registry id, entity_id, unique_id, name,
+  area, device, Mode/hold, override and resolved setting unchanged, rows
+  and devices on the house subentry, the subentry storing the entry's
+  data and options verbatim, the dry run changing nothing, a backup
+  confirmation, a multi-cover window blocking; a crash after window k at
+  two points, then a restart, resumes and a second run changes nothing;
+  the card's discovery attributes and rows), and
+  `tests/replay/test_house_replay.py::test_house_replay_consolidated[*]`
+  (the 90 house-replay cases through a house consolidated at 00:30: the
+  same goldens, byte for byte).
+  Behavior-tier test bodies changed without changing ids:
+  `tests/test_config_flow.py::*`, `tests/test_window_setup_form.py::*` and
+  `tests/test_one_cover_per_window.py::*` start from a 1.x hub (autouse
+  `legacy_model`): they pin the window-entry flows, which a fresh install
+  no longer takes (it creates the house with subentries);
+  `tests/test_entity_surface_v2.py::TestMigration::test_newer_major_version_is_refused`
+  uses major 3 (2 is the house now);
+  `tests/test_migration_1_3.py::test_live_house_migrates_to_1_3` expects
+  the `consolidate_house` issue as the house's only issue (no split);
+  `tests/test_translations.py::test_flow_strings_cover_every_form` also
+  walks the window subentry forms (add per cover type, reconfigure) and
+  the house options; `tests/simulation/test_regressions.py::test_regression_unload_cancels_arrival_poll`
+  unloads `house.entries[0]` (the window entry, or the house);
+  `tests/simulation/test_shadow_settings.py::*` pin `model="legacy"` (a
+  house from before P5). Test helpers: `WindowHandle` finds a window in
+  the window entries (enabled) or the house's subentries and its rows by
+  unique_id prefix, and reads a subentry window's settings from the
+  house's diagnostics; SimHouse gets `model="legacy"|"house"`,
+  `ADAPTIVE_COVER_SIM_MODEL` and `consolidate()`; the live-house loader
+  moved to `tests/live_house.py`. Implementation tier:
+  `tests/settings/test_round_trip.py::test_real_flows_round_trip[*]`
+  starts from a 1.x hub too.
+- **Mutations re-targeted:** re-anchored (offsets only, descriptions
+  unchanged): M40, M41, M42, M43, M47, M52, M54, M56, M58, M59, M64, M71,
+  M83, M91. Added M100 (`consolidate.py` `async_reparent_window`: an entity
+  row moves to the house without its subentry link, so HA drops it when
+  the device moves), M101 (`consolidate.py` `_async_add_subentry`: the
+  subentry loses the window's overrides; an edit made since the P5 flip is
+  lost), M102 (`house.py` `HouseRuntime.async_sync`: the listener rebuilds
+  every window; the plan's M49) and M103 (`consolidate.py`
+  `async_reparent_window`: the device stays on the window entry; the plan's
+  M50). `--mutations M100,M101,M102,M103 --jobs 3`: 4/4 killed (the
+  entity tier; the control run passed). The re-anchored M54 (area copy)
+  and M59 (one-cover guard), whose functions changed around them:
+  `--mutations M54,M59 --jobs 2`: 2/2 killed.
+- **Contract change:** C8 (entries become house + subentries)
+- **Reason:** plan P7 and ADR 0001, as amended by ADR 0006 (proposed):
+  - Two config models until P8. A window is a window entry (1.x) or a
+    `window` subentry of the house entry (the hub, 2.x) storing the entry's
+    data and options verbatim; `windows.WindowEntry` reads both, and its
+    key (the old entry_id, or a new window's subentry_id) is the unique_id
+    prefix, the override-store key and the card binding key.
+  - The house runtime (`house.py`) runs one coordinator per subentry,
+    isolated (a failure is a repair issue and a retry), adds each
+    window's entities with `config_subentry_id`, and its update listener
+    rebuilds only the subentry that changed.
+  - Consolidation is the `consolidate_house` repair: a dry run that
+    asserts every window resolves the same settings, a backup
+    confirmation, a snapshot in `.storage`, then per window: unload, add
+    the subentry, move the entity rows, then the device (HA drops the
+    entities a moving device leaves behind), verify, remove the entry.
+    Resumable at every step; the house is 2.x before the first move.
+  - Goldens, truth table and the house replay unchanged; the replay also
+    runs byte-identical through a consolidated house.

@@ -15,6 +15,7 @@ from typing import Any
 
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResultType
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adaptive_cover.const import (
     CONF_COVER_ENTITY,
@@ -77,6 +78,33 @@ def collapsed(result: Mapping[str, Any]) -> dict[str, bool]:
         str(name): validator.options["collapsed"]
         for name, validator in result["data_schema"].schema.items()
     }
+
+
+def add_legacy_house(hass) -> MockConfigEntry:
+    """Add the hub of a house that still has window entries (1.5, not set up).
+
+    Since P7 the model decides where the add form puts a window: a 1.x hub
+    gets window entries (the legacy model, until the owner consolidates);
+    a fresh install creates the house with the window as a subentry. Tests
+    of the window-entry flows start from this hub.
+    """
+    from custom_components.adaptive_cover.hub import (
+        CONF_IS_HUB,
+        HUB_ENTRY_NAME,
+        HUB_UNIQUE_ID,
+    )
+
+    hub = MockConfigEntry(
+        domain=DOMAIN,
+        title=HUB_ENTRY_NAME,
+        unique_id=HUB_UNIQUE_ID,
+        data={"name": HUB_ENTRY_NAME, CONF_IS_HUB: True},
+        options={},
+        version=1,
+        minor_version=5,
+    )
+    hub.add_to_hass(hass)
+    return hub
 
 
 async def start_add(hass) -> dict[str, Any]:

@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/layers.py b/custom_components/adaptive_cover/layers.py
 --- a/custom_components/adaptive_cover/layers.py
 +++ b/custom_components/adaptive_cover/layers.py
-@@ -420,7 +420,7 @@
+@@ -418,7 +418,7 @@
      if level is Level.HOUSE:
          options[HOUSE] = stored
      else:

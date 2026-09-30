@@ -518,5 +518,33 @@
   "function": "WindowForm.submit",
   "description": "picking another cover type saves at once instead of showing its geometry",
   "patch": "M83_cover_type_switch_not_shown.patch"
+ },
+ {
+  "id": "M100",
+  "file": "custom_components/adaptive_cover/consolidate.py",
+  "function": "async_reparent_window",
+  "description": "consolidation moves an entity row to the house entry without its window subentry (HA then drops it when the device moves)",
+  "patch": "M100_consolidation_drops_subentry_link.patch"
+ },
+ {
+  "id": "M101",
+  "file": "custom_components/adaptive_cover/consolidate.py",
+  "function": "_async_add_subentry",
+  "description": "the window subentry loses the window's stored overrides: after consolidation it re-adopts them from the legacy keys, so an edit made since the P5 flip is lost",
+  "patch": "M101_resolved_settings_change_after_consolidation.patch"
+ },
+ {
+  "id": "M102",
+  "file": "custom_components/adaptive_cover/house.py",
+  "function": "HouseRuntime.async_sync",
+  "description": "the house's update listener rebuilds every window, not only the changed one (plan M49)",
+  "patch": "M102_listener_rebuilds_every_window.patch"
+ },
+ {
+  "id": "M103",
+  "file": "custom_components/adaptive_cover/consolidate.py",
+  "function": "async_reparent_window",
+  "description": "consolidation moves a window's entities but leaves its device on the window entry (plan M50)",
+  "patch": "M103_consolidation_leaves_the_device_unmoved.patch"
  }
 ]

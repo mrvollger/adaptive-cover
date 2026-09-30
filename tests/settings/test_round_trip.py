@@ -58,7 +58,7 @@ from custom_components.adaptive_cover.settings.spec import (
 )
 from custom_components.adaptive_cover.settings.validate import cross_field_errors
 
-from ..window_form import add_window
+from ..window_form import add_legacy_house, add_window
 
 COVER_TYPES = (SensorType.BLIND, SensorType.AWNING, SensorType.TILT)
 UNITS = ("°C", "°F")
@@ -208,6 +208,8 @@ FLOW_SEEDS = range(4)
 
 @pytest.fixture(autouse=False)
 async def unload_all(hass):
+    # The window-entry flows: a house that still has window entries (P7).
+    add_legacy_house(hass)
     yield
     for entry in hass.config_entries.async_entries():
         if entry.state is config_entries.ConfigEntryState.LOADED:

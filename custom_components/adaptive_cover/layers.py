@@ -45,7 +45,6 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, Final
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import floor_registry as fr
@@ -87,6 +86,7 @@ from .settings.shadow import (
 from .settings.schema import may_be_empty
 from .settings.spec import OPTS_BY_KEY, Level, Opt, Scope
 from .shadow import lifted_hub, read_toggles, runtime_options, window_placement
+from .windows import WindowLike, async_update_window
 
 SIGNAL_SETTINGS_CHANGED: Final = f"{DOMAIN}_settings_changed"
 """Dispatcher signal: a layer changed (the house entities re-read it)."""
@@ -137,7 +137,7 @@ def _setup_values(hass: HomeAssistant, options: Mapping[str, Any]) -> dict[str, 
     return legacy_values(options, {}, temperature_unit=_unit(hass))
 
 
-def _legacy_effective(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
+def _legacy_effective(hass: HomeAssistant, entry: WindowLike) -> dict[str, Any]:
     """Return what a window acts on before the house is lifted (pre-flip reads)."""
     options = runtime_options(entry)
     return {
@@ -165,7 +165,7 @@ class Effective:
     ``floor``, ``house``, ``default``); None before the house is lifted."""
 
 
-def effective_settings(hass: HomeAssistant, entry: ConfigEntry) -> Effective:
+def effective_settings(hass: HomeAssistant, entry: WindowLike) -> Effective:
     """Return what the window acts on, resolved, with the provenance.
 
     Before the house is lifted, or when a stored layer is invalid (logged),
@@ -205,12 +205,12 @@ def effective_settings(hass: HomeAssistant, entry: ConfigEntry) -> Effective:
     )
 
 
-def effective_options(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
+def effective_options(hass: HomeAssistant, entry: WindowLike) -> dict[str, Any]:
     """Return what the window acts on: every option key, resolved."""
     return effective_settings(hass, entry).options
 
 
-def inherited_values(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
+def inherited_values(hass: HomeAssistant, entry: WindowLike) -> dict[str, Any]:
     """Return what the window would get without its own recurring values."""
     hub = lifted_hub(hass)
     if hub is None:
@@ -229,7 +229,7 @@ def inherited_values(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
     )
 
 
-def is_layered(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+def is_layered(hass: HomeAssistant, entry: WindowLike) -> bool:
     """Return whether the window acts on the layers (lifted, with its overrides)."""
     return (
         lifted_hub(hass) is not None
@@ -237,13 +237,13 @@ def is_layered(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
 
-def window_overrides(entry: ConfigEntry) -> WindowOverrides:
+def window_overrides(entry: WindowLike) -> WindowOverrides:
     """Return the window's stored overrides (empty when it has none)."""
     return stored_overrides(entry.entry_id, entry.options) or WindowOverrides()
 
 
 def window_options_after(
-    hass: HomeAssistant, entry: ConfigEntry, changes: Mapping[str, Any]
+    hass: HomeAssistant, entry: WindowLike, changes: Mapping[str, Any]
 ) -> dict[str, Any]:
     """Return the window's options with ``changes`` stored (nothing written).
 
@@ -285,15 +285,13 @@ def window_options_after(
 
 @callback
 def async_write_window(
-    hass: HomeAssistant, entry: ConfigEntry, changes: Mapping[str, Any]
+    hass: HomeAssistant, entry: WindowLike, changes: Mapping[str, Any]
 ) -> None:
-    """Store a window's edits (see ``window_options_after``)."""
-    hass.config_entries.async_update_entry(
-        entry, options=window_options_after(hass, entry, changes)
-    )
+    """Store a window's edits where it lives (see ``window_options_after``)."""
+    async_update_window(hass, entry, options=window_options_after(hass, entry, changes))
 
 
-def copied_options(hass: HomeAssistant, source: ConfigEntry) -> dict[str, Any]:
+def copied_options(hass: HomeAssistant, source: WindowLike) -> dict[str, Any]:
     """Return the options a copy of ``source`` starts from: what it acts on."""
     return {
         key: value
@@ -440,9 +438,9 @@ async def async_settings_changed(
 
     wanted = set(entry_ids) if entry_ids is not None else None
     async_dispatcher_send(hass, SIGNAL_SETTINGS_CHANGED)
-    for entry in hass.config_entries.async_entries(DOMAIN):
-        if wanted is not None and entry.entry_id not in wanted:
+    # The loaded windows, by window key (legacy entries and subentries).
+    for window_key, coordinator in list(hass.data.get(DOMAIN, {}).items()):
+        if wanted is not None and window_key not in wanted:
             continue
-        coordinator = getattr(entry, "runtime_data", None)
         if isinstance(coordinator, AdaptiveDataUpdateCoordinator):
             await coordinator.async_settings_changed()

@@ -16,8 +16,18 @@ DOMAIN = "adaptive_cover"
 #             the legacy flat keys stay and the runtime still acts on them.
 #   1.5 (P5 flip): the six per-window switches are hidden (still enabled)
 #             aliases of the Mode select and the house toggles.
+# Window entries (the legacy model) and a house that still has them stay
+# at 1.x, so a downgrade before consolidation keeps working.
 CONFIG_ENTRY_VERSION = 1
 CONFIG_ENTRY_MINOR_VERSION = 5
+# The house entry holding its windows as subentries (P7, ADR 0001): a
+# consolidated house, or a fresh install. The major bump makes older code
+# refuse the house entry (restore the backup to roll back). The config
+# flow's version is this one, so Home Assistant loads a 2.x house; window
+# entries keep their 1.x version.
+#   2.1 (P7): windows are subentries of type "window" (windows.py).
+HOUSE_ENTRY_VERSION = 2
+HOUSE_ENTRY_MINOR_VERSION = 1
 LOGGER = logging.getLogger(__package__)
 _LOGGER = logging.getLogger(__name__)
 

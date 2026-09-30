@@ -72,7 +72,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_OFF, STATE_ON, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import area_registry as ar
-from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import floor_registry as fr
 from homeassistant.helpers import issue_registry as ir
@@ -84,6 +83,13 @@ from .migration import options_1_3
 from .settings.lift import LegacyWindow, Lifted
 from .settings.normalize import window_covers
 from .settings.resolve import Placement, SettingsError
+from .windows import (
+    WindowLike,
+    all_windows,
+    async_update_window,
+    house_entry,
+    window_device,
+)
 from .settings.shadow import (
     OVERRIDES,
     TOGGLE_SWITCHES,
@@ -122,16 +128,8 @@ def _windows(hass: HomeAssistant) -> dict[str, _Window]:
     return hass.data.setdefault(SHADOW_DATA, {})
 
 
-def _is_hub(entry: ConfigEntry) -> bool:
-    from .hub import is_hub_entry
-
-    return is_hub_entry(entry)
-
-
 def _hub(hass: HomeAssistant) -> ConfigEntry | None:
-    return next(
-        (e for e in hass.config_entries.async_entries(DOMAIN) if _is_hub(e)), None
-    )
+    return house_entry(hass)
 
 
 def lifted_hub(hass: HomeAssistant) -> ConfigEntry | None:
@@ -140,18 +138,12 @@ def lifted_hub(hass: HomeAssistant) -> ConfigEntry | None:
     return hub if hub is not None and is_lifted(hub.options) else None
 
 
-def window_entries(hass: HomeAssistant) -> list[ConfigEntry]:
-    """Return the enabled window entries (the hub is not a window)."""
-    return [
-        entry
-        for entry in hass.config_entries.async_entries(
-            DOMAIN, include_ignore=False, include_disabled=False
-        )
-        if not _is_hub(entry)
-    ]
+def window_entries(hass: HomeAssistant) -> list[WindowLike]:
+    """Return the windows: the enabled legacy entries and the house's subentries."""
+    return list(all_windows(hass))
 
 
-def runtime_options(entry: ConfigEntry) -> dict[str, Any]:
+def runtime_options(entry: WindowLike) -> dict[str, Any]:
     """Return a window's options as the runtime reads them (1.3 shape)."""
     return options_1_3(without_overrides(entry.options))
 
@@ -198,11 +190,9 @@ def read_toggles(
 
 
 @callback
-def window_placement(hass: HomeAssistant, entry: ConfigEntry) -> Placement:
+def window_placement(hass: HomeAssistant, entry: WindowLike) -> Placement:
     """Return the window's area (its device's, else its cover's) and floor."""
-    device = dr.async_get(hass).async_get_device_by_identifier(
-        (DOMAIN, entry.entry_id), config_entry_id=entry.entry_id
-    )
+    device = window_device(hass, entry)
     area_id = device.area_id if device is not None else None
     if area_id is None:
         area_id = cover_area_id(hass, window_covers(entry.options))
@@ -212,7 +202,7 @@ def window_placement(hass: HomeAssistant, entry: ConfigEntry) -> Placement:
     return Placement(area_id=area.id, floor_id=area.floor_id)
 
 
-def _legacy(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
+def _legacy(hass: HomeAssistant, entry: WindowLike) -> dict[str, Any]:
     options = runtime_options(entry)
     return legacy_values(
         options,
@@ -251,7 +241,8 @@ def async_lift_house(hass: HomeAssistant, hub: ConfigEntry) -> Lifted | None:
         hub, options={**hub.options, **hub_options(lifted)}
     )
     for entry in windows:
-        hass.config_entries.async_update_entry(
+        async_update_window(
+            hass,
             entry,
             options={
                 **entry.options,
@@ -306,7 +297,7 @@ def async_migrate_hub_1_4(hass: HomeAssistant, hub: ConfigEntry) -> None:
 
 
 @callback
-def async_setup_window(hass: HomeAssistant, entry: ConfigEntry) -> None:
+def async_setup_window(hass: HomeAssistant, entry: WindowLike) -> None:
     """Record a window at setup, before its coordinator reads the layers.
 
     Lifts the house if it never was, adopts the window if it has no
@@ -321,7 +312,7 @@ def async_setup_window(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 
 @callback
-def async_adopt_window(hass: HomeAssistant, entry: ConfigEntry) -> None:
+def async_adopt_window(hass: HomeAssistant, entry: WindowLike) -> None:
     """Give a window without its own ``overrides`` the ones it needs.
 
     Every value it does not inherit becomes a window override (or a legacy
@@ -340,7 +331,8 @@ def async_adopt_window(hass: HomeAssistant, entry: ConfigEntry) -> None:
     except (SettingsError, KeyError, TypeError) as err:
         _LOGGER.warning("%s: cannot join the layered settings: %s", entry.title, err)
         return
-    hass.config_entries.async_update_entry(
+    async_update_window(
+        hass,
         entry,
         options={
             **entry.options,
@@ -357,7 +349,7 @@ def async_adopt_window(hass: HomeAssistant, entry: ConfigEntry) -> None:
     )
 
 
-def only_overrides_changed(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+def only_overrides_changed(hass: HomeAssistant, entry: WindowLike) -> bool:
     """Return whether an entry update left everything the runtime reads alone.
 
     True when the window's data, title and options (``overrides`` aside)

@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResultType, section
 from homeassistant.helpers import selector
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -59,8 +60,12 @@ from custom_components.adaptive_cover.const import (
     SensorType,
 )
 from custom_components.adaptive_cover.config_flow import (
+    ABORT_CONSOLIDATE_FIRST,
     ABORT_NOT_A_WINDOW,
+    ABORT_NOT_LIFTED,
+    ABORT_WINDOW_ADDED,
     ERROR_COVER_TYPE,
+    ERROR_HOUSE_SETTING,
 )
 from custom_components.adaptive_cover.settings.validate import ERROR_KEYS
 from custom_components.adaptive_cover.window_cover import ERROR_COVER_IN_USE
@@ -246,6 +251,89 @@ async def _options_flow_forms(hass) -> list[dict[str, Any]]:
     return forms
 
 
+def _house(hass, *, version: int = 2) -> MockConfigEntry:
+    """A house entry (lifted: it has house settings) with one window per type."""
+    house = MockConfigEntry(
+        domain=DOMAIN,
+        title="i18n house",
+        data={"name": "i18n house", "is_hub": True},
+        options={"house": {}, "floors": {}, "areas": {}},
+        version=version,
+        minor_version=1,
+        subentries_data=[
+            {
+                "data": {
+                    "data": {
+                        "name": f"i18n {sensor_type}",
+                        CONF_SENSOR_TYPE: sensor_type,
+                    },
+                    "options": {**BASE_OPTIONS, **type_options},
+                },
+                "subentry_type": "window",
+                "title": f"i18n {sensor_type}",
+                "unique_id": None,
+            }
+            for sensor_type, type_options in TYPE_OPTIONS.items()
+        ],
+    )
+    house.add_to_hass(hass)
+    return house
+
+
+async def _subentry_flow_forms(hass) -> list[dict[str, Any]]:
+    """The window subentry forms (P7): add for every type, reconfigure each."""
+    forms: list[dict[str, Any]] = []
+    house = _house(hass)
+    manager = hass.config_entries.subentries
+    for sensor_type in TYPE_OPTIONS:
+        result = await manager.async_init(
+            (house.entry_id, "window"),
+            context={"source": config_entries.SOURCE_USER},
+        )
+        assert result["step_id"] == "user", result
+        forms.append(result)
+        if sensor_type != SensorType.BLIND:
+            result = await manager.async_configure(
+                result["flow_id"],
+                {
+                    name: (
+                        {"cover_entity_id": "cover.i18n", "sensor_type": sensor_type}
+                        if name == "window"
+                        else {}
+                    )
+                    for name in result["data_schema"].schema
+                },
+            )
+            assert result["step_id"] == "user", result
+            forms.append(result)
+        manager.async_abort(result["flow_id"])
+    for subentry in house.subentries.values():
+        result = await manager.async_init(
+            (house.entry_id, "window"),
+            context={
+                "source": config_entries.SOURCE_RECONFIGURE,
+                "subentry_id": subentry.subentry_id,
+            },
+        )
+        assert result["step_id"] == "reconfigure", result
+        forms.append(result)
+        manager.async_abort(result["flow_id"])
+    return forms
+
+
+async def _house_options_forms(hass) -> list[dict[str, Any]]:
+    """The house entry's options: the house settings (P7)."""
+    house = next(
+        entry
+        for entry in hass.config_entries.async_entries(DOMAIN)
+        if entry.data.get("is_hub")
+    )
+    result = await hass.config_entries.options.async_init(house.entry_id)
+    assert result["step_id"] == "house", result
+    hass.config_entries.options.async_abort(result["flow_id"])
+    return [result]
+
+
 def _step_methods(class_name: str) -> set[str]:
     """Step ids of the ``async_step_*`` methods one flow class defines."""
     tree = ast.parse((PACKAGE / "config_flow.py").read_text(encoding="utf-8"))
@@ -408,14 +496,20 @@ def test_english_is_the_only_language() -> None:
 async def test_flow_strings_cover_every_form(hass, strings: dict[str, Any]) -> None:
     config_forms = await _config_flow_forms(hass)
     options_forms = await _options_flow_forms(hass)
+    # P7: the house's window subentries and the house settings.
+    subentry_forms = await _subentry_flow_forms(hass)
+    house_forms = await _house_options_forms(hass)
 
     # The walk must reach every step the code can show, and every step
-    # method must be reachable (import shows no form: it is programmatic).
+    # method must be reachable (import shows no form: it is programmatic;
+    # the house options' init goes straight to the house step).
     # The options flow lost nine unreachable per-page steps in P3 and the
     # setup wizard its nine pages in P6; this keeps dead steps from returning.
     for flow, cls, forms, formless in (
         ("config", "ConfigFlowHandler", config_forms, {"import"}),
         ("options", "OptionsFlowHandler", options_forms, set()),
+        ("config_subentries", "WindowSubentryFlow", subentry_forms, set()),
+        ("options", "HouseOptionsFlow", house_forms, {"init"}),
     ):
         shown = {result["step_id"] for result in forms}
         unvisited = (_literal_step_ids(cls) | _step_methods(cls)) - shown - formless
@@ -428,6 +522,28 @@ async def test_flow_strings_cover_every_form(hass, strings: dict[str, Any]) -> N
         needs.add_form("config", result)
     for result in options_forms:
         needs.add_form("options", result)
+    for result in subentry_forms:
+        needs.add_form("config_subentries.window", result)
+    for result in house_forms:
+        needs.add_form("options", result)
+    # The window subentry (P7): its buttons, name, the form's errors and
+    # how it ends; the house options' error and abort; the config flow
+    # adding a window to a house that has subentries.
+    window = "config_subentries.window"
+    needs.need(f"{window}.initiate_flow.user")
+    needs.need(f"{window}.initiate_flow.reconfigure")
+    needs.need(f"{window}.entry_type")
+    for key in (*ERROR_KEYS, ERROR_COVER_IN_USE, ERROR_COVER_TYPE):
+        needs.need(f"{window}.error.{key}")
+    for reason in (
+        "already_configured",
+        "reconfigure_successful",
+        ABORT_CONSOLIDATE_FIRST,
+    ):
+        needs.need(f"{window}.abort.{reason}")
+    needs.need(f"config.abort.{ABORT_WINDOW_ADDED}")
+    needs.need(f"options.error.{ERROR_HOUSE_SETTING}")
+    needs.need(f"options.abort.{ABORT_NOT_LIFTED}")
     # Cross-field errors (settings/validate.py): the wizard and the options
     # form run every rule.
     for key in ERROR_KEYS:
@@ -448,7 +564,7 @@ async def test_flow_strings_cover_every_form(hass, strings: dict[str, Any]) -> N
     have = {
         key
         for key, _ in _leaves(strings)
-        if key.split(".")[0] in {"config", "options", "selector"}
+        if key.split(".")[0] in {"config", "config_subentries", "options", "selector"}
     }
     missing = sorted(needs.required - have)
     stale = sorted(have - needs.allowed)

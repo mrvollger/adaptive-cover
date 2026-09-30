@@ -11,15 +11,17 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE
+from homeassistant.const import PERCENTAGE, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.util import dt as dt_util
+from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info, window_attributes
 from .entity_surface import apply_surface, window_surface
+from .windows import WindowEntry, as_window
 
 
 async def async_setup_entry(
@@ -27,10 +29,28 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Initialize Adaptive Cover config entry."""
+    """Set up a legacy window's sensors, or the house's windows' (P7)."""
+    from .hub import is_hub_entry
 
+    if is_hub_entry(config_entry):
+        from .house import async_setup_house_platform
+
+        await async_setup_house_platform(
+            hass, config_entry, Platform.SENSOR, window_entities
+        )
+        return
+    async_add_entities(
+        window_entities(hass, as_window(config_entry), config_entry.runtime_data)
+    )
+
+
+def window_entities(
+    hass: HomeAssistant,
+    config_entry: WindowEntry,
+    coordinator: AdaptiveDataUpdateCoordinator,
+) -> list[Entity]:
+    """Return one window's sensors."""
     name = config_entry.data["name"]
-    coordinator: AdaptiveDataUpdateCoordinator = config_entry.runtime_data
 
     sensor = AdaptiveCoverSensorEntity(
         config_entry.entry_id, hass, config_entry, name, coordinator
@@ -64,7 +84,7 @@ async def async_setup_entry(
     last_change = AdaptiveCoverLastChangeSensorEntity(
         config_entry.entry_id, hass, config_entry, name, coordinator
     )
-    async_add_entities([sensor, start, end, control, next_change, last_change])
+    return [sensor, start, end, control, next_change, last_change]
 
 
 class AdaptiveCoverSensorEntity(

@@ -199,7 +199,7 @@ async def test_regression_unload_cancels_arrival_poll(hass, freezer):
         hass, freezer, date="2026-03-20", start_at="10:00", initial_position=100
     )
     assert house.auto_moves("cover.shade"), "no startup command, no poll armed"
-    await hass.config_entries.async_unload(house.entry.entry_id)
+    await hass.config_entries.async_unload(house.entries[0].entry_id)
     await hass.async_block_till_done()
 
     await house.advance_to("10:10")  # past the 125 s poll
