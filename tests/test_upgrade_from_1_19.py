@@ -94,11 +94,20 @@ def _is_alias(uid: str) -> bool:
     return uid.endswith("#switch") and not uid.startswith(HUB_UNIQUE_ID)
 
 
+def _our_devices(hass) -> list[dr.DeviceEntry]:
+    """Every device of an adaptive_cover config entry (no deprecated registry reads)."""
+    dev_reg = dr.async_get(hass)
+    return [
+        device
+        for entry in hass.config_entries.async_entries(DOMAIN)
+        for device in dr.async_entries_for_config_entry(dev_reg, entry.entry_id)
+    ]
+
+
 def _devices(hass) -> dict[str, tuple]:
     """Every adaptive_cover device by id: what a person sees of it."""
-    dev_reg = dr.async_get(hass)
     found = {}
-    for device in dev_reg.devices.values():
+    for device in _our_devices(hass):
         keys = sorted(value for domain, value in device.identifiers if domain == DOMAIN)
         if keys:
             found[device.id] = (
@@ -138,7 +147,6 @@ def _rows(hass) -> dict[str, tuple]:
 
 def _placement(hass) -> dict[str, tuple]:
     """Where every row and device belongs (config entry, subentry, via)."""
-    dev_reg = dr.async_get(hass)
     rows = {
         f"row {row.unique_id}#{row.domain}": (
             row.config_entry_id,
@@ -154,7 +162,7 @@ def _placement(hass) -> dict[str, tuple]:
             device.config_subentry_id,
             device.via_device_id,
         )
-        for device in dev_reg.devices.values()
+        for device in _our_devices(hass)
         if any(domain == DOMAIN for domain, _ in device.identifiers)
     }
     return rows | devices
