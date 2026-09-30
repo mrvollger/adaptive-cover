@@ -15,7 +15,6 @@ import voluptuous as vol
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util.unit_system import METRIC_SYSTEM, US_CUSTOMARY_SYSTEM
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     async_mock_service,
 )
 
@@ -38,6 +37,7 @@ from custom_components.adaptive_cover.const import (
 )
 from custom_components.adaptive_cover.settings.schema import add_entry_baseline
 
+from .house_model import mock_window_entry
 from .conftest import COMMON_OPTIONS
 from .window_form import start_add
 from .window_handle import window_settings
@@ -72,8 +72,8 @@ async def _setup_climate_entry(hass, *, low, high, reading, unit):
     )
     hass.states.async_set(COVER, "open", {"current_position": 60})
     async_mock_service(hass, "cover", "set_cover_position")
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "Units test", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -86,7 +86,6 @@ async def _setup_climate_entry(hass, *, low, high, reading, unit):
             CONF_TEMP_HIGH: high,
         },
     )
-    entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     return entry
@@ -259,8 +258,9 @@ async def test_regression_thresholds_unit_aware_everywhere(
     entry = await _setup_climate_entry(
         hass, low=None, high=None, reading=shapes[CONF_TEMP_LOW][2], unit=unit
     )
+    # The house settings form (the per-window options form is gone, P8).
     result = await hass.config_entries.options.async_init(entry.entry_id)
-    climate = result["data_schema"].schema["climate"].schema
+    climate = result["data_schema"].schema["house_climate"].schema
     hass.config_entries.options.async_abort(result["flow_id"])
     registry = er.async_get(hass)
     for key, (low, high, default) in shapes.items():

@@ -331,10 +331,10 @@
  {
   "id": "M39",
   "file": "custom_components/adaptive_cover/layers.py",
-  "function": "window_options_after",
+  "function": "window_record_after",
   "description": "options merge inverted: existing options win over the requested changes",
   "patch": "M39_settings_merge_inverted.patch",
-  "deviation": "roadmap filed this under coordinator.py 'config merge'; no literal data/options merge exists there. Since the P5 flip the merge of a window's edits (change_settings, the options form) into its options lives in layers.window_options_after."
+  "deviation": "roadmap filed this under coordinator.py 'config merge'; no literal data/options merge exists there. Since the P5 flip the merge of a window's edits (change_settings, Reconfigure) into its stored settings lives in layers.window_record_after (v2.1: the window's geometry)."
  },
  {
   "id": "M40",
@@ -393,13 +393,6 @@
   "patch": "M48_hold_ignores_its_duration.patch"
  },
  {
-  "id": "M51",
-  "file": "custom_components/adaptive_cover/runtime/mode.py",
-  "function": "restored_mode",
-  "description": "Mode restore ignores the legacy switch fallback: a window whose Toggle Control was off comes back in auto on the first boot after the flip",
-  "patch": "M51_mode_restore_ignores_switch_fallback.patch"
- },
- {
   "id": "M90",
   "file": "custom_components/adaptive_cover/layers.py",
   "function": "effective_settings",
@@ -433,13 +426,6 @@
   "function": "differing_keys",
   "description": "the shadow comparison ignores a differing key: only one-time options are compared, so a changed recurring option raises no repair issue",
   "patch": "M70_shadow_diff_ignores_layered_key.patch"
- },
- {
-  "id": "M71",
-  "file": "custom_components/adaptive_cover/shadow.py",
-  "function": "_switch_state",
-  "description": "the lift ignores a switch's restored state and records its initial state instead (a switch the user turned on is lost at the flip)",
-  "patch": "M71_switch_capture_ignores_restored_state.patch"
  },
  {
   "id": "M52",
@@ -520,20 +506,6 @@
   "patch": "M83_cover_type_switch_not_shown.patch"
  },
  {
-  "id": "M100",
-  "file": "custom_components/adaptive_cover/consolidate.py",
-  "function": "async_reparent_window",
-  "description": "consolidation moves an entity row to the house entry without its window subentry (HA then drops it when the device moves)",
-  "patch": "M100_consolidation_drops_subentry_link.patch"
- },
- {
-  "id": "M101",
-  "file": "custom_components/adaptive_cover/consolidate.py",
-  "function": "_async_add_subentry",
-  "description": "the window subentry loses the window's stored overrides: after consolidation it re-adopts them from the legacy keys, so an edit made since the P5 flip is lost",
-  "patch": "M101_resolved_settings_change_after_consolidation.patch"
- },
- {
   "id": "M102",
   "file": "custom_components/adaptive_cover/house.py",
   "function": "HouseRuntime.async_sync",
@@ -541,10 +513,80 @@
   "patch": "M102_listener_rebuilds_every_window.patch"
  },
  {
-  "id": "M103",
-  "file": "custom_components/adaptive_cover/consolidate.py",
-  "function": "async_reparent_window",
-  "description": "consolidation moves a window's entities but leaves its device on the window entry (plan M50)",
-  "patch": "M103_consolidation_leaves_the_device_unmoved.patch"
+  "id": "M130",
+  "file": "custom_components/adaptive_cover/upgrade.py",
+  "function": "async_migrate_house",
+  "description": "the house migrates while window entries are left: v2.0.x can no longer finish the consolidation",
+  "patch": "M130_migrates_with_window_entries_left.patch"
+ },
+ {
+  "id": "M131",
+  "file": "custom_components/adaptive_cover/upgrade.py",
+  "function": "_is_alias_row",
+  "description": "the migration keeps the window switch aliases' registry rows",
+  "patch": "M131_switch_alias_rows_kept.patch"
+ },
+ {
+  "id": "M132",
+  "file": "custom_components/adaptive_cover/upgrade.py",
+  "function": "house_options_3_1",
+  "description": "the house keeps the hub's leftover options (its geometry and its group listing its own cover)",
+  "patch": "M132_hub_leftovers_kept.patch"
+ },
+ {
+  "id": "M133",
+  "file": "custom_components/adaptive_cover/settings/window_record.py",
+  "function": "record_from_v2_0",
+  "description": "a migrated window loses its own overrides: it acts on what it would inherit (an edit made since the P5 flip is lost)",
+  "patch": "M133_migrated_window_loses_overrides.patch"
+ },
+ {
+  "id": "M134",
+  "file": "custom_components/adaptive_cover/settings/window_record.py",
+  "function": "GEOMETRY_KEYS",
+  "description": "the window record drops a one-time setting (max_elevation): a window forgets its sun limit",
+  "patch": "M134_record_drops_a_one_time_setting.patch"
+ },
+ {
+  "id": "M135",
+  "file": "custom_components/adaptive_cover/upgrade.py",
+  "function": "async_check_consolidate_issue",
+  "description": "a house with window entries raises no consolidate_first repair issue (nothing says why no shade moves)",
+  "patch": "M135_no_consolidate_first_nag.patch"
+ },
+ {
+  "id": "M136",
+  "file": "custom_components/adaptive_cover/upgrade.py",
+  "function": "async_migrate_house",
+  "description": "the migration leaves the house at major version 2: v2.0.x would load a house it cannot read",
+  "patch": "M136_house_stays_2_x.patch"
+ },
+ {
+  "id": "M137",
+  "file": "custom_components/adaptive_cover/windows.py",
+  "function": "WindowEntry.name",
+  "description": "a window's device takes its subentry title instead of its stored name (a window whose title was renamed gets a new device name)",
+  "patch": "M137_device_takes_the_title.patch"
+ },
+ {
+  "id": "M138",
+  "file": "custom_components/adaptive_cover/house.py",
+  "function": "HouseRuntime.async_sync",
+  "description": "a change of only a window's overrides rebuilds the window (its entities drop out for a moment) instead of re-reading them",
+  "patch": "M138_overrides_change_rebuilds_the_window.patch"
+ },
+ {
+  "id": "M139",
+  "file": "custom_components/adaptive_cover/layers.py",
+  "function": "new_window_record",
+  "description": "a new window gets no overrides: it acts on what it inherits, not on the values it was created with",
+  "patch": "M139_new_window_without_overrides.patch"
+ },
+ {
+  "id": "M140",
+  "file": "custom_components/adaptive_cover/layers.py",
+  "function": "initial_house_options",
+  "description": "a fresh install's house stores nothing: its first window's values give way to the spec defaults",
+  "patch": "M140_fresh_house_stores_nothing.patch"
  }
 ]

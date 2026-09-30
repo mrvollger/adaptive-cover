@@ -15,7 +15,6 @@ from datetime import UTC, datetime
 import pytest
 from freezegun import freeze_time
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     async_mock_service,
 )
 
@@ -26,12 +25,12 @@ from custom_components.adaptive_cover.const import (
     CONF_HEIGHT_WIN,
     CONF_SENSOR_TYPE,
     CONF_SUNSET_POS,
-    DOMAIN,
     SensorType,
 )
 from custom_components.adaptive_cover.sun import SunData
 
 from .characterization.golden_lib import use_real_sun_data
+from .house_model import mock_window_entry
 from .conftest import COMMON_OPTIONS
 from .window_handle import WindowHandle
 
@@ -61,8 +60,8 @@ async def test_regression_entry_born_at_night_parks_at_sunset_position(
     calls = async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 100})
 
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "NightBorn", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -75,7 +74,6 @@ async def test_regression_entry_born_at_night_parks_at_sunset_position(
             "sunrise_offset": -20,
         },
     )
-    entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 

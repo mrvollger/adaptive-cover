@@ -29,25 +29,22 @@ from custom_components.adaptive_cover.const import (
     CONF_ENTITIES,
     CONF_EYE_HEIGHT,
     CONF_HEIGHT_WIN,
-    CONF_SENSOR_TYPE,
     CONF_SUNSET_POS,
     CONF_TEMP_LOW,
     DOMAIN,
-    SensorType,
 )
 
 from .conftest import COMMON_OPTIONS
+from .house_model import Window, mock_house
 from .window_handle import WindowHandle, window_settings
 
 OFFICE_COVER = "cover.office"
 DEN_COVER = "cover.den"
 
 
-def _entry(hass, name: str, cover: str) -> MockConfigEntry:
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        title=name,
-        data={"name": name, CONF_SENSOR_TYPE: SensorType.BLIND},
+def _window(name: str, cover: str) -> Window:
+    return Window(
+        name=name,
         options={
             **COMMON_OPTIONS,
             CONF_HEIGHT_WIN: 2.1,
@@ -55,14 +52,12 @@ def _entry(hass, name: str, cover: str) -> MockConfigEntry:
             CONF_ENTITIES: [cover],
         },
     )
-    entry.add_to_hass(hass)
-    return entry
 
 
-def _place(hass, entry, area_id: str) -> None:
+def _place(hass, window: Window, area_id: str) -> None:
     devices = dr.async_get(hass)
     device = devices.async_get_device_by_identifier(
-        (DOMAIN, entry.entry_id), config_entry_id=entry.entry_id
+        (DOMAIN, window.key), config_entry_id=_hub(hass).entry_id
     )
     devices.async_update_device(device.id, area_id=area_id)
 
@@ -77,17 +72,17 @@ async def house(hass, mock_sun_entity):
     areas = ar.async_get(hass)
     office = areas.async_create("Office", floor_id=upstairs.floor_id)
     den = areas.async_create("Den", floor_id=downstairs.floor_id)
-    windows = {}
-    for name, cover, area in (
-        ("Office", OFFICE_COVER, office),
-        ("Den", DEN_COVER, den),
-    ):
+    windows = {
+        "Office": _window("Office", OFFICE_COVER),
+        "Den": _window("Den", DEN_COVER),
+    }
+    for cover in (OFFICE_COVER, DEN_COVER):
         hass.states.async_set(cover, "open", {"current_position": 60})
-        entry = _entry(hass, name, cover)
-        assert await hass.config_entries.async_setup(entry.entry_id)
-        await hass.async_block_till_done()
-        _place(hass, entry, area.id)
-        windows[name] = entry
+    entry = mock_house(hass, list(windows.values()))
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    _place(hass, windows["Office"], office.id)
+    _place(hass, windows["Den"], den.id)
     await hass.async_block_till_done()
     return {
         "office": windows["Office"],
@@ -116,8 +111,7 @@ def _hub(hass) -> MockConfigEntry:
 
 async def test_house_setting_reaches_every_window_without_a_reload(hass, house):
     handles = {
-        name: WindowHandle.by_key(hass, house[name].entry_id)
-        for name in ("office", "den")
+        name: WindowHandle.by_key(hass, house[name].key) for name in ("office", "den")
     }
     before = {name: handle.teardowns for name, handle in handles.items()}
 
@@ -126,7 +120,7 @@ async def test_house_setting_reaches_every_window_without_a_reload(hass, house):
     assert response == {"scope": "house", "id": None, "changed": [CONF_SUNSET_POS]}
     assert _hub(hass).options["house"][CONF_SUNSET_POS] == 20
     for name in ("office", "den"):
-        settings = await window_settings(hass, house[name].entry_id)
+        settings = await window_settings(hass, house[name].key)
         assert settings[CONF_SUNSET_POS] == 20, name
         assert handles[name].teardowns == before[name], name
     # Setting it again changes nothing.
@@ -145,11 +139,9 @@ async def test_room_setting_overrides_the_house_for_that_room(hass, house):
     assert _hub(hass).options["areas"][house["office_area"]] == {
         CONF_DEFAULT_HEIGHT: 80
     }
-    assert (await window_settings(hass, office.entry_id))[CONF_DEFAULT_HEIGHT] == 80
-    assert (await window_settings(hass, den.entry_id))[
-        CONF_DEFAULT_HEIGHT
-    ] == house_default
-    assert WindowHandle.by_key(hass, office.entry_id).attributes["provenance"] == {
+    assert (await window_settings(hass, office.key))[CONF_DEFAULT_HEIGHT] == 80
+    assert (await window_settings(hass, den.key))[CONF_DEFAULT_HEIGHT] == house_default
+    assert WindowHandle.by_key(hass, office.key).attributes["provenance"] == {
         CONF_DEFAULT_HEIGHT: "area"
     }
 
@@ -158,7 +150,7 @@ async def test_room_setting_overrides_the_house_for_that_room(hass, house):
         hass, scope="area", id=house["office_area"], **{CONF_DEFAULT_HEIGHT: None}
     )
     assert house["office_area"] not in _hub(hass).options["areas"]
-    assert (await window_settings(hass, office.entry_id))[
+    assert (await window_settings(hass, office.key))[
         CONF_DEFAULT_HEIGHT
     ] == house_default
 
@@ -169,13 +161,13 @@ async def test_floor_setting_and_precedence(hass, house):
     await _set_profile(
         hass, scope="area", id=house["office_area"], **{CONF_TEMP_LOW: 19}
     )
-    assert (await window_settings(hass, office.entry_id))[CONF_TEMP_LOW] == 19
+    assert (await window_settings(hass, office.key))[CONF_TEMP_LOW] == 19
     # The area beats the floor; without it the floor applies.
     await _set_profile(
         hass, scope="area", id=house["office_area"], **{CONF_TEMP_LOW: None}
     )
-    assert (await window_settings(hass, office.entry_id))[CONF_TEMP_LOW] == 18
-    assert (await window_settings(hass, house["den"].entry_id))[CONF_TEMP_LOW] != 18
+    assert (await window_settings(hass, office.key))[CONF_TEMP_LOW] == 18
+    assert (await window_settings(hass, house["den"].key))[CONF_TEMP_LOW] != 18
 
 
 async def test_window_value_beats_the_room(hass, house):
@@ -183,14 +175,14 @@ async def test_window_value_beats_the_room(hass, house):
     await hass.services.async_call(
         DOMAIN,
         "change_settings",
-        {"config_entry": office.entry_id, CONF_EYE_HEIGHT: 1.6},
+        {"config_entry": office.key, CONF_EYE_HEIGHT: 1.6},
         blocking=True,
     )
     await hass.async_block_till_done()
     await _set_profile(
         hass, scope="area", id=house["office_area"], **{CONF_EYE_HEIGHT: 1.3}
     )
-    assert (await window_settings(hass, office.entry_id))[CONF_EYE_HEIGHT] == 1.6
+    assert (await window_settings(hass, office.key))[CONF_EYE_HEIGHT] == 1.6
 
 
 async def test_a_window_moved_to_another_room_takes_its_settings(hass, house):
@@ -202,8 +194,8 @@ async def test_a_window_moved_to_another_room_takes_its_settings(hass, house):
     # The next refresh (a sun update) reads the new room.
     hass.states.async_set("sun.sun", "above_horizon", {"azimuth": 181, "elevation": 44})
     await hass.async_block_till_done()
-    assert (await window_settings(hass, office.entry_id))[CONF_DEFAULT_HEIGHT] == 70
-    assert (await window_settings(hass, den.entry_id))[CONF_DEFAULT_HEIGHT] == 70
+    assert (await window_settings(hass, office.key))[CONF_DEFAULT_HEIGHT] == 70
+    assert (await window_settings(hass, den.key))[CONF_DEFAULT_HEIGHT] == 70
 
 
 @pytest.mark.parametrize(

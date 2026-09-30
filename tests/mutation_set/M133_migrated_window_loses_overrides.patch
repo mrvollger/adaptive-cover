@@ -1,0 +1,11 @@
+diff --git a/custom_components/adaptive_cover/settings/window_record.py b/custom_components/adaptive_cover/settings/window_record.py
+--- a/custom_components/adaptive_cover/settings/window_record.py
++++ b/custom_components/adaptive_cover/settings/window_record.py
+@@ -306,6 +306,6 @@
+         name,
+         str(entry_data.get(CONF_SENSOR_TYPE) or SensorType.BLIND),
+         options,
+-        overrides=overrides,
++        overrides=None,
+         window_key=str(stored_key) if stored_key else None,
+     )

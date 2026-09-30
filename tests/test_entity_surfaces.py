@@ -1,7 +1,7 @@
 """Behavior tests for the per-entry entity surfaces (wp9-entity-surfaces).
 
-Every assertion here goes through public seams only: a real config entry set
-up via MockConfigEntry, mocked cover services, hass.states reads resolved
+Every assertion here goes through public seams only: a real house entry
+with one window set up (tests/house_model.py), mocked cover services, hass.states reads resolved
 through the entity registry, and the documented diagnostics hook. No
 coordinator internals, no private attributes.
 
@@ -24,7 +24,6 @@ from homeassistant.util import dt as dt_util
 from zoneinfo import ZoneInfo
 import pytest
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     async_mock_service,
 )
 
@@ -63,6 +62,7 @@ from .characterization.golden_lib import (
     patch_sun_data,
 )
 from .conftest import COMMON_OPTIONS
+from .house_model import mock_window_entry, window_subentry
 from .window_handle import WindowHandle
 
 COVER = "cover.test_cover"
@@ -74,10 +74,11 @@ POS_AT_30 = 14  # 0.5 * tan(30) = 0.289 -> 13.75
 
 
 def _entry(hass, name="Surface Test", covers=(COVER,), **extra):
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={"name": name, CONF_SENSOR_TYPE: SensorType.BLIND},
-        options={
+    """A house with one window (its key is the house's entry_id)."""
+    return mock_window_entry(
+        hass,
+        {"name": name, CONF_SENSOR_TYPE: SensorType.BLIND},
+        {
             **COMMON_OPTIONS,
             CONF_HEIGHT_WIN: 2.1,
             CONF_DISTANCE: 0.5,
@@ -86,8 +87,6 @@ def _entry(hass, name="Surface Test", covers=(COVER,), **extra):
             **extra,
         },
     )
-    entry.add_to_hass(hass)
-    return entry
 
 
 async def _setup(hass, entry):
@@ -426,7 +425,11 @@ class TestSunInfrontBinary:
 
 
 class TestConditionalEntityCreation:
-    """Gap conditional-entity-creation: exactly the documented entity sets."""
+    """Gap conditional-entity-creation: exactly the documented entity sets.
+
+    Since v2.1 (P8) a window has no switches: its control state is its
+    Mode, and the toggles are house settings (the house's switches).
+    """
 
     SWITCHES = (
         "Toggle Control",
@@ -435,6 +438,13 @@ class TestConditionalEntityCreation:
         "Outside Temperature",
         "Lux",
         "Irradiance",
+    )
+    HOUSE_SWITCHES = (
+        "climate_on",
+        "manual_detection",
+        "use_outside_temp",
+        "use_lux",
+        "use_irradiance",
     )
 
     def _present_switches(self, hass, entry):
@@ -460,21 +470,20 @@ class TestConditionalEntityCreation:
         for binary in ("Sun Infront", "Manual Override"):
             assert _eid(hass, "binary_sensor", entry, binary), binary
 
-    async def test_covers_basic_mode_switch_set(
+    async def test_a_cover_brings_the_return_button_and_no_switch(
         self, hass, mock_sun_entity, cover_calls
     ):
         _set_cover(hass, 60)
         entry = _entry(hass)
         await _setup(hass, entry)
-        assert self._present_switches(hass, entry) == {
-            "Toggle Control",
-            "Manual Override",
-        }
+        assert self._present_switches(hass, entry) == set()
         assert _eid(hass, "button", entry, "Reset Manual Override") is not None
+        assert _eid(hass, "select", entry, "mode_select") is not None
 
-    async def test_climate_with_all_aux_entities_full_switch_set(
+    async def test_climate_adds_no_window_switch(
         self, hass, mock_sun_entity, cover_calls
     ):
+        """Climate with every aux entity: the toggles are the house's switches."""
         _set_cover(hass, 60)
         hass.states.async_set("sensor.indoor", "22.0")
         hass.states.async_set("sensor.outdoor", "20.0")
@@ -498,28 +507,14 @@ class TestConditionalEntityCreation:
             },
         )
         await _setup(hass, entry)
-        assert self._present_switches(hass, entry) == set(self.SWITCHES)
-
-    async def test_climate_without_aux_entities_climate_switch_only(
-        self, hass, mock_sun_entity, cover_calls
-    ):
-        _set_cover(hass, 60)
-        hass.states.async_set("sensor.indoor", "22.0")
-        entry = _entry(
-            hass,
-            **{
-                CONF_CLIMATE_MODE: True,
-                CONF_TEMP_ENTITY: "sensor.indoor",
-                CONF_TEMP_LOW: 21,
-                CONF_TEMP_HIGH: 25,
-            },
-        )
-        await _setup(hass, entry)
-        assert self._present_switches(hass, entry) == {
-            "Toggle Control",
-            "Manual Override",
-            "Climate Mode",
-        }
+        assert self._present_switches(hass, entry) == set()
+        registry = er.async_get(hass)
+        for toggle in self.HOUSE_SWITCHES:
+            entity_id = registry.async_get_entity_id(
+                "switch", DOMAIN, f"adaptive_cover_hub_{toggle}"
+            )
+            assert entity_id is not None, toggle
+            assert hass.states.get(entity_id) is not None, toggle
 
 
 class TestContextualLogging:
@@ -549,7 +544,7 @@ class TestDiagnostics:
         entry = _entry(hass, name="Diag Test")
         await _setup(hass, entry)
         payload = await async_get_config_entry_diagnostics(hass, entry)
-        assert set(payload) == {
+        keys = {
             "title",
             "type",
             "identifier",
@@ -558,12 +553,24 @@ class TestDiagnostics:
             "settings",
             "settings_provenance",
         }
+        # The house entry's download: the house, and each window under
+        # ``windows`` (by window key).
+        assert set(payload) == {*keys, "windows"}
         assert payload["type"] == "config_entry"
         assert payload["identifier"] == entry.entry_id
         assert dict(payload["config_data"]) == dict(entry.data)
         assert dict(payload["config_options"]) == dict(entry.options)
-        # P5 flip: what the window acts on (every option, resolved) and the
-        # non-house sources (none: the house was lifted from this window).
-        assert payload["settings"]["set_azimuth"] == entry.options["set_azimuth"]
-        assert payload["settings"]["climate_on"] is True
-        assert payload["settings_provenance"] == {}
+        assert payload["settings"] is None
+        window = payload["windows"][entry.entry_id]
+        assert set(window) == keys
+        assert window["type"] == "config_subentry"
+        assert window["identifier"] == entry.entry_id
+        subentry = window_subentry(entry)
+        assert window["config_data"] == dict(subentry.data)
+        assert window["config_options"]["set_azimuth"] == 180
+        assert window["config_options"]["cover_entity_id"] == COVER
+        # What the window acts on (every option, resolved) and the non-house
+        # sources (none: the house was lifted from this window).
+        assert window["settings"]["set_azimuth"] == 180
+        assert window["settings"]["climate_on"] is True
+        assert window["settings_provenance"] == {}

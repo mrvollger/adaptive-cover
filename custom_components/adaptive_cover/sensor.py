@@ -21,7 +21,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info, window_attributes
 from .entity_surface import apply_surface, window_surface
-from .windows import WindowEntry, as_window
+from .windows import WindowEntry
 
 
 async def async_setup_entry(
@@ -29,18 +29,11 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up a legacy window's sensors, or the house's windows' (P7)."""
-    from .hub import is_hub_entry
+    """Set up the house's windows' sensors."""
+    from .house import async_setup_house_platform
 
-    if is_hub_entry(config_entry):
-        from .house import async_setup_house_platform
-
-        await async_setup_house_platform(
-            hass, config_entry, Platform.SENSOR, window_entities
-        )
-        return
-    async_add_entities(
-        window_entities(hass, as_window(config_entry), config_entry.runtime_data)
+    await async_setup_house_platform(
+        hass, config_entry, Platform.SENSOR, window_entities
     )
 
 
@@ -50,7 +43,7 @@ def window_entities(
     coordinator: AdaptiveDataUpdateCoordinator,
 ) -> list[Entity]:
     """Return one window's sensors."""
-    name = config_entry.data["name"]
+    name = config_entry.name
 
     sensor = AdaptiveCoverSensorEntity(
         config_entry.entry_id, hass, config_entry, name, coordinator
@@ -170,7 +163,7 @@ class AdaptiveCoverTimeSensorEntity(
         self.hass = hass
         self.config_entry = config_entry
         self._name = name
-        self._cover_type = self.config_entry.data["sensor_type"]
+        self._cover_type = self.config_entry.cover_type
         self._sensor_name = sensor_name
         apply_surface(self, window_surface("sensor", sensor_name))
         self._attr_device_info = adaptive_cover_device_info(config_entry)
@@ -215,7 +208,7 @@ class AdaptiveCoverControlSensorEntity(
         self.hass = hass
         self.config_entry = config_entry
         self._name = name
-        self._cover_type = self.config_entry.data["sensor_type"]
+        self._cover_type = self.config_entry.cover_type
         self._attr_device_info = adaptive_cover_device_info(config_entry)
 
     @callback
@@ -272,7 +265,7 @@ class AdaptiveCoverNextChangeSensorEntity(
         event = self.data.states.get("next_change_event")
         time = self.data.states.get("next_change_time")
         pos = self.data.states.get("next_change_position")
-        if event and time:
+        if event and time and pos is not None:
             local_time = dt_util.as_local(time)
             time_str = local_time.strftime("%H:%M")
             return f"{event} at {time_str} \u2192 {int(pos)}%"

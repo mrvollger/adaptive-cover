@@ -22,32 +22,6 @@
           "summer": "mdi:heat-wave"
         }
       }
-    },
-    "switch": {
-      "control_toggle": {
-        "default": "mdi:toggle-switch-outline",
-        "state": {
-          "off": "mdi:toggle-switch-off-outline"
-        }
-      },
-      "temp_toggle": {
-        "default": "mdi:thermometer"
-      },
-      "switch_mode": {
-        "default": "mdi:home-thermometer-outline"
-      },
-      "lux_toggle": {
-        "default": "mdi:brightness-5",
-        "state": {
-          "off": "mdi:brightness-1"
-        }
-      },
-      "irradiance_toggle": {
-        "default": "mdi:sun-wireless-outline",
-        "state": {
-          "off": "mdi:sun-wireless"
-        }
-      }
     }
   }
 }

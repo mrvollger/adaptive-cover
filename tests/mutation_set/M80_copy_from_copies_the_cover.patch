@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/settings/schema.py b/custom_components/adaptive_cover/settings/schema.py
 --- a/custom_components/adaptive_cover/settings/schema.py
 +++ b/custom_components/adaptive_cover/settings/schema.py
-@@ -324,7 +324,7 @@
+@@ -313,7 +313,7 @@
      values: dict[str, Any] = {
          opt.key: copy.deepcopy(options.get(opt.key))
          for opt in OPTS

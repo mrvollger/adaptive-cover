@@ -1,7 +1,8 @@
 # Simulation harness — test the house without the house
 
-`harness.py` runs the **real integration** (config entry, coordinator,
-listeners, entities) against a fully simulated house:
+`harness.py` runs the **real integration** (the house entry with one window
+subentry per cover, coordinators, listeners, entities) against a fully
+simulated house:
 
 - **Fake shades** that behave like the real Smartwings/Zigbee covers: an
   `opening`/`closing` intermediate state the moment a command arrives, a
@@ -42,22 +43,22 @@ async def test_my_scenario(hass, freezer):
 
 - `date`, `location`, `step_minutes`, `covers`, `options`, `cover_type`,
   `initial_position`, `travel_seconds` — scenario shape.
-- `covers=[a, b]` creates **two windows**, one config entry per cover
-  (a window drives one cover: ADR 0002, plan P3). The windows share
-  `options` and `cover_type`; the first is "Sim House", the next
-  "Sim House 2", and so on. `house.entry` is the first window's entry,
-  `house.entries` all of them. A config entry that drives several covers
-  (from before P3) is not a SimHouse shape: its "split" repair and legacy
-  behavior are pinned in `tests/test_migration_1_3.py`.
-- `model="legacy"|"house"` (P7) — the config model. `legacy` (the default)
-  runs one config entry per window; `house` runs one house entry (2.x) with
-  a `window` subentry per cover. Then `house.entries` is `[house entry]`
-  and `house.entry` the first window's view (`entry_id` = its window key,
-  `options` = what it stores). `ADAPTIVE_COVER_SIM_MODEL=house` makes
-  `house` the default: `pixi run test-house-model` runs the whole tier
-  that way. `await house.consolidate()` fixes the "Consolidate" repair
-  mid-scenario (legacy → house, same keys and entities); the house replay
-  uses it (`tests/replay`, `test_house_replay_consolidated`).
+- The house is one house entry (3.1) with a `window` subentry per cover
+  (ADR 0001; a window drives one cover: ADR 0002). It is built by
+  `tests/house_model.py`: the house options are the windows' recurring
+  values lifted into house/floor/area profiles and each subentry stores the
+  window's geometry, cover and overrides, so every window acts on exactly
+  `options`. `house.house_entry` (and `house.entries == [house_entry]`) is
+  the entry to set up; `house.entry` is the first window as the house
+  holds it (`windows.WindowEntry`: `entry_id` = its window key, `options` =
+  its one-time options; recurring values are read with
+  `await house.window().settings()`).
+- `covers=[a, b]` creates **two windows**, one subentry per cover. The
+  windows share `options` and `cover_type`; the first is "Sim House", the
+  next "Sim House 2", and so on.
+- `window_keys=[...]` — the windows' keys in the order of `covers`
+  (default: their subentry_ids). A migrated window keeps its old
+  entry_id as its key; the house replay uses the live entry_ids.
 - `start_at="04:00"` — when the sim (and HA) starts. A daytime value
   (`"13:00"`) models HA starting mid-day with the sun already actionable,
   for startup/catch-up scenarios.
@@ -96,21 +97,22 @@ async def test_my_scenario(hass, freezer):
 ## Lifecycle
 
 - `await house.set_options(**changes)` — the user edits every window's
-  settings: one `adaptive_cover.change_settings` call per window (P5 flip:
-  one-time settings go to the options and reload the window, recurring
-  ones become the window's own values without a reload), then re-wins the
-  fake cover services and keeps attributing commands to the rebuilt
-  windows. With no changes it models saving the dialog unchanged (a
-  reload).
+  settings: one `adaptive_cover.change_settings` call per window (one-time
+  settings go to the window's geometry and rebuild that window alone,
+  recurring ones become the window's own values without a rebuild), then
+  re-wins the fake cover services and keeps attributing commands to the
+  rebuilt windows. With no changes it reloads the house entry.
 - `await house.restart(at=None, restore=True, seed_states=None, cold=False)`
   — HA restart: optionally advance first, capture every window's entity
   states, unload, seed `mock_restore_cache` (or `seed_states={entity_id:
-  "off"}` overrides; `restore=False` skips capture so defaults apply), set
-  up again on the same entries. The timeline and shade states persist
-  across the restart. Seeding a window's `toggle_control` switch drops its
-  captured Mode, so the window restores as on its first boot after the P5
-  flip (from that switch). `cold=True` also drops the in-memory
-  manual-override store, as a real process restart does.
+  "off"}` overrides, e.g. `{house.eid("select", "mode_select"): "off"}`;
+  `restore=False` skips capture so defaults apply), set up again on the
+  same house entry. The timeline and shade states persist across the
+  restart. `cold=True` also drops the in-memory manual-override store, as
+  a real process restart does.
+- `await house.teardown()` — unloads and removes the house entry (and its
+  entities' restore-cache records): a second SimHouse created later in
+  the same test is then the one house.
 
 ## Device faults
 
@@ -138,8 +140,8 @@ async def test_my_scenario(hass, freezer):
   startup command.
 - `house.eid(domain, key, cover=None)` — resolve a window's entities by
   unique-id suffix via the entity registry (`"cover_position"`,
-  `"toggle_control"`, `"manual_override"`, `"climate_mode"`,
-  `"reset_manual_override"`, `"mode_select"`, `"sun_infront"`, ...).
+  `"manual_override"` (the binary sensor), `"reset_manual_override"`,
+  `"mode_select"`, `"sun_infront"`, `"control_method"`, ...).
   `cover` picks the window; the default is the first. The same `cover=`
   keyword works on `entity`, `sensor_value`, `sensor_attr`, `toggle`,
   `press` and `select_option`.
@@ -152,8 +154,15 @@ async def test_my_scenario(hass, freezer):
   service calls with a simulated-user context. The reset button returns
   at once (it does not wait for covers to land); should a press ever
   block, `press()` drives short sub-steps until it completes.
-  `toggle("toggle_control", on)` sets the window's Mode (P5 flip: the
-  switch is a hidden alias): on selects `auto`, off selects `off`.
+  Windows have no switches since v2.1 (the six switches were hidden
+  aliases since the P5 flip). `toggle(key, on)` keeps the old keys:
+  `toggle("toggle_control", on)` sets the window's Mode (on selects
+  `auto`, off selects `off`); `manual_override`, `climate_mode`,
+  `outside_temperature`, `lux` and `irradiance` flip the house's switch
+  of that toggle (`manual_detection`, `climate_on`, `use_outside_temp`,
+  `use_lux`, `use_irradiance`: house settings). `house.switch(key)` reads
+  the same way (`"on"` / `"off"`), and `house.house_switch_eid(key)` is
+  the house switch's entity_id.
 - `await house.hold(cover=, area_id=, duration=, position=)` — a REAL
   `adaptive_cover.hold` call: one window's Mode select, or every window in
   an area. `house.place(cover, "Office", floor="Upstairs")` puts a

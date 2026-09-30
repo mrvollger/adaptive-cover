@@ -1,9 +1,12 @@
 """House-replay goldens: the 15 live windows on 6 dates, byte for byte.
 
-Each case replays one live window entry (from the sanitized snapshot in
+Each case replays one live window (from the sanitized snapshot in
 ``tests/fixtures/house_snapshot/``) through the real integration for one
-scripted local day and compares the rendered outbound command timeline and
-position-sensor trace against ``goldens/<window>__<date>.txt``. See
+scripted local day, the way the live house holds it on v2.1 (consolidated
+on v2.0.x, then migrated to 3.1), and compares the rendered outbound
+command timeline and position-sensor trace against
+``goldens/<window>__<date>.txt``. The goldens were recorded when each
+window was its own config entry: v2.1 must replay them byte for byte. See
 ``house_replay.py`` for the script and the rendering.
 
 To regenerate after an INTENDED behavior change:
@@ -77,20 +80,3 @@ def _assert_matches_golden(rendered: str, window, label: str) -> None:
             )
         )
         pytest.fail(f"House replay changed for {window.title} on {label}:\n{diff}")
-
-
-@pytest.mark.parametrize(
-    ("window", "label"),
-    CASES,
-    ids=[f"{window.slug}-{label}" for window, label in CASES],
-)
-async def test_house_replay_consolidated(hass, freezer, window, label):
-    """The same day through a house consolidated at 00:30 (P7): same golden.
-
-    The window entry becomes a subentry of the house entry (the repair
-    fix flow), keeping its key and entities; every outbound command and
-    sensor sample must match the legacy golden byte for byte.
-    """
-    replay = await run_replay(hass, freezer, window, label, consolidated=True)
-    assert golden_path(window, label).exists()
-    _assert_matches_golden(render(replay), window, label)

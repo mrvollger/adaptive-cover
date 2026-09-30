@@ -61,12 +61,13 @@ WINDOW_COVER = "custom_components/adaptive_cover/window_cover.py"
 SCHEMA = "custom_components/adaptive_cover/settings/schema.py"
 CONFIG_FLOW = "custom_components/adaptive_cover/config_flow.py"
 SETTINGS_SHADOW = "custom_components/adaptive_cover/settings/shadow.py"
-SHADOW = "custom_components/adaptive_cover/shadow.py"
 MODE = "custom_components/adaptive_cover/runtime/mode.py"
 LAYERS = "custom_components/adaptive_cover/layers.py"
 HOUSE_SETTINGS = "custom_components/adaptive_cover/house_settings.py"
-CONSOLIDATE = "custom_components/adaptive_cover/consolidate.py"
 HOUSE = "custom_components/adaptive_cover/house.py"
+UPGRADE = "custom_components/adaptive_cover/upgrade.py"
+WINDOW_RECORD = "custom_components/adaptive_cover/settings/window_record.py"
+WINDOWS = "custom_components/adaptive_cover/windows.py"
 
 
 @dataclass
@@ -661,14 +662,15 @@ MUTATIONS: list[Mutation] = [
         "M39",
         "settings_merge_inverted",
         LAYERS,
-        "window_options_after",
+        "window_record_after",
         "options merge inverted: existing options win over the requested changes",
-        "            options[key] = value\n            continue\n",
-        "            options.setdefault(key, value)\n            continue\n",
+        "                geometry[key] = value\n            continue\n",
+        "                geometry.setdefault(key, value)\n            continue\n",
         deviation="roadmap filed this under coordinator.py 'config merge'; no "
         "literal data/options merge exists there. Since the P5 flip the "
-        "merge of a window's edits (change_settings, the options form) into "
-        "its options lives in layers.window_options_after.",
+        "merge of a window's edits (change_settings, Reconfigure) into its "
+        "stored settings lives in layers.window_record_after (v2.1: the "
+        "window's geometry).",
     ),
     # ---- group G: entity surfaces & routing ----------------------------
     Mutation(
@@ -759,17 +761,6 @@ MUTATIONS: list[Mutation] = [
         "window.manager.reset_duration\n",
         "        length = window.manager.reset_duration\n",
     ),
-    Mutation(
-        "M51",
-        "mode_restore_ignores_switch_fallback",
-        MODE,
-        "restored_mode",
-        "Mode restore ignores the legacy switch fallback: a window whose "
-        "Toggle Control was off comes back in auto on the first boot after the "
-        "flip",
-        '    if legacy_switch == "off":\n        return Restored(Mode.OFF)\n',
-        "    if False:\n        return Restored(Mode.OFF)\n",
-    ),
     # P5 flip, batch 2: the runtime acts on the layered settings.
     Mutation(
         "M90",
@@ -778,8 +769,8 @@ MUTATIONS: list[Mutation] = [
         "effective_settings",
         "the runtime ignores a window's own values: every window acts on "
         "what it would inherit from its area, floor and the house",
-        "                hub.options,\n                overrides,\n",
-        "                hub.options,\n                WindowOverrides(),\n",
+        "            window.config_entry.options,\n            window.overrides,\n",
+        "            window.config_entry.options,\n            WindowOverrides(),\n",
     ),
     Mutation(
         "M91",
@@ -829,16 +820,6 @@ MUTATIONS: list[Mutation] = [
         "        for opt in spec\n"
         "        if opt.home is Level.WINDOW\n"
         "        and not same_value(resolved[opt.key], legacy[opt.key])\n",
-    ),
-    Mutation(
-        "M71",
-        "switch_capture_ignores_restored_state",
-        SHADOW,
-        "_switch_state",
-        "the lift ignores a switch's restored state and records its initial "
-        "state instead (a switch the user turned on is lost at the flip)",
-        "    return stored.state.state == STATE_ON\n",
-        "    return switch.initial\n",
     ),
     # ---- group H: P1 entity surface ----------------------------------------
     Mutation(
@@ -946,33 +927,7 @@ MUTATIONS: list[Mutation] = [
         "        if filled or cover_type != self.cover_type:\n",
         "        if filled:\n",
     ),
-    # P7 (v2.0): the house entry with window subentries; consolidation.
-    Mutation(
-        "M100",
-        "consolidation_drops_subentry_link",
-        CONSOLIDATE,
-        "async_reparent_window",
-        "consolidation moves an entity row to the house entry without its "
-        "window subentry (HA then drops it when the device moves)",
-        '            changes["config_subentry_id"] = subentry_id\n',
-        '            changes["config_subentry_id"] = None\n',
-    ),
-    Mutation(
-        "M101",
-        "resolved_settings_change_after_consolidation",
-        CONSOLIDATE,
-        "_async_add_subentry",
-        "the window subentry loses the window's stored overrides: after "
-        "consolidation it re-adopts them from the legacy keys, so an edit made "
-        "since the P5 flip is lost",
-        "        data=_frozen(window_subentry_data(entry.entry_id, entry.data, "
-        "entry.options)),\n",
-        "        data=_frozen(\n"
-        "            window_subentry_data(\n"
-        '                entry.entry_id, entry.data, {**entry.options, "overrides": None}\n'
-        "            )\n"
-        "        ),\n",
-    ),
+    # P7 (v2.0): the house entry with window subentries.
     Mutation(
         "M102",
         "listener_rebuilds_every_window",
@@ -980,22 +935,131 @@ MUTATIONS: list[Mutation] = [
         "HouseRuntime.async_sync",
         "the house's update listener rebuilds every window, not only the "
         "changed one (plan M49)",
-        "                if runtime.seen == self._seen(subentry_id):\n"
-        "                    continue\n",
-        "                if runtime.seen == self._seen(subentry_id):\n"
+        "                if runtime.seen == seen:\n                    continue\n",
+        "                if runtime.seen == seen:\n"
         "                    await self._async_stop_window(subentry_id)\n"
         "                    await self._async_start_window(subentry_id)\n"
         "                    continue\n",
     ),
+    # P8 (v2.1): the house migrates to 3.1; the legacy path refuses.
     Mutation(
-        "M103",
-        "consolidation_leaves_the_device_unmoved",
-        CONSOLIDATE,
-        "async_reparent_window",
-        "consolidation moves a window's entities but leaves its device on the "
-        "window entry (plan M50)",
-        "    if moved is None and legacy is not None:\n",
-        "    if False:\n",
+        "M130",
+        "migrates_with_window_entries_left",
+        UPGRADE,
+        "async_migrate_house",
+        "the house migrates while window entries are left: v2.0.x can no "
+        "longer finish the consolidation",
+        "    if windows := needs_consolidation(hass):\n",
+        "    if windows := []:\n",
+    ),
+    Mutation(
+        "M131",
+        "switch_alias_rows_kept",
+        UPGRADE,
+        "_is_alias_row",
+        "the migration keeps the window switch aliases' registry rows",
+        '        if row.domain == "switch" and suffix in SWITCH_ALIASES:\n'
+        "            return True\n",
+        '        if row.domain == "switch" and suffix in SWITCH_ALIASES:\n'
+        "            return False\n",
+    ),
+    Mutation(
+        "M132",
+        "hub_leftovers_kept",
+        UPGRADE,
+        "house_options_3_1",
+        "the house keeps the hub's leftover options (its geometry and its "
+        "group listing its own cover)",
+        "    return {key: value for key, value in options.items() if key in "
+        "HOUSE_OPTION_KEYS}\n",
+        "    return dict(options)\n",
+    ),
+    Mutation(
+        "M133",
+        "migrated_window_loses_overrides",
+        WINDOW_RECORD,
+        "record_from_v2_0",
+        "a migrated window loses its own overrides: it acts on what it would "
+        "inherit (an edit made since the P5 flip is lost)",
+        "        overrides=overrides,\n"
+        "        window_key=str(stored_key) if stored_key else None,\n",
+        "        overrides=None,\n"
+        "        window_key=str(stored_key) if stored_key else None,\n",
+    ),
+    Mutation(
+        "M134",
+        "record_drops_a_one_time_setting",
+        WINDOW_RECORD,
+        "GEOMETRY_KEYS",
+        "the window record drops a one-time setting (max_elevation): a window "
+        "forgets its sun limit",
+        "    opt.key for opt in OPTS if opt.home is Level.WINDOW and opt.key not "
+        "in COVER_KEYS\n",
+        "    opt.key\n"
+        "    for opt in OPTS\n"
+        "    if opt.home is Level.WINDOW\n"
+        '    and opt.key not in COVER_KEYS | {"max_elevation"}\n',
+    ),
+    Mutation(
+        "M135",
+        "no_consolidate_first_nag",
+        UPGRADE,
+        "async_check_consolidate_issue",
+        "a house with window entries raises no consolidate_first repair issue "
+        "(nothing says why no shade moves)",
+        "    windows = needs_consolidation(hass)\n    if not windows:\n",
+        "    windows = needs_consolidation(hass)\n    if True:\n",
+    ),
+    Mutation(
+        "M136",
+        "house_stays_2_x",
+        UPGRADE,
+        "async_migrate_house",
+        "the migration leaves the house at major version 2: v2.0.x would load "
+        "a house it cannot read",
+        "        version=HOUSE_ENTRY_VERSION,\n",
+        "        version=V2_0_HOUSE_VERSION,\n",
+    ),
+    Mutation(
+        "M137",
+        "device_takes_the_title",
+        WINDOWS,
+        "WindowEntry.name",
+        "a window's device takes its subentry title instead of its stored name "
+        "(a window whose title was renamed gets a new device name)",
+        "        return self.record.name or self.title\n",
+        "        return self.title\n",
+    ),
+    Mutation(
+        "M138",
+        "overrides_change_rebuilds_the_window",
+        HOUSE,
+        "HouseRuntime.async_sync",
+        "a change of only a window's overrides rebuilds the window (its "
+        "entities drop out for a moment) instead of re-reading them",
+        "                    refresh.append(runtime.window.window_key)\n"
+        "                    continue\n",
+        "                    refresh.append(runtime.window.window_key)\n",
+    ),
+    Mutation(
+        "M139",
+        "new_window_without_overrides",
+        LAYERS,
+        "new_window_record",
+        "a new window gets no overrides: it acts on what it inherits, not on "
+        "the values it was created with",
+        "    return record.with_changes(overrides=overrides)\n",
+        "    return record\n",
+    ),
+    Mutation(
+        "M140",
+        "fresh_house_stores_nothing",
+        LAYERS,
+        "initial_house_options",
+        "a fresh install's house stores nothing: its first window's values "
+        "give way to the spec defaults",
+        "    return hub_options(lifted), lifted.overrides[_NEW_WINDOW]\n",
+        "    return {}, lifted.overrides[_NEW_WINDOW]\n",
     ),
 ]
 

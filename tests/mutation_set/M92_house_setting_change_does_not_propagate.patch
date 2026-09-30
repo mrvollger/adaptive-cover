@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/house_settings.py b/custom_components/adaptive_cover/house_settings.py
 --- a/custom_components/adaptive_cover/house_settings.py
 +++ b/custom_components/adaptive_cover/house_settings.py
-@@ -166,7 +166,7 @@
+@@ -161,7 +161,7 @@
          except ProfileError as err:
              raise HomeAssistantError(str(err)) from err
          self.async_write_ha_state()

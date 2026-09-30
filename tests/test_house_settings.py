@@ -5,8 +5,7 @@ entities: the Climate switch (primary), the detection and use-flag
 switches and the threshold, override duration, eye height, seat distance
 and privacy delay numbers (CONFIG). Each shows and sets the house's value
 in the layered settings; every window acts on a change at once, without a
-reload. The seven window numbers are gone (their old rows are removed at
-the window's setup).
+reload. The windows have no numbers (nor switches) of their own.
 
 Observed through entity states, the registries, the hub's config entry and
 the diagnostics settings.
@@ -18,10 +17,7 @@ import pytest
 from homeassistant.const import EntityCategory
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util.unit_system import METRIC_SYSTEM, US_CUSTOMARY_SYSTEM
-from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
-    async_mock_service,
-)
+from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.adaptive_cover.const import (
     CONF_CLIMATE_MODE,
@@ -30,16 +26,15 @@ from custom_components.adaptive_cover.const import (
     CONF_ENTITIES,
     CONF_HEIGHT_WIN,
     CONF_MANUAL_OVERRIDE_DURATION,
-    CONF_SENSOR_TYPE,
     CONF_TEMP_ENTITY,
     CONF_TEMP_HIGH,
     CONF_TEMP_LOW,
     DOMAIN,
-    SensorType,
 )
 from custom_components.adaptive_cover.entity_surface import HUB_UNIQUE_ID
 
 from .conftest import COMMON_OPTIONS
+from .house_model import Window, mock_house
 from .window_handle import WindowHandle, window_settings
 
 COVERS = ("cover.office", "cover.den")
@@ -60,12 +55,9 @@ NUMBERS = (
 )
 
 
-def _entry(hass, cover: str, **extra) -> MockConfigEntry:
-    name = cover.split(".")[1].title()
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        title=name,
-        data={"name": name, CONF_SENSOR_TYPE: SensorType.BLIND},
+def _window(cover: str, toggles=None, **extra) -> Window:
+    return Window(
+        name=cover.split(".")[1].title(),
         options={
             **COMMON_OPTIONS,
             CONF_HEIGHT_WIN: 2.1,
@@ -75,23 +67,24 @@ def _entry(hass, cover: str, **extra) -> MockConfigEntry:
             CONF_TEMP_ENTITY: "sensor.indoor",
             **extra,
         },
+        toggles=toggles or {},
     )
-    entry.add_to_hass(hass)
-    return entry
 
 
-async def _house(hass, **extra) -> list[MockConfigEntry]:
+async def _house(hass, toggles=None, **extra) -> list[Window]:
+    """A running house with the two windows of ``COVERS``.
+
+    ``toggles`` maps a cover to its window's own toggle values.
+    """
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set("sensor.indoor", "22.0")
-    entries = []
     for cover in COVERS:
         hass.states.async_set(cover, "open", {"current_position": 60})
-        entry = _entry(hass, cover, **extra)
-        assert await hass.config_entries.async_setup(entry.entry_id)
-        await hass.async_block_till_done()
-        entries.append(entry)
+    windows = [_window(cover, (toggles or {}).get(cover), **extra) for cover in COVERS]
+    house = mock_house(hass, windows)
+    assert await hass.config_entries.async_setup(house.entry_id)
     await hass.async_block_till_done()
-    return entries
+    return windows
 
 
 def _hub_eid(hass, platform: str, key: str) -> str:
@@ -102,7 +95,7 @@ def _hub_eid(hass, platform: str, key: str) -> str:
     return entity_id
 
 
-def _hub(hass) -> MockConfigEntry:
+def _hub(hass):
     (hub,) = [
         e for e in hass.config_entries.async_entries(DOMAIN) if e.data.get("is_hub")
     ]
@@ -120,10 +113,15 @@ async def test_house_settings_are_hub_entities(hass, mock_sun_entity):
             expected = None if key == CONF_CLIMATE_ON else EntityCategory.CONFIG
             assert row.entity_category == expected, key
             assert row.disabled_by is None and row.hidden_by is None, key
-    # The windows have no number entities any more.
-    for entry in entries:
-        rows = er.async_entries_for_config_entry(registry, entry.entry_id)
-        assert not [row for row in rows if row.domain == "number"], entry.title
+    # The windows have no number (nor switch) entities.
+    for window in entries:
+        rows = [
+            row
+            for row in registry.entities.values()
+            if row.platform == DOMAIN and row.unique_id.startswith(f"{window.key}_")
+        ]
+        assert rows, window.name
+        assert not [row for row in rows if row.domain in ("number", "switch")]
 
 
 async def test_house_numbers_show_the_house_values(hass, mock_sun_entity):
@@ -185,15 +183,15 @@ async def test_regression_threshold_numbers_follow_unit_system(
     )
     await hass.async_block_till_done()
     assert _hub(hass).options["house"][CONF_TEMP_LOW] == new_low
-    for entry in entries:
-        assert (await window_settings(hass, entry.entry_id))[CONF_TEMP_LOW] == new_low
+    for window in entries:
+        assert (await window_settings(hass, window.key))[CONF_TEMP_LOW] == new_low
 
 
 async def test_a_house_setting_reaches_every_window_without_a_reload(
     hass, mock_sun_entity
 ):
     entries = await _house(hass)
-    handles = [WindowHandle.by_key(hass, entry.entry_id) for entry in entries]
+    handles = [WindowHandle.by_key(hass, window.key) for window in entries]
     before = [handle.teardowns for handle in handles]
 
     await hass.services.async_call(
@@ -220,16 +218,14 @@ async def test_a_house_setting_reaches_every_window_without_a_reload(
         "seconds": 0,
     }
     assert house[CONF_CLIMATE_ON] is False
-    for entry, handle, teardowns in zip(entries, handles, before, strict=True):
-        settings = await window_settings(hass, entry.entry_id)
+    for window, handle, teardowns in zip(entries, handles, before, strict=True):
+        settings = await window_settings(hass, window.key)
         assert (
             settings[CONF_MANUAL_OVERRIDE_DURATION]
             == house[CONF_MANUAL_OVERRIDE_DURATION]
         )
         assert settings[CONF_CLIMATE_ON] is False
-        assert handle.teardowns == teardowns, entry.title
-        # The window's hidden Climate mode alias follows what it acts on.
-        assert handle.state("climate_mode").state == "off"
+        assert handle.teardowns == teardowns, window.name
     assert hass.states.get(_hub_eid(hass, "switch", CONF_CLIMATE_ON)).state == "off"
     assert (
         hass.states.get(_hub_eid(hass, "number", CONF_MANUAL_OVERRIDE_DURATION)).state
@@ -238,9 +234,9 @@ async def test_a_house_setting_reaches_every_window_without_a_reload(
 
 
 async def test_a_window_with_its_own_value_keeps_it(hass, mock_sun_entity):
-    office, den = await _house(hass)
-    # The office's hidden Climate mode alias: the office's own value.
-    await WindowHandle.by_key(hass, office.entry_id).turn("climate_mode", False)
+    # The office has its own climate value (as the lift stores a per-window
+    # value no allowed level can hold).
+    office, den = await _house(hass, toggles={"cover.office": {CONF_CLIMATE_ON: False}})
     await hass.services.async_call(
         "switch",
         "turn_on",
@@ -248,15 +244,15 @@ async def test_a_window_with_its_own_value_keeps_it(hass, mock_sun_entity):
         blocking=True,
     )
     await hass.async_block_till_done()
-    assert (await window_settings(hass, office.entry_id))[CONF_CLIMATE_ON] is False
-    assert (await window_settings(hass, den.entry_id))[CONF_CLIMATE_ON] is True
+    assert (await window_settings(hass, office.key))[CONF_CLIMATE_ON] is False
+    assert (await window_settings(hass, den.key))[CONF_CLIMATE_ON] is True
 
 
 async def test_house_times_reach_every_window_without_a_reload(hass, mock_sun_entity):
     """The end time and the quiet hours are hub time entities (CONFIG)."""
     entries = await _house(hass)
     registry = er.async_get(hass)
-    handles = [WindowHandle.by_key(hass, entry.entry_id) for entry in entries]
+    handles = [WindowHandle.by_key(hass, window.key) for window in entries]
     before = [handle.teardowns for handle in handles]
     for key in ("end_time", "quiet_start", "quiet_end"):
         row = registry.async_get(_hub_eid(hass, "time", key))
@@ -274,8 +270,6 @@ async def test_house_times_reach_every_window_without_a_reload(hass, mock_sun_en
 
     assert _hub(hass).options["house"]["quiet_start"] == "22:30:00"
     assert hass.states.get(_hub_eid(hass, "time", "quiet_start")).state == "22:30:00"
-    for entry, handle, teardowns in zip(entries, handles, before, strict=True):
-        assert (await window_settings(hass, entry.entry_id))[
-            "quiet_start"
-        ] == "22:30:00"
-        assert handle.teardowns == teardowns, entry.title
+    for window, handle, teardowns in zip(entries, handles, before, strict=True):
+        assert (await window_settings(hass, window.key))["quiet_start"] == "22:30:00"
+        assert handle.teardowns == teardowns, window.name

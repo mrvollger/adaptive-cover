@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.components.cover import DOMAIN as COVER_DOMAIN
-from homeassistant.config_entries import ConfigEntry, ConfigEntryState, current_entry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     SERVICE_SET_COVER_POSITION,
@@ -73,7 +73,7 @@ from .helpers import (
     get_safe_state,
 )
 from .layers import SETUP_KEYS, effective_settings
-from .windows import WindowEntry, WindowLike, as_window
+from .windows import WindowEntry
 from .settings.lift import same_value
 
 
@@ -119,14 +119,11 @@ def localize_standard(naive: dt.datetime, tz: dt.tzinfo) -> dt.datetime:
 
 
 def async_schedule_window_reload(hass: HomeAssistant, window: WindowEntry) -> None:
-    """Reload one window: its entry (legacy), or its subentry alone (house)."""
-    if not window.is_subentry:
-        hass.config_entries.async_schedule_reload(window.config_entry.entry_id)
-        return
+    """Rebuild one window alone (its subentry; the rest of the house runs on)."""
     from .house import house_runtime
 
     runtime = house_runtime(window.config_entry)
-    if runtime is not None and window.subentry_id is not None:
+    if runtime is not None:
         runtime.async_schedule_rebuild(window.subentry_id)
 
 
@@ -161,21 +158,20 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         hass: HomeAssistant,
         clock: Clock | None = None,
         *,
-        window: WindowLike | None = None,
+        window: WindowEntry,
     ) -> None:
         """Initialize the coordinator of one window.
 
-        ``window`` is the window (a legacy entry or a house subentry,
-        windows.py); None means the config entry being set up. ``clock``
-        is where every "now" comes from (see runtime/clock.py); None means
-        the module's ``default_clock``.
+        ``window`` is the window (a subentry of the house, windows.py).
+        ``clock`` is where every "now" comes from (see runtime/clock.py);
+        None means the module's ``default_clock``.
         """
-        if window is None:
-            current = current_entry.get()
-            if current is None:
-                raise ValueError("A window coordinator needs its window")
-            window = current
-        self.window: WindowEntry = as_window(window)
+        self.window: WindowEntry = window
+        # What the window acts on: its resolved settings (layers.py),
+        # re-read on every refresh (_read_settings). Read first: a window
+        # whose stored settings cannot be read fails here, before the
+        # house entry holds anything of it.
+        settings = effective_settings(hass, window)
         # The owning entry: its unload shuts the coordinator down.
         super().__init__(
             hass, LOGGER, config_entry=self.window.config_entry, name=DOMAIN
@@ -183,13 +179,10 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.clock: Clock = clock if clock is not None else default_clock
 
         self.logger = ConfigContextAdapter(_LOGGER)
-        self.logger.set_config_name(self.window.data.get("name"))
-        self._cover_type = self.window.data.get("sensor_type")
-        # What the window acts on: its resolved settings (P5 flip,
-        # layers.py), re-read on every refresh (_update_options).
-        settings = effective_settings(self.hass, self.window)
+        self.logger.set_config_name(self.window.name)
+        self._cover_type = self.window.cover_type
         self.options: dict[str, Any] = settings.options
-        self.provenance: dict[str, str] | None = settings.provenance
+        self.provenance: dict[str, str] = settings.provenance
         # Read once: they decide the window's entities and listeners; a
         # change reloads the window (SETUP_KEYS).
         self._setup_values = {key: self.options.get(key) for key in SETUP_KEYS}
@@ -375,20 +368,19 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         """Fetch and process state change event."""
         self.logger.debug("Cover state change")
         data = event.data
-        if data["old_state"] is None:
+        old_state = data["old_state"]
+        new_state = data["new_state"]
+        if old_state is None:
             self.logger.debug("Old state is None")
             return
-        if data["new_state"] is None:
+        if new_state is None:
             self.logger.debug("New state is None")
             return
         self.state_change_data = StateChangedData(
-            data["entity_id"], data["old_state"], data["new_state"]
+            data["entity_id"], old_state, new_state
         )
-        if self.state_change_data.old_state.state in ("unknown", "unavailable"):
-            self.logger.debug(
-                "Old state is %s, not processing",
-                self.state_change_data.old_state.state,
-            )
+        if old_state.state in ("unknown", "unavailable"):
+            self.logger.debug("Old state is %s, not processing", old_state.state)
             # Device just came back: deliver any end-of-day close that
             # could not be sent while it was away.
             pending = self.end_of_day.take_retry(data["entity_id"], self.control_toggle)
@@ -403,11 +395,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     reason="retry after cover returned",
                 )
             return
-        if self.state_change_data.new_state.state in ("unknown", "unavailable"):
-            self.logger.debug(
-                "New state is %s, not processing",
-                self.state_change_data.new_state.state,
-            )
+        if new_state.state in ("unknown", "unavailable"):
+            self.logger.debug("New state is %s, not processing", new_state.state)
             return
         entity_id = data["entity_id"]
         # Our own command echoing back (service context preserved):
@@ -425,7 +414,6 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # only at journey end, so waiting for the landing report leaves a
         # 1-3 minute window where the cover reads as auto-controlled while a
         # person is actively moving it.
-        new_state = data["new_state"]  # the same State; checked not None above
         if new_state.state in ("opening", "closing") and not self.wait_for_target.get(
             entity_id
         ):
@@ -436,7 +424,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.commands.release_if_against(
             entity_id,
             new_state.state,
-            self.state_change_data.old_state.attributes.get(
+            old_state.attributes.get(
                 "current_tilt_position"
                 if self._cover_type == "cover_tilt"
                 else "current_position"
@@ -495,8 +483,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         """
         event = self.state_change_data
         self.logger.debug("Processing state change event: %s", event)
+        if event is None or event.new_state is None:
+            return None
         entity_id = event.entity_id
-        if self.ignore_intermediate_states and event.new_state.state in [
+        new_state = event.new_state
+        if self.ignore_intermediate_states and new_state.state in [
             "opening",
             "closing",
         ]:
@@ -504,8 +495,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             return None
         return self.commands.classify_report(
             entity_id,
-            event.new_state.state,
-            event.new_state.attributes.get(
+            new_state.state,
+            new_state.attributes.get(
                 "current_position"
                 if self._cover_type != "cover_tilt"
                 else "current_tilt_position"
@@ -977,10 +968,13 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         See CommandTracker.adopt_late_delivery; an adopted send is logged
         and polled like a delivered command. Returns True when adopted.
         """
+        change = self.state_change_data
+        if change is None or change.new_state is None or change.old_state is None:
+            return False
         sent = self.commands.adopt_late_delivery(
             entity_id,
-            self.state_change_data.new_state.state,
-            self.state_change_data.old_state.attributes.get(
+            change.new_state.state,
+            change.old_state.attributes.get(
                 "current_tilt_position"
                 if self._cover_type == "cover_tilt"
                 else "current_position"

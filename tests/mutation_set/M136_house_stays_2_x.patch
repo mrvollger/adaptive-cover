@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/upgrade.py b/custom_components/adaptive_cover/upgrade.py
+--- a/custom_components/adaptive_cover/upgrade.py
++++ b/custom_components/adaptive_cover/upgrade.py
+@@ -244,7 +244,7 @@
+     hass.config_entries.async_update_entry(
+         house,
+         options=house_options_3_1(house.options),
+-        version=HOUSE_ENTRY_VERSION,
++        version=V2_0_HOUSE_VERSION,
+         minor_version=HOUSE_ENTRY_MINOR_VERSION,
+     )
+     _LOGGER.info(

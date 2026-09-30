@@ -26,7 +26,6 @@ from __future__ import annotations
 from typing import Any, Final, cast
 
 import voluptuous as vol
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
@@ -38,10 +37,11 @@ from .layers import (
     effective_settings,
     profile_values,
     window_overrides,
+    window_placement,
 )
 from .settings.shadow import AREAS, FLOORS, TEMPERATURE_UNIT
 from .settings.spec import Level
-from .shadow import lifted_hub, window_placement
+from .windows import WindowEntry, find_window, house_entry
 
 SERVICE_GET_PROFILE: Final = "get_profile"
 MODE_SELECT_SUFFIX: Final = "_mode_select"
@@ -54,27 +54,21 @@ GET_PROFILE_SCHEMA: Final = vol.Schema(
 )
 
 
-def _window(hass: HomeAssistant, ref: str) -> ConfigEntry:
+def _window(hass: HomeAssistant, ref: str) -> WindowEntry:
     """Find a window by its key or by its Mode select entity."""
-    from .hub import is_hub_entry
-
     key = ref
     if "." in ref:
         row = er.async_get(hass).async_get(ref)
         if row is None or row.platform != DOMAIN:
             raise ServiceValidationError(f"{ref} is not an Adaptive Cover entity")
-        key = (
-            row.unique_id.removesuffix(MODE_SELECT_SUFFIX)
-            if row.unique_id.endswith(MODE_SELECT_SUFFIX)
-            else row.config_entry_id or ""
-        )
-    entry = hass.config_entries.async_get_entry(key)
-    if entry is None or entry.domain != DOMAIN or is_hub_entry(entry):
+        key = row.unique_id.removesuffix(MODE_SELECT_SUFFIX)
+    window = find_window(hass, key)
+    if window is None:
         raise ServiceValidationError(f"No Adaptive Cover window {ref!r}")
-    return entry
+    return window
 
 
-def window_profile(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
+def window_profile(hass: HomeAssistant, entry: WindowEntry) -> dict[str, Any]:
     """Return one window's stored overrides, resolved settings and sources."""
     settings = effective_settings(hass, entry)
     overrides = window_overrides(entry)
@@ -102,9 +96,9 @@ def get_profile(
         if not scope_id:
             raise ServiceValidationError("a window needs its id")
         return window_profile(hass, _window(hass, scope_id))
-    hub = lifted_hub(hass)
+    hub = house_entry(hass)
     if hub is None:
-        raise ServiceValidationError("the house has no layered settings yet")
+        raise ServiceValidationError("there is no Adaptive Cover house")
     unit = hub.options.get(TEMPERATURE_UNIT)
     if scope is None:
         return {

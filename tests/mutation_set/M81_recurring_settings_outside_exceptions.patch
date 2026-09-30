@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/settings/schema.py b/custom_components/adaptive_cover/settings/schema.py
 --- a/custom_components/adaptive_cover/settings/schema.py
 +++ b/custom_components/adaptive_cover/settings/schema.py
-@@ -281,7 +281,7 @@
+@@ -270,7 +270,7 @@
  
  def setup_section(opt: Opt) -> str:
      """Return the setup-form section that shows ``opt`` (see the table above)."""

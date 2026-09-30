@@ -17,11 +17,10 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import CONF_ENTITIES
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info, override_until
 from .entity_surface import apply_surface, window_surface
-from .windows import WindowEntry, as_window
+from .windows import WindowEntry
 
 
 async def async_setup_entry(
@@ -29,18 +28,11 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up a legacy window's binary sensors, or the house's windows' (P7)."""
-    from .hub import is_hub_entry
+    """Set up the house's windows' binary sensors."""
+    from .house import async_setup_house_platform
 
-    if is_hub_entry(config_entry):
-        from .house import async_setup_house_platform
-
-        await async_setup_house_platform(
-            hass, config_entry, Platform.BINARY_SENSOR, window_entities
-        )
-        return
-    async_add_entities(
-        window_entities(hass, as_window(config_entry), config_entry.runtime_data)
+    await async_setup_house_platform(
+        hass, config_entry, Platform.BINARY_SENSOR, window_entities
     )
 
 
@@ -81,7 +73,7 @@ class AdaptiveCoverBinarySensor(
 
     def __init__(
         self,
-        config_entry,
+        config_entry: WindowEntry,
         unique_id: str,
         binary_name: str,
         state: bool,
@@ -93,7 +85,7 @@ class AdaptiveCoverBinarySensor(
         super().__init__(coordinator=coordinator)
         self._key = key
         self._config_entry = config_entry
-        self._name = config_entry.data["name"]
+        self._name = config_entry.name
         self._binary_name = binary_name
         self._attr_unique_id = f"{unique_id}_{binary_name}"
         apply_surface(self, window_surface("binary_sensor", binary_name))
@@ -110,7 +102,7 @@ class AdaptiveCoverBinarySensor(
     @property
     def extra_state_attributes(self) -> Mapping[str, Any] | None:  # noqa: D102
         if self._key == "manual_override":
-            covers = list(self._config_entry.options.get(CONF_ENTITIES) or [])
+            covers = self._config_entry.covers
             until = override_until(self.coordinator, covers)
             return {
                 "manual_controlled": self.coordinator.data.states["manual_list"],

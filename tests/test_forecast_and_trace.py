@@ -4,9 +4,6 @@ from __future__ import annotations
 
 import datetime as dt
 
-from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
-)
 
 from custom_components.adaptive_cover.const import (
     CONF_DELTA_TIME,
@@ -19,6 +16,7 @@ from custom_components.adaptive_cover.const import (
     SensorType,
 )
 
+from .house_model import mock_window_entry, window_subentry
 from .conftest import COMMON_OPTIONS
 from .window_handle import WindowHandle
 
@@ -26,8 +24,8 @@ COVER = "cover.test_cover"
 
 
 def _entry(hass, **extra):
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "Forecast Test", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -38,7 +36,6 @@ def _entry(hass, **extra):
             **extra,
         },
     )
-    entry.add_to_hass(hass)
     return entry
 
 
@@ -107,7 +104,7 @@ async def test_get_forecast_service_by_title(hass, mock_sun_entity):
     response = await hass.services.async_call(
         DOMAIN,
         "get_forecast",
-        {"config_entry": entry.title},
+        {"config_entry": window_subentry(entry).title},
         blocking=True,
         return_response=True,
     )

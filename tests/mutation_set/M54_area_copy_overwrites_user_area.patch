@@ -1,12 +1,12 @@
 diff --git a/custom_components/adaptive_cover/entity_surface.py b/custom_components/adaptive_cover/entity_surface.py
 --- a/custom_components/adaptive_cover/entity_surface.py
 +++ b/custom_components/adaptive_cover/entity_surface.py
-@@ -260,7 +260,7 @@
+@@ -144,7 +144,7 @@
  
      dev_reg = dr.async_get(hass)
-     device = window_device(hass, entry)
+     device = window_device(hass, window)
 -    if device is None or device.area_id is not None:
 +    if device is None:
          return None
-     area_id = cover_area_id(hass, entry.options.get(CONF_ENTITIES) or [])
+     area_id = cover_area_id(hass, window.covers)
      if area_id is None:

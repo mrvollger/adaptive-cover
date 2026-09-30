@@ -471,14 +471,14 @@ async def test_control_off_no_calls(hass, freezer):
     parked = house.position(SHADE)
     await house.toggle("toggle_control", False)
 
-    # Restart mid-day: the restored OFF switch must suppress the
+    # Restart mid-day: the restored Mode off must suppress the
     # first-refresh catch-up command too.
     await house.restart(at="12:00")
-    assert house.entity("switch", "toggle_control").state == "off"
+    assert house.switch("toggle_control") == "off"
 
     await house.advance_to("21:00")  # end-time close would fire at 18:00
     assert house.auto_moves(SHADE, since="04:30") == [], (
-        "service calls while the control switch entity is off"
+        "service calls while the window's Mode is off"
     )
     assert house.position(SHADE) == parked
     await house.teardown()
@@ -490,9 +490,9 @@ async def test_control_on_force_apply(hass, freezer):
     delta_position=90 and a 10-hour throttle would block any tracking
     move; the switch-on force-apply must command the healthy cover
     immediately anyway — and skip the cover whose manual override
-    survived the restart (restored with the switch off, so nothing
+    survived the restart (restored with the Mode off, so nothing
     cleared it). One window per cover (ADR 0002): both windows restart
-    with control off and are switched back on.
+    with their Mode off and are switched back to auto.
     """
     covers = ["cover.left", "cover.right"]
     house = await SimHouse.create(
@@ -514,12 +514,11 @@ async def test_control_on_force_apply(hass, freezer):
     await house.restart(
         at="11:10",
         seed_states={
-            house.eid("switch", "toggle_control", cover=cover): "off"
-            for cover in covers
+            house.eid("select", "mode_select", cover=cover): "off" for cover in covers
         },
     )
     for cover in covers:
-        assert house.entity("switch", "toggle_control", cover=cover).state == "off"
+        assert house.switch("toggle_control", cover=cover) == "off"
     assert house.entity("binary_sensor", "manual_override").state == "on", (
         "the manual override was lost across the restart"
     )

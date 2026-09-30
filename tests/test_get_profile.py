@@ -15,10 +15,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import floor_registry as fr
-from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
-    async_mock_service,
-)
+from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.adaptive_cover.const import (
     CONF_DEFAULT_HEIGHT,
@@ -33,6 +30,7 @@ from custom_components.adaptive_cover.const import (
 )
 
 from .conftest import COMMON_OPTIONS
+from .house_model import mock_window_entry
 from .window_handle import WindowHandle, window_settings
 
 COVER = "cover.office"
@@ -52,18 +50,17 @@ async def house(hass, mock_sun_entity):
     hass.states.async_set(COVER, "open", {"current_position": 60})
     upstairs = fr.async_get(hass).async_create("Upstairs", level=1)
     office = ar.async_get(hass).async_create("Office", floor_id=upstairs.floor_id)
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        title="Office north",
-        data={"name": "Office north", CONF_SENSOR_TYPE: SensorType.BLIND},
-        options={
+    # A house with one window; its key is the house's entry_id.
+    entry = mock_window_entry(
+        hass,
+        {"name": "Office north", CONF_SENSOR_TYPE: SensorType.BLIND},
+        {
             **COMMON_OPTIONS,
             CONF_HEIGHT_WIN: 2.1,
             CONF_DISTANCE: 0.5,
             CONF_ENTITIES: [COVER],
         },
     )
-    entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     devices = dr.async_get(hass)

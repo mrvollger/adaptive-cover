@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
-import os
 from dataclasses import dataclass
 from zoneinfo import ZoneInfo
 
@@ -36,6 +35,7 @@ from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import floor_registry as fr
+from homeassistant.helpers import restore_state
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     MockUser,
@@ -62,10 +62,9 @@ from custom_components.adaptive_cover.const import (
     CONF_WEATHER_ENTITY,
     CONF_WEATHER_STATE,
     DOMAIN,
-    HOUSE_ENTRY_MINOR_VERSION,
-    HOUSE_ENTRY_VERSION,
     SensorType,
 )
+from custom_components.adaptive_cover.entity_surface import HUB_UNIQUE_ID
 from tests.characterization.golden_lib import (
     SLC,
     STEP_MINUTES,
@@ -76,21 +75,25 @@ from tests.characterization.golden_lib import (
     patch_sun_data,
 )
 from tests.conftest import COMMON_OPTIONS
+from tests.house_model import Window, mock_house
 from tests.window_handle import WindowHandle, internal_coordinator
 
 SIM_USER_ID = "simulated-human"
 
-# The config model every SimHouse starts in (P7): "legacy" (a config entry
-# per window) or "house" (one house entry, a window subentry per cover).
-# ``ADAPTIVE_COVER_SIM_MODEL=house pytest tests/simulation`` runs the whole
-# simulation tier in the house model (pixi task ``test-house-model``).
-SIM_MODEL = os.environ.get("ADAPTIVE_COVER_SIM_MODEL", "legacy")
-if SIM_MODEL not in ("legacy", "house"):
-    raise ValueError(f"ADAPTIVE_COVER_SIM_MODEL={SIM_MODEL!r}: legacy or house")
+# The window switches the P5 flip made hidden aliases, and what each is
+# since v2.1: the window's Mode (toggle_control), or a house setting (the
+# house's switch of that toggle).
+HOUSE_TOGGLES: dict[str, str] = {
+    "manual_override": "manual_detection",
+    "climate_mode": "climate_on",
+    "outside_temperature": "use_outside_temp",
+    "lux": "use_lux",
+    "irradiance": "use_irradiance",
+}
 
 
 def _window_rows(hass, window_key: str) -> list[er.RegistryEntry]:
-    """A window's registry rows: its unique_id prefix (either model)."""
+    """A window's registry rows: its unique_id prefix."""
     prefix = f"{window_key}_"
     return [
         row
@@ -281,15 +284,12 @@ class SimHouse:
         self.step = dt.timedelta(minutes=step_minutes)
         self.shades: dict[str, FakeShade] = {}
         self.timeline: list[TimelineEvent] = []
-        # The config model (P7): "legacy" runs one config entry per window,
-        # "house" one house entry with a window subentry per cover.
-        self.model = SIM_MODEL
-        # The config entries the house sets up: the window entries (legacy),
-        # or the house entry (house).
+        # The config entries the house sets up: the house entry (v2.1: one
+        # house entry with a window subentry per cover).
         self.entries: list[MockConfigEntry] = []
         self.house_entry: MockConfigEntry | None = None
         # One window per cover, in the order of `covers`: its window key
-        # (the legacy entry_id, or the subentry's key).
+        # (its subentry_id, or the key a test gave it).
         self._keys: list[str] = []
         self._key_by_cover: dict[str, str] = {}
         self.windows: dict[str, WindowHandle] = {}
@@ -304,10 +304,9 @@ class SimHouse:
 
     @property
     def entry(self):
-        """The first window: its config entry, or its view in the house (P7).
+        """The first window, as the house holds it (``windows.WindowEntry``).
 
-        Either way ``entry_id`` is the window key and ``options`` / ``data``
-        what the window stores.
+        ``entry_id`` is the window key; ``options`` its one-time options.
         """
         return self._entry_for(None) if self._keys else None
 
@@ -316,13 +315,10 @@ class SimHouse:
         return self._keys[0] if cover is None else self._key_by_cover[cover]
 
     def _entry_for(self, cover: str | None):
-        """The window driving ``cover`` (default: first): entry or house view."""
+        """The window driving ``cover`` (default: first), as the house holds it."""
         from custom_components.adaptive_cover.windows import find_window
 
         key = self._key_for(cover)
-        entry = self.hass.config_entries.async_get_entry(key)
-        if entry is not None:
-            return entry
         window = find_window(self.hass, key)
         assert window is not None, f"no window {key}"
         return window
@@ -345,14 +341,16 @@ class SimHouse:
         initial_position: int = 100,
         travel_seconds: int = 120,
         climate: dict | None = None,
-        model: str | None = None,
+        window_keys: list[str] | None = None,
     ) -> SimHouse:
         """Build the house, freeze the clock, and set up the integration.
 
-        covers: one window (config entry) per cover, as a window drives one
-        cover (ADR 0002). The windows share ``options`` and ``cover_type``;
-        the first is named "Sim House", the others "Sim House 2", ... An
-        empty list makes one window without a cover.
+        covers: one window (a subentry of the house entry) per cover, as a
+        window drives one cover (ADR 0002). The windows share ``options``
+        and ``cover_type``; the first is named "Sim House", the others "Sim
+        House 2", ... An empty list makes one window without a cover. The
+        house is lifted from them (tests/house_model.py): each window acts
+        on exactly ``options``.
 
         start_at: the local time the simulation (and HA) starts. The default
         pre-dawn 04:00 gives a clean full-day replay; a DAYTIME value (e.g.
@@ -371,15 +369,13 @@ class SimHouse:
           "device_tracker" (default) parameterizes the presence entity's
           domain (zone expects a count like "2"; binary_sensor "on"/"off").
 
-        model: "legacy" (a config entry per window) or "house" (one house
-        entry with a window subentry per cover, P7); default SIM_MODEL.
+        window_keys: the windows' keys, in the order of ``covers`` (default:
+        their subentry_ids); a migrated window keeps its old entry_id.
         """
         location = location or dict(SLC)
         self = cls(
             hass, freezer, date=date, location=location, step_minutes=step_minutes
         )
-        if model is not None:
-            self.model = model
 
         # Entity service calls validate context.user_id against hass.auth,
         # so the simulated human must exist as a real (owner) user.
@@ -473,14 +469,7 @@ class SimHouse:
             }
             name = "Sim House" if index == 0 else f"Sim House {index + 1}"
             windows.append((cover, {"name": name, CONF_SENSOR_TYPE: cover_type}, opts))
-        if self.model == "house":
-            self._add_house(windows)
-        else:
-            for cover, data, opts in windows:
-                entry = MockConfigEntry(domain=DOMAIN, data=data, options=opts)
-                entry.add_to_hass(hass)
-                self.entries.append(entry)
-                self._add_key(cover, entry.entry_id)
+        self._add_house(windows, window_keys)
         await self._setup_entry()
         return self
 
@@ -489,69 +478,37 @@ class SimHouse:
         if cover:
             self._key_by_cover[cover] = key
 
-    def _add_house(self, windows: list[tuple[str | None, dict, dict]]) -> None:
-        """The house model (P7): one house entry, a window subentry per cover."""
-        from custom_components.adaptive_cover.hub import (
-            CONF_IS_HUB,
-            HUB_ENTRY_NAME,
-            HUB_UNIQUE_ID,
-        )
-
-        house = MockConfigEntry(
-            domain=DOMAIN,
-            title=HUB_ENTRY_NAME,
-            unique_id=HUB_UNIQUE_ID,
-            data={"name": HUB_ENTRY_NAME, CONF_IS_HUB: True},
-            options={},
-            version=HOUSE_ENTRY_VERSION,
-            minor_version=HOUSE_ENTRY_MINOR_VERSION,
-            subentries_data=[
-                {
-                    "data": {"data": data, "options": opts},
-                    "subentry_type": "window",
-                    "title": data["name"],
-                    "unique_id": None,
-                }
-                for _cover, data, opts in windows
-            ],
-        )
-        house.add_to_hass(self.hass)
+    def _add_house(
+        self,
+        windows: list[tuple[str | None, dict, dict]],
+        window_keys: list[str] | None = None,
+    ) -> None:
+        """One house entry (3.1), a window subentry per cover (tests/house_model.py)."""
+        specs = [
+            Window(
+                name=data["name"],
+                options=opts,
+                sensor_type=data[CONF_SENSOR_TYPE],
+                window_key=window_keys[index] if window_keys else None,
+            )
+            for index, (_cover, data, opts) in enumerate(windows)
+        ]
+        house = self._house_entry(specs)
         self.house_entry = house
         self.entries.append(house)
-        for (cover, _data, _opts), subentry_id in zip(
-            windows, list(house.subentries), strict=True
-        ):
-            self._add_key(cover, subentry_id)
+        for (cover, _data, _opts), spec in zip(windows, specs, strict=True):
+            self._add_key(cover, spec.key)
 
-    async def consolidate(self) -> None:
-        """Consolidate the house (P7): the owner fixes the "Consolidate" repair.
-
-        Every window entry becomes a subentry of the house entry (the hub);
-        the window keys, entity_ids and the timeline stay. Afterwards the
-        house runs in the house model.
-        """
-        from tests.consolidation import consolidate_via_repair
-
-        await consolidate_via_repair(self.hass)
-        house = next(
-            entry
-            for entry in self.hass.config_entries.async_entries(DOMAIN)
-            if entry.data.get("is_hub")
-        )
-        self.model = "house"
-        self.house_entry = house
-        self.entries = [house]
-        self._remember_coordinator()
-        self._register_services()
-        await self.hass.async_block_till_done()
+    def _house_entry(self, windows: list[Window]) -> MockConfigEntry:
+        """Build and add the house entry (a replay overrides this)."""
+        return mock_house(self.hass, windows)
 
     async def _setup_entry(self) -> None:
         """Set the windows up and win the cover services back from the hub.
 
-        The hub bootstrap loads the real cover component (for its aggregate
+        The house loads the real cover component (for its aggregate
         cover), whose entity services override our fakes. Re-register so
         simulated shades win. Shared by create(), restart(), set_options().
-        (The first setup of the integration sets up every window entry.)
         """
         for entry in self.entries:
             if entry.state is ConfigEntryState.NOT_LOADED:
@@ -572,6 +529,20 @@ class SimHouse:
         for entry in self.entries:
             await self.hass.config_entries.async_unload(entry.entry_id)
             await self.hass.async_block_till_done()
+        # The integration has one house entry: remove this one, so a house
+        # created after it in the same test is the house. Its entities'
+        # last states leave the restore cache too: a house created next
+        # reuses their entity_ids and must start fresh, not restore them.
+        entity_ids = [
+            row.entity_id for key in self._keys for row in _window_rows(self.hass, key)
+        ]
+        for entry in self.entries:
+            if self.hass.config_entries.async_get_entry(entry.entry_id) is not None:
+                await self.hass.config_entries.async_remove(entry.entry_id)
+                await self.hass.async_block_till_done()
+        last_states = restore_state.async_get(self.hass).last_states
+        for entity_id in entity_ids:
+            last_states.pop(entity_id, None)
         if self._patch is not None:
             self._patch.stop()
             self._patch = None
@@ -588,7 +559,7 @@ class SimHouse:
         seed_states: dict[str, str] | None = None,
         cold: bool = False,
     ) -> None:
-        """Simulate an HA restart of every window, preserving the timeline.
+        """Simulate an HA restart of the house, preserving the timeline.
 
         Optionally advance to ``at`` first. Captures the current states of
         the windows' entities, unloads the entries, seeds the restore cache
@@ -598,11 +569,6 @@ class SimHouse:
         entries and re-wins the fake cover services. Shade states persist
         in hass.states across the restart, as in real HA.
 
-        Seeding a window's Toggle Control switch (``toggle_control``) drops
-        that window's captured Mode select state: the window restarts as
-        on its first boot after the P5 flip, when the Mode select has no
-        state of its own and restores from that switch.
-
         ``cold=True`` also drops the integration's in-memory manual-override
         store, as a real Home Assistant process restart does (by default it
         survives, as it does an entry reload): what the windows hold then
@@ -610,7 +576,6 @@ class SimHouse:
         """
         if at is not None:
             await self.advance_to(at)
-        registry = er.async_get(self.hass)
         seeded: dict[str, State] = {}
         if restore:
             for key in self._keys:
@@ -620,13 +585,6 @@ class SimHouse:
                         seeded[reg_entry.entity_id] = state
         for entity_id, state_str in (seed_states or {}).items():
             seeded[entity_id] = State(entity_id, state_str)
-        for key in self._keys:
-            control = registry.async_get_entity_id(
-                "switch", DOMAIN, f"{key}_Toggle Control"
-            )
-            mode = registry.async_get_entity_id("select", DOMAIN, f"{key}_mode_select")
-            if control in (seed_states or {}) and mode is not None:
-                seeded.pop(mode, None)
         for entry in self.entries:
             await self.hass.config_entries.async_unload(entry.entry_id)
         await self.hass.async_block_till_done()
@@ -642,13 +600,12 @@ class SimHouse:
         """The user edits every window's settings: one service call each.
 
         Goes through ``adaptive_cover.change_settings``, which stores the
-        edits where the P5 flip keeps them: one-time settings in the
-        window's options (the window reloads), recurring ones as the
-        window's own values in the layered settings (no reload; the window
-        acts on them at once). Called with NO changes it models saving the
-        options dialog unchanged: a reload. Afterwards the fake cover
-        services are re-won and the rebuilt coordinators remembered for
-        command attribution.
+        edits where they live: one-time settings in the window's geometry
+        (the window is rebuilt alone), recurring ones as the window's own
+        values in the layered settings (no rebuild; the window acts on them
+        at once). Called with NO changes it models a reload of the house.
+        Afterwards the fake cover services are re-won and the rebuilt
+        coordinators remembered for command attribution.
         """
         if option_changes:
             for key in self._keys:
@@ -661,7 +618,6 @@ class SimHouse:
                 )
                 await self.hass.async_block_till_done()
         else:
-            # The house model reloads the house entry: every window.
             for entry in self.entries:
                 await self.hass.config_entries.async_reload(entry.entry_id)
                 await self.hass.async_block_till_done()
@@ -1094,9 +1050,9 @@ class SimHouse:
     def eid(self, domain: str, key: str, *, cover: str | None = None) -> str:
         """Resolve one of a window's entities by unique-id suffix.
 
-        key is the normalized suffix: "cover_position", "toggle_control",
-        "manual_override", "climate_mode", "reset_manual_override",
-        "mode_select", "sun_infront", "control_method", ... ``cover``
+        key is the normalized suffix: "cover_position", "manual_override",
+        "reset_manual_override", "mode_select", "sun_infront",
+        "control_method", ... ``cover``
         picks the window (default: the first). Never hard-code
         sim_house_-slugged entity_ids in tests.
         """
@@ -1128,11 +1084,34 @@ class SimHouse:
 
     # ------------------------------------------------- entity-level controls
 
-    async def toggle(self, key: str, on: bool, *, cover: str | None = None) -> None:
-        """Flip one of a window's switches through a REAL HA service call.
+    def house_switch_eid(self, key: str) -> str:
+        """The entity_id of the house's switch of one toggle (``HOUSE_TOGGLES``)."""
+        toggle = HOUSE_TOGGLES.get(key, key)
+        entity_id = er.async_get(self.hass).async_get_entity_id(
+            "switch", DOMAIN, f"{HUB_UNIQUE_ID}_{toggle}"
+        )
+        assert entity_id is not None, f"the house has no {toggle} switch"
+        return entity_id
 
-        ``toggle_control`` is the window's Mode since the P5 flip (the
-        switch is a hidden alias): on selects ``auto``, off selects ``off``.
+    def switch(self, key: str, *, cover: str | None = None) -> str | None:
+        """What an old window switch reads as since v2.1: "on", "off" or None.
+
+        ``toggle_control`` is the window's Mode (off, else on); the other
+        keys (``HOUSE_TOGGLES``) are the house's switch of that toggle.
+        """
+        if key == "toggle_control":
+            mode = self.window(cover).mode
+            return None if mode is None else ("off" if mode == "off" else "on")
+        state = self.hass.states.get(self.house_switch_eid(key))
+        return state.state if state is not None else None
+
+    async def toggle(self, key: str, on: bool, *, cover: str | None = None) -> None:
+        """Flip what an old window switch became, through a REAL service call.
+
+        The six window switches were hidden aliases since the P5 flip and
+        are gone since v2.1: ``toggle_control`` is the window's Mode (on
+        selects ``auto``, off selects ``off``); the others are house
+        settings, flipped with the house's switch (``HOUSE_TOGGLES``).
         """
         if key == "toggle_control":
             await self.select_option(
@@ -1142,7 +1121,7 @@ class SimHouse:
         await self.hass.services.async_call(
             "switch",
             "turn_on" if on else "turn_off",
-            {"entity_id": self.eid("switch", key, cover=cover)},
+            {"entity_id": self.house_switch_eid(key)},
             blocking=True,
             context=Context(user_id=SIM_USER_ID),
         )
@@ -1208,19 +1187,8 @@ class SimHouse:
         )
         devices = dr.async_get(self.hass)
         window_key = self._key_for(cover)
-        owners = [window_key, *(e.entry_id for e in self.entries)]
-        device = next(
-            (
-                found
-                for owner in owners
-                if (
-                    found := devices.async_get_device_by_identifier(
-                        (DOMAIN, window_key), config_entry_id=owner
-                    )
-                )
-                is not None
-            ),
-            None,
+        device = devices.async_get_device_by_identifier(
+            (DOMAIN, window_key), config_entry_id=self.house_entry.entry_id
         )
         assert device is not None, f"no window device for {cover}"
         devices.async_update_device(device.id, area_id=area_entry.id)

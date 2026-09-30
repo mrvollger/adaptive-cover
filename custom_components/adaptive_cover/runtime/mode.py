@@ -33,7 +33,6 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, Final, Protocol
@@ -55,15 +54,6 @@ class Mode(StrEnum):
 
 MODE_OPTIONS: Final[list[str]] = [Mode.AUTO.value, Mode.HOLD.value, Mode.OFF.value]
 """The Mode select's options, in display order."""
-
-LEGACY_OPTIONS: Final[Mapping[str, Mode]] = {
-    "Manual": Mode.OFF,
-    "Sun tracking": Mode.AUTO,
-    "Sun + climate": Mode.AUTO,
-}
-"""The select's options before the flip. Climate moved to the house
-``climate_on`` setting (migration 1.4 recorded each window's Climate Mode
-switch), so both tracking options are ``auto``."""
 
 HOLD_SOURCE: Final = "hold"
 """The move-log source of a position the ``hold`` service commands."""
@@ -94,17 +84,18 @@ class Restored:
 def restored_mode(
     own: str | None,
     own_until: dt.datetime | None,
-    legacy_switch: str | None,
     now: dt.datetime,
 ) -> Restored:
     """Return the Mode to restore.
 
     ``own`` and ``own_until`` are the Mode select's last state and its
-    ``until`` attribute; ``legacy_switch`` is the Toggle Control switch's
-    last state, read on the select's first boot after the flip (it had no
-    state of its own before). A hold whose end passed while Home Assistant
-    was down, or whose end is unknown, restores as ``auto``. Nothing to go
-    on (a new window) is ``auto``, the switch's initial state.
+    ``until`` attribute. A hold whose end passed while Home Assistant was
+    down, or whose end is unknown, restores as ``auto``. Nothing to go on
+    (a new window) is ``auto``.
+
+    (Until v2.1 a select without a state of its own fell back to the
+    Toggle Control switch's, or mapped its pre-flip options; every house
+    that runs v2.1 ran v2.0.x, where the select stored its own state.)
     """
     if own in MODE_OPTIONS:
         mode = Mode(own)
@@ -112,11 +103,6 @@ def restored_mode(
             return Restored(mode)
         if own_until is not None and own_until > now:
             return Restored(Mode.HOLD, own_until)
-        return Restored(Mode.AUTO)
-    if own is not None and own in LEGACY_OPTIONS:
-        return Restored(LEGACY_OPTIONS[own])
-    if legacy_switch == "off":
-        return Restored(Mode.OFF)
     return Restored(Mode.AUTO)
 
 

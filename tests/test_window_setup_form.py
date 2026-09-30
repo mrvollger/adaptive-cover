@@ -1,15 +1,17 @@
-"""The one-screen window form: add a window, reconfigure it (plan P6).
+"""The one-screen window form: add a window, reconfigure it (plan P6, P8).
 
-Through the config-entry flow manager and entry states only:
+Through the config-entry and subentry flow managers and entry states only:
 
-- the add form is one screen; recurring settings sit only in collapsed
-  sections labelled as per-window exceptions;
+- the add form is one screen (a fresh install's first window, or "Add
+  window" on the house); recurring settings sit only in collapsed sections
+  labelled as per-window exceptions;
 - a window made from only a cover and an azimuth is valid and resolves to
   the house defaults;
 - "Copy from" pre-fills everything but the name and the cover; presets
   fill geometry only;
-- Reconfigure shows the same form without the exceptions and changes only
-  the one-time settings.
+- Reconfigure (a window subentry's) shows the same form, the exceptions
+  collapsed, and changes the one-time settings without touching the
+  recurring ones.
 """
 
 from __future__ import annotations
@@ -19,7 +21,6 @@ from homeassistant import config_entries
 from homeassistant.components.cover import CoverEntityFeature
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adaptive_cover.const import (
     CONF_AWNING_ANGLE,
@@ -37,12 +38,12 @@ from custom_components.adaptive_cover.const import (
     CONF_OVERHANG_DEPTH,
     CONF_OVERHANG_HEIGHT,
     CONF_SENSOR_TYPE,
+    CONF_SUNSET_POS,
     CONF_TEMP_HIGH,
     CONF_TILT_DEPTH,
     DOMAIN,
     SensorType,
 )
-from custom_components.adaptive_cover.settings.shadow import without_overrides
 from custom_components.adaptive_cover.settings.lift import legacy_flat
 from custom_components.adaptive_cover.settings.resolve import (
     HouseProfile,
@@ -52,36 +53,36 @@ from custom_components.adaptive_cover.settings.resolve import (
     resolve_with_provenance,
     spec_default,
 )
-from custom_components.adaptive_cover.settings.spec import OPTS, Level, Scope
+from custom_components.adaptive_cover.settings.spec import (
+    OPTS,
+    OPTS_BY_KEY,
+    Level,
+    Scope,
+)
 
 from .conftest import COMMON_OPTIONS
+from .house_model import Window, mock_house
 from .window_form import (
-    add_legacy_house,
     add_window,
     collapsed,
+    only_window,
     prefilled,
+    record,
     show_type,
     shown,
     start_add,
+    start_add_window,
     start_reconfigure,
     submit,
+    window_subentries,
 )
+from .window_handle import window_settings
 
 pytestmark = pytest.mark.usefixtures("stub_sun_integration")
 
 COVER = "cover.study"
 OTHER = "cover.hall"
 EXCEPTIONS = ("exceptions_positions", "exceptions_schedule", "exceptions_climate")
-
-
-@pytest.fixture(autouse=True)
-def legacy_model(hass):
-    """Pin the window-entry flows: a house that still has window entries (P7).
-
-    A fresh install creates the house with subentries instead
-    (tests/test_house_subentries.py).
-    """
-    add_legacy_house(hass)
 
 
 @pytest.fixture(autouse=True)
@@ -94,15 +95,22 @@ async def unload_all_entries(hass):
     await hass.async_block_till_done()
 
 
-def _window(
-    hass, cover: str, *, title: str = "Den south", **options
-) -> MockConfigEntry:
+# Every recurring setting at its spec default (°C): the house a window of
+# these tests lives in holds a value for each (as a real house does).
+RECURRING_DEFAULTS = {
+    key: value
+    for key, value in legacy_flat({}, temperature_unit="°C").items()
+    if OPTS_BY_KEY[key].scope is Scope.RECURRING
+}
+
+
+def _awning(cover: str, *, title: str = "Den south", **options) -> Window:
     """An existing window: an awning with its own geometry and exceptions."""
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        title=title,
-        data={"name": title, CONF_SENSOR_TYPE: SensorType.AWNING},
+    return Window(
+        name=title,
+        sensor_type=SensorType.AWNING,
         options={
+            **RECURRING_DEFAULTS,
             **COMMON_OPTIONS,
             CONF_AZIMUTH: 190,
             CONF_HEIGHT_WIN: 2.4,
@@ -117,15 +125,29 @@ def _window(
             **options,
         },
     )
-    entry.add_to_hass(hass)
+
+
+async def _house(hass, *windows: Window):
+    """A running house with ``windows`` (their covers exist)."""
+    for window in windows:
+        hass.states.async_set(window.options[CONF_COVER_ENTITY], "open", {})
+    entry = mock_house(hass, list(windows))
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
     return entry
 
 
-def _position_sensor(hass, entry) -> str | None:
-    registry = er.async_get(hass)
-    return registry.async_get_entity_id(
-        "sensor", DOMAIN, f"{entry.entry_id}_Cover Position"
+def _subentry(entry, cover: str):
+    return next(
+        subentry
+        for subentry in window_subentries(entry)
+        if subentry.data[CONF_COVER_ENTITY] == cover
     )
+
+
+def _position_sensor(hass, key: str) -> str | None:
+    registry = er.async_get(hass)
+    return registry.async_get_entity_id("sensor", DOMAIN, f"{key}_Cover Position")
 
 
 # ------------------------------------------------------------- the screen
@@ -182,9 +204,9 @@ async def test_window_section_is_cover_type_and_facing_first(hass):
 async def test_window_from_only_a_cover_and_azimuth_resolves_to_house_defaults(hass):
     """Plan P6: a cover and an azimuth are a valid window; the rest is default.
 
-    The stored options are exactly the window's one-time setup on top of an
-    empty house: every recurring setting resolves from the house defaults
-    (the spec defaults until P5 stores a house), none from the window.
+    The window stores its one-time setup only; the house, lifted from this
+    one window, holds every recurring setting at its spec default, and the
+    window overrides none of them.
     """
     hass.states.async_set(COVER, "open", {"current_position": 50})
     result = await start_add(hass)
@@ -203,30 +225,37 @@ async def test_window_from_only_a_cover_and_azimuth_resolves_to_house_defaults(h
     await hass.async_block_till_done()
     entry = result["result"]
     assert entry.state is config_entries.ConfigEntryState.LOADED
-    assert entry.data[CONF_SENSOR_TYPE] == SensorType.BLIND
-    assert hass.states.get(_position_sensor(hass, entry)).state not in (
+    window = only_window(entry)
+    stored = record(window)
+    assert stored.cover_type == SensorType.BLIND
+    assert hass.states.get(_position_sensor(hass, window.subentry_id)).state not in (
         None,
         "unknown",
         "unavailable",
     )
 
-    # P5 flip: the house lifted itself from this one window, which then
-    # stores no override of its own (everything else is inherited).
-    assert entry.options["overrides"]["values"] == {}
-    assert entry.options["overrides"]["legacy"] == {}
+    # The house is lifted from this one window, which then stores no
+    # override of its own (everything else is inherited).
+    assert stored.overrides.values == {}
+    assert stored.overrides.legacy == {}
     unit = hass.config.units.temperature_unit
-    flat = legacy_flat(without_overrides(entry.options), temperature_unit=unit)
+    flat = legacy_flat(stored.options, temperature_unit=unit)
     setup = {opt.key: flat[opt.key] for opt in OPTS if opt.home is Level.WINDOW}
     profiles = Profiles(
         house=HouseProfile({}, temperature_unit=unit),
-        windows={entry.entry_id: WindowOverrides(setup=setup)},
+        windows={window.subentry_id: WindowOverrides(setup=setup)},
     )
-    resolution = resolve_with_provenance(entry.entry_id, profiles)
+    resolution = resolve_with_provenance(window.subentry_id, profiles)
     assert dict(resolution.values) == flat
     recurring = [opt.key for opt in OPTS if opt.scope is Scope.RECURRING]
     assert {key: resolution.provenance[key] for key in recurring} == dict.fromkeys(
         recurring, Source.DEFAULT
     )
+    # ... and the house holds exactly those defaults: the window acts on them.
+    settings = await window_settings(hass, window.subentry_id)
+    assert {key: settings[key] for key in recurring} == {
+        key: resolution.values[key] for key in recurring
+    }
     # Of the blind's own setup, everything but the cover and the azimuth is
     # the spec default too (another type's geometry is not stored).
     entered = {CONF_COVER_ENTITY, CONF_ENTITIES, CONF_AZIMUTH}
@@ -250,8 +279,9 @@ async def test_name_defaults_to_the_cover_name(hass):
     hass.states.async_set(COVER, "open", {"friendly_name": "Study blind"})
     result = await add_window(hass, {CONF_COVER_ENTITY: COVER})
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == "Study blind"
-    assert result["data"]["name"] == "Study blind"
+    window = only_window(result["result"])
+    assert window.title == "Study blind"
+    assert record(window).name == "Study blind"
 
 
 async def test_cover_type_switch_keeps_what_was_entered(hass):
@@ -274,9 +304,10 @@ async def test_cover_type_switch_keeps_what_was_entered(hass):
 
     result = await submit(hass, result, {CONF_COVER_ENTITY: COVER, CONF_AZIMUTH: 100})
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["data"][CONF_SENSOR_TYPE] == SensorType.TILT
+    stored = record(only_window(result["result"]))
+    assert stored.cover_type == SensorType.TILT
     # A tilted blind has no window height: the blind default was not kept.
-    assert result["options"][CONF_HEIGHT_WIN] is None
+    assert stored.geometry[CONF_HEIGHT_WIN] is None
 
 
 async def test_switching_the_type_back_keeps_that_types_geometry(hass):
@@ -315,19 +346,22 @@ async def test_a_cover_that_cannot_move_like_the_type_is_refused(hass):
     )
     result = await submit(hass, result, {CONF_COVER_ENTITY: COVER})
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["data"][CONF_SENSOR_TYPE] == SensorType.TILT
+    assert record(only_window(result["result"])).cover_type == SensorType.TILT
 
 
 # ------------------------------------------------------ copy from, presets
 
 
 async def test_copy_from_prefills_everything_but_name_and_cover(hass):
-    source = _window(hass, OTHER, **{CONF_TEMP_HIGH: 25.5})
-    copied_from = dict(source.options)
-    result = await start_add(hass)
+    source_window = _awning(OTHER, **{CONF_TEMP_HIGH: 25.5})
+    entry = await _house(hass, source_window)
+    source = _subentry(entry, OTHER)
+    source_settings = await window_settings(hass, source.subentry_id)
+    hass.states.async_set(COVER, "open", {})
+    result = await start_add_window(hass, entry)
     assert "copy_from" in shown(result)["window"]
     result = await submit(
-        hass, result, {"copy_from": source.entry_id, CONF_COVER_ENTITY: COVER}
+        hass, result, {"copy_from": source.subentry_id, CONF_COVER_ENTITY: COVER}
     )
     assert result["type"] is FlowResultType.FORM
     values = prefilled(result)
@@ -341,20 +375,27 @@ async def test_copy_from_prefills_everything_but_name_and_cover(hass):
         CONF_DEFAULT_HEIGHT,
         CONF_TEMP_HIGH,
     ):
-        assert values[key] == source.options[key], key
+        assert values[key] == source_window.options[key], key
     # ... but not its identity: this window's cover stays, no name copied.
     assert values[CONF_COVER_ENTITY] == COVER
     assert "name" not in values
 
     result = await submit(hass, result, {**values, "name": "Study"})
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["data"] == {"name": "Study", CONF_SENSOR_TYPE: SensorType.AWNING}
-    # (As copied: setting the new window up also migrates the source.)
-    for key, value in copied_from.items():
+    await hass.async_block_till_done()
+    copy = _subentry(entry, COVER)
+    assert copy.title == "Study"
+    assert record(copy).cover_type == SensorType.AWNING
+    copied = record(copy).geometry
+    for key, value in record(source).geometry.items():
+        assert copied[key] == value, key
+    # The copy acts on what its source acts on, but on its own cover.
+    copy_settings = await window_settings(hass, copy.subentry_id)
+    for key in source_window.options:
         if key not in (CONF_COVER_ENTITY, CONF_ENTITIES):
-            assert result["options"][key] == value, key
-    assert result["options"][CONF_COVER_ENTITY] == COVER
-    assert result["options"][CONF_ENTITIES] == [COVER]
+            assert copy_settings[key] == source_settings[key], key
+    assert copy_settings[CONF_COVER_ENTITY] == COVER
+    assert copy_settings[CONF_ENTITIES] == [COVER]
 
 
 @pytest.mark.parametrize(
@@ -415,31 +456,39 @@ async def test_preset_fills_geometry_only(hass, preset, expected):
 
     result = await submit(hass, result, {**values, "preset": preset})
     assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    window = only_window(result["result"])
     for key, value in expected.items():
-        assert result["options"][key] == value, key
-    assert result["options"][CONF_DEFAULT_HEIGHT] == 80
+        assert record(window).geometry[key] == value, key
+    settings = await window_settings(hass, window.subentry_id)
+    assert settings[CONF_DEFAULT_HEIGHT] == 80
 
 
 # ------------------------------------------------------------ reconfigure
 
 
-async def test_reconfigure_shows_the_one_time_settings_only(hass):
-    entry = _window(hass, OTHER)
-    result = await start_reconfigure(hass, entry)
+async def test_reconfigure_shows_the_window_setup_and_its_exceptions(hass):
+    entry = await _house(hass, _awning(OTHER))
+    result = await start_reconfigure(hass, entry, _subentry(entry, OTHER).subentry_id)
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "reconfigure"
-    assert list(shown(result)) == ["window", "sun_limits", "advanced"]
+    assert list(shown(result)) == ["window", "sun_limits", "advanced", *EXCEPTIONS]
+    folded = collapsed(result)
+    assert [name for name, closed in folded.items() if not closed] == ["window"]
     values = prefilled(result)
     assert values[CONF_COVER_ENTITY] == OTHER
     assert values["name"] == "Den south"
     assert values[CONF_LENGTH_AWNING] == 3.0
+    assert values[CONF_DEFAULT_HEIGHT] == 97  # what it acts on
     assert "copy_from" not in shown(result)["window"]  # no other window
 
 
 async def test_reconfigure_changes_setup_and_keeps_recurring_settings(hass):
-    entry = _window(hass, OTHER, **{CONF_TEMP_HIGH: 25.5})
-    before = dict(entry.options)
-    result = await start_reconfigure(hass, entry)
+    entry = await _house(hass, _awning(OTHER, **{CONF_TEMP_HIGH: 25.5}))
+    hass.states.async_set(COVER, "open", {})
+    key = _subentry(entry, OTHER).subentry_id
+    before = await window_settings(hass, key)
+    result = await start_reconfigure(hass, entry, key)
     values = prefilled(result)
     del values[CONF_OVERHANG_DEPTH]  # the user clears it
     result = await submit(
@@ -450,35 +499,48 @@ async def test_reconfigure_changes_setup_and_keeps_recurring_settings(hass):
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "reconfigure_successful"
     await hass.async_block_till_done()
-    assert entry.title == "Den door"
-    assert entry.data == {"name": "Den door", CONF_SENSOR_TYPE: SensorType.AWNING}
-    assert entry.options[CONF_HEIGHT_WIN] == 2.2
-    assert entry.options[CONF_OVERHANG_DEPTH] is None
-    assert entry.options[CONF_COVER_ENTITY] == COVER
-    assert entry.options[CONF_ENTITIES] == [COVER]
-    # Recurring settings are the options form's: untouched.
-    for key in (CONF_DEFAULT_HEIGHT, CONF_TEMP_HIGH):
-        assert entry.options[key] == before[key]
+    window = entry.subentries[key]
+    stored = record(window)
+    assert window.title == "Den door"
+    assert (stored.name, stored.cover_type) == ("Den door", SensorType.AWNING)
+    assert stored.geometry[CONF_HEIGHT_WIN] == 2.2
+    assert stored.geometry[CONF_OVERHANG_DEPTH] is None
+    assert stored.cover == COVER
+    # Recurring settings: untouched (shown as they are, so no exception).
+    assert stored.overrides.values == {}
+    after = await window_settings(hass, key)
+    for option in (CONF_DEFAULT_HEIGHT, CONF_TEMP_HIGH):
+        assert after[option] == before[option]
 
 
 async def test_reconfigure_keeps_the_shadow_overrides(hass):
-    """Reconfigure must keep the window's P5 `overrides` (migration 1.4).
+    """Reconfigure must keep the window's own recurring values (its overrides).
 
-    Dropping them would make the next setup re-adopt the window and absorb
-    the edit, so a real difference could never raise the settings repair.
+    A geometry change must not drop an exception the window stores.
     """
-    overrides = {"window_key": "w", "values": {"sunset_position": 5}, "legacy": {}}
-    entry = _window(hass, OTHER, overrides=overrides)
-    result = await start_reconfigure(hass, entry)
+    entry = await _house(hass, _awning(OTHER))
+    key = _subentry(entry, OTHER).subentry_id
+    await hass.services.async_call(
+        DOMAIN,
+        "change_settings",
+        {"config_entry": key, CONF_SUNSET_POS: 5},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+    overrides = entry.subentries[key].data["overrides"]
+    assert overrides == {"values": {CONF_SUNSET_POS: 5}, "legacy": {}}
+    result = await start_reconfigure(hass, entry, key)
     result = await submit(hass, result, {**prefilled(result), CONF_HEIGHT_WIN: 2.2})
     assert result["reason"] == "reconfigure_successful"
     await hass.async_block_till_done()
-    assert entry.options["overrides"] == overrides
+    assert entry.subentries[key].data["overrides"] == overrides
+    assert record(entry.subentries[key]).geometry[CONF_HEIGHT_WIN] == 2.2
 
 
 async def test_reconfigure_changes_the_cover_type(hass):
-    entry = _window(hass, OTHER)
-    result = await start_reconfigure(hass, entry)
+    entry = await _house(hass, _awning(OTHER))
+    key = _subentry(entry, OTHER).subentry_id
+    result = await start_reconfigure(hass, entry, key)
     result = await submit(
         hass, result, {**prefilled(result), CONF_SENSOR_TYPE: SensorType.BLIND}
     )
@@ -487,26 +549,18 @@ async def test_reconfigure_changes_the_cover_type(hass):
     assert prefilled(result)[CONF_HEIGHT_WIN] == 2.4  # kept across the switch
     result = await submit(hass, result, prefilled(result))
     assert result["reason"] == "reconfigure_successful"
-    assert entry.data[CONF_SENSOR_TYPE] == SensorType.BLIND
+    await hass.async_block_till_done()
+    stored = record(entry.subentries[key])
+    assert stored.cover_type == SensorType.BLIND
     # The awning's geometry stays stored (the runtime ignores it).
-    assert entry.options[CONF_LENGTH_AWNING] == 3.0
+    assert stored.geometry[CONF_LENGTH_AWNING] == 3.0
 
 
 async def test_reconfigure_refuses_a_cover_another_window_drives(hass):
-    entry = _window(hass, OTHER)
-    _window(hass, COVER, title="Office")
-    result = await start_reconfigure(hass, entry)
+    entry = await _house(hass, _awning(OTHER), _awning(COVER, title="Office"))
+    key = _subentry(entry, OTHER).subentry_id
+    result = await start_reconfigure(hass, entry, key)
     result = await submit(hass, result, {**prefilled(result), CONF_COVER_ENTITY: COVER})
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "cover_in_use"}
-    assert entry.options[CONF_COVER_ENTITY] == OTHER
-
-
-async def test_reconfigure_of_the_house_entry_aborts(hass):
-    hub = MockConfigEntry(
-        domain=DOMAIN, title="Adaptive Cover All", data={"is_hub": True}, options={}
-    )
-    hub.add_to_hass(hass)
-    result = await start_reconfigure(hass, hub)
-    assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "not_a_window"
+    assert record(entry.subentries[key]).cover == OTHER

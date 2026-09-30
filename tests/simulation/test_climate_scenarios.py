@@ -406,8 +406,9 @@ async def test_irradiance_threshold_and_switch(hass, freezer):
 
 
 async def test_outside_temp_toggle_and_fallback(hass, freezer):
-    """The Outside Temperature switch swaps the season input; unavailable
-    outside readings fall back to the inside sensor."""
+    """The outside-temperature toggle (the house's switch since v2.1) swaps
+    the season input; unavailable outside readings fall back to the inside
+    sensor."""
     house = await SimHouse.create(
         hass,
         freezer,
@@ -421,7 +422,7 @@ async def test_outside_temp_toggle_and_fallback(hass, freezer):
     )
     await house.advance_to("12:00")
     # The Outside Temperature switch defaults OFF: inside temp rules.
-    assert house.entity("switch", "outside_temperature").state == "off"
+    assert house.switch("outside_temperature") == "off"
     assert house.position(SHADE) == 100, (
         f"toggle off: inside 18 is winter, away opens fully; "
         f"moves: {house.auto_moves(SHADE)}"

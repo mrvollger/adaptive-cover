@@ -1,13 +1,13 @@
-"""The house runtime: one coordinator per window subentry (P7; ADR 0001).
+"""The house runtime: one coordinator per window subentry (ADR 0001).
 
 The house entry (the hub, promoted) holds its windows as config subentries
 of type ``window`` (windows.py). ``HouseRuntime`` is the house entry's
 ``runtime_data``:
 
 - **Isolated windows.** Each window subentry gets its own coordinator,
-  listeners and entities (``async_build_window``, shared with the legacy
-  window entries). A window that fails to set up gets a repair issue and
-  a retry; the rest of the house keeps running.
+  listeners and entities (``async_build_window``). A window that fails to
+  set up gets a repair issue and a retry; the rest of the house keeps
+  running.
 - **Entities per window.** Each platform module hands the runtime a
   factory (``async_add_platform``); the runtime adds a window's entities
   with ``config_subentry_id`` set, so HA shows them under the window's
@@ -15,17 +15,13 @@ of type ``window`` (windows.py). ``HouseRuntime`` is the house entry's
 - **Listener compares subentries** (``async_sync``, the house entry's
   update listener): a new subentry starts, a removed one stops, a changed
   one is rebuilt alone. A change that only wrote the window's sparse
-  ``overrides`` rebuilds nothing: the window acts on it at once, as a
-  legacy window does. A house-profile change (``set_profile``) touches no
-  subentry: ``layers.async_settings_changed`` re-resolves every window in
-  place.
-- **Mid-consolidation windows** (a subentry whose legacy entry still
-  exists) are skipped: the legacy entry runs the window until the
-  consolidation removes it (consolidate.py).
+  ``overrides`` rebuilds nothing: the window acts on it at once. A
+  house-profile change (``set_profile``) touches no subentry:
+  ``layers.async_settings_changed`` re-resolves every window in place.
 
-The loaded windows' coordinators are also indexed in ``hass.data[DOMAIN]``
-by window key (legacy entries and subentries alike), where the hub
-entities, services and ``layers`` find them.
+The running windows' coordinators are found through the house entry's
+``runtime_data`` (``window_coordinators``): the hub entities, the services
+and ``layers`` use it. ``hass.data`` holds only the override store.
 """
 
 from __future__ import annotations
@@ -47,17 +43,17 @@ from homeassistant.helpers.event import async_call_later, async_track_state_chan
 from .const import (
     _LOGGER,
     CONF_END_ENTITY,
-    CONF_ENTITIES,
     CONF_PRESENCE_ENTITY,
     CONF_TEMP_ENTITY,
     CONF_WEATHER_ENTITY,
     DOMAIN,
 )
 from .coordinator import AdaptiveDataUpdateCoordinator, cached_timezone
+from .settings.window_record import OVERRIDES
 from .windows import (
     WINDOW_SUBENTRY,
     WindowEntry,
-    is_pending,
+    house_entry,
     subentry_window_key,
 )
 
@@ -101,23 +97,15 @@ async def async_build_window(
 ) -> tuple[AdaptiveDataUpdateCoordinator, list[CALLBACK_TYPE]]:
     """Build one window's coordinator and listeners, and run its first refresh.
 
-    Shared by the legacy window entries and the house's subentries. The
-    window records itself in the layered settings first (``shadow``: the
-    house lifts itself if it never was, a window without overrides is
-    adopted). Returns the coordinator and the listeners to cancel on
-    unload; on a failed first refresh everything is undone and
-    ``ConfigEntryNotReady`` is raised.
+    The window acts on its resolved layered settings (layers.py). Returns
+    the coordinator and the listeners to cancel on unload; on a failed
+    first refresh everything is undone and ``ConfigEntryNotReady`` is
+    raised.
     """
-    from . import shadow
-
     # Prime the timezone cache off-loop: the first construction reads a
     # zoneinfo file, and schedule math needs it inside the loop.
     await hass.async_add_executor_job(cached_timezone, hass.config.time_zone)
 
-    # P5 flip: the window acts on its layered settings (layers.py). Record
-    # it, lift the house if it never was, adopt the window if it has no
-    # overrides of its own, then build the runtime on the resolved values.
-    shadow.async_setup_window(hass, window)
     coordinator = AdaptiveDataUpdateCoordinator(hass, window=window)
     settings = coordinator.options
     watched = ["sun.sun"]
@@ -126,9 +114,9 @@ async def async_build_window(
             watched.append(entity)
     if (end_entity := settings.get(CONF_END_ENTITY)) is not None:
         watched.append(end_entity)
-    covers = list(window.options.get(CONF_ENTITIES, []))
+    covers = window.covers
 
-    _LOGGER.debug("Setting up window %s", window.data.get("name"))
+    _LOGGER.debug("Setting up window %s", window.name)
     unsubs = [
         async_track_state_change_event(
             hass, watched, coordinator.async_check_entity_state_change
@@ -143,19 +131,8 @@ async def async_build_window(
         for unsub in unsubs:
             unsub()
         await coordinator.async_shutdown()
-        shadow.async_unload_window(hass, window.window_key)
         raise
-    hass.data.setdefault(DOMAIN, {})[window.window_key] = coordinator
     return coordinator, unsubs
-
-
-@callback
-def async_forget_window(hass: HomeAssistant, window_key: str) -> None:
-    """Drop an unloaded window from the coordinator index and the store."""
-    from .shadow import async_unload_window
-
-    hass.data.get(DOMAIN, {}).pop(window_key, None)
-    async_unload_window(hass, window_key)
 
 
 # ------------------------------------------------------------ the house
@@ -177,6 +154,31 @@ def house_runtime(entry: ConfigEntry) -> HouseRuntime | None:
     """Return the house entry's runtime (None when it is not loaded)."""
     runtime = getattr(entry, "runtime_data", None)
     return runtime if isinstance(runtime, HouseRuntime) else None
+
+
+def window_coordinators(
+    hass: HomeAssistant,
+) -> dict[str, AdaptiveDataUpdateCoordinator]:
+    """Return the running windows' coordinators, by window key."""
+    house = house_entry(hass)
+    runtime = house_runtime(house) if house is not None else None
+    if runtime is None:
+        return {}
+    return {
+        window.window.window_key: window.coordinator
+        for window in runtime.windows.values()
+    }
+
+
+def window_coordinator(
+    hass: HomeAssistant, window_key: str
+) -> AdaptiveDataUpdateCoordinator | None:
+    """Return one running window's coordinator, or None."""
+    return window_coordinators(hass).get(window_key)
+
+
+def _without_overrides(data: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in data.items() if key != OVERRIDES}
 
 
 class HouseRuntime:
@@ -213,11 +215,10 @@ class HouseRuntime:
         return self._house_device_id
 
     def _wanted(self) -> dict[str, Any]:
-        """Return the window subentries the house should run (not mid-consolidation)."""
+        """Return the window subentries the house runs."""
         return {
             subentry.subentry_id: subentry
             for subentry in self.entry.get_subentries_of_type(WINDOW_SUBENTRY)
-            if not is_pending(self.hass, subentry)
         }
 
     def _seen(self, subentry_id: str) -> tuple[str, dict[str, Any]]:
@@ -316,7 +317,6 @@ class HouseRuntime:
         for unsub in runtime.unsubs:
             unsub()
         await runtime.coordinator.async_shutdown()
-        async_forget_window(self.hass, runtime.window.window_key)
 
     def _window_failed(
         self, subentry_id: str, window: WindowEntry, err: BaseException
@@ -364,7 +364,6 @@ class HouseRuntime:
         title and data are unchanged is left alone.
         """
         from .layers import async_settings_changed
-        from .shadow import only_overrides_changed
 
         if self._closed:
             return
@@ -380,10 +379,14 @@ class HouseRuntime:
                 if runtime is None:
                     await self._async_start_window(subentry_id)
                     continue
-                if runtime.seen == self._seen(subentry_id):
+                seen = self._seen(subentry_id)
+                if runtime.seen == seen:
                     continue
-                if only_overrides_changed(self.hass, runtime.window):
-                    runtime.seen = self._seen(subentry_id)
+                if runtime.seen[0] == seen[0] and _without_overrides(
+                    runtime.seen[1]
+                ) == _without_overrides(seen[1]):
+                    # Only the window's overrides changed: it re-reads them.
+                    runtime.seen = seen
                     refresh.append(runtime.window.window_key)
                     continue
                 await self._async_stop_window(subentry_id)

@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/settings/schema.py b/custom_components/adaptive_cover/settings/schema.py
 --- a/custom_components/adaptive_cover/settings/schema.py
 +++ b/custom_components/adaptive_cover/settings/schema.py
-@@ -356,7 +356,7 @@
+@@ -345,7 +345,7 @@
      )
      marker_cls = vol.Required if required else vol.Optional
      kwargs = _suggested(values.get(opt.key))

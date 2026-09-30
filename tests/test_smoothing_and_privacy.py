@@ -15,7 +15,6 @@ from __future__ import annotations
 import datetime as dt
 
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     async_mock_service,
 )
 
@@ -32,6 +31,7 @@ from custom_components.adaptive_cover.const import (
     SensorType,
 )
 
+from .house_model import mock_window_entry
 from .conftest import COMMON_OPTIONS
 from .window_handle import WindowHandle, internal_coordinator
 
@@ -49,8 +49,8 @@ def _awaiting_target(hass, entry) -> bool:
 
 async def test_privacy_closes_after_dusk(hass, mock_sun_data, mock_sun_entity):
     """End-to-end: privacy mode drives the cover to the privacy position."""
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "Privacy Test", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -63,7 +63,6 @@ async def test_privacy_closes_after_dusk(hass, mock_sun_data, mock_sun_entity):
             CONF_PRIVACY_POSITION: 7,
         },
     )
-    entry.add_to_hass(hass)
     window = WindowHandle(hass, COVER)
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
@@ -102,8 +101,8 @@ async def test_privacy_offset_zero_engages_at_sunset(
     Ten minutes after sunset the privacy position must already be commanded;
     an `offset or 30` coercion would still be waiting.
     """
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "Privacy Zero", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -116,7 +115,6 @@ async def test_privacy_offset_zero_engages_at_sunset(
             CONF_PRIVACY_POSITION: 7,
         },
     )
-    entry.add_to_hass(hass)
     window = WindowHandle(hass, COVER)
     hass.states.async_set(COVER, "open", {"current_position": 60})
 
@@ -168,12 +166,11 @@ async def test_sunrise_offset_falls_back_to_sunset_offset(
     from custom_components.adaptive_cover.const import CONF_SUNRISE_OFFSET
 
     options.pop(CONF_SUNRISE_OFFSET)  # key absent: the fallback must engage
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "Sunrise Fallback", CONF_SENSOR_TYPE: SensorType.BLIND},
         options=options,
     )
-    entry.add_to_hass(hass)
     window = WindowHandle(hass, COVER)
     hass.states.async_set(COVER, "open", {"current_position": 60})
 
@@ -202,8 +199,8 @@ async def test_sunrise_offset_falls_back_to_sunset_offset(
 
 async def test_privacy_beats_winter_open(hass, mock_sun_data, mock_sun_entity):
     """The aquarium fix: climate winter logic must not reopen after dusk."""
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "Privacy Climate", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -219,7 +216,6 @@ async def test_privacy_beats_winter_open(hass, mock_sun_data, mock_sun_entity):
             CONF_PRIVACY_OFFSET: 30,
         },
     )
-    entry.add_to_hass(hass)
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
     hass.states.async_set("sensor.indoor", "17.0")  # cold: winter mode
@@ -242,8 +238,8 @@ async def test_privacy_beats_winter_open(hass, mock_sun_data, mock_sun_entity):
 async def test_regression_target_latch_tolerance(hass, mock_sun_data, mock_sun_entity):
     """Cover lands NEAR the target (99 vs 100): latch must clear so the
     next human move is detected as manual. Production bug 2026-07-02."""
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "Latch Test", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -253,7 +249,6 @@ async def test_regression_target_latch_tolerance(hass, mock_sun_data, mock_sun_e
             CONF_DELTA_TIME: 0,
         },
     )
-    entry.add_to_hass(hass)
     window = WindowHandle(hass, COVER)
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
@@ -283,8 +278,8 @@ async def test_regression_target_latch_expiry(
     """Cover never approaches the target: after TARGET_TIMEOUT the latch
     expires and human moves are manual again (not swallowed forever)."""
     freezer.move_to("2026-03-20 18:00:00+00:00")  # daytime; no midnight
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "Latch Expiry", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -294,7 +289,6 @@ async def test_regression_target_latch_expiry(
             CONF_DELTA_TIME: 0,
         },
     )
-    entry.add_to_hass(hass)
     window = WindowHandle(hass, COVER)
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
@@ -323,8 +317,8 @@ async def test_user_context_move_latches_even_mid_window(
     even inside a fresh travel window. Production bug 2026-07-02 (2)."""
     from homeassistant.core import Context
 
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "UserCtx", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -334,7 +328,6 @@ async def test_user_context_move_latches_even_mid_window(
             CONF_DELTA_TIME: 0,
         },
     )
-    entry.add_to_hass(hass)
     window = WindowHandle(hass, COVER)
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
@@ -363,8 +356,8 @@ async def test_user_context_move_latches_even_mid_window(
 async def test_no_recommand_while_awaiting_target(hass, mock_sun_data, mock_sun_entity):
     """While a command is in flight, adaptive ticks must not re-send:
     only the latest command matters, no stacking."""
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "NoStack", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -374,7 +367,6 @@ async def test_no_recommand_while_awaiting_target(hass, mock_sun_data, mock_sun_
             CONF_DELTA_TIME: 0,
         },
     )
-    entry.add_to_hass(hass)
     window = WindowHandle(hass, COVER)
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
@@ -419,8 +411,8 @@ async def test_poll_forced_when_landing_report_missing(
     )
     from homeassistant.util import dt as dt_util
 
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "PollTest", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -430,7 +422,6 @@ async def test_poll_forced_when_landing_report_missing(
             CONF_DELTA_TIME: 0,
         },
     )
-    entry.add_to_hass(hass)
     async_mock_service(hass, "cover", "set_cover_position")
     update_calls = async_mock_service(hass, "homeassistant", "update_entity")
     hass.states.async_set(COVER, "open", {"current_position": 60})
@@ -457,8 +448,8 @@ async def test_no_poll_when_cover_arrived(hass, mock_sun_data, mock_sun_entity):
     )
     from homeassistant.util import dt as dt_util
 
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "PollTest2", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -468,7 +459,6 @@ async def test_no_poll_when_cover_arrived(hass, mock_sun_data, mock_sun_entity):
             CONF_DELTA_TIME: 0,
         },
     )
-    entry.add_to_hass(hass)
     window = WindowHandle(hass, COVER)
     async_mock_service(hass, "cover", "set_cover_position")
     update_calls = async_mock_service(hass, "homeassistant", "update_entity")
@@ -500,8 +490,8 @@ async def test_regression_manual_latch_on_movement_start(
     end, so latching on the landing report left a 1-3 minute window where
     a person's move read as auto-controlled mid-travel.
     """
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "StartLatch", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -511,7 +501,6 @@ async def test_regression_manual_latch_on_movement_start(
             CONF_DELTA_TIME: 0,
         },
     )
-    entry.add_to_hass(hass)
     window = WindowHandle(hass, COVER)
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
@@ -543,8 +532,8 @@ async def test_regression_no_latch_when_movement_is_ours(
     hass, mock_sun_data, mock_sun_entity
 ):
     """Movement while our own command is in flight must NOT latch manual."""
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "OwnMove", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -554,7 +543,6 @@ async def test_regression_no_latch_when_movement_is_ours(
             CONF_DELTA_TIME: 0,
         },
     )
-    entry.add_to_hass(hass)
     window = WindowHandle(hass, COVER)
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
@@ -582,8 +570,8 @@ async def test_regression_resume_button_rename_keeps_unique_id(
     would orphan every existing registry entry). Regression 2026-07-03."""
     from homeassistant.helpers import entity_registry as er
 
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "Rename", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -592,7 +580,6 @@ async def test_regression_resume_button_rename_keeps_unique_id(
             CONF_ENTITIES: [COVER],
         },
     )
-    entry.add_to_hass(hass)
     hass.states.async_set(COVER, "open", {"current_position": 60})
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()

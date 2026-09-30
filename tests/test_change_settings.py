@@ -5,10 +5,7 @@ from __future__ import annotations
 import pytest
 import voluptuous as vol
 from homeassistant.exceptions import ServiceValidationError
-from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
-    async_mock_service,
-)
+from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.adaptive_cover.const import (
     CONF_DELTA_TIME,
@@ -25,6 +22,8 @@ from custom_components.adaptive_cover.const import (
 )
 
 from .conftest import COMMON_OPTIONS
+from .house_model import mock_window_entry, window_subentry
+from .window_form import record
 from .window_handle import internal_coordinator, window_settings
 
 COVER = "cover.test_cover"
@@ -32,20 +31,27 @@ COVER = "cover.test_cover"
 
 @pytest.fixture
 def entry(hass):
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        title="SE test shades",
-        data={"name": "Family room test", CONF_SENSOR_TYPE: SensorType.BLIND},
-        options={
+    """A house with one window: title "SE test shades", name "Family room test".
+
+    ``entry.entry_id`` is also the window's key.
+    """
+    return mock_window_entry(
+        hass,
+        {"name": "Family room test", CONF_SENSOR_TYPE: SensorType.BLIND},
+        {
             **COMMON_OPTIONS,
             CONF_HEIGHT_WIN: 2.0,
             CONF_DISTANCE: 0.1,
             CONF_ENTITIES: [COVER],
             CONF_DELTA_TIME: 0,
         },
+        title="SE test shades",
     )
-    entry.add_to_hass(hass)
-    return entry
+
+
+def _window(entry):
+    """The window subentry of the fixture's house."""
+    return window_subentry(entry, entry.entry_id)
 
 
 async def _setup(hass, entry):
@@ -74,9 +80,10 @@ async def test_change_settings_persists_and_reloads(hass, entry, mock_sun_entity
     )
     await hass.async_block_till_done()
 
-    assert entry.options[CONF_OVERHANG_DEPTH] == 1.2
-    assert entry.options[CONF_OVERHANG_HEIGHT] == 2.6
-    assert entry.options[CONF_PRIVACY_MODE] is True
+    geometry = record(_window(entry)).geometry
+    assert geometry[CONF_OVERHANG_DEPTH] == 1.2
+    assert geometry[CONF_OVERHANG_HEIGHT] == 2.6
+    assert geometry[CONF_PRIVACY_MODE] is True
     assert response["changed"] == sorted(
         [CONF_OVERHANG_DEPTH, CONF_OVERHANG_HEIGHT, CONF_EYE_HEIGHT, CONF_PRIVACY_MODE]
     )
@@ -84,7 +91,7 @@ async def test_change_settings_persists_and_reloads(hass, entry, mock_sun_entity
     # contract: internal (no entity exposes the adapter's overhang/privacy
     # config; the P5 Position `provenance` attribute will)
     coordinator = internal_coordinator(hass, entry.entry_id)
-    cover_data = coordinator.get_blind_data(entry.options)
+    cover_data = coordinator.get_blind_data(coordinator.options)
     assert cover_data.overhang is not None
     assert cover_data.privacy is not None and cover_data.privacy.enabled
 
@@ -139,7 +146,7 @@ async def test_no_changes_raises(hass, entry, mock_sun_entity):
 async def test_regression_rename_updates_title_and_device_name(
     hass, entry, mock_sun_entity
 ):
-    """change_settings with name renames the entry without breaking entities.
+    """change_settings with name renames the window without breaking entities.
 
     User request 2026-07-04: room-based names ("Office north") replacing the
     compass wizard names ("NE north shade") - without recreating entries.
@@ -161,8 +168,8 @@ async def test_regression_rename_updates_title_and_device_name(
     )
     await hass.async_block_till_done()
 
-    assert entry.title == "Office north"
-    assert entry.data["name"] == "Office north"
+    assert _window(entry).title == "Office north"
+    assert record(_window(entry)).name == "Office north"
     after = {
         e.unique_id for e in er.async_entries_for_config_entry(registry, entry.entry_id)
     }
@@ -178,7 +185,7 @@ async def test_rename_combines_with_option_changes(hass, entry, mock_sun_entity)
         blocking=True,
     )
     await hass.async_block_till_done()
-    assert entry.title == "Renamed"
+    assert _window(entry).title == "Renamed"
     assert (await window_settings(hass, entry.entry_id))[CONF_EYE_HEIGHT] == 1.4
 
 
@@ -222,19 +229,11 @@ async def test_regression_change_settings_enables_climate_mode(
     assert settings["climate_mode"] is True
     assert settings["temp_entity"] == "sensor.room_temp"
     assert settings["weather_state"] == ["sunny", "clear"]
-    # The reload created the climate-mode switch and the season resolves
-    # in the sensor's own unit: 68 °F < 70 → winter.
+    # The window was rebuilt in climate mode and the season resolves in the
+    # sensor's own unit: 68 °F < 70 → winter.
     registry = er.async_get(hass)
-    unique_ids = {
-        e.unique_id for e in er.async_entries_for_config_entry(registry, entry.entry_id)
-    }
-    assert any(
-        uid.endswith("_Climate Mode") or "climate" in uid.lower() for uid in unique_ids
-    ), unique_ids
-    method = next(
-        e.entity_id
-        for e in er.async_entries_for_config_entry(registry, entry.entry_id)
-        if "control_method" in e.entity_id
+    method = registry.async_get_entity_id(
+        "sensor", DOMAIN, f"{entry.entry_id}_Control Method"
     )
     assert hass.states.get(method).state == "winter"
 

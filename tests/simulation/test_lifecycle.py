@@ -409,7 +409,11 @@ async def test_daytime_start_positions_within_first_tick(hass, freezer):
 
 
 async def test_switch_restore_captured_states(hass, freezer):
-    """Switches restore their pre-restart states across restart()."""
+    """What the switches were keeps its pre-restart state across restart().
+
+    The window's Mode restores itself (Toggle Control off -> Mode off); the
+    toggles are house settings (stored, so they outlast a restart).
+    """
     house = await SimHouse.create(
         hass,
         freezer,
@@ -422,23 +426,23 @@ async def test_switch_restore_captured_states(hass, freezer):
 
     await house.restart(at="10:30")
 
-    assert house.entity("switch", "toggle_control").state == "off", (
+    assert house.switch("toggle_control") == "off", (
         "control switch did not restore its captured off state"
     )
-    assert house.entity("switch", "climate_mode").state == "off", (
+    assert house.switch("climate_mode") == "off", (
         "climate mode switch did not restore its captured off state"
     )
-    assert house.entity("switch", "manual_override").state == "on", (
+    assert house.switch("manual_override") == "on", (
         "untouched manual override switch lost its on state"
     )
     await house.teardown()
 
 
 async def test_switch_defaults_without_prior_state(hass, freezer):
-    """A brand-new entry's switches start at their documented defaults.
+    """A brand-new window starts at the switches' documented defaults.
 
-    No prior state exists at first setup, so RestoreEntity falls back to
-    the initial states: control ON, manual override ON, climate mode ON,
+    No prior state exists at first setup: the Mode is auto (control ON),
+    and the house's toggles are manual-move detection ON, climate ON and
     outside temperature OFF.
     """
     house = await SimHouse.create(
@@ -452,10 +456,10 @@ async def test_switch_defaults_without_prior_state(hass, freezer):
             "outside_temp": 28.0,
         },
     )
-    assert house.entity("switch", "toggle_control").state == "on"
-    assert house.entity("switch", "manual_override").state == "on"
-    assert house.entity("switch", "climate_mode").state == "on"
-    assert house.entity("switch", "outside_temperature").state == "off"
+    assert house.switch("toggle_control") == "on"
+    assert house.switch("manual_override") == "on"
+    assert house.switch("climate_mode") == "on"
+    assert house.switch("outside_temperature") == "off"
     await house.teardown()
 
 

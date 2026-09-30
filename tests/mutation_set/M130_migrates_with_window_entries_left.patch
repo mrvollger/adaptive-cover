@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/upgrade.py b/custom_components/adaptive_cover/upgrade.py
+--- a/custom_components/adaptive_cover/upgrade.py
++++ b/custom_components/adaptive_cover/upgrade.py
+@@ -212,7 +212,7 @@
+         written.
+ 
+     """
+-    if windows := needs_consolidation(hass):
++    if windows := []:
+         raise MigrationRefused(
+             f"{len(windows)} window entries are not consolidated yet"
+         )
