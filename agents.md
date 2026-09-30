@@ -54,23 +54,21 @@ custom_components/adaptive_cover/
 │   ├── events.py            # RefreshQueue: why the next refresh runs (entity, cover, startup, end time)
 │   └── explainer.py         # Explainer: next change, forecast, last change, move log, sensor attributes
 ├── sun.py                   # Astral-based solar table (SolarDay, 5-minute points, stdlib only)
-├── config_flow.py           # Setup wizard + one-page options form (routing only)
+├── config_flow.py           # The house's first window (config flow), Add window / Change window (subentry flow), house options
 ├── settings/                # One option spec; every settings surface is built from it (P3)
 │   ├── spec.py              # OPTS: one row per option (kind, default, range, unit, one-time/recurring, surfaces, legacy drift)
 │   ├── schema.py            # Wizard pages, options sections, service schemas, number ranges
-│   ├── normalize.py         # The window's one cover: cover_entity_id + group: [cover] (both written until P8)
+│   ├── normalize.py         # The one cover in flat options (cover_entity_id, or the runtime's group: [cover])
 │   ├── validate.py          # Cross-field checks (elevation order, blind-spot order, interp lists)
 │   ├── resolve.py           # P5: pure layered resolver (window > area > floor > house > default) + provenance
 │   ├── lift.py              # P5: pure lift of flat legacy options into house/floor/area/window layers
-│   └── shadow.py            # P5 store: toggle settings, stored-layer (de)serialization, compare, adopt
-├── window_cover.py          # One cover per window (ADR 0002): cover_problem guard, registry-id unique_id, split issue
-├── migration.py             # Config entry 1.3: fallbacks written into options, cover_entity_id, unique_id
-├── shadow.py                # Config entry 1.4 (P5): lift into the hub (also a never-lifted house at setup), switch-state capture, adoption
-├── layers.py                # P5 flip: what a window acts on (resolved every refresh), sparse window edits, profiles, propagation
-├── repairs.py               # Fix flows: "split" (multi-cover entry -> one window per cover), "consolidate" (P7: dry run, backup, move)
-├── windows.py               # P7: WindowEntry (a window entry or a house "window" subentry, read the same way), lookups, async_update_window
-├── house.py                 # P7: HouseRuntime (house entry runtime_data): one coordinator per window subentry, isolated setup, subentry listener
-├── consolidate.py           # P7: move window entries into house subentries (plan, snapshot, re-parent rows, resumable) + the repair issue
+│   ├── shadow.py            # P5 store: toggle settings, house options (de)serialization, compare, adopt
+│   └── window_record.py     # P8: what a window subentry stores (name, cover, cover type, geometry, overrides) + the v2.0 reader
+├── window_cover.py          # One cover per window (ADR 0002): cover_problem guard, registry-id unique_id
+├── layers.py                # What a window acts on (resolved every refresh), sparse window edits, new windows' overrides, profiles, propagation
+├── windows.py               # WindowEntry (a house "window" subentry: record, key, name, cover), lookups, async_update_window
+├── house.py                 # HouseRuntime (house entry runtime_data): one coordinator per window subentry, isolated setup, subentry listener, window_coordinators
+├── upgrade.py               # P8: migration 2.1 -> 3.1 (window records, switch alias rows, house options) + the consolidate_first nag
 ├── const.py                 # All config keys, defaults, enums
 ├── hub.py                   # "Adaptive Cover All" hub device (all-shades cover, house Mode select auto/hold/off/mixed, reset-all button)
 ├── house_settings.py        # P5 flip: the house settings on the hub (Climate + toggle switches, threshold/duration/geometry numbers, end/quiet times)
@@ -79,12 +77,12 @@ custom_components/adaptive_cover/
 ├── cover.py                 # Cover platform: only the hub's aggregate cover
 ├── sensor.py                # Position %, solar times, control method, next/last change
 ├── binary_sensor.py         # Sun in front, manual override active
-├── switch.py                # Hidden switch aliases (P5): Toggle Control writes the Mode; the others write the window's toggle value
+├── switch.py                # The house's toggle switches (windows have none since v2.1)
 ├── select.py                # Mode select auto/hold/off (RestoreEntity, source of truth) + the hold entity service
 ├── number.py                # The hub's house numbers (the window numbers were removed in the P5 flip)
 ├── button.py                # Return to auto button (Mode auto)
 ├── entity_shared.py         # Shared entity helpers (device info, Position window attributes)
-├── entity_surface.py        # Entity surface table (category, visibility, name key) + 1.2/1.5 migrations + area copy
+├── entity_surface.py        # Entity surface table (category, visibility, name key) + area copy
 ├── frontend.py              # Serves and auto-registers the bundled Lovelace card
 ├── logbook.py               # Logbook text for adaptive_cover_moved events
 ├── helpers.py               # Utility functions (safe state access, datetime parsing)
@@ -123,9 +121,10 @@ tests/
   precedence (window override → area → floor → house → spec default) and
   the one-time vs recurring rule, 0004 refactor contract v2 + behavior
   tier/mutation gate, 0005 drop pandas/numpy/pytz, 0006 (proposed, P7)
-  window subentries in v2.0: verbatim storage, versions, move order. A
-  new design decision gets a new ADR; an accepted ADR is superseded, not
-  rewritten.
+  window subentries in v2.0: verbatim storage, versions, move order, 0007
+  (proposed, P8) the house is the only runtime in v2.1: the window record,
+  the consolidate_first nag, version 3. A new design decision gets a new
+  ADR; an accepted ADR is superseded, not rewritten.
 - `CONTRIBUTING.md` — the how-to for everything in "Development & Testing".
 
 ## Core Architecture
@@ -179,50 +178,42 @@ cover state change ────┘         ▼
 
 **`Clock`** (runtime/clock.py) — Where "now" comes from. The coordinator owns one (`coordinator.clock`; `coordinator.default_clock` is the test seam) and hands it to its override manager, cover adapters and `SunData`. Production uses `HassClock` (`dt_util`, which `freezer` freezes).
 
-**`ShadeConfig`** / **`ControlState`** / **`Schedule`** / **`GatePolicy`** (runtime/, P4 batch 1) — Split out of the coordinator, no `hass`. The coordinator rebuilds `self.config = ShadeConfig.from_options(options)` each refresh, keeps the switch toggles in `self.controls` (the switch platform still sets `control_toggle`, `manual_toggle`, ... by name through `ControlToggle` forwards), asks `self.schedule` for the start/end window and `self.gates.first_blocking_gate(...)` for each automatic move.
+**`ShadeConfig`** / **`ControlState`** / **`Schedule`** / **`GatePolicy`** (runtime/, P4 batch 1) — Split out of the coordinator, no `hass`. The coordinator rebuilds `self.config = ShadeConfig.from_options(options)` each refresh, keeps the toggles in `self.controls` (from the resolved settings; `control_toggle`, `manual_toggle`, ... read them by name through `ControlToggle` forwards), asks `self.schedule` for the start/end window and `self.gates.first_blocking_gate(...)` for each automatic move.
 
 **`CommandTracker`** / **`ManualDetector`** / **`OverrideTracker`** / **`EndOfDay`** (runtime/, P4 batch 2) — Also no `hass`. `self.commands` holds the commands in flight (`wait_for_target`, `target_call`, `target_call_time`, our context ids, failed sends that may still arrive) and classifies cover reports against them; the coordinator exposes `wait_for_target`, `target_call_time` and `TARGET_TIMEOUT` for the reset button. `self.detector` holds the manual-move rules and latches into `self.manager` (the `OverrideTracker`: latch, override clock, the `hass.data` store). `self.end_of_day` arms the end-time timer, runs the close and keeps undelivered closes for a retry. HA calls (services, timers) reach them as callables the coordinator passes in.
 
 **`Decider`** (runtime/decider.py, P4 batch 3) — Picks the basic or climate position and applies the output transforms (interpolation, or inversion; the min/max clamp stays in the engine). `coordinator.state` and `_transform_state` delegate to `self.decider`, so tracking moves, the forecast and the end-of-day close share one transform chain.
 
-**`Explainer`** / **`RefreshQueue`** (runtime/, P4 batch 4) — `self.explainer` builds what the entities explain (next change event, today's forecast, last change, the move log and the Position sensor's explanation attributes); `coordinator.forecast`, `move_log` and `record_move_provenance` forward to it. `self.events` replaces the four refresh flags: each `RefreshEvent` (ENTITY_CHANGED, COVER_CHANGED, STARTUP, END_TIME) stays pending until its handler marks it done, and cover reports queue in order. Each window entry's coordinator is `entry.runtime_data`; `hass.data[DOMAIN][window_key]` is the index of every loaded window's coordinator (entries and subentries) for the hub, the services and `layers`.
+**`Explainer`** / **`RefreshQueue`** (runtime/, P4 batch 4) — `self.explainer` builds what the entities explain (next change event, today's forecast, last change, the move log and the Position sensor's explanation attributes); `coordinator.forecast`, `move_log` and `record_move_provenance` forward to it. `self.events` replaces the four refresh flags: each `RefreshEvent` (ENTITY_CHANGED, COVER_CHANGED, STARTUP, END_TIME) stays pending until its handler marks it done, and cover reports queue in order. The house entry's `runtime_data` (a `HouseRuntime`) holds every running window's coordinator; `house.window_coordinators(hass)` is how the hub, the services, diagnostics and `layers` find them (`hass.data` keeps only the override store).
 
-**`WindowEntry`** / **`HouseRuntime`** (windows.py, house.py; P7, ADR 0001/0006) — Two config models run until P8. *Legacy*: one config entry per window (1.x) plus the hub. *House*: the hub is the house entry (2.x) and each window is a `window` config subentry storing the entry's data and options verbatim (`{window_key, data, options}`). `WindowEntry` reads both the same way (`entry_id` = the window key = the old entry_id or a new window's subentry_id); the coordinator, the platforms and `layers`/`shadow` take a `WindowEntry` (or a legacy `ConfigEntry`) and write through `windows.async_update_window`. The house entry's `runtime_data` is a `HouseRuntime`: `async_build_window` per subentry (shared with legacy setup), entities added per platform with `config_subentry_id`, window devices `via_device_id` → house device, a failing window gets a `window_setup_failed_<key>` repair issue and a retry, and the house update listener (`async_sync`) starts/stops/rebuilds only the subentries that changed (an `overrides`-only change re-resolves in place). A fresh install creates the house with subentries; a 1.x house keeps window entries until the owner fixes the `consolidate_house` repair (`consolidate.py`).
+**`WindowEntry`** / **`HouseRuntime`** (windows.py, house.py; P7, P8, ADR 0001/0006/0007) — The house entry (the hub, 3.x) is the integration's one running config entry (`single_config_entry`); each window is a `window` config subentry storing its record (`settings/window_record.py`): `{window_key?, name, cover_entity_id, cover_type, geometry, overrides}` (one-time settings in `geometry`, sparse recurring values in `overrides`; nothing recurring is copied). `WindowEntry` reads one (`entry_id`/`window_key` = the old entry_id or a new window's subentry_id; `name`, `cover`, `covers`, `cover_type`, `geometry`, `overrides`, and `options`, the computed flat one-time options the runtime reads); edits go through `windows.async_update_window(hass, window, record)`. The house entry's `runtime_data` is a `HouseRuntime`: `async_build_window` per subentry, entities added per platform with `config_subentry_id`, window devices `via_device_id` → house device, a failing window gets a `window_setup_failed_<key>` repair issue and a retry, and the house update listener (`async_sync`) starts/stops/rebuilds only the subentries that changed (an `overrides`-only change re-resolves in place).
+
+**Upgrading to v2.1** (upgrade.py, P8, ADR 0007) — A house consolidated on v2.0.x (2.1, subentries verbatim) migrates at its first start to 3.1: snapshot `.storage/adaptive_cover.v2_0_snapshot`, every subentry rewritten to its record, the 6 switch alias rows per window removed, the house options cut to `house`/`floors`/`areas`/`temperature_unit`. A house with enabled window entries (1.x, or a consolidation that stopped part way) is not touched: every entry fails to set up with the `consolidate_first` message and the non-fixable `consolidate_first` repair says to consolidate on v2.0.x first.
 
 ### Config Flow (config_flow.py)
 
-Multi-step wizard:
-1. **User** → pick blind type + name
-2. **Vertical/Horizontal/Tilt** → window geometry parameters
-3. **Interpolation** (optional) → custom position mapping
-4. **Blind spot** (optional) → shadow exclusion zones
-5. **Automation** → timing, delta thresholds, manual override duration
-6. **Climate** (optional) → temp/presence/weather/lux/irradiance entities
-7. **Weather** (optional) → which weather conditions trigger control
+- **Config flow** (`ConfigFlowHandler`, version 3.1): runs only while the
+  integration has no entry (`single_config_entry`). Its user step is the
+  one-screen window form; it creates the house entry with that window as
+  its first subentry and the house options lifted from it
+  (`layers.initial_house_options`).
+- **Add window / Change window** (`WindowSubentryFlow`): the same form. A
+  new window gets the overrides it needs at creation
+  (`layers.new_window_record`: every value it would not inherit at its
+  cover's area). Reconfigure is the whole form incl. the exceptions,
+  stored sparsely (`reconfigured_window`). "Add window" on a house that
+  is not 3.x aborts `consolidate_first`.
+- **House options** (`HouseOptionsFlow`, step `house`): every house-level
+  setting, stored through `layers.async_set_profile`.
 
-The options flow (`OptionsFlowHandler`) is one sectioned page, `init`:
-covers_geometry, sun_behavior, automation_timing and climate. Every field
-on the wizard, the options form, the `change_settings` / `add_entry`
-schemas and the number entities comes from `settings/spec.py`;
+Every field on these forms, the `change_settings` / `add_entry` schemas
+and the number entities comes from `settings/spec.py`;
 `tests/contract/spec_parity.json` pins what each surface shows
-(regenerate with `tests/contract/generate_spec_parity.py`, ledger the diff).
-
-One cover per window (ADR 0002, P3): the cover field is `cover_entity_id`
-(single select). Every writer also stores `group: [cover]`, which the
-runtime still reads (older versions write only `group`). The wizard, the
-options form and `add_entry` (`cover`, or the older `covers` with one item)
-refuse a cover another enabled window drives (`window_cover.cover_problem`).
-A new entry's unique_id is its cover's entity-registry id. An entry with
-several covers keeps working and gets a fixable `split_window` repair issue.
-
-P7 flows: the flow's version is 2. A fresh install's user step creates the
-house entry (2.1) with the window as its first subentry; on a 2.x house it
-adds a subentry and ends with `window_added`; on a 1.x house it creates a
-1.5 window entry as before. `WindowSubentryFlow` is "Add window" (the same
-one-screen form; `consolidate_first` on a 1.x house) and a subentry's
-Reconfigure (the whole form incl. the exceptions, stored sparsely). The
-house entry's options flow is `HouseOptionsFlow` (step `house`): every
-house-level setting, stored through `layers.async_set_profile`.
+(regenerate with `tests/contract/generate_spec_parity.py`, ledger the
+diff). One cover per window (ADR 0002): the forms and `add_entry`
+(`cover`, or the older `covers` with one item) refuse a cover another
+window drives (`window_cover.cover_problem`); a window subentry's
+unique_id is its cover's entity-registry id.
 
 ## Solar Algorithm Details
 
@@ -270,37 +261,27 @@ Season is determined by comparing current temperature against configurable low/h
 Names come from `translation_key` + `strings.json` (`has_entity_name`), so
 friendly names read "<Device> <Role>". Unique_id suffixes (in parentheses)
 are frozen; categories and default visibility come from one table in
-`entity_surface.py` (refactor plan, "Entity surface"; P1). Config entry
-1.1 -> 1.2 (`async_migrate_entry`) applies the table to existing registry
-rows without overriding user choices. 1.2 -> 1.3 (P3, `migration.py`)
-writes every option the entry reads through a code fallback into its
-options, the cover as `cover_entity_id`, and the cover's registry id as
-unique_id. 1.3 -> 1.4 (P5 shadow, `shadow.py`) lifts every window into
-house / floor / area profiles in the hub's options and a sparse
-`overrides` per window, recording the states of the switches P5 drops;
-since the P5 flip the runtime acts on them (`layers.py`: every refresh
-resolves window -> area -> floor -> house -> default; one-time settings
-come from the window's options), edits store sparsely in them (the
-options form, `change_settings`: recurring values as the window's
-`overrides`, one-time ones in its options) and the legacy flat keys are
-left for a downgrade. A house that was never lifted lifts itself at setup.
-1.4 -> 1.5 (P5 flip) hides the six switches (hidden_by integration, still
-enabled): they are aliases of the Mode select and the toggle settings for
-one release. At setup the window device copies the physical cover's area
-if it has none.
+`entity_surface.py` (refactor plan, "Entity surface"; P1). The window's
+settings are its resolved layers (`layers.py`: every refresh resolves
+window -> area -> floor -> house -> default; one-time settings come from
+the window record's `geometry`); edits store sparsely (Reconfigure,
+`change_settings`: recurring values as the window's `overrides`, one-time
+ones in its geometry). At setup the window device copies the physical
+cover's area if it has none. The 1.x entry migrations (1.2 surface, 1.3
+fallbacks, 1.4 lift, 1.5 hidden aliases) ran on v2.0.x and are gone in
+v2.1; migration 3.1 (`upgrade.py`) removes the switch aliases.
 
 | Platform | Name (unique_id suffix) | Visibility | Purpose |
 |----------|-------------------------|------------|---------|
 | sensor | Target position (`Cover Position`) | primary | Calculated position (0-100%); attributes include `window_key`, `cover_entity`, `cover_type`, `override_until`, `next_move`, `provenance` (non-house sources of the layered settings; P5) |
-| select | Mode (`mode_select`) | primary | `auto` / `hold` / `off` (P5 flip): the window's control state, restored (first boot: from the Toggle Control switch); attribute `until` while held. Entity service `adaptive_cover.hold(duration?, position?)` |
+| select | Mode (`mode_select`) | primary | `auto` / `hold` / `off` (P5 flip): the window's control state, restored (nothing to restore: `auto`); attribute `until` while held. Entity service `adaptive_cover.hold(duration?, position?)` |
 | button | Return to auto (`Reset Manual Override`) | primary | Mode auto: end a hold (move back) or turn an off window on |
 | binary_sensor | Manual override (`Manual Override`) | diagnostic | Any cover under manual control? (attribute `until`) |
 | binary_sensor | Sun in front (`Sun Infront`) | diagnostic | Is sun within window FOV? |
 | sensor | Control method (`Control Method`) | diagnostic | "winter" / "summer" / "intermediate" |
 | sensor | Start sun, End sun, Next change, Last change | diagnostic, disabled by default | Solar times and the next/last change |
-| switch | Automatic control, Manual override detection, Climate mode, Outside temperature, Lux, Irradiance | config, hidden (enabled) | Aliases until P8: Automatic control writes/mirrors the Mode; the others still set the window's ControlState (house settings `manual_detection`, `climate_on`, `use_*` in the stored layers) |
 | hub switch | Climate (`climate_on`), Manual-move detection, Use outside temperature / lux / irradiance | primary (Climate), config | The house's settings (P5 flip); a change reaches every window without a reload |
-| hub number | Heating / cooling threshold, manual override duration (min), eye height, seat distance, privacy delay | config | The house's settings (P5 flip); the window numbers are gone (rows removed at setup) |
+| hub number | Heating / cooling threshold, manual override duration (min), eye height, seat distance, privacy delay | config | The house's settings (P5 flip); windows have no numbers |
 | hub time | End time, quiet hours start, quiet hours end | config | The house's settings (P5 flip) |
 
 ## Manual Override Detection
@@ -345,7 +326,7 @@ Environment and tasks come from `pixi.toml` (see `CONTRIBUTING.md`):
 pixi install          # environment from pixi.lock
 pixi run test         # full pytest suite, parallel (pytest -n auto)
 pixi run lint         # ruff
-pixi run typecheck    # pyright (strict and zero errors on engine/ and runtime/)
+pixi run typecheck    # pyright: standard mode, strict on engine/, runtime/ and the pure settings/ modules; no baseline
 pixi run mutations    # mutation kill matrix (tests/mutation_set/)
 pixi run pytest tests/simulation -q   # one tier or file
 ```
@@ -363,7 +344,7 @@ own npm toolchain in `card/` (`npm test`, `npm run typecheck`,
 | Runtime | `tests/runtime/` | runtime components called directly with fakes, no `hass` fixture (implementation tier); `test_no_hass.py` guards it |
 | Characterization | `tests/characterization/` | `climate_truth_table.json` (216 combos), golden day schedules in `goldens/`, outbound service calls |
 | Simulation | `tests/simulation/` | full-day SimHouse replays of the REAL integration (fake shades, real astral sun, stepped frozen clock) |
-| Entity surface | root `tests/test_*.py` | config flow, options, services, entities, hub, restore — through a real config entry |
+| Entity surface | root `tests/test_*.py` | config flow, subentry flow, house options, services, entities, hub, restore, the v2.1 upgrade (`test_upgrade_2_1.py`) — through a real house entry (`tests/house_model.py`) |
 | House replay | `tests/replay/` | the real house configs on 6 dates (DST start/end, equinoxes, solstices): outbound command timeline |
 | Contract | `tests/contract/` | `behavior_tier_ids.txt` + `ledger.md`, checked by `check_behavior_tier.py` |
 | Card | `card/tests/` | vitest |
@@ -421,12 +402,12 @@ the reference for `engine/numeric.py`.
 
 ## Patterns Worth Knowing
 
-- **Coordinator pattern**: single `DataUpdateCoordinator` per config entry, all entities subscribe
-- **RestoreEntity**: the Mode select (control state, a hold's end) and the switch aliases persist across HA restarts
+- **Coordinator pattern**: one `DataUpdateCoordinator` per window subentry (the house entry's `HouseRuntime` runs them); the window's entities subscribe
+- **RestoreEntity**: the Mode select (control state, a hold's end) persists across HA restarts
 - **Executor offload**: solar calculations run in `hass.async_add_executor_job` to avoid blocking
 - **Contextual logging**: `ConfigContextAdapter` prepends config name to all log messages
 - **Service call throttling**: position delta + time delta + timing window gates before calling covers
-- **Config merging**: options flow updates `config_entry.options`; coordinator merges `data + options`
+- **Layered settings**: a window reads its record (`geometry`, `overrides`) and the house's layers; `layers.effective_settings` resolves them on every refresh
 
 ## Fork & Release Workflow
 

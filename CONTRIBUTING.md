@@ -30,9 +30,8 @@ The Python environment is managed with [pixi](https://pixi.sh). `pixi.toml` and 
 pixi install          # create the environment from pixi.lock
 pixi run test         # the full pytest suite, in parallel (pytest -n auto)
 pixi run lint         # ruff lint and format checks
-pixi run typecheck    # pyright (basic with a baseline; strict and zero errors on engine/, runtime/, settings/resolve.py and settings/lift.py)
+pixi run typecheck    # pyright (standard mode, no baseline; strict on engine/, runtime/ and the pure settings/ modules)
 pixi run mutations    # the mutation kill matrix (tests/mutation_set/)
-pixi run test-house-model  # the simulation tier with every SimHouse in the house model (P7)
 ```
 
 - Run one tier or one file with `pixi run pytest <path>`, for example `pixi run pytest tests/simulation -q`.
@@ -76,7 +75,7 @@ Copy `custom_components/adaptive_cover/` into `/config/custom_components/` on a 
 | Runtime | `tests/runtime/` | The components split out of the coordinator (P4), called directly with fakes and no `hass` fixture. Implementation tier: later P4 steps may reshape them. `test_no_hass.py` keeps them free of Home Assistant. |
 | Characterization | `tests/characterization/` | The climate truth table (`climate_truth_table.json`, 216 combinations), the golden day schedules (`goldens/*.txt`) and the outbound service calls (`test_service_calls.py`). |
 | Simulation | `tests/simulation/` | Full-day replays of the real integration against fake shades, a real astral sun and a stepped frozen clock (SimHouse). |
-| Entity surface | root `tests/test_*.py` | Config flow, options, services, entities, the hub and restore behavior, through a real config entry. |
+| Entity surface | root `tests/test_*.py` | Config flow, Add window and Change window, the house options, services, entities, the hub, restore behavior and the v2.1 upgrade, through a real house entry (`tests/house_model.py` builds one with window subentries). |
 | House replay | `tests/replay/` | The real house configs on 6 dates (DST start and end, both equinoxes, both solstices) with scripted weather and manual moves. Pins the outbound command timeline. |
 | Contract | `tests/contract/` | The behavior-tier id list and the ledger check. See [the behavior-tier ledger](#the-behavior-tier-ledger). |
 | Mutation | `tests/mutation_set/` | Not a test tier. It checks that the tiers above catch deliberate bugs. See [adding a mutation](#adding-a-mutation). |
@@ -106,7 +105,7 @@ The truth table, the goldens and the house replay are review artifacts. If a cha
 The full harness API is in [`tests/simulation/README.md`](tests/simulation/README.md). The short version:
 
 1. Pick the file by topic, for example `test_manual_override_behavior.py`, `test_gates_and_windows.py` or `test_lifecycle.py`. The README's "File tour" helps.
-2. Build the house with `SimHouse.create(hass, freezer, date=..., covers=[...], options={...})`. Each cover gets its own window (one cover per window). Add `climate={...}` for climate mode and `start_at="13:00"` for a mid-day start.
+2. Build the house with `SimHouse.create(hass, freezer, date=..., covers=[...], options={...})`. Each cover gets its own window (one cover per window), a subentry of one house entry. Add `climate={...}` for climate mode and `start_at="13:00"` for a mid-day start.
 3. Drive time with `house.advance_to("HH:MM")`, and inputs with `house.user_moves(...)`, `house.set_temperature(...)`, `house.set_options(...)` or `house.restart(...)`.
 4. Assert on what a person would observe: `house.auto_moves(...)`, `house.moves(...)`, `house.position(...)` and entity states through `house.eid(...)` / `house.sensor_attr(...)`. Never hard-code entity_ids.
 5. End with `await house.teardown()`.
