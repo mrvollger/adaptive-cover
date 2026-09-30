@@ -1,12 +1,9 @@
 diff --git a/custom_components/adaptive_cover/window_cover.py b/custom_components/adaptive_cover/window_cover.py
 --- a/custom_components/adaptive_cover/window_cover.py
 +++ b/custom_components/adaptive_cover/window_cover.py
-@@ -79,7 +79,7 @@
+@@ -66,4 +66,4 @@
          hass, covers[0], exclude_entry_id=exclude_entry_id
      ):
          problem = ERROR_COVER_IN_USE
 -    return problem
 +    return None
- 
- 
- # ------------------------------------------------------------ split repair

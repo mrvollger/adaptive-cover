@@ -1,40 +1,37 @@
-"""The pure part of the P5 shadow release (settings/shadow.py).
+"""The pure layered-settings store (settings/shadow.py, window_record.py).
 
-- The dropped switches are layered settings of their own (``TOGGLE_OPTS``),
-  outside ``OPTS``, so no form or service shows them yet.
-- ``legacy_values`` = the options the runtime reads plus the switch states.
-- Stored layers round-trip through the hub and window options: every
-  lifted window compares equal, whatever its switch states.
+- The toggles that replaced the per-window switches are layered settings
+  of their own (``TOGGLE_OPTS``), outside ``OPTS``, so no window form or
+  service shows them.
+- ``legacy_values`` = a window's flat options plus its toggle values.
+- Stored layers round-trip through the house options and the window
+  records: every lifted window compares equal, whatever its toggles.
+- A v2.0 window's own overrides are the ones naming it (a copy's are not).
 - A differing option is reported (30 == 30.0; a bool is not a number).
 - ``adopt`` lifts one new window against stored layers exactly.
 - The provenance summary leaves out house, default and one-time values.
-- ``TOGGLE_SWITCHES`` predicts which switches ``switch.py`` creates.
 """
 
 from __future__ import annotations
 
 import random
+from collections.abc import Mapping
+from typing import Any
 
 import pytest
-from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.adaptive_cover.const import (
-    CONF_CLIMATE_MODE,
     CONF_DEFAULT_HEIGHT,
-    CONF_IRRADIANCE_ENTITY,
-    CONF_LUX_ENTITY,
     CONF_MANUAL_DETECTION,
-    CONF_OUTSIDETEMP_ENTITY,
     CONF_SUNRISE_OFFSET,
     CONF_SUNSET_POS,
     CONF_TEMP_ENTITY,
     CONF_USE_LUX,
     CONF_USE_OUTSIDE_TEMP,
-    CONF_WEATHER_ENTITY,
 )
-from custom_components.adaptive_cover.migration import options_1_3
+from custom_components.adaptive_cover.runtime.shade_config import absent_options
 from custom_components.adaptive_cover.settings.lift import LegacyWindow, placements
+from custom_components.adaptive_cover.settings.normalize import normalize_cover
 from custom_components.adaptive_cover.settings.resolve import (
     Placement,
     Resolution,
@@ -45,32 +42,36 @@ from custom_components.adaptive_cover.settings.shadow import (
     SHADOW_SPEC,
     TOGGLE_KEYS,
     TOGGLE_OPTS,
-    TOGGLE_SWITCHES,
     adopt,
     compare,
     differing_keys,
     hub_options,
-    is_lifted,
     legacy_values,
     lift_house,
-    overrides_option,
     provenance_summary,
-    stored_overrides,
-    without_overrides,
 )
 from custom_components.adaptive_cover.settings.spec import OPTS, Level
+from custom_components.adaptive_cover.settings.window_record import (
+    overrides_data,
+    overrides_from_data,
+    v2_0_overrides,
+)
 
-from ..test_entity_surface_v2 import _entry, _set_world, _setup
 from .house import TEMPERATURE_UNIT, load_house
 
 HOUSE = load_house()
 DEFAULTS = {opt.key: opt.default for opt in TOGGLE_OPTS}
 
 
+def _flat(options: Mapping[str, Any]) -> dict[str, Any]:
+    """A window's flat options as the runtime reads them (fallbacks written)."""
+    return normalize_cover({**options, **absent_options(options)})
+
+
 def _house_legacy(toggles_for) -> dict[str, dict]:
     return {
         w.window_key: legacy_values(
-            options_1_3(w.options),
+            _flat(w.options),
             toggles_for(w.window_key),
             temperature_unit=TEMPERATURE_UNIT,
         )
@@ -100,14 +101,19 @@ def test_toggles_are_house_settings_outside_the_option_spec():
         "climate_on",
         CONF_MANUAL_DETECTION,
     }
-    assert [switch.key for switch in TOGGLE_SWITCHES] == list(TOGGLE_KEYS)
-    # a switch with nothing to restore starts at the setting's default
-    assert {s.key: s.initial for s in TOGGLE_SWITCHES} == DEFAULTS
+    # (the switches' initial states before P5: control, lux and irradiance on)
+    assert DEFAULTS == {
+        "climate_on": True,
+        CONF_USE_OUTSIDE_TEMP: False,
+        CONF_USE_LUX: True,
+        "use_irradiance": True,
+        CONF_MANUAL_DETECTION: True,
+    }
 
 
 def test_legacy_values_are_the_options_plus_the_switches():
     options = {
-        **options_1_3(HOUSE.windows[0].options),
+        **_flat(HOUSE.windows[0].options),
         "overrides": {"window_key": "x"},
         "name": "not an option",
     }
@@ -126,23 +132,23 @@ def test_stored_layers_round_trip_whatever_the_switches():
     }
     legacy = _house_legacy(lambda key: toggles[key])
     lifted, hub = _lift_house(legacy)
-    assert is_lifted(hub)
+    # The house options hold the layers and nothing else.
+    assert set(hub) == {"house", "floors", "areas", "temperature_unit"}
     where = placements(HOUSE.windows, HOUSE.areas)
     for key, values in legacy.items():
-        stored = {"overrides": overrides_option(key, lifted.overrides[key])}
-        overrides = stored_overrides(key, stored)
-        assert overrides is not None
+        # A window record stores its overrides; they read back the same.
+        overrides = overrides_from_data(overrides_data(lifted.overrides[key]))
         check = compare(key, values, hub, overrides, where[key])
         assert check.differing == (), HOUSE.titles[key]
         assert dict(check.resolved) == values
 
 
 def test_overrides_belong_to_their_window():
-    stored = {"overrides": overrides_option("a", WindowOverrides(values={"x": 1}))}
-    assert stored_overrides("a", stored) is not None
-    assert stored_overrides("b", stored) is None  # a copy of window a
-    assert stored_overrides("a", {}) is None
-    assert without_overrides({**stored, "k": 1}) == {"k": 1}
+    """A v2.0 window's overrides named their window (window_record.v2_0_overrides)."""
+    stored = {"overrides": {"window_key": "a", "values": {"x": 1}, "legacy": {}}}
+    assert v2_0_overrides("a", stored) == WindowOverrides(values={"x": 1})
+    assert v2_0_overrides("b", stored) is None  # a copy of window a
+    assert v2_0_overrides("a", {}) is None
 
 
 def test_a_changed_legacy_value_differs():
@@ -212,44 +218,3 @@ def test_provenance_summary_keeps_it_small():
         CONF_TEMP_ENTITY: "floor",
         CONF_SUNRISE_OFFSET: "legacy",
     }
-
-
-# ------------------------------------------------ switch.py parity
-
-_CLIMATE = {
-    CONF_CLIMATE_MODE: True,
-    CONF_TEMP_ENTITY: "sensor.indoor",
-    CONF_WEATHER_ENTITY: "weather.home",
-}
-
-
-@pytest.mark.parametrize(
-    "extra",
-    [
-        {},
-        {CONF_CLIMATE_MODE: True, CONF_TEMP_ENTITY: "sensor.indoor"},
-        _CLIMATE,
-        {**_CLIMATE, CONF_LUX_ENTITY: "sensor.lux"},
-        {
-            **_CLIMATE,
-            CONF_WEATHER_ENTITY: None,
-            CONF_OUTSIDETEMP_ENTITY: "sensor.outdoor",
-            CONF_IRRADIANCE_ENTITY: "sensor.irradiance",
-        },
-    ],
-    ids=["basic", "climate", "weather", "lux", "outside_irradiance"],
-)
-async def test_toggle_switches_match_the_switch_platform(hass, extra):
-    async_mock_service(hass, "cover", "set_cover_position")
-    _set_world(hass)
-    entry = _entry(hass, minor_version=3, **extra)
-    await _setup(hass, entry)
-
-    prefix = f"{entry.entry_id}_"
-    created = {
-        row.unique_id.removeprefix(prefix)
-        for row in er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
-        if row.domain == "switch"
-    }
-    predicted = {s.switch_name for s in TOGGLE_SWITCHES if s.created(entry.options)}
-    assert predicted == created - {"Toggle Control"}

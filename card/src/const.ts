@@ -8,6 +8,10 @@ export const TILE_CARD_EDITOR_NAME = 'adaptive-cover-tile-card-editor';
 export const DECISION_CARD_NAME = 'adaptive-cover-decision-card';
 export const DECISION_CARD_EDITOR_NAME = 'adaptive-cover-decision-card-editor';
 export const HOUSE_CARD_NAME = 'adaptive-cover-house-card';
+/** Tile card feature `type: custom:adaptive-cover-mode` (Auto / Hold / Off
+ *  chips). HA creates the element named after the type. */
+export const MODE_FEATURE_TYPE = 'adaptive-cover-mode';
+export const MODE_FEATURE_EDITOR_NAME = 'adaptive-cover-mode-editor';
 /** Dashboard strategy type: `strategy: { type: custom:adaptive-cover }`. HA
  *  looks up the element `ll-strategy-dashboard-<type>`. */
 export const STRATEGY_TYPE = 'adaptive-cover';

@@ -4,6 +4,7 @@
 - **Date:** 2026-09-28
 - **Delivered in:** P7 (v2.0.0); legacy path removed in P8 (v2.1.0)
 - **Source:** [`docs/refactor_plan.md`](../refactor_plan.md), "Config model", "P7", "Migration of the live house"; owner decision 3
+- **Amended by:** [ADR 0006](0006-window-subentries-in-v2.md) (subentry data shape in v2.0, when the house becomes 2.x, the order of the registry moves); [ADR 0007](0007-house-only-in-v2-1.md) (the window record stores the name too; the house is 3.x after P8; no consolidation in v2.1)
 
 ## Context
 

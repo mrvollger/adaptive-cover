@@ -51,6 +51,7 @@
 | House mode, Return all | recurring control | house | — |
 | Climate on/off | recurring | house switch | area |
 | Heating / cooling thresholds | recurring | house | floor, area |
+| Threshold hysteresis (how far past a threshold before the season changes back) | recurring | house | area |
 | Indoor temperature sensor | recurring | floor | area |
 | Weather entity, sunny states, presence, outside temp / lux / irradiance entities, their use-flags and thresholds | recurring (rare) | house | — |
 | Manual-move detection; override duration; restart clock on later moves; ignore intermediate positions | recurring | house | area |
@@ -118,7 +119,7 @@ These defaults are the spec defaults for new installs. For the live house, a lif
   - `select.shades_mode`: Auto / Hold / Off, with a display-only Mixed. It changes each window's Mode directly.
   - `button.shades_return_to_auto`
   - Climate switch
-- CONFIG: detection switch; heating/cooling thresholds (unit-aware); eye height; seat distance; override duration; privacy delay; end / quiet start / quiet end (time entities).
+- CONFIG: detection switch; heating/cooling thresholds and their hysteresis (unit-aware); eye height; seat distance; override duration; privacy delay; end / quiet start / quiet end (time entities).
 
 **Services**
 - `adaptive_cover.hold(duration, position?)`. An entity service on Mode, so it can target an area or floor. `position` lets `automation.meeting` close the office covers and hold them in one call.
@@ -321,6 +322,7 @@ services.py · diagnostics.py (per device) · frontend.py · <platform>.py
     - M49: the listener reloads every window.
     - M50: consolidation leaves an entity or device unmoved.
 - **Rollback:** before the click, downgrade. After the click, restore the backup.
+- **As built** ([ADR 0006](adr/0006-window-subentries-in-v2.md), proposed): the subentry stores the window entry's data and options verbatim until P8; the flow is at version 2 while window entries stay 1.x; the house becomes 2.x before the first window moves; each window's entity rows move **before** its device (HA drops the entities a moving device leaves on the old entry); a subentry's Reconfigure is the whole form, exceptions included (subentries have no options flow). Mutations M100–M103 stand for the plan's M49/M50 and the two consolidation guards; `ADAPTIVE_COVER_SIM_MODEL=house` (`pixi run test-house-model`) runs the simulation tier in the house model.
 
 ### P8: Cleanup (v2.1.0, S; the point of no return)
 
@@ -331,6 +333,7 @@ services.py · diagnostics.py (per device) · frontend.py · <platform>.py
   - Remove the hub's leftover geometry and its reference to itself in `group`.
   - Run pyright in standard mode across the rest of the code.
 - **Rollback:** restore the backup and reinstall v2.0.x.
+- **As built** ([ADR 0007](adr/0007-house-only-in-v2-1.md), proposed): v2.1 has no consolidation; a house with enabled window entries fails to set up (every entry, with the `consolidate_first` message) and the non-fixable `consolidate_first` repair says to consolidate on v2.0.x first; nothing is written to it. A consolidated house (2.1) migrates at its first start to **3.1** (a major bump, so v2.0.x refuses it): a snapshot (`.storage/adaptive_cover.v2_0_snapshot`), each window subentry rewritten to the window record `{window_key?, name, cover_entity_id, cover_type, geometry, overrides}` (ADR 0001's shape plus the name), the 6 switch aliases per window removed from the entity registry, the hub's leftover geometry and `group` dropped from the house options. New windows get their overrides when they are created (the lift and the adoption at setup are gone). The coordinators are found through the house's `runtime_data`; `hass.data` keeps only the override store. The simulation tier runs in the house model only; the house replay runs through the 2.1 → 3.1 migration and matches the goldens. Pyright: standard mode on the whole integration, strict on engine/, runtime/ and the pure settings modules, empty baseline. Mutations M130–M140 are new; M51, M71 and M100–M103 are retired.
 
 ## Migration of the live house
 

@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/engine/season.py b/custom_components/adaptive_cover/engine/season.py
+--- a/custom_components/adaptive_cover/engine/season.py
++++ b/custom_components/adaptive_cover/engine/season.py
+@@ -84,7 +84,7 @@
+     """
+     if was_in is None:
+         return 0.0
+-    return hysteresis if was_in else -hysteresis
++    return -hysteresis if was_in else hysteresis
+ 
+ 
+ def decide_season(inputs: SeasonInputs, previous: Season | None = None) -> Season:

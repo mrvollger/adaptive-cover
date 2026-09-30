@@ -119,6 +119,24 @@ RULES: list[tuple[str, str]] = [
     # the hidden switch aliases, through entity states, registries, the
     # restore cache and real service calls.
     ("tests/test_mode_select.py::*", BEHAVIOR),
+    # P5 flip (C6): the runtime acts on the layered settings; the options
+    # form, change_settings and add_entry store edits sparsely in them.
+    # Through config entries, the diagnostics download and entity states.
+    ("tests/test_layered_settings.py::*", BEHAVIOR),
+    ("tests/test_set_profile.py::*", BEHAVIOR),  # P5 flip: set_profile (C6)
+    # P5 flip (C7): the house settings on the hub device, through entity
+    # states, registries, the hub's config entry and the diagnostics.
+    ("tests/test_house_settings.py::*", BEHAVIOR),
+    ("tests/test_get_profile.py::*", BEHAVIOR),  # get_profile responses (C6)
+    # P7 (C8): the house entry with window subentries (fresh install, Add
+    # window, Reconfigure, delete, isolation, services, house options) and
+    # the consolidation of the live snapshot through its repair fix flow
+    # (identity, settings, Mode/hold, resume, card discovery), through
+    # config entries and subentries, registries, entity states and the
+    # diagnostics download. The crash injection patches one internal step.
+    ("tests/test_house_subentries.py::*", BEHAVIOR),
+    ("tests/test_consolidation.py::*", BEHAVIOR),
+    ("tests/test_upgrade_2_1.py::*", BEHAVIOR),  # P8 upgrade and nag (C8)
     # P5 layered settings: `resolve` is a contract v2 seam (ADR 0004).
     # Precedence, provenance, the lift's rules and the P5 guarantee on the
     # live snapshot (resolve(w) == legacy_flat(w)) are behavior; the purity

@@ -17,7 +17,7 @@ import pytest
 import voluptuous as vol
 
 from custom_components.adaptive_cover.const import SensorType
-from custom_components.adaptive_cover.number import TUNABLES
+from custom_components.adaptive_cover.house_settings import HOUSE_NUMBERS
 from custom_components.adaptive_cover.settings import schema, spec
 from custom_components.adaptive_cover.settings.spec import (
     NO_DEFAULT,
@@ -77,6 +77,7 @@ PLAN_TABLE: dict[str, tuple[Scope, Level | None, set[Level]]] = {
     "climate_mode": (Scope.RECURRING, H, {A}),
     "temp_low": (Scope.RECURRING, H, {F, A}),
     "temp_high": (Scope.RECURRING, H, {F, A}),
+    "temp_hysteresis": (Scope.RECURRING, H, {A}),
     "temp_entity": (Scope.RECURRING, F, {A}),
     "weather_entity": (Scope.RECURRING, H, set()),
     "weather_state": (Scope.RECURRING, H, set()),
@@ -121,12 +122,9 @@ PLAN_TABLE: dict[str, tuple[Scope, Level | None, set[Level]]] = {
 EXPECTED_LEGACY: dict[str, dict] = {
     "length_awning": {"service.bounded": False},
     "angle": {"service.bounded": False},
-    "overhang_depth": {"service.bounded": False, "number.min": 0, "number.step": 0.05},
-    "overhang_height": {
-        "service.bounded": False,
-        "number.min": 0.5,
-        "number.step": 0.05,
-    },
+    # No live number since the P5 flip: the overhang is window geometry.
+    "overhang_depth": {"service.bounded": False},
+    "overhang_height": {"service.bounded": False},
     "eye_height": {"service.bounded": False, "number.min": 0.5, "number.step": 0.05},
     "occupied_distance": {"service.bounded": False},
     "slat_depth": {"service.bounded": False},
@@ -213,7 +211,11 @@ def test_clearable_keys_match_the_pre_spec_options_form():
 
 
 def test_number_entities_are_the_spec_rows_with_a_live_number():
-    assert {t.key for t in TUNABLES} == {o.key for o in OPTS if o.number is not None}
+    """The house numbers (P5 flip) are the rows with a live number, plus the
+    override duration (a duration, shown in minutes)."""
+    assert {n.key for n in HOUSE_NUMBERS} == {
+        o.key for o in OPTS if o.number is not None
+    } | {"manual_override_duration"}
 
 
 def _boundary_values(opt: spec.Opt, surface: str, unit: str) -> list:

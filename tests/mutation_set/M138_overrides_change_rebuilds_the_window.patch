@@ -1,0 +1,11 @@
+diff --git a/custom_components/adaptive_cover/house.py b/custom_components/adaptive_cover/house.py
+--- a/custom_components/adaptive_cover/house.py
++++ b/custom_components/adaptive_cover/house.py
+@@ -388,7 +388,6 @@
+                     # Only the window's overrides changed: it re-reads them.
+                     runtime.seen = seen
+                     refresh.append(runtime.window.window_key)
+-                    continue
+                 await self._async_stop_window(subentry_id)
+                 await self._async_start_window(subentry_id)
+         if refresh:

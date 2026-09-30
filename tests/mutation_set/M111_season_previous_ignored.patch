@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -1177,7 +1177,7 @@
+             self.config.climate,
+             self.controls,
+             self._cover_type,
+-            previous_season=self._season,
++            previous_season=None,
+         )
+ 
+     def climate_mode_data(self, options, cover_data):

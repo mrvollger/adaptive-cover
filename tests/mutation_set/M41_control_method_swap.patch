@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/sensor.py b/custom_components/adaptive_cover/sensor.py
 --- a/custom_components/adaptive_cover/sensor.py
 +++ b/custom_components/adaptive_cover/sensor.py
-@@ -207,7 +207,8 @@
+@@ -220,7 +220,8 @@
      @property
      def native_value(self) -> str | None:
          """Handle when entity is added."""

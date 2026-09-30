@@ -5,9 +5,10 @@ Every settings surface comes from ``spec.OPTS``:
 - the one-screen setup form that adds a window and reconfigures it
   (``setup_section_fields``, ``setup_schema``), with its presets and
   "Copy from" values;
-- the one-page options form sections (``options_section_fields``);
+- the house options form (``form_validator`` on the ``options`` surface);
 - the ``change_settings`` and ``add_entry`` service schemas, and the
   options ``add_entry`` gives an entry without ``copy_from``;
+- the ``set_profile`` service schema (every recurring setting);
 - the ranges of the live number entities (``number_shape``).
 """
 
@@ -48,7 +49,6 @@ from .spec import (
     Kind,
     Opt,
     Scope,
-    opts_in,
 )
 
 ENTITY_ID_PATTERN: Final = r"^[a-z_]+\.[a-z0-9_]+$"
@@ -58,16 +58,6 @@ _COVER_FEATURE: Final = {
     SensorType.AWNING: "cover.CoverEntityFeature.SET_POSITION",
     SensorType.TILT: "cover.CoverEntityFeature.SET_TILT_POSITION",
 }
-
-# Options form: section -> groups, in order. The climate section holds only
-# the toggle while climate mode is off (so the feature stays discoverable).
-OPTIONS_SECTIONS: Final = {
-    "covers_geometry": (Group.COVER,),
-    "sun_behavior": (Group.SUN, Group.BLIND_SPOT, Group.INTERP),
-    "automation_timing": (Group.AUTOMATION,),
-    "climate": (Group.CLIMATE_TOGGLE, Group.CLIMATE, Group.WEATHER),
-}
-_CLIMATE_OFF_GROUPS: Final = (Group.CLIMATE_TOGGLE,)
 
 # Every option a form shows (a new window stores all of them).
 SETUP_OPTION_KEYS: Final = frozenset(
@@ -462,39 +452,6 @@ def flatten_sections(user_input: Mapping[str, Any]) -> dict[str, Any]:
     return flat
 
 
-# ---------------------------------------------------------- options form
-
-
-def options_section_fields(
-    cover_type: str,
-    *,
-    climate_on: bool,
-    options: Mapping[str, Any],
-    temperature_unit: str | None,
-) -> dict[str, dict[vol.Marker, Any]]:
-    """``{section: fields}`` of the one-page options form.
-
-    Every field is optional and pre-filled with the entry's current value.
-    """
-    sections: dict[str, dict[vol.Marker, Any]] = {}
-    for name, groups in OPTIONS_SECTIONS.items():
-        if name == "climate" and not climate_on:
-            groups = _CLIMATE_OFF_GROUPS
-        sections[name] = {
-            vol.Optional(
-                opt.key, description={"suggested_value": options.get(opt.key)}
-            ): form_validator(
-                opt,
-                "options",
-                cover_type=cover_type,
-                temperature_unit=temperature_unit,
-            )
-            for group in groups
-            for opt in opts_in(group, cover_type)
-        }
-    return sections
-
-
 # -------------------------------------------------------------- services
 
 _COERCERS: Final = {
@@ -569,6 +526,53 @@ def change_settings_schema(temperature_unit: str | None = None) -> vol.Schema:
     }
     for key, validator in changeable_options(temperature_unit).items():
         schema[vol.Optional(key)] = validator
+    return vol.Schema(schema)
+
+
+PROFILE_SCOPES: Final = ("house", "floor", "area")
+
+
+def profile_validator(opt: Opt, temperature_unit: str | None = None) -> Any:
+    """How ``set_profile`` validates ``opt`` (a recurring setting).
+
+    The option's service validator where it has one; a toggle or a
+    checkbox takes a boolean, an entity field an entity id. None is always
+    accepted: on a floor or an area it removes the value (the house decides
+    whether it may be empty, ``layers.async_set_profile``).
+    """
+    if opt.service is not None:
+        validator = service_validator(opt, temperature_unit)
+    elif opt.kind in (Kind.BOOL, Kind.SWITCH, Kind.INTERNAL):
+        # vol.Boolean is a decorated validator factory; its stub hides that.
+        validator = vol.Boolean()  # pyright: ignore[reportCallIssue]
+    elif opt.kind is Kind.ENTITY:
+        validator = vol.Match(ENTITY_ID_PATTERN)
+    else:
+        raise ValueError(f"{opt.key} has no set_profile validator")
+    return vol.Any(None, validator)
+
+
+def may_be_empty(opt: Opt) -> bool:
+    """Whether ``opt`` may be stored as None (an entity, or a nullable service field)."""
+    return opt.kind is Kind.ENTITY or (opt.service is not None and opt.service.nullable)
+
+
+def set_profile_schema(
+    spec: tuple[Opt, ...] | list[Opt], temperature_unit: str | None = None
+) -> vol.Schema:
+    """Build the set_profile schema: scope, id and every recurring setting.
+
+    Which level may store which setting is checked when the call runs
+    (``layers.check_profile_keys``), from the spec's home and
+    overridable_at levels.
+    """
+    schema: dict[vol.Marker, Any] = {
+        vol.Required("scope"): vol.In(PROFILE_SCOPES),
+        vol.Optional("id"): vol.All(str, vol.Length(min=1)),
+    }
+    recurring = [opt for opt in spec if opt.scope is Scope.RECURRING]
+    for opt in recurring:
+        schema[vol.Optional(opt.key)] = profile_validator(opt, temperature_unit)
     return vol.Schema(schema)
 
 

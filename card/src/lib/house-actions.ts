@@ -414,8 +414,23 @@ export function planHouseCovers(scope: HouseScope, command: 'open' | 'close'): S
 
 export type ClimateState = 'on' | 'off' | 'mixed';
 
-/** The Climate mode switches across `windows`: null when none has one. */
-export function climateState(hass: HomeAssistant, windows: HouseWindow[]): ClimateState | null {
+/** The house's Climate switch (P5 flip: the house `climate_on` setting), when
+ *  the house controls act through the hub. */
+function hubClimate(hass: HomeAssistant, scope: HouseScope | undefined): string | null {
+  const id = scope?.useHub ? scope.hub.climateSwitch : undefined;
+  const st = stateOf(hass, id);
+  return id && (st === 'on' || st === 'off') ? id : null;
+}
+
+/** The Climate control's state: the house's Climate switch, else the Climate
+ *  mode switches across `windows`; null when there is none. */
+export function climateState(
+  hass: HomeAssistant,
+  windows: HouseWindow[],
+  scope?: HouseScope,
+): ClimateState | null {
+  const house = hubClimate(hass, scope);
+  if (house) return stateOf(hass, house) === 'on' ? 'on' : 'off';
   const states = windows
     .map((w) => stateOf(hass, w.entities.climateSwitch))
     .filter((s): s is string => s === 'on' || s === 'off');
@@ -425,8 +440,16 @@ export function climateState(hass: HomeAssistant, windows: HouseWindow[]): Clima
   return 'mixed';
 }
 
-/** Turn every window's Climate mode switch on or off in one call. */
-export function planClimate(windows: HouseWindow[], on: boolean): ServiceCall[] {
+/** Climate on or off: the house's Climate switch, else every window's Climate
+ *  mode switch, in one call. */
+export function planClimate(
+  windows: HouseWindow[],
+  on: boolean,
+  hass?: HomeAssistant,
+  scope?: HouseScope,
+): ServiceCall[] {
+  const house = hass ? hubClimate(hass, scope) : null;
+  if (house) return [entityCall('switch', on ? 'turn_on' : 'turn_off', [house])];
   const ids = windows.map((w) => w.entities.climateSwitch).filter((s): s is string => !!s);
   return ids.length > 0 ? [entityCall('switch', on ? 'turn_on' : 'turn_off', ids)] : [];
 }

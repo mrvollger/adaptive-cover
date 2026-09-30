@@ -1,35 +1,28 @@
-"""The All Shades hub: bootstrap, aggregate cover, house mode, reset-all."""
+"""The All Shades hub (the house): aggregate cover, house mode, reset-all."""
 
 from __future__ import annotations
 
-from homeassistant.config_entries import ConfigEntryState
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_component import async_update_entity
-from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
-    async_mock_service,
-)
+from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.adaptive_cover.const import (
     CONF_DELTA_TIME,
     CONF_DISTANCE,
     CONF_ENTITIES,
     CONF_HEIGHT_WIN,
-    CONF_SENSOR_TYPE,
     DOMAIN,
-    SensorType,
 )
 from custom_components.adaptive_cover.hub import HUB_UNIQUE_ID, is_hub_entry
 
 from .conftest import COMMON_OPTIONS
+from .house_model import Window, mock_house
 from .window_handle import WindowHandle
 
 
-def _regular_entry(hass, name, cover, delta_time=0):
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        title=name,
-        data={"name": name, CONF_SENSOR_TYPE: SensorType.BLIND},
+def _window(name, cover, delta_time=0) -> Window:
+    return Window(
+        name=name,
         options={
             **COMMON_OPTIONS,
             CONF_HEIGHT_WIN: 2.1,
@@ -38,38 +31,31 @@ def _regular_entry(hass, name, cover, delta_time=0):
             CONF_DELTA_TIME: delta_time,
         },
     )
-    entry.add_to_hass(hass)
-    return entry
 
 
 async def _setup_two_entries(hass, delta_time_a=0):
+    """A house with two windows, Room A and Room B; return their keys."""
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set("cover.a", "open", {"current_position": 80})
     hass.states.async_set("cover.b", "open", {"current_position": 20})
-    e1 = _regular_entry(hass, "Room A", "cover.a", delta_time=delta_time_a)
-    e2 = _regular_entry(hass, "Room B", "cover.b")
-    await hass.config_entries.async_setup(e1.entry_id)
-    await hass.async_block_till_done()  # bootstrap may set up the component
-    if e2.state is not ConfigEntryState.LOADED:
-        await hass.config_entries.async_setup(e2.entry_id)
+    room_a = _window("Room A", "cover.a", delta_time=delta_time_a)
+    room_b = _window("Room B", "cover.b")
+    house = mock_house(hass, [room_a, room_b])
+    await hass.config_entries.async_setup(house.entry_id)
     await hass.async_block_till_done()
-    # The aggregate cover polls. When the hub loads before Room B, its first
-    # state misses B (a ~1% setup-order race); poll once so every test sees
-    # both rooms.
+    # The aggregate cover polls; poll once so every test sees both rooms.
     await async_update_entity(hass, "cover.adaptive_cover_all")
     await hass.async_block_till_done()
-    return e1, e2
+    return room_a.key, room_b.key
 
 
-async def test_hub_auto_bootstrapped_once(hass, mock_sun_entity):
+async def test_the_house_is_the_only_hub(hass, mock_sun_entity):
+    """The house entry is the hub: one entry, "Adaptive Cover All"."""
     await _setup_two_entries(hass)
-    hubs = [
-        entry
-        for entry in hass.config_entries.async_entries(DOMAIN)
-        if is_hub_entry(entry)
-    ]
-    assert len(hubs) == 1
-    assert hubs[0].title == "Adaptive Cover All"
+    entries = hass.config_entries.async_entries(DOMAIN)
+    assert len(entries) == 1
+    assert is_hub_entry(entries[0])
+    assert entries[0].title == "Adaptive Cover All"
 
 
 async def test_aggregate_cover_average_position(hass, mock_sun_entity):
@@ -128,17 +114,16 @@ async def test_house_mode_flips_all_entries(hass, mock_sun_entity):
     )
     await hass.async_block_till_done()
 
-    # Every window's Mode is off, and its Toggle Control alias reads off.
+    # Every window's Mode is off.
     for cover in ("cover.a", "cover.b"):
         assert WindowHandle(hass, cover).mode == "off"
-        assert WindowHandle(hass, cover).state("control").state == "off"
     assert hass.states.get(select_id).state == "off"
 
 
-def _manual_binary(hass, entry):
-    """State of an entry's Manual Override binary sensor (entity surface)."""
+def _manual_binary(hass, key):
+    """State of a window's Manual Override binary sensor (entity surface)."""
     eid = er.async_get(hass).async_get_entity_id(
-        "binary_sensor", DOMAIN, f"{entry.entry_id}_Manual Override"
+        "binary_sensor", DOMAIN, f"{key}_Manual Override"
     )
     assert eid is not None
     return hass.states.get(eid)

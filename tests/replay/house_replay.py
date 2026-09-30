@@ -1,20 +1,29 @@
 """House replay: every live window entry, replayed through SimHouse.
 
-Each replay runs ONE real window entry from the sanitized live snapshot
+Each replay runs ONE real window from the sanitized live snapshot
 (``tests/fixtures/house_snapshot/``) through the REAL integration via
 ``tests.simulation.harness.SimHouse`` for one full local day, and renders
 what the house would do: the OUTBOUND cover-command timeline plus the
 position sensor (value and ``intent``), run-length encoded per step.
 
+The window runs the way the live house holds it after it is consolidated
+on v2.0.x and updated to v2.1 (P8): a house entry at 2.1 with the window
+as a ``window`` subentry storing the entry's data and options verbatim
+(ADR 0006; options as migration 1.3 wrote them, and the overrides the lift
+gave it), which migration 3.1 rewrites at setup (``upgrade.py``). The
+house's layers are the lift of this one window (its switch states
+included), as the hub a v2.0 window entry bootstrapped stored them.
+
 Taken from the snapshot, verbatim:
-- the entry's ``entry_id``, title, ``data`` and complete ``options``
-  (geometry, limits, offsets, climate thresholds, the real cover and the
-  real temperature/weather entity ids);
-- the entry's entity-registry rows (pre-registered, so the sim runs with
-  the live entity_ids and unique_ids);
+- the entry's ``entry_id`` (the window key), title, ``data`` and complete
+  ``options`` (geometry, limits, offsets, climate thresholds, the real
+  cover and the real temperature/weather entity ids);
+- the entry's entity-registry rows (pre-registered on the house and the
+  window's subentry, so the sim runs with the live entity_ids and
+  unique_ids; migration 3.1 removes the switch and number rows);
 - the live on/off state of the entry's switches (Toggle Control, Manual
-  Override detection, Climate Mode, Outside Temperature), seeded through
-  the restore cache exactly like an HA restart.
+  Override detection, Climate Mode, Outside Temperature): the toggles the
+  lift records and, for Toggle Control, the Mode the window restores.
 
 Scripted, identical for every window and date:
 - HA runs in America/Denver with the US customary unit system; the indoor
@@ -42,7 +51,6 @@ import hashlib
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from unittest.mock import patch
 
 from homeassistant.core import State
 from homeassistant.helpers import entity_registry as er
@@ -54,14 +62,34 @@ from pytest_homeassistant_custom_component.common import (
 )
 
 from custom_components.adaptive_cover.const import (
+    CONF_CLIMATE_MODE,
+    CONF_CLIMATE_ON,
     CONF_ENTITIES,
-    CONFIG_ENTRY_MINOR_VERSION,
+    CONF_MANUAL_DETECTION,
+    CONF_OUTSIDETEMP_ENTITY,
     CONF_SENSOR_TYPE,
     CONF_TEMP_ENTITY,
+    CONF_USE_OUTSIDE_TEMP,
     CONF_WEATHER_ENTITY,
     DOMAIN,
+    HOUSE_ENTRY_MINOR_VERSION,
+    HOUSE_ENTRY_VERSION,
+    V2_0_HOUSE_VERSION,
 )
-from tests.simulation import harness
+from custom_components.adaptive_cover.hub import (
+    CONF_IS_HUB,
+    HUB_ENTRY_NAME,
+    HUB_UNIQUE_ID,
+)
+from custom_components.adaptive_cover.runtime.shade_config import absent_options
+from custom_components.adaptive_cover.settings.lift import LegacyWindow
+from custom_components.adaptive_cover.settings.normalize import normalize_cover
+from custom_components.adaptive_cover.settings.shadow import (
+    hub_options,
+    legacy_values,
+    lift_house,
+)
+from tests.house_model import Window as HouseWindow
 from tests.simulation.harness import SimHouse
 
 REPLAY_DIR = Path(__file__).parent
@@ -135,6 +163,12 @@ RESTORED_SWITCHES = (
     "Climate Mode",
     "Outside Temperature",
 )
+# What each window switch recorded when the P5 lift read it: its toggle.
+SWITCH_TOGGLES: dict[str, str] = {
+    "Manual Override": CONF_MANUAL_DETECTION,
+    "Climate Mode": CONF_CLIMATE_ON,
+    "Outside Temperature": CONF_USE_OUTSIDE_TEMP,
+}
 
 
 # --------------------------------------------------------------- snapshot
@@ -173,6 +207,36 @@ class Window:
     def options_digest(self) -> str:
         blob = json.dumps(self.options, sort_keys=True).encode()
         return hashlib.sha256(blob).hexdigest()[:12]
+
+    def switch_state(self, suffix: str) -> str | None:
+        """The live state of one of the window's switches (None: not captured)."""
+        for entity_id, state in self.switch_states:
+            row = next(r for r in self.registry_rows if r["entity_id"] == entity_id)
+            if row["unique_id"] == f"{self.entry_id}_{suffix}":
+                return state
+        return None
+
+    def toggles(self) -> dict[str, bool]:
+        """The toggles the P5 lift recorded from the window's switches.
+
+        A switch the window has (its options create it) records its state;
+        a window without the switch keeps the toggle's default.
+        """
+        created = {
+            CONF_MANUAL_DETECTION: bool(self.options.get(CONF_ENTITIES)),
+            CONF_CLIMATE_ON: bool(self.options.get(CONF_CLIMATE_MODE)),
+            CONF_USE_OUTSIDE_TEMP: bool(self.options.get(CONF_CLIMATE_MODE))
+            and bool(
+                self.options.get(CONF_WEATHER_ENTITY)
+                or self.options.get(CONF_OUTSIDETEMP_ENTITY)
+            ),
+        }
+        toggles = {}
+        for suffix, key in SWITCH_TOGGLES.items():
+            state = self.switch_state(suffix)
+            if created[key] and state in ("on", "off"):
+                toggles[key] = state == "on"
+        return toggles
 
 
 def load_windows() -> list[Window]:
@@ -227,6 +291,58 @@ class ReplayHouse(SimHouse):
         self.position_sensor: str | None = None
         self._replay_seeded = False
 
+    def _house_entry(self, windows: list[HouseWindow]) -> MockConfigEntry:
+        """The house as v2.0 consolidated it: 2.1, the window stored verbatim."""
+        (spec,) = windows
+        window = self.window
+        unit = self.hass.config.units.temperature_unit
+        options = normalize_cover({**spec.options, **absent_options(spec.options)})
+        lifted = lift_house(
+            [
+                LegacyWindow(
+                    window_key=window.entry_id,
+                    options=legacy_values(
+                        options, window.toggles(), temperature_unit=unit
+                    ),
+                )
+            ],
+            {},
+            [],
+            temperature_unit=unit,
+        )
+        overrides = lifted.overrides[window.entry_id]
+        house = MockConfigEntry(
+            domain=DOMAIN,
+            title=HUB_ENTRY_NAME,
+            unique_id=HUB_UNIQUE_ID,
+            data={"name": HUB_ENTRY_NAME, CONF_IS_HUB: True},
+            options=hub_options(lifted),
+            version=V2_0_HOUSE_VERSION,
+            minor_version=1,
+            subentries_data=[
+                {
+                    "data": {
+                        "window_key": window.entry_id,
+                        "data": dict(window.data),
+                        "options": {
+                            **options,
+                            "overrides": {
+                                "window_key": window.entry_id,
+                                "values": dict(overrides.values),
+                                "legacy": dict(overrides.legacy),
+                            },
+                        },
+                    },
+                    "subentry_id": spec.subentry_id,
+                    "subentry_type": "window",
+                    "title": window.title,
+                    "unique_id": None,
+                }
+            ],
+        )
+        house.add_to_hass(self.hass)
+        return house
+
     async def _setup_entry(self) -> None:
         if not self._replay_seeded:
             self._replay_seeded = True
@@ -235,8 +351,14 @@ class ReplayHouse(SimHouse):
         self.position_sensor = self.eid("sensor", "cover_position")
 
     def _seed_registry_and_restore(self) -> None:
-        """Pre-register the live entity rows and seed the live switch states."""
+        """Pre-register the live entity rows and restore the window's Mode.
+
+        The rows go on the house and the window's subentry, as v2.0's
+        consolidation left them. The Toggle Control switch's live state is
+        the Mode the window restores (off, else auto).
+        """
         registry = er.async_get(self.hass)
+        subentry_id = next(iter(self.house_entry.subentries))
         for row in self.window.registry_rows:
             domain, object_id = row["entity_id"].split(".", 1)
             registry.async_get_or_create(
@@ -244,13 +366,14 @@ class ReplayHouse(SimHouse):
                 DOMAIN,
                 row["unique_id"],
                 suggested_object_id=object_id,
-                config_entry=self.entry,
+                config_entry=self.house_entry,
+                config_subentry_id=subentry_id,
             )
-        if self.window.switch_states:
-            mock_restore_cache(
-                self.hass,
-                [State(eid, state) for eid, state in self.window.switch_states],
+        if self.window.switch_state("Toggle Control") == "off":
+            mode = registry.async_get_entity_id(
+                "select", DOMAIN, f"{self.window.entry_id}_mode_select"
             )
+            mock_restore_cache(self.hass, [State(mode, "off")])
 
     def mark(self, kind: str, *payload) -> None:
         self.marks.append((len(self.timeline), self.now, kind, payload))
@@ -314,44 +437,34 @@ class Replay:
     lines: list[tuple[tuple, dt.datetime, str]] = field(default_factory=list)
 
 
-def _entry_factory(window: Window):
-    """MockConfigEntry with the live entry_id, title and data."""
-
-    def factory(*, domain, data, options):  # the call SimHouse.create makes
-        return MockConfigEntry(
-            domain=domain,
-            entry_id=window.entry_id,
-            title=window.title,
-            data=dict(window.data),
-            options=options,
-        )
-
-    return factory
-
-
 async def _create(hass, freezer, window: Window, date: str) -> ReplayHouse:
     house_cls = type("WindowReplayHouse", (ReplayHouse,), {"window": window})
-    with patch.object(harness, "MockConfigEntry", _entry_factory(window)):
-        house = await house_cls.create(
-            hass,
-            freezer,
-            date=date,
-            covers=[window.cover],
-            options=dict(window.options),
-            start_at=START_AT,
-            step_minutes=STEP_MINUTES,
-            travel_seconds=TRAVEL_SECONDS,
-            # At 00:30 the shade sits where the evening left it.
-            initial_position=int(window.options.get("sunset_position") or 0),
-        )
-    # The entry starts at config version 1.1 (as the live house did before
-    # P1), so every replay runs the live options through migrations 1.2 and
-    # 1.3 (P3: fallbacks written, cover_entity_id) and the goldens pin the
-    # migrated windows.
-    assert (house.entry.version, house.entry.minor_version) == (
-        1,
-        CONFIG_ENTRY_MINOR_VERSION,
+    house = await house_cls.create(
+        hass,
+        freezer,
+        date=date,
+        covers=[window.cover],
+        # The live options, with the entry's identity data kept apart.
+        options=dict(window.options),
+        cover_type=window.data[CONF_SENSOR_TYPE],
+        window_keys=[window.entry_id],
+        start_at=START_AT,
+        step_minutes=STEP_MINUTES,
+        travel_seconds=TRAVEL_SECONDS,
+        # At 00:30 the shade sits where the evening left it.
+        initial_position=int(window.options.get("sunset_position") or 0),
     )
+    # Migration 3.1 rewrote the house the v2.0 consolidation left: the
+    # window keeps its key and entities, and acts on its resolved layered
+    # settings (a window acting on them has a provenance).
+    assert (house.house_entry.version, house.house_entry.minor_version) == (
+        HOUSE_ENTRY_VERSION,
+        HOUSE_ENTRY_MINOR_VERSION,
+    )
+    handle = house.windows[window.cover]
+    assert handle.window_key == window.entry_id
+    assert handle.attributes["window_key"] == window.entry_id
+    assert handle.attributes.get("provenance") is not None
     house.sample()
     return house
 

@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing, type PropertyValues, type TemplateResul
 import { customElement, property, state } from 'lit/decorators.js';
 import type { HomeAssistant } from 'custom-card-helpers';
 
+import './components/settings-sheet';
 import { HOUSE_CARD_NAME, INTEGRATION_DOMAIN } from './const';
 import { entityStateChanged } from './lib/hass-change';
 import { t } from './lib/i18n';
@@ -52,6 +53,20 @@ import {
   sunText,
   whyText,
 } from './lib/house-format';
+import {
+  profilesSupported,
+  readProfiles,
+  readWindowSettings,
+  planHouseSetting,
+  planSetProfile,
+  settingRows,
+  windowExceptions,
+  type ProfileOverlay,
+  type ProfileScope,
+  type ProfilesRead,
+  windowsToRead,
+} from './lib/profile-model';
+import { settingsAt } from './lib/profile-settings';
 import type { AdaptiveCoverHouseCardConfig } from './types';
 
 /*
@@ -59,6 +74,13 @@ import type { AdaptiveCoverHouseCardConfig } from './types';
  * a "Whole house" bar, filter chips, then floors → rooms → window rows. A row
  * opens a detail sheet. Below 600 px it switches to the phone layout (one
  * column, collapsible rooms).
+ *
+ * Settings sheets (P6): a room's or floor's menu opens its sheet, and "House
+ * settings" opens the house sheet (every house setting: the house device's
+ * entities where it has one, else set_profile for the house). The sheet body
+ * is components/settings-sheet.ts; what it shows (read with
+ * adaptive_cover.get_profile) and the calls it makes come from
+ * lib/profile-model.ts (room and floor: adaptive_cover.set_profile).
  *
  * Discovery and the mode mapping live in lib/house-model.ts and
  * lib/house-actions.ts; this file only renders and dispatches.
@@ -102,6 +124,12 @@ interface FloorView {
   total: number;
 }
 
+interface MenuItem {
+  key: string;
+  label: string;
+  run: () => void;
+}
+
 interface UpcomingItem {
   time: string;
   what: string;
@@ -142,12 +170,24 @@ export class AdaptiveCoverHouseCard extends LitElement {
    *  window needs attention). */
   @state() private _expanded: Record<string, boolean> = {};
   @state() private _registry: EntityRegistryEntry[] | null = null;
+  /** The open settings sheet (house, floor or room). */
+  @state() private _settings: ProfileScope | null = null;
+  /** The open room or floor menu (`area:<id>` / `floor:<id>`). */
+  @state() private _menu: string | null = null;
+  /** The stored profiles (adaptive_cover.get_profile), once read. */
+  @state() private _profiles: ProfilesRead | null = null;
+  /** The open sheet's own writes (they win until it closes). */
+  @state() private _overlay: ProfileOverlay = {};
+  @state() private _saving = false;
 
   private _watched: string[] = [];
   private _registryFor: unknown = null;
   private _resizeObserver: ResizeObserver | null = null;
   private _cancelMinuteTimer: (() => void) | null = null;
   private _focusSheet = false;
+  private _storedToken = 0;
+  /** The model of the last render (for the menu and sheet handlers). */
+  private _house: HouseModel | null = null;
 
   public setConfig(config: AdaptiveCoverHouseCardConfig): void {
     if (!config || typeof config !== 'object') throw new Error('Invalid configuration');
@@ -240,12 +280,17 @@ export class AdaptiveCoverHouseCard extends LitElement {
   }
 
   protected updated(changed: PropertyValues): void {
-    if (changed.has('_selected')) {
-      if (this._selected) {
+    if (changed.has('_selected') || changed.has('_settings') || changed.has('_menu')) {
+      if (this._selected || this._settings || this._menu) {
         window.addEventListener('keydown', this._onKeydown);
-        this._focusSheet = true;
       } else {
         window.removeEventListener('keydown', this._onKeydown);
+      }
+      if (
+        (changed.has('_selected') && this._selected) ||
+        (changed.has('_settings') && this._settings)
+      ) {
+        this._focusSheet = true;
       }
     }
     if (this._focusSheet) {
@@ -258,7 +303,13 @@ export class AdaptiveCoverHouseCard extends LitElement {
   }
 
   private _onKeydown = (e: KeyboardEvent): void => {
-    if (e.key === 'Escape') this._selected = null;
+    if (e.key !== 'Escape') return;
+    if (this._menu) {
+      this._menu = null;
+      return;
+    }
+    this._selected = null;
+    this._closeSettings();
   };
 
   // ---------------------------------------------------------------- model
@@ -319,10 +370,12 @@ export class AdaptiveCoverHouseCard extends LitElement {
 
   // -------------------------------------------------------------- actions
 
-  private async _run(calls: ServiceCall[]): Promise<void> {
-    if (calls.length === 0) return;
+  /** Run `calls`; a failure becomes a notification. True when they all ran. */
+  private async _run(calls: ServiceCall[]): Promise<boolean> {
+    if (calls.length === 0) return true;
     try {
       await runCalls(this.hass, calls);
+      return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       this.dispatchEvent(
@@ -332,6 +385,7 @@ export class AdaptiveCoverHouseCard extends LitElement {
           composed: true,
         }),
       );
+      return false;
     }
   }
 
@@ -344,6 +398,88 @@ export class AdaptiveCoverHouseCard extends LitElement {
     history.pushState(null, '', path);
     window.dispatchEvent(new CustomEvent('location-changed', { detail: { replace: false } }));
     this._selected = null;
+    this._closeSettings();
+  }
+
+  // ------------------------------------------------------------- settings
+
+  private _openSettings(scope: ProfileScope): void {
+    this._menu = null;
+    this._selected = null;
+    this._overlay = {};
+    this._profiles = null;
+    this._settings = scope;
+    void this._loadProfiles();
+  }
+
+  private _closeSettings(): void {
+    this._settings = null;
+    this._overlay = {};
+    this._storedToken += 1;
+  }
+
+  /** Read the stored profiles and, for the open sheet, the resolved
+   *  settings of its windows with their own values (see profile-model). */
+  private async _loadProfiles(): Promise<void> {
+    const model = this._house;
+    const scope = this._settings;
+    if (!model || !scope) return;
+    const token = ++this._storedToken;
+    const read = await readProfiles(this.hass);
+    if (token !== this._storedToken) return;
+    this._profiles = read;
+    if (read.status !== 'ok') return;
+    const keys = windowsToRead(
+      this.hass,
+      this._scopeWindows(model, scope),
+      settingsAt(scope.level).map((s) => s.key),
+    );
+    if (keys.length === 0) return;
+    const windows = await readWindowSettings(this.hass, keys);
+    if (token === this._storedToken) {
+      this._profiles = { status: 'ok', stored: { ...read.stored, windows } };
+    }
+  }
+
+  /** The windows a sheet covers (every window for the house). */
+  private _scopeWindows(model: HouseModel, scope: ProfileScope): HouseWindow[] {
+    if (scope.level === 'house') return model.windows;
+    return model.windows.filter(
+      (w) => (scope.level === 'area' ? w.areaId : w.floorId) === scope.id,
+    );
+  }
+
+  /** Store one setting of the open sheet (null: remove a room or floor value). */
+  private async _saveSetting(key: string, value: unknown): Promise<void> {
+    const scope = this._settings;
+    const model = this._house;
+    if (!scope || !model || this._saving) return;
+    const calls =
+      scope.level === 'house'
+        ? planHouseSetting(model, key, value)
+        : [planSetProfile(scope, key, value)];
+    this._saving = true;
+    const ok = await this._run(calls);
+    this._saving = false;
+    if (!ok || this._settings !== scope) return;
+    this._overlay = { ...this._overlay, [key]: value };
+    void this._loadProfiles();
+  }
+
+  /** The house sheet: the whole house shown, on an integration with
+   *  layered settings. */
+  private _houseSheetAvailable(model: HouseModel): boolean {
+    return !this._filtered() && profilesSupported(this.hass, model);
+  }
+
+  private _areaScope(room: HouseRoom): ProfileScope | null {
+    if (!this._house || !profilesSupported(this.hass, this._house)) return null;
+    return room.id ? { level: 'area', id: room.id, name: room.name } : null;
+  }
+
+  private _floorScope(floor: HouseFloor): ProfileScope | null {
+    if (!this._house || !profilesSupported(this.hass, this._house)) return null;
+    return floor.id ? { level: 'floor', id: floor.id, name: floor.name } : null;
   }
 
   // --------------------------------------------------------------- render
@@ -351,6 +487,7 @@ export class AdaptiveCoverHouseCard extends LitElement {
   protected render(): TemplateResult | typeof nothing {
     if (!this._config || !this.hass) return nothing;
     const model = this._model();
+    this._house = model;
     this._watched = watchedEntityIds(model);
     const now = Date.now();
     const floors = this._views(model);
@@ -367,7 +504,13 @@ export class AdaptiveCoverHouseCard extends LitElement {
     }
 
     const selected = this._selected ? views.find((v) => v.w.key === this._selected) : undefined;
-    return html`<ha-card>
+    // A click anywhere else closes an open room or floor menu (the menu's
+    // own buttons stop their clicks).
+    return html`<ha-card
+      @click=${() => {
+        if (this._menu) this._menu = null;
+      }}
+    >
       <div class="root ${narrow ? 'narrow' : 'wide'}">
         ${this._renderHeader(model, floors, narrow)} ${this._renderHouseBar(model, views, narrow)}
         ${narrow
@@ -375,6 +518,7 @@ export class AdaptiveCoverHouseCard extends LitElement {
           : html`${this._renderFilters(views)} ${this._renderWide(floors, views, now)}`}
       </div>
       ${selected ? this._renderSheet(selected, now, narrow) : nothing}
+      ${this._settings ? this._renderSettingsSheet(model, this._settings, narrow) : nothing}
     </ha-card>`;
   }
 
@@ -432,10 +576,26 @@ export class AdaptiveCoverHouseCard extends LitElement {
     >
       ${t('house.return_all')}
     </button>`;
+    // The house settings live on the house device (P5 flip), else the
+    // integration page.
+    const settingsPath = model.hubDeviceId
+      ? `/config/devices/device/${encodeURIComponent(model.hubDeviceId)}`
+      : SETTINGS_PATH;
+    // With the house setting entities it opens the house sheet (the link
+    // stays the fallback target).
+    const houseSheet = this._houseSheetAvailable(model);
     const settings = html`<a
       class="link settings"
-      href=${SETTINGS_PATH}
-      @click=${(e: Event) => this._navigate(e, SETTINGS_PATH)}
+      href=${settingsPath}
+      aria-haspopup=${houseSheet ? 'dialog' : nothing}
+      @click=${(e: Event) => {
+        if (!houseSheet) {
+          this._navigate(e, settingsPath);
+          return;
+        }
+        e.preventDefault();
+        this._openSettings({ level: 'house', id: null, name: '' });
+      }}
       ><ha-icon icon="mdi:tune-variant"></ha-icon>${narrow
         ? t('house.settings_short')
         : t('house.settings')}</a
@@ -475,12 +635,15 @@ export class AdaptiveCoverHouseCard extends LitElement {
         </button>
       </div>
       <div class="grow"></div>
-      ${this._renderClimate(model.windows)} ${settings}
+      ${this._renderClimate(model.windows, scope)} ${settings}
     </section>`;
   }
 
-  private _renderClimate(windows: HouseWindow[]): TemplateResult | typeof nothing {
-    const st = climateState(this.hass, windows);
+  private _renderClimate(
+    windows: HouseWindow[],
+    scope: HouseScope,
+  ): TemplateResult | typeof nothing {
+    const st = climateState(this.hass, windows, scope);
     if (st === null) return nothing;
     let text: string;
     if (st === 'on') {
@@ -499,7 +662,7 @@ export class AdaptiveCoverHouseCard extends LitElement {
       type="button"
       class="btn climate ${st}"
       aria-pressed=${st === 'on' ? 'true' : st === 'off' ? 'false' : 'mixed'}
-      @click=${() => void this._run(planClimate(windows, st !== 'on'))}
+      @click=${() => void this._run(planClimate(windows, st !== 'on', this.hass, scope))}
     >
       <span class="track"><span class="knob"></span></span>
       <span class="strong">${t('house.climate')}</span>
@@ -602,10 +765,76 @@ export class AdaptiveCoverHouseCard extends LitElement {
 
   private _floorHead(f: FloorView): TemplateResult | typeof nothing {
     if (!f.floor.name) return nothing;
-    return html`<div class="floor-head">
+    return html`<div class="floor-head" data-floor=${f.floor.id ?? ''}>
       <h2>${f.floor.name}</h2>
       <span class="muted">${countLabel('window', f.total)}</span>
+      ${this._floorMenu(f.floor)}
     </div>`;
+  }
+
+  private _floorMenu(floor: HouseFloor): TemplateResult | typeof nothing {
+    const scope = this._floorScope(floor);
+    if (!scope) return nothing;
+    return this._renderMenu(`floor:${floor.id}`, floor.name, [
+      {
+        key: 'floor-settings',
+        label: t('house.floor_settings'),
+        run: () => this._openSettings(scope),
+      },
+    ]);
+  }
+
+  private _roomMenu(room: HouseRoom): TemplateResult | typeof nothing {
+    const scope = this._areaScope(room);
+    if (!scope) return nothing;
+    return this._renderMenu(`area:${room.id}`, room.name, [
+      {
+        key: 'room-settings',
+        label: t('house.room_settings'),
+        run: () => this._openSettings(scope),
+      },
+    ]);
+  }
+
+  /** A "⋮" button with a small menu (a room card or a floor header). */
+  private _renderMenu(key: string, name: string, items: MenuItem[]): TemplateResult {
+    const open = this._menu === key;
+    return html`<span class="menu-wrap">
+      <button
+        type="button"
+        class="menu-btn"
+        data-menu=${key}
+        aria-haspopup="menu"
+        aria-expanded=${open ? 'true' : 'false'}
+        aria-label=${t('house.menu', { name })}
+        @click=${(e: Event) => {
+          e.stopPropagation();
+          this._menu = open ? null : key;
+        }}
+      >
+        <ha-icon icon="mdi:dots-vertical"></ha-icon>
+      </button>
+      ${open
+        ? html`<div class="menu" role="menu">
+            ${items.map(
+              (item) =>
+                html`<button
+                  type="button"
+                  role="menuitem"
+                  class="menu-item"
+                  data-item=${item.key}
+                  @click=${(e: Event) => {
+                    e.stopPropagation();
+                    this._menu = null;
+                    item.run();
+                  }}
+                >
+                  ${item.label}
+                </button>`,
+            )}
+          </div>`
+        : nothing}
+    </span>`;
   }
 
   private _roomSummary(r: RoomView): string {
@@ -633,7 +862,7 @@ export class AdaptiveCoverHouseCard extends LitElement {
           <h3>${r.room.name}</h3>
           <span class="muted">${this._roomSummary(r)}</span>
         </div>
-        ${this._roomSegments(r, 'sm')}
+        <div class="room-tools">${this._roomSegments(r, 'sm')} ${this._roomMenu(r.room)}</div>
       </div>
       ${r.shown.map((v) => this._renderRow(v, now))}
     </div>`;
@@ -680,7 +909,12 @@ export class AdaptiveCoverHouseCard extends LitElement {
   private _renderPhoneFloor(f: FloorView, now: number): TemplateResult | typeof nothing {
     if (f.rooms.length === 0) return nothing;
     return html`<section class="floor">
-      ${f.floor.name ? html`<h2 class="phone-floor">${f.floor.name}</h2>` : nothing}
+      ${f.floor.name
+        ? html`<div class="phone-floor-head" data-floor=${f.floor.id ?? ''}>
+            <h2 class="phone-floor">${f.floor.name}</h2>
+            ${this._floorMenu(f.floor)}
+          </div>`
+        : nothing}
       ${f.rooms.map((r) => this._renderPhoneRoom(r, now))}
     </section>`;
   }
@@ -706,6 +940,18 @@ export class AdaptiveCoverHouseCard extends LitElement {
       ${expanded
         ? html`<div class="room-body">
             ${this._roomSegments(r, 'lg')} ${r.all.map((v) => this._renderRow(v, now))}
+            ${this._areaScope(r.room)
+              ? html`<button
+                  type="button"
+                  class="btn room-settings"
+                  @click=${() => {
+                    const scope = this._areaScope(r.room);
+                    if (scope) this._openSettings(scope);
+                  }}
+                >
+                  <ha-icon icon="mdi:tune-variant"></ha-icon>${t('house.room_settings')}
+                </button>`
+              : nothing}
           </div>`
         : nothing}
     </div>`;
@@ -779,6 +1025,77 @@ export class AdaptiveCoverHouseCard extends LitElement {
         )}
       </div>
     </section>`;
+  }
+
+  private _renderSettingsSheet(
+    model: HouseModel,
+    scope: ProfileScope,
+    narrow: boolean,
+  ): TemplateResult {
+    const stored = this._profiles?.status === 'ok' ? this._profiles.stored : null;
+    const locked = this._profiles?.status === 'not_lifted';
+    const rows = settingRows(this.hass, model, scope, stored, this._overlay);
+    const windows =
+      scope.level === 'house' ? [] : windowExceptions(this.hass, this._scopeWindows(model, scope));
+    const title = t(`settings.title.${scope.level}`, { name: scope.name });
+    const devicePath = model.hubDeviceId
+      ? `/config/devices/device/${encodeURIComponent(model.hubDeviceId)}`
+      : SETTINGS_PATH;
+    return html`<div class="scrim" @click=${() => this._closeSettings()}></div>
+      <aside
+        class="sheet settings-sheet ${narrow ? 'bottom' : 'side'}"
+        role="dialog"
+        aria-modal="true"
+        aria-label=${t('settings.sheet_label', { name: title })}
+        data-level=${scope.level}
+        data-id=${scope.id ?? ''}
+      >
+        <div class="sheet-head">
+          <div class="sheet-title">
+            <span class="muted">${t(`settings.eyebrow.${scope.level}`)}</span>
+            <h2>${title}</h2>
+          </div>
+          <button
+            type="button"
+            class="close icon-btn"
+            aria-label=${t('settings.close')}
+            @click=${() => this._closeSettings()}
+          >
+            <ha-icon icon="mdi:close"></ha-icon>
+          </button>
+        </div>
+        <p class="muted intro">${t(`settings.intro.${scope.level}`)}</p>
+        ${locked ? html`<p class="notice not-lifted">${t('settings.not_lifted')}</p>` : nothing}
+        <acp-settings-sheet
+          .hass=${this.hass}
+          .scope=${scope}
+          .rows=${rows}
+          .windows=${windows}
+          ?busy=${this._saving}
+          ?locked=${locked}
+          @acp-setting-set=${(e: CustomEvent<{ key: string; value: unknown }>) =>
+            void this._saveSetting(e.detail.key, e.detail.value)}
+          @acp-setting-reset=${(e: CustomEvent<{ key: string }>) =>
+            void this._saveSetting(e.detail.key, null)}
+          @acp-open-window=${(e: CustomEvent<{ key: string }>) => {
+            this._closeSettings();
+            this._selected = e.detail.key;
+          }}
+        ></acp-settings-sheet>
+        ${scope.level === 'house'
+          ? html`<div class="sheet-foot">
+              <span class="setup">
+                <a
+                  class="link more"
+                  href=${devicePath}
+                  @click=${(e: Event) => this._navigate(e, devicePath)}
+                  >${t('settings.more')}</a
+                >
+                <span class="muted">${t('settings.more_hint')}</span>
+              </span>
+            </div>`
+          : nothing}
+      </aside>`;
   }
 
   private _renderSheet(v: WindowView, now: number, narrow: boolean): TemplateResult {
@@ -1243,6 +1560,75 @@ export class AdaptiveCoverHouseCard extends LitElement {
     .room-title .muted {
       font-size: 0.85rem;
     }
+    .room-tools {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .floor-head .menu-wrap {
+      margin-left: auto;
+    }
+    .phone-floor-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .room-settings {
+      margin-top: 8px;
+      align-self: flex-start;
+    }
+    .room-settings ha-icon {
+      --mdc-icon-size: 18px;
+    }
+
+    /* Room and floor menus */
+    .menu-wrap {
+      position: relative;
+      display: inline-flex;
+    }
+    .menu-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--secondary-text-color);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .menu-btn:hover,
+    .menu-btn[aria-expanded='true'] {
+      background: var(--acp-track);
+    }
+    .menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      z-index: 5;
+      min-width: 180px;
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--acp-line);
+      border-radius: 12px;
+      background: var(--acp-surface);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    }
+    .menu-item {
+      min-height: 44px;
+      padding: 0 12px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--primary-text-color);
+      font-weight: 600;
+      text-align: left;
+    }
+    .menu-item:hover {
+      background: var(--acp-track);
+    }
 
     /* Window rows */
     .row {
@@ -1571,6 +1957,21 @@ export class AdaptiveCoverHouseCard extends LitElement {
     .setup .muted,
     .sheet-foot > .muted {
       font-size: 0.85rem;
+    }
+    .settings-sheet.side {
+      width: min(520px, 100vw);
+    }
+    .settings-sheet .intro {
+      margin: -8px 0 0;
+      line-height: 1.45;
+    }
+    .settings-sheet .notice {
+      margin: 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      line-height: 1.45;
+      background: rgba(255, 166, 0, 0.2);
+      background: color-mix(in srgb, var(--acp-hold) 22%, transparent);
     }
   `;
 }

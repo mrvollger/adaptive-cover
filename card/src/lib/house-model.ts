@@ -43,8 +43,9 @@ export type WindowRole =
   | 'controlSwitch'
   | 'climateSwitch';
 
-/** The house device's entities ("Adaptive Cover All"). */
-export type HubRole = 'cover' | 'modeSelect' | 'returnButton';
+/** The house device's entities ("Adaptive Cover All"); the Climate switch is
+ *  the house's `climate_on` setting (P5 flip). */
+export type HubRole = 'cover' | 'modeSelect' | 'returnButton' | 'climateSwitch';
 
 /** (domain, translation_key) of each window role. Mirrors
  *  custom_components/adaptive_cover/entity_surface.py WINDOW_SURFACE. */
@@ -75,10 +76,33 @@ const ROLE_SUFFIX: Record<WindowRole, string> = Object.fromEntries(
   Object.entries(WINDOW_UNIQUE_ID_SUFFIXES).map(([k, role]) => [role, k.slice(k.indexOf(':') + 1)]),
 ) as Record<WindowRole, string>;
 
+/** The house settings on the house device (P5 flip, `house_settings.py`):
+ *  (domain, translation_key) → setting key. Their unique_id suffix is the
+ *  same key. Window rows of older integrations had numbers with some of
+ *  these translation keys, so a row counts only on the house device. */
+const HUB_SETTING_KEYS: Record<string, string> = {
+  'switch:climate_on': 'climate_on',
+  'switch:manual_detection': 'manual_detection',
+  'switch:use_outside_temp': 'use_outside_temp',
+  'switch:use_lux': 'use_lux',
+  'switch:use_irradiance': 'use_irradiance',
+  'number:temp_low': 'temp_low',
+  'number:temp_high': 'temp_high',
+  'number:temp_hysteresis': 'temp_hysteresis',
+  'number:manual_override_duration': 'manual_override_duration',
+  'number:eye_height': 'eye_height',
+  'number:occupied_distance': 'occupied_distance',
+  'number:privacy_offset': 'privacy_offset',
+  'time:end_time': 'end_time',
+  'time:quiet_start': 'quiet_start',
+  'time:quiet_end': 'quiet_end',
+};
+
 /** (domain, translation_key) of the house device's roles. HUB_SURFACE. */
 const HUB_TRANSLATION_KEYS: Record<string, HubRole> = {
   'select:house_mode': 'modeSelect',
   'button:return_all_to_auto': 'returnButton',
+  'switch:climate_on': 'climateSwitch',
 };
 
 export const HUB_UNIQUE_ID_PREFIX = 'adaptive_cover_hub_';
@@ -86,6 +110,7 @@ const HUB_UNIQUE_ID_SUFFIXES: Record<string, HubRole> = {
   'cover:cover': 'cover',
   'select:house_mode': 'modeSelect',
   'button:reset_all': 'returnButton',
+  'switch:climate_on': 'climateSwitch',
 };
 
 /** One row of the frontend display registry (`hass.entities`). */
@@ -170,11 +195,19 @@ export interface HouseFloor {
 
 export type HouseHub = Partial<Record<HubRole, string>>;
 
+/** The house device's setting entities, by setting key (`climate_on`,
+ *  `temp_low`, ...). */
+export type HouseHubSettings = Partial<Record<string, string>>;
+
 export interface HouseModel {
   floors: HouseFloor[];
   /** Every window in display order (floor, room, name). */
   windows: HouseWindow[];
   hub: HouseHub;
+  /** The house settings entities on the house device (P5 flip). */
+  hubSettings: HouseHubSettings;
+  /** The house device (its page holds the house settings), when known. */
+  hubDeviceId: string | null;
   /** True when some adaptive_cover rows need the full registry to classify
    *  (no translation key) and none was passed in. */
   needsRegistry: boolean;
@@ -240,6 +273,8 @@ interface Classified {
   row: DisplayEntity;
   window?: WindowRole;
   hub?: HubRole;
+  /** A house setting candidate (kept only when it is on the house device). */
+  hubSetting?: string;
   /** The unique_id prefix, when the registry row is known. */
   uidKey?: string;
   reg?: RegistryRow;
@@ -261,16 +296,19 @@ function classify(row: DisplayEntity, reg: RegistryRow | undefined): Classified 
   if (domain === 'cover') return { row, hub: 'cover', reg };
   const tk = row.translation_key ?? reg?.translation_key;
   if (nonEmpty(tk)) {
+    const hubSetting = HUB_SETTING_KEYS[`${domain}:${tk}`];
     const hub = HUB_TRANSLATION_KEYS[`${domain}:${tk}`];
-    if (hub) return { row, hub, reg };
+    if (hub) return { row, hub, hubSetting, reg };
     const role = WINDOW_TRANSLATION_KEYS[`${domain}:${tk}`];
     if (role) return { row, window: role, uidKey: uidPrefix(uid, role), reg };
-    return null;
+    return hubSetting ? { row, hubSetting, reg } : null;
   }
   if (!nonEmpty(uid)) return null;
   if (uid.startsWith(HUB_UNIQUE_ID_PREFIX)) {
-    const hub = HUB_UNIQUE_ID_SUFFIXES[`${domain}:${uid.slice(HUB_UNIQUE_ID_PREFIX.length)}`];
-    return hub ? { row, hub, reg } : null;
+    const suffix = `${domain}:${uid.slice(HUB_UNIQUE_ID_PREFIX.length)}`;
+    const hub = HUB_UNIQUE_ID_SUFFIXES[suffix];
+    const hubSetting = HUB_SETTING_KEYS[suffix];
+    return hub || hubSetting ? { row, hub, hubSetting, reg } : null;
   }
   for (const [key, role] of Object.entries(WINDOW_UNIQUE_ID_SUFFIXES)) {
     if (!key.startsWith(`${domain}:`)) continue;
@@ -366,7 +404,20 @@ export function discoverHouse(
 
   // Hub roles.
   const hub: HouseHub = {};
-  for (const c of classified) if (c.hub && !hub[c.hub]) hub[c.hub] = c.row.entity_id;
+  let hubDeviceId: string | null = null;
+  for (const c of classified) {
+    if (c.hub && !hub[c.hub]) hub[c.hub] = c.row.entity_id;
+    if (c.hub && !hubDeviceId && nonEmpty(c.row.device_id)) hubDeviceId = c.row.device_id;
+  }
+  // House settings: rows on the house device, or with the house unique_id.
+  const hubSettings: HouseHubSettings = {};
+  for (const c of classified) {
+    if (!c.hubSetting || hubSettings[c.hubSetting]) continue;
+    const onHub =
+      (hubDeviceId !== null && c.row.device_id === hubDeviceId) ||
+      !!c.reg?.unique_id?.startsWith(HUB_UNIQUE_ID_PREFIX);
+    if (onHub) hubSettings[c.hubSetting] = c.row.entity_id;
+  }
 
   // One window per Position sensor.
   interface Draft {
@@ -503,7 +554,14 @@ export function discoverHouse(
   if (floors.length === 1 && floors[0].id === null) floors[0].name = '';
 
   const ordered = floors.flatMap((f) => f.rooms.flatMap((r) => r.windows));
-  return { floors, windows: ordered, hub, needsRegistry: needsRegistry && !registry };
+  return {
+    floors,
+    windows: ordered,
+    hub,
+    hubSettings,
+    hubDeviceId,
+    needsRegistry: needsRegistry && !registry,
+  };
 }
 
 /** Every entity id the house card reads for `model` (for change detection). */
@@ -514,6 +572,7 @@ export function watchedEntityIds(model: HouseModel): string[] {
     for (const c of w.covers) ids.add(c);
   }
   for (const id of Object.values(model.hub)) if (id) ids.add(id);
+  for (const id of Object.values(model.hubSettings ?? {})) if (id) ids.add(id);
   ids.add('sun.sun');
   return [...ids];
 }

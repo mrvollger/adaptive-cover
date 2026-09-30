@@ -12,9 +12,9 @@ Lovelace cards for the [Adaptive Cover](https://github.com/mrvollger/adaptive-co
 | Tile | `custom:adaptive-cover-tile-card` | Compact per-shade row: icon, name, position, `↑ ■ ▼`, and a live intent badge. Tap opens a detail dialog. |
 | Sky Compass | `custom:adaptive-cover-sky-compass-card` | The compass on its own. Accepts multiple windows and overlays each window's FOV and cover wedge on a shared sun dot. |
 | Decision strip | `custom:adaptive-cover-decision-card` | Standalone decision trace: every engine step for one window with the winning step highlighted. |
-| House | `custom:adaptive-cover-house-card` | Every window by floor and room. Auto / Hold / Off for the house, each room and each window; Return all to auto, Open all, Close all, Climate. A row opens a detail sheet. Phone layout below 600 px. |
+| House | `custom:adaptive-cover-house-card` | Every window by floor and room. Auto / Hold / Off for the house, each room and each window; Return all to auto, Open all, Close all, Climate. A row opens a detail sheet; house, floor and room settings sheets. Phone layout below 600 px. |
 
-There is also a **dashboard strategy**, `custom:adaptive-cover`: a whole dashboard with one view that holds the house card (see [House card and dashboard](#house-card-and-dashboard)).
+There is also a **dashboard strategy**, `custom:adaptive-cover`: a whole dashboard with one view that holds the house card (see [House card and dashboard](#house-card-and-dashboard)), and a **tile card feature**, `custom:adaptive-cover-mode`: Auto / Hold / Off chips on a stock tile card (see [Mode chips on a tile card](#mode-chips-on-a-tile-card)).
 
 ## What the cards read
 
@@ -44,7 +44,7 @@ Discovery never uses the registry's `config_entry_id` to find a window, because 
 
 The dialog's settings button (the tune icon, "Window settings") opens the integration page with that window's config entry highlighted; its **Configure** button opens the window's options.
 
-All cover actions use standard Home Assistant services (`cover.set_cover_position`, `cover.stop_cover`, `cover.set_cover_tilt_position`, `switch.turn_on/off`, `button.press`) — no custom services, and the cards make zero third-party network calls.
+All cover actions use standard Home Assistant services (`cover.set_cover_position`, `cover.stop_cover`, `cover.set_cover_tilt_position`, `switch.turn_on/off`, `button.press`, `select.select_option`, `number.set_value`, `time.set_value`). The house card and the Mode chips also call the integration's `adaptive_cover.hold`, `adaptive_cover.set_profile` and `adaptive_cover.get_profile`. The cards make zero third-party network calls.
 
 ### Known limitations
 
@@ -131,15 +131,36 @@ strategy:
 
 The card needs no window keys. It lists every `adaptive_cover` entity in `hass.entities` (hidden and disabled entities are left out) and finds each role by its translation key; a window is one Position sensor, keyed by its `window_key` attribute. For an older integration without translation keys it falls back to the unique_id prefix (it then fetches the full entity registry). A window's room is its Position sensor's area, else the window device's area, else the physical cover's area (entity, then device); the floor is that room's floor. Floors run top-down by level; a window without a room goes in "Unassigned".
 
-The integration has no Auto / Hold / Off select yet, so the card maps today's entities:
+Each window's Mode select (auto / hold / off, integration 1.19+) is its mode; a hold ends at the select's `until` attribute:
 
-| Mode | Shown when | What picking it does |
-|------|-----------|----------------------|
-| Off | the window's Mode select is "Manual", or its Automatic control switch is off | `select.select_option` → "Manual" (else `switch.turn_off` on Automatic control) |
-| Hold | the Manual override binary sensor is on; the chip counts down to its `until` attribute | not selectable: a hold starts when a shade is moved by hand or with Open / Close, and the segment says so in its tooltip |
-| Auto | otherwise | for Off windows `select.select_option` → "Sun + climate" when the window's Climate mode switch is on, else "Sun tracking"; then `button.press` on Return to auto for every window that was not on Auto |
+| Mode | What picking it does |
+|------|----------------------|
+| Auto | `select.select_option` → auto (control on, a hold ends) |
+| Hold | `adaptive_cover.hold` on the Mode selects (the window's own override duration); the window sheet's chips pass a `duration` (1 h, 2 h, 4 h, until tonight) |
+| Off | `select.select_option` → off |
 
-House controls use the "Adaptive Cover All" device: Off → its select to "Manual"; Auto and Return all to auto → its select to "Adaptive" (when a window is off), then its "Return all shades to auto" button; Open all / Close all → `cover.open_cover` / `cover.close_cover` on `cover.adaptive_cover_all`. Climate turns every window's Climate mode switch on or off. A card with `floors:` / `areas:` does not use the house device; its house controls act on its own windows. Every group action is one service call per service with all targets in one `entity_id` list. The window sheet's Open / Stop / Close call the cover services on that window's covers, and "Window setup" opens the window's entry on the integration page.
+On an older integration (Mode "Manual" / "Sun tracking" / "Sun + climate", no hold option) the card maps the old entities instead: Off is "Manual" or the Automatic control switch off, Hold is a latched Manual override (not selectable: it starts with a hand move), and Auto selects the automatic option and presses Return to auto.
+
+House controls use the "Adaptive Cover All" device: Auto / Hold / Off → its select (Mixed is display-only); Return all to auto → its select to auto (older integrations: its select, then its "Return all shades to auto" button); Open all / Close all → `cover.open_cover` / `cover.close_cover` on `cover.adaptive_cover_all`; Climate → the house Climate switch (older integrations: every window's Climate mode switch). A card with `floors:` / `areas:` does not use the house device; its house controls act on its own windows. Every group action is one service call per service with all targets in one `entity_id` list. The window sheet's Open / Stop / Close call the cover services on that window's covers, and "Window setup" opens the window's entry on the integration page.
+
+**Settings sheets** (integration 1.20+). A room card's and a floor header's **⋮** menu opens that room's or floor's settings; **House settings** opens the house sheet. Each row shows whether the room or floor sets its own value or uses the floor's / house's, the house value, an editor, and the rooms, floors or windows that set their own value.
+
+- A room or floor lists every setting it may hold (the integration's option spec: a floor holds the heating and cooling thresholds and the indoor temperature sensor; a room also holds climate, hand-move handling, the daily schedule, the default and evening positions, eye height, seat distance and privacy). **Set for this room/floor** calls `adaptive_cover.set_profile` with `scope: area` / `floor`, the id and the one setting; **Reset to house** sends it as `null`.
+- The house sheet lists every house setting (movement limits and weather/light sensors folded). A setting with an entity on the house device goes through it (`switch.turn_on/off`, `number.set_value`, `time.set_value` for the end time and quiet hours); every other one through `adaptive_cover.set_profile` with `scope: house`. Optional values (sensors, quiet hours, limits) have **Clear**. **More house settings** opens the house device.
+- A room or floor sheet also lists the windows with their own values (from the Position sensor's `provenance` attribute); picking one opens its window sheet.
+
+The stored values come from `adaptive_cover.get_profile` (response only, any user): one call for the house, every floor and every room, plus one `scope: window` call per window that sets its own value for a setting on the sheet. Before the house has layered settings the sheet says so and stores nothing. With an integration that has `set_profile` but no `get_profile`, the card reads the windows' `provenance` (a window whose value comes from `area` means the room sets it) and the Position sensor's `default`, `sunset_default` and `sunset_offset`; a row can then say "Set for this room" without the value. Without `set_profile` there are no settings menus.
+
+### Mode chips on a tile card
+
+```yaml
+type: tile
+entity: select.office_north_mode   # the window's Mode select, its cover, or the house select
+features:
+  - type: custom:adaptive-cover-mode
+```
+
+The tile's entity picks what the chips drive: a window (its Mode select, its physical cover, or any entity on the window device) or the whole house (the house select or `cover.adaptive_cover_all`). The calls are the house card's (see the table above). The feature has no options; its editor says so.
 
 ## For developers
 

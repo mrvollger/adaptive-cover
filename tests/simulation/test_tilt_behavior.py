@@ -1,6 +1,6 @@
 """Tilt (venetian) behavior at the service-call seam (wp8-tilt-behavior).
 
-Drives a real venetian (``cover_tilt``) config entry through SimHouse and
+Drives a real venetian (``cover_tilt``) window through SimHouse and
 asserts only on the public surfaces: the outbound service calls on the
 timeline and the shades' true fields.
 

@@ -13,7 +13,6 @@ import datetime as dt
 
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     async_mock_service,
 )
 
@@ -23,12 +22,12 @@ from custom_components.adaptive_cover.const import (
     CONF_ENTITIES,
     CONF_HEIGHT_WIN,
     CONF_SENSOR_TYPE,
-    DOMAIN,
     SensorType,
 )
 from custom_components.adaptive_cover.runtime.clock import SYSTEM_CLOCK
 
 from .characterization.golden_lib import use_real_sun_data
+from .house_model import mock_window_entry
 from .conftest import COMMON_OPTIONS
 from .window_handle import WindowHandle
 
@@ -55,9 +54,8 @@ async def test_injected_clock_stamps_the_moves(hass, mock_sun_entity, monkeypatc
     hass.bus.async_listen("adaptive_cover_moved", lambda e: events.append(e.data))
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        title="Clock Seam",
+    entry = mock_window_entry(
+        hass,
         data={"name": "Clock Seam", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -66,7 +64,6 @@ async def test_injected_clock_stamps_the_moves(hass, mock_sun_entity, monkeypatc
             CONF_ENTITIES: [COVER],
         },
     )
-    entry.add_to_hass(hass)
 
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
@@ -101,9 +98,8 @@ async def test_regression_adapters_use_the_coordinator_clock(
     async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set(COVER, "open", {"current_position": 60})
     window = WindowHandle(hass, COVER)
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        title="Clock Seam",
+    entry = mock_window_entry(
+        hass,
         data={"name": "Clock Seam", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -112,7 +108,6 @@ async def test_regression_adapters_use_the_coordinator_clock(
             CONF_ENTITIES: [COVER],
         },
     )
-    entry.add_to_hass(hass)
     with use_real_sun_data():
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()

@@ -94,6 +94,7 @@ from ..const import (
     CONF_SUNSET_POS,
     CONF_TEMP_ENTITY,
     CONF_TEMP_HIGH,
+    CONF_TEMP_HYSTERESIS,
     CONF_TEMP_LOW,
     CONF_TILT_DEPTH,
     CONF_TILT_DISTANCE,
@@ -197,7 +198,9 @@ class Service:
 
 @dataclass(frozen=True, kw_only=True)
 class LiveNumber:
-    """The option also has a live number entity (number.py owns its name).
+    """The option also has a live number entity: the house's (P5 flip).
+
+    ``house_settings.HOUSE_NUMBERS`` owns which ones and their icons.
 
     ``shows_default``: the entity shows the default while the option is
     unset (otherwise it shows unknown until set).
@@ -362,6 +365,15 @@ _TEMP_HIGH: Final = MappingProxyType(
     }
 )  # fmt: skip
 
+# The season's hysteresis per HA temperature unit (engine/season.py):
+# 0 is off, the plain threshold rule.
+_TEMP_HYSTERESIS: Final = MappingProxyType(
+    {
+        "°C": UnitShape(min=0, max=3, step=0.5, default=0),
+        "°F": UnitShape(min=0, max=5, step=0.1, default=0),
+    }
+)
+
 WEATHER_CONDITIONS: Final = (
     "clear-night", "clear", "cloudy", "fog", "hail", "lightning",
     "lightning-rainy", "partlycloudy", "pouring", "rainy", "snowy",
@@ -397,14 +409,13 @@ OPTS: Final[tuple[Opt, ...]] = (
         cover_types=POSITION_COVER_TYPES, default=0.5, min=0.1, max=10,
         step=0.1, unit="m", slider=True, wizard_required=True, baseline=True,
         service=_FLOAT),
+    # The overhang is window geometry: no live number since the P5 flip.
     Opt(CONF_OVERHANG_DEPTH, Kind.NUMBER, Group.COVER, ONE, W,
         cover_types=POSITION_COVER_TYPES, min=0.1, max=5, step=0.01, unit="m",
-        clearable=True, service=_FLOAT_OPTIONAL, number=LiveNumber(),
-        legacy={**_ANY_NUMBER, "number.min": 0, "number.step": 0.05}),
+        clearable=True, service=_FLOAT_OPTIONAL, legacy=_ANY_NUMBER),
     Opt(CONF_OVERHANG_HEIGHT, Kind.NUMBER, Group.COVER, ONE, W,
         cover_types=POSITION_COVER_TYPES, min=0.1, max=10, step=0.01, unit="m",
-        clearable=True, service=_FLOAT_OPTIONAL, number=LiveNumber(),
-        legacy={**_ANY_NUMBER, "number.min": 0.5, "number.step": 0.05}),
+        clearable=True, service=_FLOAT_OPTIONAL, legacy=_ANY_NUMBER),
     Opt(CONF_EYE_HEIGHT, Kind.NUMBER, Group.COVER, REC, H, (A, W),
         cover_types=POSITION_COVER_TYPES, default=DEFAULT_EYE_HEIGHT, min=0.1,
         max=3, step=0.01, unit="m", clearable=True, service=_FLOAT_OPTIONAL,
@@ -541,6 +552,9 @@ OPTS: Final[tuple[Opt, ...]] = (
     Opt(CONF_TEMP_HIGH, Kind.NUMBER, Group.CLIMATE, REC, H, (F, A),
         unit=TEMPERATURE, by_temperature_unit=_TEMP_HIGH, wizard_required=True,
         service=_FLOAT_OPTIONAL, number=LiveNumber(shows_default=True)),
+    Opt(CONF_TEMP_HYSTERESIS, Kind.NUMBER, Group.CLIMATE, REC, H, (A,),
+        unit=TEMPERATURE, by_temperature_unit=_TEMP_HYSTERESIS, service=_FLOAT,
+        number=LiveNumber(shows_default=True)),
     Opt(CONF_OUTSIDETEMP_ENTITY, Kind.ENTITY, Group.CLIMATE, REC, H,
         domains=("sensor",), clearable=True, service=_ENTITY_ID),
     Opt(CONF_OUTSIDE_THRESHOLD, Kind.INT, Group.CLIMATE, REC, H,

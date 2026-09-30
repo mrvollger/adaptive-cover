@@ -1,7 +1,7 @@
-"""The "Adaptive Cover All" hub: one device driving every entry.
+"""The house device ("All shades"): entities that drive every window.
 
-A singleton config entry (data.is_hub) auto-created on first regular-entry
-setup. Its entities fan out over all loaded coordinators:
+The house entry (data.is_hub; the integration's one config entry) owns
+this device. Its entities fan out over every running window:
 
 - cover.adaptive_cover_all: aggregate cover (avg of non-tilt positions;
   open/close/set all - marks each cover manually controlled, so adaptive
@@ -27,6 +27,7 @@ from homeassistant.components.cover import (
     CoverEntityFeature,
 )
 from homeassistant.components.select import SelectEntity
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 
@@ -43,18 +44,16 @@ MODE_MIXED = "mixed"
 """The house select's display-only option: the windows' Modes differ."""
 
 
-def is_hub_entry(entry) -> bool:
-    """Check whether a config entry is the singleton hub."""
+def is_hub_entry(entry: ConfigEntry) -> bool:
+    """Check whether a config entry is the house (the hub)."""
     return bool(entry.data.get(CONF_IS_HUB))
 
 
 def iter_coordinators(hass: HomeAssistant) -> list[AdaptiveDataUpdateCoordinator]:
-    """All loaded regular-entry coordinators."""
-    return [
-        coordinator
-        for coordinator in hass.data.get(DOMAIN, {}).values()
-        if isinstance(coordinator, AdaptiveDataUpdateCoordinator)
-    ]
+    """Return the running windows' coordinators (the house's runtime)."""
+    from .house import window_coordinators
+
+    return list(window_coordinators(hass).values())
 
 
 def hub_device_info() -> DeviceInfo:

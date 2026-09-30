@@ -26,10 +26,13 @@ import {
   type HouseScope,
 } from '../src/lib/house-actions';
 import {
+  HUB_CLIMATE_SWITCH,
+  HUB_DEVICE,
   HUB_MODE_SELECT,
   houseFixture,
   mixedHouse,
   p5House,
+  withHubClimate,
   withStates,
   type HouseFixture,
   type HouseTestHass,
@@ -465,5 +468,22 @@ describe('runCalls', () => {
       { domain: 'button', service: 'press', data: {} },
     ]);
     expect(order).toEqual(['select.select_option', 'button.press']);
+  });
+});
+
+describe('P5 house settings', () => {
+  it('the house Climate switch drives the Climate control', () => {
+    const { hass, model, scope } = setup((f) => withHubClimate(p5House(f), 'off'));
+    expect(model.hub.climateSwitch).toBe(HUB_CLIMATE_SWITCH);
+    expect(model.hubDeviceId).toBe(HUB_DEVICE);
+    expect(climateState(hass, model.windows, scope())).toBe('off');
+    expect(planClimate(model.windows, true, hass, scope())).toEqual([
+      { domain: 'switch', service: 'turn_on', data: { entity_id: [HUB_CLIMATE_SWITCH] } },
+    ]);
+    // A card showing some rooms acts on their windows, not the house.
+    expect(climateState(hass, model.windows, scope(false))).toBe('on');
+    expect(planClimate(model.windows, false, hass, scope(false))[0].data.entity_id).toHaveLength(
+      15,
+    );
   });
 });

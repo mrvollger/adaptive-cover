@@ -1,12 +1,12 @@
-diff --git a/custom_components/adaptive_cover/__init__.py b/custom_components/adaptive_cover/__init__.py
---- a/custom_components/adaptive_cover/__init__.py
-+++ b/custom_components/adaptive_cover/__init__.py
-@@ -174,7 +174,7 @@
-             update_kwargs["data"] = {**entry.data, "name": new_name}
-             update_kwargs["title"] = new_name
-         if changes:
--            update_kwargs["options"] = {**entry.options, **changes}
-+            update_kwargs["options"] = {**changes, **entry.options}
-         hass.config_entries.async_update_entry(entry, **update_kwargs)
-         if new_name and not changes:
-             # Options updates reload via the update listener; a pure rename
+diff --git a/custom_components/adaptive_cover/layers.py b/custom_components/adaptive_cover/layers.py
+--- a/custom_components/adaptive_cover/layers.py
++++ b/custom_components/adaptive_cover/layers.py
+@@ -260,7 +260,7 @@
+         place = where(key) if key in SPEC else Where.OPTIONS
+         if place is Where.OPTIONS:
+             if key in GEOMETRY_KEYS:
+-                geometry[key] = value
++                geometry.setdefault(key, value)
+             continue
+         values.pop(key, None)
+         legacy.pop(key, None)

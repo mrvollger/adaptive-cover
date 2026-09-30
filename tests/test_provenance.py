@@ -7,7 +7,6 @@ bus event (logbook) and the Position sensor's ``last_moves`` attribute.
 from __future__ import annotations
 
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     async_mock_service,
 )
 
@@ -17,10 +16,10 @@ from custom_components.adaptive_cover.const import (
     CONF_ENTITIES,
     CONF_HEIGHT_WIN,
     CONF_SENSOR_TYPE,
-    DOMAIN,
     SensorType,
 )
 
+from .house_model import mock_window_entry
 from .conftest import COMMON_OPTIONS
 from .window_handle import WindowHandle, internal_coordinator
 
@@ -28,9 +27,8 @@ COVER = "cover.test_cover"
 
 
 def _entry(hass):
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        title="Prov Test",
+    entry = mock_window_entry(
+        hass,
         data={"name": "Prov Test", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -40,7 +38,6 @@ def _entry(hass):
             CONF_DELTA_TIME: 0,
         },
     )
-    entry.add_to_hass(hass)
     return entry
 
 

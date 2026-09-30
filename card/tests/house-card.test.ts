@@ -8,9 +8,12 @@ import type { AdaptiveCoverHouseCardConfig } from '../src/types';
 import { holdDuration, msUntilTonight } from '../src/lib/house-actions';
 import {
   FIXTURE_NOW,
+  HUB_CLIMATE_SWITCH,
+  HUB_DEVICE,
   houseFixture,
   mixedHouse,
   p5House,
+  withHubClimate,
   withStates,
   type HouseFixture,
   type HouseTestHass,
@@ -282,6 +285,18 @@ describe('service calls', () => {
       ['button', 'press', { entity_id: ['button.adaptive_cover_all_reset_all_manual_overrides'] }],
       ['cover', 'open_cover', { entity_id: ['cover.adaptive_cover_all'] }],
       ['cover', 'close_cover', { entity_id: ['cover.adaptive_cover_all'] }],
+    ]);
+  });
+
+  it('P5: the House settings link opens the house device; Climate is the house switch', async () => {
+    const hass = withHubClimate(p5House(fx), 'on');
+    const el = await mount(hass);
+    expect($(el, '.house-bar .settings')!.getAttribute('href')).toBe(
+      `/config/devices/device/${HUB_DEVICE}`,
+    );
+    await click(el, $(el, '.climate'));
+    expect(hass.callService.mock.calls).toEqual([
+      ['switch', 'turn_off', { entity_id: [HUB_CLIMATE_SWITCH] }],
     ]);
   });
 

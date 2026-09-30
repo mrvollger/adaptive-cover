@@ -5,27 +5,31 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, Any
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.util import dt as dt_util
 
-from .const import CONF_ENTITIES, CONF_SENSOR_TYPE, DOMAIN
+from .const import DOMAIN
+from .windows import WindowEntry
 
 if TYPE_CHECKING:
     from .coordinator import AdaptiveDataUpdateCoordinator
 
 
-def adaptive_cover_device_info(config_entry: ConfigEntry) -> DeviceInfo:
-    """Return the shared device info for all entities of a config entry.
+def adaptive_cover_device_info(window: WindowEntry) -> DeviceInfo:
+    """Return the shared device info for all entities of one window.
 
-    One service device per config entry, named after the user's entry name,
-    so entities render as "<entry name> <role>".
+    One service device per window (identifier: the window key), named
+    after the window, so entities render as "<window name> <role>". A
+    window subentry's device hangs off the house device (``via_device_id``).
     """
-    return DeviceInfo(
-        identifiers={(DOMAIN, config_entry.entry_id)},
-        name=config_entry.data["name"],
+    info = DeviceInfo(
+        identifiers={(DOMAIN, window.window_key)},
+        name=window.name,
         entry_type=DeviceEntryType.SERVICE,
     )
+    if window.via_device_id is not None:
+        info["via_device_id"] = window.via_device_id
+    return info
 
 
 def _local_iso(value: dt.datetime | None) -> str | None:
@@ -52,34 +56,29 @@ def override_until(
 
 
 def window_attributes(
-    config_entry: ConfigEntry, coordinator: AdaptiveDataUpdateCoordinator
+    config_entry: WindowEntry, coordinator: AdaptiveDataUpdateCoordinator
 ) -> dict[str, Any]:
     """Identity and schedule attributes for the Position sensor (P1).
 
-    - window_key: the entry_id (the card binding key; stays valid when the
-      entry later becomes a window subentry).
-    - cover_entity: the cover this window drives. An entry with several
-      covers also gets cover_entities (the full list); cover_entity is the
-      first.
+    - window_key: the window key (the card binding key): a migrated
+      window's old entry_id, a new window's subentry_id (windows.py).
+    - cover_entity: the cover this window drives (None without one).
     - cover_type: cover_blind / cover_awning / cover_tilt.
     - override_until: local ISO time the manual override ends, or None.
     - next_move: {time, position} from the next-change computation, or None.
-    - provenance (P5 shadow): where the layered settings take each option
-      from, for the options that do not come from the house or the spec
-      default and are not one-time window settings ({option: "area" |
-      "floor" | "window" | "legacy"}); None until the house is lifted
-      (shadow.py).
+    - provenance (P5): where the window's settings come from, for the
+      options that do not come from the house or the spec default and are
+      not one-time window settings ({option: "area" | "floor" | "window" |
+      "legacy"}; layers.py).
     """
-    from .shadow import provenance
-
-    covers = list(config_entry.options.get(CONF_ENTITIES) or [])
+    covers = config_entry.covers
     states = coordinator.data.states
     next_time = states.get("next_change_time")
     next_position = states.get("next_change_position")
     attributes: dict[str, Any] = {
         "window_key": config_entry.entry_id,
         "cover_entity": covers[0] if covers else None,
-        "cover_type": config_entry.data.get(CONF_SENSOR_TYPE),
+        "cover_type": config_entry.cover_type,
         "override_until": _local_iso(override_until(coordinator, covers)),
         "next_move": {
             "time": _local_iso(next_time),
@@ -87,8 +86,6 @@ def window_attributes(
         }
         if next_time is not None
         else None,
-        "provenance": provenance(coordinator.hass, config_entry.entry_id),
+        "provenance": coordinator.provenance,
     }
-    if len(covers) > 1:
-        attributes["cover_entities"] = covers
     return attributes

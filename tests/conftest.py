@@ -3,7 +3,6 @@
 from unittest.mock import patch
 
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adaptive_cover.const import (
     CONF_AWNING_ANGLE,
@@ -33,7 +32,6 @@ from custom_components.adaptive_cover.const import (
     CONF_TILT_DEPTH,
     CONF_TILT_DISTANCE,
     CONF_TILT_MODE,
-    DOMAIN,
     SensorType,
 )
 
@@ -117,55 +115,53 @@ def stub_sun_integration(hass, mock_sun_entity):
     hass.config.components.add("sun")
 
 
+VERTICAL_WINDOW = (
+    {"name": "Test Vertical", CONF_SENSOR_TYPE: SensorType.BLIND},
+    {**COMMON_OPTIONS, CONF_HEIGHT_WIN: 2.1, CONF_DISTANCE: 0.5},
+)
+HORIZONTAL_WINDOW = (
+    {"name": "Test Horizontal", CONF_SENSOR_TYPE: SensorType.AWNING},
+    {
+        **COMMON_OPTIONS,
+        CONF_HEIGHT_WIN: 2.1,
+        CONF_DISTANCE: 0.5,
+        CONF_LENGTH_AWNING: 2.1,
+        CONF_AWNING_ANGLE: 0,
+    },
+)
+TILT_WINDOW = (
+    {"name": "Test Tilt", CONF_SENSOR_TYPE: SensorType.TILT},
+    {
+        **COMMON_OPTIONS,
+        CONF_TILT_DEPTH: 3,
+        CONF_TILT_DISTANCE: 2,
+        CONF_TILT_MODE: "mode2",
+    },
+)
+
+
 @pytest.fixture
 def vertical_config_entry(hass):
-    """Create a mock config entry for vertical cover."""
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={"name": "Test Vertical", CONF_SENSOR_TYPE: SensorType.BLIND},
-        options={
-            **COMMON_OPTIONS,
-            CONF_HEIGHT_WIN: 2.1,
-            CONF_DISTANCE: 0.5,
-        },
-    )
-    entry.add_to_hass(hass)
-    return entry
+    """A house with one vertical window (``entry_id`` is also the window key)."""
+    from tests.house_model import mock_window_entry
+
+    return mock_window_entry(hass, *VERTICAL_WINDOW)
 
 
 @pytest.fixture
 def horizontal_config_entry(hass):
-    """Create a mock config entry for horizontal cover."""
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={"name": "Test Horizontal", CONF_SENSOR_TYPE: SensorType.AWNING},
-        options={
-            **COMMON_OPTIONS,
-            CONF_HEIGHT_WIN: 2.1,
-            CONF_DISTANCE: 0.5,
-            CONF_LENGTH_AWNING: 2.1,
-            CONF_AWNING_ANGLE: 0,
-        },
-    )
-    entry.add_to_hass(hass)
-    return entry
+    """A house with one awning window (``entry_id`` is also the window key)."""
+    from tests.house_model import mock_window_entry
+
+    return mock_window_entry(hass, *HORIZONTAL_WINDOW)
 
 
 @pytest.fixture
 def tilt_config_entry(hass):
-    """Create a mock config entry for tilt cover."""
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={"name": "Test Tilt", CONF_SENSOR_TYPE: SensorType.TILT},
-        options={
-            **COMMON_OPTIONS,
-            CONF_TILT_DEPTH: 3,
-            CONF_TILT_DISTANCE: 2,
-            CONF_TILT_MODE: "mode2",
-        },
-    )
-    entry.add_to_hass(hass)
-    return entry
+    """A house with one tilted-blind window (``entry_id`` is also the window key)."""
+    from tests.house_model import mock_window_entry
+
+    return mock_window_entry(hass, *TILT_WINDOW)
 
 
 @pytest.fixture

@@ -48,6 +48,7 @@
    "sunset_position",
    "temp_entity",
    "temp_high",
+   "temp_hysteresis",
    "temp_low",
    "tilt_mode",
    "weather_entity",
@@ -124,43 +125,55 @@
    "sunset_position",
    "temp_entity",
    "temp_high",
+   "temp_hysteresis",
    "temp_low",
    "tilt_mode",
    "weather_entity",
    "weather_state",
    "window_height"
   ],
-  "number [types=cover_awning|cover_tilt; climate=off]": [
-   "privacy_offset"
-  ],
-  "number [types=cover_awning|cover_tilt; climate=on]": [
+  "number": [
+   "eye_height",
+   "manual_override_duration",
+   "occupied_distance",
    "privacy_offset",
    "temp_high",
+   "temp_hysteresis",
    "temp_low"
   ],
-  "number [types=cover_blind; climate=off]": [
-   "eye_height",
-   "occupied_distance",
-   "overhang_depth",
-   "overhang_height",
-   "privacy_offset"
+  "options.house": [
+   "house_positions",
+   "house_schedule",
+   "house_climate"
   ],
-  "number [types=cover_blind; climate=on]": [
-   "eye_height",
-   "occupied_distance",
-   "overhang_depth",
-   "overhang_height",
-   "privacy_offset",
+  "options.house.house_climate": [
+   "climate_mode",
+   "temp_low",
    "temp_high",
-   "temp_low"
+   "temp_hysteresis",
+   "outside_temp",
+   "outside_threshold",
+   "presence_entity",
+   "lux_entity",
+   "lux_threshold",
+   "irradiance_entity",
+   "irradiance_threshold",
+   "weather_entity",
+   "weather_state",
+   "climate_on",
+   "use_outside_temp",
+   "use_lux",
+   "use_irradiance"
   ],
-  "options.init": [
-   "covers_geometry",
-   "sun_behavior",
-   "automation_timing",
-   "climate"
+  "options.house.house_positions": [
+   "eye_height",
+   "occupied_distance",
+   "default_percentage",
+   "sunset_position",
+   "sunset_offset",
+   "sunrise_offset"
   ],
-  "options.init.automation_timing": [
+  "options.house.house_schedule": [
    "delta_position",
    "delta_time",
    "start_time",
@@ -172,82 +185,12 @@
    "end_time",
    "end_entity",
    "return_sunset",
-   "privacy_mode",
    "privacy_offset",
    "privacy_position",
    "quiet_start",
    "quiet_end",
-   "max_moves_hour"
-  ],
-  "options.init.climate [climate=off]": [
-   "climate_mode"
-  ],
-  "options.init.climate [climate=on]": [
-   "climate_mode",
-   "temp_entity",
-   "temp_low",
-   "temp_high",
-   "outside_temp",
-   "outside_threshold",
-   "presence_entity",
-   "lux_entity",
-   "lux_threshold",
-   "irradiance_entity",
-   "irradiance_threshold",
-   "transparent_blind",
-   "weather_entity",
-   "weather_state"
-  ],
-  "options.init.covers_geometry [types=cover_awning]": [
-   "length_awning",
-   "angle",
-   "cover_entity_id",
-   "window_height",
-   "distance_shaded_area",
-   "overhang_depth",
-   "overhang_height",
-   "eye_height",
-   "occupied_distance"
-  ],
-  "options.init.covers_geometry [types=cover_blind]": [
-   "cover_entity_id",
-   "window_height",
-   "distance_shaded_area",
-   "overhang_depth",
-   "overhang_height",
-   "eye_height",
-   "occupied_distance"
-  ],
-  "options.init.covers_geometry [types=cover_tilt]": [
-   "cover_entity_id",
-   "slat_depth",
-   "slat_distance",
-   "tilt_mode"
-  ],
-  "options.init.sun_behavior": [
-   "set_azimuth",
-   "default_percentage",
-   "max_position",
-   "enable_max_position",
-   "min_position",
-   "enable_min_position",
-   "min_elevation",
-   "max_elevation",
-   "fov_left",
-   "fov_right",
-   "sunset_position",
-   "sunset_offset",
-   "sunrise_offset",
-   "inverse_state",
-   "blind_spot",
-   "interp",
-   "blind_spot_left",
-   "blind_spot_right",
-   "blind_spot_elevation",
-   "interp_start",
-   "interp_end",
-   "interp_list",
-   "interp_list_new"
+   "max_moves_hour",
+   "manual_detection"
   ],
   "services_yaml.add_entry": [
    "name",
@@ -271,12 +214,134 @@
    "weather_entity",
    "weather_state",
    "temp_low",
-   "temp_high"
+   "temp_high",
+   "temp_hysteresis"
+  ],
+  "setup.first": [
+   "window",
+   "sun_limits",
+   "advanced",
+   "exceptions_positions",
+   "exceptions_schedule",
+   "exceptions_climate"
+  ],
+  "setup.first.advanced": [
+   "max_position",
+   "enable_max_position",
+   "min_position",
+   "enable_min_position",
+   "inverse_state",
+   "interp",
+   "interp_start",
+   "interp_end",
+   "interp_list",
+   "interp_list_new",
+   "privacy_mode",
+   "transparent_blind"
+  ],
+  "setup.first.exceptions_climate": [
+   "climate_mode",
+   "temp_entity",
+   "temp_low",
+   "temp_high",
+   "temp_hysteresis",
+   "outside_temp",
+   "outside_threshold",
+   "presence_entity",
+   "lux_entity",
+   "lux_threshold",
+   "irradiance_entity",
+   "irradiance_threshold",
+   "weather_entity",
+   "weather_state"
+  ],
+  "setup.first.exceptions_positions [types=cover_awning|cover_blind]": [
+   "eye_height",
+   "occupied_distance",
+   "default_percentage",
+   "sunset_position",
+   "sunset_offset",
+   "sunrise_offset"
+  ],
+  "setup.first.exceptions_positions [types=cover_tilt]": [
+   "default_percentage",
+   "sunset_position",
+   "sunset_offset",
+   "sunrise_offset"
+  ],
+  "setup.first.exceptions_schedule": [
+   "delta_position",
+   "delta_time",
+   "start_time",
+   "start_entity",
+   "manual_override_duration",
+   "manual_override_reset",
+   "manual_threshold",
+   "manual_ignore_intermediate",
+   "end_time",
+   "end_entity",
+   "return_sunset",
+   "privacy_offset",
+   "privacy_position",
+   "quiet_start",
+   "quiet_end",
+   "max_moves_hour"
+  ],
+  "setup.first.sun_limits": [
+   "min_elevation",
+   "max_elevation",
+   "blind_spot",
+   "blind_spot_left",
+   "blind_spot_right",
+   "blind_spot_elevation"
+  ],
+  "setup.first.window [types=cover_awning]": [
+   "preset",
+   "name",
+   "cover_entity_id",
+   "sensor_type",
+   "set_azimuth",
+   "fov_left",
+   "fov_right",
+   "length_awning",
+   "angle",
+   "window_height",
+   "distance_shaded_area",
+   "overhang_depth",
+   "overhang_height"
+  ],
+  "setup.first.window [types=cover_blind]": [
+   "preset",
+   "name",
+   "cover_entity_id",
+   "sensor_type",
+   "set_azimuth",
+   "fov_left",
+   "fov_right",
+   "window_height",
+   "distance_shaded_area",
+   "overhang_depth",
+   "overhang_height"
+  ],
+  "setup.first.window [types=cover_tilt]": [
+   "preset",
+   "name",
+   "cover_entity_id",
+   "sensor_type",
+   "set_azimuth",
+   "fov_left",
+   "fov_right",
+   "slat_depth",
+   "slat_distance",
+   "tilt_mode"
   ],
   "setup.reconfigure": [
    "window",
    "sun_limits",
-   "advanced"
+   "advanced",
+   "exceptions_positions",
+   "exceptions_schedule",
+   "exceptions_climate"
   ],
   "setup.reconfigure.advanced": [
    "max_position",
@@ -291,6 +356,54 @@
    "interp_list_new",
    "privacy_mode",
    "transparent_blind"
+  ],
+  "setup.reconfigure.exceptions_climate": [
+   "climate_mode",
+   "temp_entity",
+   "temp_low",
+   "temp_high",
+   "temp_hysteresis",
+   "outside_temp",
+   "outside_threshold",
+   "presence_entity",
+   "lux_entity",
+   "lux_threshold",
+   "irradiance_entity",
+   "irradiance_threshold",
+   "weather_entity",
+   "weather_state"
+  ],
+  "setup.reconfigure.exceptions_positions [types=cover_awning|cover_blind]": [
+   "eye_height",
+   "occupied_distance",
+   "default_percentage",
+   "sunset_position",
+   "sunset_offset",
+   "sunrise_offset"
+  ],
+  "setup.reconfigure.exceptions_positions [types=cover_tilt]": [
+   "default_percentage",
+   "sunset_position",
+   "sunset_offset",
+   "sunrise_offset"
+  ],
+  "setup.reconfigure.exceptions_schedule": [
+   "delta_position",
+   "delta_time",
+   "start_time",
+   "start_entity",
+   "manual_override_duration",
+   "manual_override_reset",
+   "manual_threshold",
+   "manual_ignore_intermediate",
+   "end_time",
+   "end_entity",
+   "return_sunset",
+   "privacy_offset",
+   "privacy_position",
+   "quiet_start",
+   "quiet_end",
+   "max_moves_hour"
   ],
   "setup.reconfigure.sun_limits": [
    "min_elevation",
@@ -370,6 +483,7 @@
    "temp_entity",
    "temp_low",
    "temp_high",
+   "temp_hysteresis",
    "outside_temp",
    "outside_threshold",
    "presence_entity",
@@ -477,19 +591,7 @@
    },
    {
     "where": [
-     "options.init.covers_geometry [types=cover_awning]"
-    ],
-    "kind": "number",
-    "max": 45,
-    "min": 0,
-    "mode": "slider",
-    "step": 1,
-    "unit": "°",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.window [types=cover_awning]",
      "setup.reconfigure.window [types=cover_awning]",
      "setup.user.window [types=cover_awning]"
     ],
@@ -512,35 +614,27 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "boolean",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
-     "setup.reconfigure.sun_limits",
+     "setup.first.sun_limits",
      "setup.user.sun_limits"
     ],
     "kind": "boolean",
     "required": true,
     "default": false
+   },
+   {
+    "where": [
+     "setup.reconfigure.sun_limits"
+    ],
+    "kind": "boolean",
+    "required": true,
+    "default": false,
+    "suggested": true
    }
   ],
   "blind_spot_elevation": [
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "int",
-    "min": 0,
-    "max": 90,
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.sun_limits",
      "setup.reconfigure.sun_limits",
      "setup.user.sun_limits"
     ],
@@ -553,18 +647,7 @@
   "blind_spot_left": [
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "number",
-    "max": 90,
-    "min": 0,
-    "mode": "box",
-    "step": 1,
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.sun_limits",
      "setup.reconfigure.sun_limits",
      "setup.user.sun_limits"
     ],
@@ -581,18 +664,7 @@
   "blind_spot_right": [
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "number",
-    "max": 90,
-    "min": 1,
-    "mode": "box",
-    "step": 1,
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.sun_limits",
      "setup.reconfigure.sun_limits",
      "setup.user.sun_limits"
     ],
@@ -624,7 +696,7 @@
    },
    {
     "where": [
-     "options.init.climate"
+     "options.house.house_climate"
     ],
     "kind": "boolean",
     "required": false,
@@ -632,11 +704,31 @@
    },
    {
     "where": [
+     "setup.first.exceptions_climate",
      "setup.user.exceptions_climate"
     ],
     "kind": "boolean",
     "required": false,
     "default": false
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_climate"
+    ],
+    "kind": "boolean",
+    "required": false,
+    "default": false,
+    "suggested": true
+   }
+  ],
+  "climate_on": [
+   {
+    "where": [
+     "options.house.house_climate"
+    ],
+    "kind": "boolean",
+    "required": false,
+    "suggested": true
    }
   ],
   "config_entry": [
@@ -716,67 +808,7 @@
   "cover_entity_id": [
    {
     "where": [
-     "options.init.covers_geometry [types=cover_awning|cover_blind]"
-    ],
-    "kind": "entity",
-    "filter": [
-     {
-      "domain": [
-       "cover"
-      ],
-      "supported_features": [
-       4
-      ]
-     }
-    ],
-    "multiple": false,
-    "reorder": false,
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
-     "options.init.covers_geometry [types=cover_tilt]"
-    ],
-    "kind": "entity",
-    "filter": [
-     {
-      "domain": [
-       "cover"
-      ],
-      "supported_features": [
-       128
-      ]
-     }
-    ],
-    "multiple": false,
-    "reorder": false,
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
-     "setup.reconfigure.window",
-     "setup.user.window [types=cover_blind]"
-    ],
-    "kind": "entity",
-    "filter": [
-     {
-      "domain": [
-       "cover"
-      ],
-      "supported_features": [
-       4,
-       128
-      ]
-     }
-    ],
-    "multiple": false,
-    "reorder": false,
-    "required": true
-   },
-   {
-    "where": [
+     "setup.first.window [types=cover_awning|cover_tilt]",
      "setup.user.window [types=cover_awning|cover_tilt]"
     ],
     "kind": "entity",
@@ -795,6 +827,28 @@
     "reorder": false,
     "required": true,
     "suggested": true
+   },
+   {
+    "where": [
+     "setup.first.window [types=cover_blind]",
+     "setup.reconfigure.window",
+     "setup.user.window [types=cover_blind]"
+    ],
+    "kind": "entity",
+    "filter": [
+     {
+      "domain": [
+       "cover"
+      ],
+      "supported_features": [
+       4,
+       128
+      ]
+     }
+    ],
+    "multiple": false,
+    "reorder": false,
+    "required": true
    }
   ],
   "covers": [
@@ -838,7 +892,7 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
+     "options.house.house_positions"
     ],
     "kind": "number",
     "max": 100,
@@ -851,6 +905,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_positions",
      "setup.user.exceptions_positions"
     ],
     "kind": "number",
@@ -861,6 +916,20 @@
     "unit": "%",
     "required": true,
     "default": 100
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_positions"
+    ],
+    "kind": "number",
+    "max": 100,
+    "min": 0,
+    "mode": "slider",
+    "step": 1,
+    "unit": "%",
+    "required": true,
+    "default": 100,
+    "suggested": true
    }
   ],
   "delta_position": [
@@ -882,7 +951,7 @@
    },
    {
     "where": [
-     "options.init.automation_timing"
+     "options.house.house_schedule"
     ],
     "kind": "number",
     "max": 90,
@@ -895,6 +964,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_schedule",
      "setup.user.exceptions_schedule"
     ],
     "kind": "number",
@@ -905,6 +975,20 @@
     "unit": "%",
     "required": true,
     "default": 1
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_schedule"
+    ],
+    "kind": "number",
+    "max": 90,
+    "min": 1,
+    "mode": "slider",
+    "step": 1,
+    "unit": "%",
+    "required": true,
+    "default": 1,
+    "suggested": true
    }
   ],
   "delta_time": [
@@ -925,7 +1009,7 @@
    },
    {
     "where": [
-     "options.init.automation_timing"
+     "options.house.house_schedule"
     ],
     "kind": "number",
     "min": 0,
@@ -937,6 +1021,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_schedule",
      "setup.user.exceptions_schedule"
     ],
     "kind": "number",
@@ -946,6 +1031,19 @@
     "unit": "minutes",
     "required": false,
     "default": 2
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_schedule"
+    ],
+    "kind": "number",
+    "min": 0,
+    "mode": "box",
+    "step": 1,
+    "unit": "minutes",
+    "required": false,
+    "default": 2,
+    "suggested": true
    }
   ],
   "distance_shaded_area": [
@@ -967,19 +1065,7 @@
    },
    {
     "where": [
-     "options.init.covers_geometry [types=cover_awning|cover_blind]"
-    ],
-    "kind": "number",
-    "max": 10,
-    "min": 0.1,
-    "mode": "slider",
-    "step": 0.1,
-    "unit": "m",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.window [types=cover_awning|cover_blind]",
      "setup.reconfigure.window [types=cover_awning|cover_blind]",
      "setup.user.window [types=cover_awning|cover_blind]"
     ],
@@ -1002,20 +1088,21 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "boolean",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
-     "setup.reconfigure.advanced",
+     "setup.first.advanced",
      "setup.user.advanced"
     ],
     "kind": "boolean",
     "required": false,
     "default": false
+   },
+   {
+    "where": [
+     "setup.reconfigure.advanced"
+    ],
+    "kind": "boolean",
+    "required": false,
+    "default": false,
+    "suggested": true
    }
   ],
   "enable_min_position": [
@@ -1027,26 +1114,27 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "boolean",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
-     "setup.reconfigure.advanced",
+     "setup.first.advanced",
      "setup.user.advanced"
     ],
     "kind": "boolean",
     "required": false,
     "default": false
+   },
+   {
+    "where": [
+     "setup.reconfigure.advanced"
+    ],
+    "kind": "boolean",
+    "required": false,
+    "default": false,
+    "suggested": true
    }
   ],
   "end_entity": [
    {
     "where": [
-     "options.init.automation_timing"
+     "options.house.house_schedule"
     ],
     "kind": "entity",
     "domain": [
@@ -1060,6 +1148,8 @@
    },
    {
     "where": [
+     "setup.first.exceptions_schedule",
+     "setup.reconfigure.exceptions_schedule",
      "setup.user.exceptions_schedule"
     ],
     "kind": "entity",
@@ -1090,7 +1180,7 @@
    },
    {
     "where": [
-     "options.init.automation_timing"
+     "options.house.house_schedule"
     ],
     "kind": "time",
     "required": false,
@@ -1098,11 +1188,21 @@
    },
    {
     "where": [
+     "setup.first.exceptions_schedule",
      "setup.user.exceptions_schedule"
     ],
     "kind": "time",
     "required": false,
     "default": "00:00:00"
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_schedule"
+    ],
+    "kind": "time",
+    "required": false,
+    "default": "00:00:00",
+    "suggested": true
    }
   ],
   "eye_height": [
@@ -1117,8 +1217,9 @@
    },
    {
     "where": [
-     "number [types=cover_blind]"
+     "number"
     ],
+    "default": 1.2,
     "kind": "number",
     "max": 3,
     "min": 0.5,
@@ -1128,7 +1229,7 @@
    },
    {
     "where": [
-     "options.init.covers_geometry [types=cover_awning|cover_blind]"
+     "options.house.house_positions"
     ],
     "kind": "number",
     "max": 3,
@@ -1152,6 +1253,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_positions [types=cover_awning|cover_blind]",
      "setup.user.exceptions_positions [types=cover_awning|cover_blind]"
     ],
     "kind": "number",
@@ -1162,6 +1264,20 @@
     "unit": "m",
     "required": false,
     "default": 1.2
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_positions [types=cover_awning|cover_blind]"
+    ],
+    "kind": "number",
+    "max": 3,
+    "min": 0.1,
+    "mode": "box",
+    "step": 0.01,
+    "unit": "m",
+    "required": false,
+    "default": 1.2,
+    "suggested": true
    }
   ],
   "fov_left": [
@@ -1183,19 +1299,7 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "number",
-    "max": 90,
-    "min": 1,
-    "mode": "slider",
-    "step": 1,
-    "unit": "°",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.window",
      "setup.reconfigure.window",
      "setup.user.window"
     ],
@@ -1228,19 +1332,7 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "number",
-    "max": 90,
-    "min": 1,
-    "mode": "slider",
-    "step": 1,
-    "unit": "°",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.window",
      "setup.reconfigure.window",
      "setup.user.window"
     ],
@@ -1263,35 +1355,27 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "boolean",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
-     "setup.reconfigure.advanced",
+     "setup.first.advanced",
      "setup.user.advanced"
     ],
     "kind": "boolean",
     "required": true,
     "default": false
+   },
+   {
+    "where": [
+     "setup.reconfigure.advanced"
+    ],
+    "kind": "boolean",
+    "required": true,
+    "default": false,
+    "suggested": true
    }
   ],
   "interp_end": [
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "int",
-    "min": 0,
-    "max": 100,
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.advanced",
      "setup.reconfigure.advanced",
      "setup.user.advanced"
     ],
@@ -1310,22 +1394,7 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "select",
-    "custom_value": true,
-    "multiple": true,
-    "options": [
-     "0",
-     "50",
-     "100"
-    ],
-    "sort": false,
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.advanced",
      "setup.reconfigure.advanced",
      "setup.user.advanced"
     ],
@@ -1351,22 +1420,7 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "select",
-    "custom_value": true,
-    "multiple": true,
-    "options": [
-     "0",
-     "50",
-     "100"
-    ],
-    "sort": false,
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.advanced",
      "setup.reconfigure.advanced",
      "setup.user.advanced"
     ],
@@ -1386,16 +1440,7 @@
   "interp_start": [
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "int",
-    "min": 0,
-    "max": 100,
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.advanced",
      "setup.reconfigure.advanced",
      "setup.user.advanced"
     ],
@@ -1414,26 +1459,27 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "boolean",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
-     "setup.reconfigure.advanced",
+     "setup.first.advanced",
      "setup.user.advanced"
     ],
     "kind": "boolean",
     "required": true,
     "default": false
+   },
+   {
+    "where": [
+     "setup.reconfigure.advanced"
+    ],
+    "kind": "boolean",
+    "required": true,
+    "default": false,
+    "suggested": true
    }
   ],
   "irradiance_entity": [
    {
     "where": [
-     "options.init.climate [climate=on]"
+     "options.house.house_climate"
     ],
     "kind": "entity",
     "device_class": [
@@ -1449,6 +1495,8 @@
    },
    {
     "where": [
+     "setup.first.exceptions_climate",
+     "setup.reconfigure.exceptions_climate",
      "setup.user.exceptions_climate"
     ],
     "kind": "entity",
@@ -1475,7 +1523,7 @@
    },
    {
     "where": [
-     "options.init.climate [climate=on]"
+     "options.house.house_climate"
     ],
     "kind": "number",
     "mode": "box",
@@ -1486,6 +1534,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_climate",
      "setup.user.exceptions_climate"
     ],
     "kind": "number",
@@ -1494,6 +1543,18 @@
     "unit": "W/m²",
     "required": false,
     "default": 300
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_climate"
+    ],
+    "kind": "number",
+    "mode": "box",
+    "step": 1,
+    "unit": "W/m²",
+    "required": false,
+    "default": 300,
+    "suggested": true
    }
   ],
   "length_awning": [
@@ -1508,19 +1569,7 @@
    },
    {
     "where": [
-     "options.init.covers_geometry [types=cover_awning]"
-    ],
-    "kind": "number",
-    "max": 6,
-    "min": 0.3,
-    "mode": "slider",
-    "step": 0.01,
-    "unit": "m",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.window [types=cover_awning]",
      "setup.reconfigure.window [types=cover_awning]",
      "setup.user.window [types=cover_awning]"
     ],
@@ -1537,7 +1586,7 @@
   "lux_entity": [
    {
     "where": [
-     "options.init.climate [climate=on]"
+     "options.house.house_climate"
     ],
     "kind": "entity",
     "device_class": [
@@ -1553,6 +1602,8 @@
    },
    {
     "where": [
+     "setup.first.exceptions_climate",
+     "setup.reconfigure.exceptions_climate",
      "setup.user.exceptions_climate"
     ],
     "kind": "entity",
@@ -1579,7 +1630,7 @@
    },
    {
     "where": [
-     "options.init.climate [climate=on]"
+     "options.house.house_climate"
     ],
     "kind": "number",
     "mode": "box",
@@ -1590,6 +1641,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_climate",
      "setup.user.exceptions_climate"
     ],
     "kind": "number",
@@ -1598,12 +1650,34 @@
     "unit": "lux",
     "required": false,
     "default": 1000
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_climate"
+    ],
+    "kind": "number",
+    "mode": "box",
+    "step": 1,
+    "unit": "lux",
+    "required": false,
+    "default": 1000,
+    "suggested": true
+   }
+  ],
+  "manual_detection": [
+   {
+    "where": [
+     "options.house.house_schedule"
+    ],
+    "kind": "boolean",
+    "required": false,
+    "suggested": true
    }
   ],
   "manual_ignore_intermediate": [
    {
     "where": [
-     "options.init.automation_timing"
+     "options.house.house_schedule"
     ],
     "kind": "boolean",
     "required": false,
@@ -1611,11 +1685,21 @@
    },
    {
     "where": [
+     "setup.first.exceptions_schedule",
      "setup.user.exceptions_schedule"
     ],
     "kind": "boolean",
     "required": false,
     "default": false
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_schedule"
+    ],
+    "kind": "boolean",
+    "required": false,
+    "default": false,
+    "suggested": true
    }
   ],
   "manual_override_duration": [
@@ -1640,7 +1724,19 @@
    },
    {
     "where": [
-     "options.init.automation_timing"
+     "number"
+    ],
+    "default": 120,
+    "kind": "number",
+    "max": 1440,
+    "min": 1,
+    "mode": "box",
+    "step": 1,
+    "unit": "min"
+   },
+   {
+    "where": [
+     "options.house.house_schedule"
     ],
     "kind": "duration",
     "enable_second": true,
@@ -1649,6 +1745,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_schedule",
      "setup.user.exceptions_schedule"
     ],
     "kind": "duration",
@@ -1659,6 +1756,20 @@
      "minutes": 0,
      "seconds": 0
     }
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_schedule"
+    ],
+    "kind": "duration",
+    "enable_second": true,
+    "required": true,
+    "default": {
+     "hours": 2,
+     "minutes": 0,
+     "seconds": 0
+    },
+    "suggested": true
    }
   ],
   "manual_override_reset": [
@@ -1678,7 +1789,7 @@
    },
    {
     "where": [
-     "options.init.automation_timing"
+     "options.house.house_schedule"
     ],
     "kind": "boolean",
     "required": false,
@@ -1686,11 +1797,21 @@
    },
    {
     "where": [
+     "setup.first.exceptions_schedule",
      "setup.user.exceptions_schedule"
     ],
     "kind": "boolean",
     "required": true,
     "default": false
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_schedule"
+    ],
+    "kind": "boolean",
+    "required": true,
+    "default": false,
+    "suggested": true
    }
   ],
   "manual_threshold": [
@@ -1707,7 +1828,7 @@
    },
    {
     "where": [
-     "options.init.automation_timing"
+     "options.house.house_schedule"
     ],
     "kind": "int",
     "min": 0,
@@ -1717,6 +1838,8 @@
    },
    {
     "where": [
+     "setup.first.exceptions_schedule",
+     "setup.reconfigure.exceptions_schedule",
      "setup.user.exceptions_schedule"
     ],
     "kind": "int",
@@ -1737,16 +1860,7 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "int",
-    "min": 0,
-    "max": 90,
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.sun_limits",
      "setup.reconfigure.sun_limits",
      "setup.user.sun_limits"
     ],
@@ -1770,7 +1884,7 @@
    },
    {
     "where": [
-     "options.init.automation_timing"
+     "options.house.house_schedule"
     ],
     "kind": "int",
     "min": 1,
@@ -1780,6 +1894,8 @@
    },
    {
     "where": [
+     "setup.first.exceptions_schedule",
+     "setup.reconfigure.exceptions_schedule",
      "setup.user.exceptions_schedule"
     ],
     "kind": "int",
@@ -1802,16 +1918,7 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "int",
-    "min": 1,
-    "max": 100,
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.advanced",
      "setup.reconfigure.advanced",
      "setup.user.advanced"
     ],
@@ -1833,16 +1940,7 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "int",
-    "min": 0,
-    "max": 90,
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.sun_limits",
      "setup.reconfigure.sun_limits",
      "setup.user.sun_limits"
     ],
@@ -1866,16 +1964,7 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "int",
-    "min": 0,
-    "max": 99,
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.advanced",
      "setup.reconfigure.advanced",
      "setup.user.advanced"
     ],
@@ -1921,6 +2010,7 @@
    {
     "where": [
      "services_yaml.change_settings",
+     "setup.first.window",
      "setup.user.window"
     ],
     "kind": "text",
@@ -1951,8 +2041,9 @@
    },
    {
     "where": [
-     "number [types=cover_blind]"
+     "number"
     ],
+    "default": 2,
     "kind": "number",
     "max": 10,
     "min": 0.1,
@@ -1962,7 +2053,7 @@
    },
    {
     "where": [
-     "options.init.covers_geometry [types=cover_awning|cover_blind]"
+     "options.house.house_positions"
     ],
     "kind": "number",
     "max": 10,
@@ -1986,6 +2077,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_positions [types=cover_awning|cover_blind]",
      "setup.user.exceptions_positions [types=cover_awning|cover_blind]"
     ],
     "kind": "number",
@@ -1996,6 +2088,20 @@
     "unit": "m",
     "required": false,
     "default": 2
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_positions [types=cover_awning|cover_blind]"
+    ],
+    "kind": "number",
+    "max": 10,
+    "min": 0.1,
+    "mode": "box",
+    "step": 0.1,
+    "unit": "m",
+    "required": false,
+    "default": 2,
+    "suggested": true
    }
   ],
   "outside_temp": [
@@ -2011,7 +2117,7 @@
    },
    {
     "where": [
-     "options.init.climate [climate=on]"
+     "options.house.house_climate"
     ],
     "kind": "entity",
     "domain": [
@@ -2024,6 +2130,8 @@
    },
    {
     "where": [
+     "setup.first.exceptions_climate",
+     "setup.reconfigure.exceptions_climate",
      "setup.user.exceptions_climate"
     ],
     "kind": "entity",
@@ -2047,7 +2155,7 @@
    },
    {
     "where": [
-     "options.init.climate [climate=on]"
+     "options.house.house_climate"
     ],
     "kind": "int",
     "min": 0,
@@ -2057,6 +2165,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_climate",
      "setup.user.exceptions_climate"
     ],
     "kind": "int",
@@ -2064,6 +2173,17 @@
     "max": 100,
     "required": false,
     "default": 0
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_climate"
+    ],
+    "kind": "int",
+    "min": 0,
+    "max": 100,
+    "required": false,
+    "default": 0,
+    "suggested": true
    }
   ],
   "overhang_depth": [
@@ -2078,30 +2198,6 @@
    },
    {
     "where": [
-     "number [types=cover_blind]"
-    ],
-    "kind": "number",
-    "max": 5,
-    "min": 0,
-    "mode": "box",
-    "step": 0.05,
-    "unit": "m"
-   },
-   {
-    "where": [
-     "options.init.covers_geometry [types=cover_awning|cover_blind]"
-    ],
-    "kind": "number",
-    "max": 5,
-    "min": 0.1,
-    "mode": "box",
-    "step": 0.01,
-    "unit": "m",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
      "services_yaml.change_settings"
     ],
     "kind": "number",
@@ -2113,6 +2209,7 @@
    },
    {
     "where": [
+     "setup.first.window [types=cover_awning|cover_blind]",
      "setup.reconfigure.window [types=cover_awning|cover_blind]",
      "setup.user.window [types=cover_awning|cover_blind]"
     ],
@@ -2137,30 +2234,6 @@
    },
    {
     "where": [
-     "number [types=cover_blind]"
-    ],
-    "kind": "number",
-    "max": 10,
-    "min": 0.5,
-    "mode": "box",
-    "step": 0.05,
-    "unit": "m"
-   },
-   {
-    "where": [
-     "options.init.covers_geometry [types=cover_awning|cover_blind]"
-    ],
-    "kind": "number",
-    "max": 10,
-    "min": 0.1,
-    "mode": "box",
-    "step": 0.01,
-    "unit": "m",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
      "services_yaml.change_settings"
     ],
     "kind": "number",
@@ -2172,6 +2245,7 @@
    },
    {
     "where": [
+     "setup.first.window [types=cover_awning|cover_blind]",
      "setup.reconfigure.window [types=cover_awning|cover_blind]",
      "setup.user.window [types=cover_awning|cover_blind]"
     ],
@@ -2197,7 +2271,7 @@
    },
    {
     "where": [
-     "options.init.climate [climate=on]"
+     "options.house.house_climate"
     ],
     "kind": "entity",
     "domain": [
@@ -2214,6 +2288,8 @@
    {
     "where": [
      "services_yaml.change_settings",
+     "setup.first.exceptions_climate",
+     "setup.reconfigure.exceptions_climate",
      "setup.user.exceptions_climate"
     ],
     "kind": "entity",
@@ -2231,6 +2307,7 @@
   "preset": [
    {
     "where": [
+     "setup.first.window",
      "setup.reconfigure.window",
      "setup.user.window"
     ],
@@ -2260,14 +2337,7 @@
    },
    {
     "where": [
-     "options.init.automation_timing"
-    ],
-    "kind": "boolean",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.advanced",
      "setup.reconfigure.advanced",
      "setup.user.advanced"
     ],
@@ -2301,7 +2371,7 @@
    },
    {
     "where": [
-     "options.init.automation_timing"
+     "options.house.house_schedule"
     ],
     "kind": "number",
     "max": 180,
@@ -2325,6 +2395,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_schedule",
      "setup.user.exceptions_schedule"
     ],
     "kind": "number",
@@ -2335,6 +2406,20 @@
     "unit": "minutes",
     "required": false,
     "default": 30
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_schedule"
+    ],
+    "kind": "number",
+    "max": 180,
+    "min": 0,
+    "mode": "box",
+    "step": 5,
+    "unit": "minutes",
+    "required": false,
+    "default": 30,
+    "suggested": true
    }
   ],
   "privacy_position": [
@@ -2350,7 +2435,7 @@
    },
    {
     "where": [
-     "options.init.automation_timing"
+     "options.house.house_schedule"
     ],
     "kind": "number",
     "max": 100,
@@ -2363,6 +2448,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_schedule",
      "setup.user.exceptions_schedule"
     ],
     "kind": "number",
@@ -2373,6 +2459,20 @@
     "unit": "%",
     "required": false,
     "default": 0
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_schedule"
+    ],
+    "kind": "number",
+    "max": 100,
+    "min": 0,
+    "mode": "box",
+    "step": 1,
+    "unit": "%",
+    "required": false,
+    "default": 0,
+    "suggested": true
    }
   ],
   "quiet_end": [
@@ -2387,7 +2487,7 @@
    },
    {
     "where": [
-     "options.init.automation_timing"
+     "options.house.house_schedule"
     ],
     "kind": "time",
     "required": false,
@@ -2395,6 +2495,8 @@
    },
    {
     "where": [
+     "setup.first.exceptions_schedule",
+     "setup.reconfigure.exceptions_schedule",
      "setup.user.exceptions_schedule"
     ],
     "kind": "time",
@@ -2413,7 +2515,7 @@
    },
    {
     "where": [
-     "options.init.automation_timing"
+     "options.house.house_schedule"
     ],
     "kind": "time",
     "required": false,
@@ -2421,6 +2523,8 @@
    },
    {
     "where": [
+     "setup.first.exceptions_schedule",
+     "setup.reconfigure.exceptions_schedule",
      "setup.user.exceptions_schedule"
     ],
     "kind": "time",
@@ -2430,7 +2534,7 @@
   "return_sunset": [
    {
     "where": [
-     "options.init.automation_timing"
+     "options.house.house_schedule"
     ],
     "kind": "boolean",
     "required": false,
@@ -2438,11 +2542,21 @@
    },
    {
     "where": [
+     "setup.first.exceptions_schedule",
      "setup.user.exceptions_schedule"
     ],
     "kind": "boolean",
     "required": false,
     "default": false
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_schedule"
+    ],
+    "kind": "boolean",
+    "required": false,
+    "default": false,
+    "suggested": true
    }
   ],
   "sensor_type": [
@@ -2460,6 +2574,7 @@
    },
    {
     "where": [
+     "setup.first.window [types=cover_awning]",
      "setup.reconfigure.window [types=cover_awning]",
      "setup.user.window [types=cover_awning]"
     ],
@@ -2478,6 +2593,7 @@
    },
    {
     "where": [
+     "setup.first.window [types=cover_blind]",
      "setup.reconfigure.window [types=cover_blind]",
      "setup.user.window [types=cover_blind]"
     ],
@@ -2496,6 +2612,7 @@
    },
    {
     "where": [
+     "setup.first.window [types=cover_tilt]",
      "setup.reconfigure.window [types=cover_tilt]",
      "setup.user.window [types=cover_tilt]"
     ],
@@ -2532,19 +2649,6 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
-    ],
-    "kind": "number",
-    "max": 359,
-    "min": 0,
-    "mode": "slider",
-    "step": 1,
-    "unit": "°",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
      "services_yaml.add_entry"
     ],
     "kind": "number",
@@ -2556,6 +2660,7 @@
    },
    {
     "where": [
+     "setup.first.window",
      "setup.reconfigure.window",
      "setup.user.window"
     ],
@@ -2581,19 +2686,7 @@
    },
    {
     "where": [
-     "options.init.covers_geometry [types=cover_tilt]"
-    ],
-    "kind": "number",
-    "max": 15,
-    "min": 0.1,
-    "mode": "slider",
-    "step": 0.1,
-    "unit": "cm",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.window [types=cover_tilt]",
      "setup.reconfigure.window [types=cover_tilt]",
      "setup.user.window [types=cover_tilt]"
     ],
@@ -2619,19 +2712,7 @@
    },
    {
     "where": [
-     "options.init.covers_geometry [types=cover_tilt]"
-    ],
-    "kind": "number",
-    "max": 15,
-    "min": 0.1,
-    "mode": "slider",
-    "step": 0.1,
-    "unit": "cm",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.window [types=cover_tilt]",
      "setup.reconfigure.window [types=cover_tilt]",
      "setup.user.window [types=cover_tilt]"
     ],
@@ -2648,7 +2729,7 @@
   "start_entity": [
    {
     "where": [
-     "options.init.automation_timing"
+     "options.house.house_schedule"
     ],
     "kind": "entity",
     "domain": [
@@ -2662,6 +2743,8 @@
    },
    {
     "where": [
+     "setup.first.exceptions_schedule",
+     "setup.reconfigure.exceptions_schedule",
      "setup.user.exceptions_schedule"
     ],
     "kind": "entity",
@@ -2692,7 +2775,7 @@
    },
    {
     "where": [
-     "options.init.automation_timing"
+     "options.house.house_schedule"
     ],
     "kind": "time",
     "required": false,
@@ -2700,11 +2783,21 @@
    },
    {
     "where": [
+     "setup.first.exceptions_schedule",
      "setup.user.exceptions_schedule"
     ],
     "kind": "time",
     "required": false,
     "default": "00:00:00"
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_schedule"
+    ],
+    "kind": "time",
+    "required": false,
+    "default": "00:00:00",
+    "suggested": true
    }
   ],
   "sunrise_offset": [
@@ -2724,7 +2817,7 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
+     "options.house.house_positions"
     ],
     "kind": "number",
     "mode": "box",
@@ -2735,6 +2828,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_positions",
      "setup.user.exceptions_positions"
     ],
     "kind": "number",
@@ -2743,6 +2837,18 @@
     "unit": "minutes",
     "required": true,
     "default": 0
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_positions"
+    ],
+    "kind": "number",
+    "mode": "box",
+    "step": 1,
+    "unit": "minutes",
+    "required": true,
+    "default": 0,
+    "suggested": true
    }
   ],
   "sunset_offset": [
@@ -2762,7 +2868,7 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
+     "options.house.house_positions"
     ],
     "kind": "number",
     "mode": "box",
@@ -2773,6 +2879,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_positions",
      "setup.user.exceptions_positions"
     ],
     "kind": "number",
@@ -2781,6 +2888,18 @@
     "unit": "minutes",
     "required": true,
     "default": 0
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_positions"
+    ],
+    "kind": "number",
+    "mode": "box",
+    "step": 1,
+    "unit": "minutes",
+    "required": true,
+    "default": 0,
+    "suggested": true
    }
   ],
   "sunset_position": [
@@ -2802,7 +2921,7 @@
    },
    {
     "where": [
-     "options.init.sun_behavior"
+     "options.house.house_positions"
     ],
     "kind": "number",
     "max": 100,
@@ -2815,6 +2934,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_positions",
      "setup.user.exceptions_positions"
     ],
     "kind": "number",
@@ -2825,6 +2945,20 @@
     "unit": "%",
     "required": true,
     "default": 0
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_positions"
+    ],
+    "kind": "number",
+    "max": 100,
+    "min": 0,
+    "mode": "slider",
+    "step": 1,
+    "unit": "%",
+    "required": true,
+    "default": 0,
+    "suggested": true
    }
   ],
   "temp_entity": [
@@ -2837,20 +2971,6 @@
     "pattern": "^[a-z_]+\\.[a-z0-9_]+$",
     "nullable": true,
     "required": false
-   },
-   {
-    "where": [
-     "options.init.climate [climate=on]"
-    ],
-    "kind": "entity",
-    "domain": [
-     "climate",
-     "sensor"
-    ],
-    "multiple": false,
-    "reorder": false,
-    "required": false,
-    "suggested": true
    },
    {
     "where": [
@@ -2867,6 +2987,8 @@
    },
    {
     "where": [
+     "setup.first.exceptions_climate",
+     "setup.reconfigure.exceptions_climate",
      "setup.user.exceptions_climate"
     ],
     "kind": "entity",
@@ -2904,7 +3026,7 @@
    },
    {
     "where": [
-     "number [climate=on; units=°C]"
+     "number [units=°C]"
     ],
     "default": 24,
     "kind": "number",
@@ -2916,7 +3038,7 @@
    },
    {
     "where": [
-     "number [climate=on; units=°F]"
+     "number [units=°F]"
     ],
     "default": 75,
     "kind": "number",
@@ -2928,7 +3050,7 @@
    },
    {
     "where": [
-     "options.init.climate [climate=on; units=°C]"
+     "options.house.house_climate [units=°C]"
     ],
     "kind": "number",
     "max": 40,
@@ -2941,7 +3063,7 @@
    },
    {
     "where": [
-     "options.init.climate [climate=on; units=°F]"
+     "options.house.house_climate [units=°F]"
     ],
     "kind": "number",
     "max": 100,
@@ -2965,6 +3087,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_climate [units=°C]",
      "setup.user.exceptions_climate [units=°C]"
     ],
     "kind": "number",
@@ -2978,6 +3101,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_climate [units=°F]",
      "setup.user.exceptions_climate [units=°F]"
     ],
     "kind": "number",
@@ -2988,6 +3112,173 @@
     "unit": "°F",
     "required": true,
     "default": 75
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_climate [units=°C]"
+    ],
+    "kind": "number",
+    "max": 40,
+    "min": 10,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°C",
+    "required": true,
+    "default": 24,
+    "suggested": true
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_climate [units=°F]"
+    ],
+    "kind": "number",
+    "max": 100,
+    "min": 50,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°F",
+    "required": true,
+    "default": 75,
+    "suggested": true
+   }
+  ],
+  "temp_hysteresis": [
+   {
+    "where": [
+     "add_entry [units=°C]",
+     "change_settings [units=°C]"
+    ],
+    "kind": "float",
+    "min": 0,
+    "max": 3,
+    "required": false
+   },
+   {
+    "where": [
+     "add_entry [units=°F]",
+     "change_settings [units=°F]"
+    ],
+    "kind": "float",
+    "min": 0,
+    "max": 5,
+    "required": false
+   },
+   {
+    "where": [
+     "number [units=°C]"
+    ],
+    "default": 0,
+    "kind": "number",
+    "max": 3,
+    "min": 0,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°C"
+   },
+   {
+    "where": [
+     "number [units=°F]"
+    ],
+    "default": 0,
+    "kind": "number",
+    "max": 5,
+    "min": 0,
+    "mode": "box",
+    "step": 0.1,
+    "unit": "°F"
+   },
+   {
+    "where": [
+     "options.house.house_climate [units=°C]"
+    ],
+    "kind": "number",
+    "max": 3,
+    "min": 0,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°C",
+    "required": false,
+    "suggested": true
+   },
+   {
+    "where": [
+     "options.house.house_climate [units=°F]"
+    ],
+    "kind": "number",
+    "max": 5,
+    "min": 0,
+    "mode": "box",
+    "step": 0.1,
+    "unit": "°F",
+    "required": false,
+    "suggested": true
+   },
+   {
+    "where": [
+     "services_yaml.change_settings"
+    ],
+    "kind": "number",
+    "max": 5,
+    "min": 0,
+    "mode": "box",
+    "step": 0.1,
+    "required": false
+   },
+   {
+    "where": [
+     "setup.first.exceptions_climate [units=°C]",
+     "setup.user.exceptions_climate [units=°C]"
+    ],
+    "kind": "number",
+    "max": 3,
+    "min": 0,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°C",
+    "required": false,
+    "default": 0
+   },
+   {
+    "where": [
+     "setup.first.exceptions_climate [units=°F]",
+     "setup.user.exceptions_climate [units=°F]"
+    ],
+    "kind": "number",
+    "max": 5,
+    "min": 0,
+    "mode": "box",
+    "step": 0.1,
+    "unit": "°F",
+    "required": false,
+    "default": 0
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_climate [units=°C]"
+    ],
+    "kind": "number",
+    "max": 3,
+    "min": 0,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°C",
+    "required": false,
+    "default": 0,
+    "suggested": true
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_climate [units=°F]"
+    ],
+    "kind": "number",
+    "max": 5,
+    "min": 0,
+    "mode": "box",
+    "step": 0.1,
+    "unit": "°F",
+    "required": false,
+    "default": 0,
+    "suggested": true
    }
   ],
   "temp_low": [
@@ -3015,7 +3306,7 @@
    },
    {
     "where": [
-     "number [climate=on; units=°C]"
+     "number [units=°C]"
     ],
     "default": 22,
     "kind": "number",
@@ -3027,7 +3318,7 @@
    },
    {
     "where": [
-     "number [climate=on; units=°F]"
+     "number [units=°F]"
     ],
     "default": 72,
     "kind": "number",
@@ -3039,7 +3330,7 @@
    },
    {
     "where": [
-     "options.init.climate [climate=on; units=°C]"
+     "options.house.house_climate [units=°C]"
     ],
     "kind": "number",
     "max": 30,
@@ -3052,7 +3343,7 @@
    },
    {
     "where": [
-     "options.init.climate [climate=on; units=°F]"
+     "options.house.house_climate [units=°F]"
     ],
     "kind": "number",
     "max": 90,
@@ -3076,6 +3367,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_climate [units=°C]",
      "setup.user.exceptions_climate [units=°C]"
     ],
     "kind": "number",
@@ -3089,6 +3381,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_climate [units=°F]",
      "setup.user.exceptions_climate [units=°F]"
     ],
     "kind": "number",
@@ -3099,6 +3392,34 @@
     "unit": "°F",
     "required": true,
     "default": 72
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_climate [units=°C]"
+    ],
+    "kind": "number",
+    "max": 30,
+    "min": 5,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°C",
+    "required": true,
+    "default": 22,
+    "suggested": true
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_climate [units=°F]"
+    ],
+    "kind": "number",
+    "max": 90,
+    "min": 40,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°F",
+    "required": true,
+    "default": 72,
+    "suggested": true
    }
   ],
   "tilt_mode": [
@@ -3117,22 +3438,7 @@
    },
    {
     "where": [
-     "options.init.covers_geometry [types=cover_tilt]"
-    ],
-    "kind": "select",
-    "custom_value": false,
-    "multiple": false,
-    "options": [
-     "mode1",
-     "mode2"
-    ],
-    "sort": false,
-    "translation_key": "tilt_mode",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.window [types=cover_tilt]",
      "setup.reconfigure.window [types=cover_tilt]",
      "setup.user.window [types=cover_tilt]"
     ],
@@ -3152,20 +3458,43 @@
   "transparent_blind": [
    {
     "where": [
-     "options.init.climate [climate=on]"
-    ],
-    "kind": "boolean",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.advanced",
      "setup.reconfigure.advanced",
      "setup.user.advanced"
     ],
     "kind": "boolean",
     "required": false,
     "default": false
+   }
+  ],
+  "use_irradiance": [
+   {
+    "where": [
+     "options.house.house_climate"
+    ],
+    "kind": "boolean",
+    "required": false,
+    "suggested": true
+   }
+  ],
+  "use_lux": [
+   {
+    "where": [
+     "options.house.house_climate"
+    ],
+    "kind": "boolean",
+    "required": false,
+    "suggested": true
+   }
+  ],
+  "use_outside_temp": [
+   {
+    "where": [
+     "options.house.house_climate"
+    ],
+    "kind": "boolean",
+    "required": false,
+    "suggested": true
    }
   ],
   "weather_entity": [
@@ -3181,7 +3510,7 @@
    },
    {
     "where": [
-     "options.init.climate [climate=on]"
+     "options.house.house_climate"
     ],
     "kind": "entity",
     "domain": [
@@ -3195,6 +3524,8 @@
    {
     "where": [
      "services_yaml.change_settings",
+     "setup.first.exceptions_climate",
+     "setup.reconfigure.exceptions_climate",
      "setup.user.exceptions_climate"
     ],
     "kind": "entity",
@@ -3218,7 +3549,7 @@
    },
    {
     "where": [
-     "options.init.climate [climate=on]"
+     "options.house.house_climate"
     ],
     "kind": "select",
     "custom_value": false,
@@ -3256,6 +3587,7 @@
    },
    {
     "where": [
+     "setup.first.exceptions_climate",
      "setup.user.exceptions_climate"
     ],
     "kind": "select",
@@ -3288,6 +3620,42 @@
      "windy",
      "windy-variant"
     ]
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_climate"
+    ],
+    "kind": "select",
+    "custom_value": false,
+    "multiple": true,
+    "options": [
+     "clear-night",
+     "clear",
+     "cloudy",
+     "fog",
+     "hail",
+     "lightning",
+     "lightning-rainy",
+     "partlycloudy",
+     "pouring",
+     "rainy",
+     "snowy",
+     "snowy-rainy",
+     "sunny",
+     "windy",
+     "windy-variant",
+     "exceptional"
+    ],
+    "sort": false,
+    "required": false,
+    "default": [
+     "sunny",
+     "partlycloudy",
+     "clear",
+     "windy",
+     "windy-variant"
+    ],
+    "suggested": true
    }
   ],
   "window_height": [
@@ -3309,19 +3677,7 @@
    },
    {
     "where": [
-     "options.init.covers_geometry [types=cover_awning|cover_blind]"
-    ],
-    "kind": "number",
-    "max": 10,
-    "min": 0.1,
-    "mode": "slider",
-    "step": 0.01,
-    "unit": "m",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
+     "setup.first.window [types=cover_awning|cover_blind]",
      "setup.reconfigure.window [types=cover_awning|cover_blind]",
      "setup.user.window [types=cover_awning|cover_blind]"
     ],

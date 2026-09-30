@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/windows.py b/custom_components/adaptive_cover/windows.py
+--- a/custom_components/adaptive_cover/windows.py
++++ b/custom_components/adaptive_cover/windows.py
+@@ -134,7 +134,7 @@
+     @property
+     def name(self) -> str:
+         """The window's name (its device's), else its title."""
+-        return self.record.name or self.title
++        return self.title
+ 
+     @property
+     def cover(self) -> str | None:

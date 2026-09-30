@@ -15,14 +15,31 @@ The form is ``WindowForm`` plus plain functions (``setup_errors``,
 ``new_window_options``, ``reconfigured_window``), so a ConfigSubentryFlow
 (P7) can drive it too; the flow classes only show it and store the result.
 
+Since the P5 flip the forms show what a window acts on (its resolved
+settings, ``layers.py``) and store edits where they belong: one-time
+settings in the window's options, recurring ones as the window's sparse
+overrides (a value equal to what it inherits, or a cleared field, means
+"inherit"). A new window starts from the house's settings, and "Copy
+from" copies what the source window acts on.
+
 A window drives one cover (ADR 0002): the forms refuse a cover another
-window drives (window_cover.cover_problem), and a new entry's unique_id is
-its cover's entity-registry id.
+window drives (window_cover.cover_problem), and a new window's unique_id
+is its cover's entity-registry id.
+
+The house entry is the integration's one config entry (ADR 0001;
+``single_config_entry``). A fresh install creates it with its first window
+(the config flow's user step, ``initial_house_options``); after that every
+window is added as a subentry ("Add window" on the integration page,
+``WindowSubentryFlow``). A window subentry's Reconfigure is the whole
+one-screen form: its one-time settings and, collapsed, its exceptions
+(subentries have no options flow). The house entry's options are the house
+settings (``HouseOptionsFlow``).
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
+from types import MappingProxyType
 from typing import Any, Final
 
 import voluptuous as vol
@@ -31,25 +48,51 @@ from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
     ConfigFlowResult,
+    ConfigSubentry,
+    ConfigSubentryFlow,
     OptionsFlow,
+    SubentryFlowResult,
 )
 from homeassistant.const import ATTR_SUPPORTED_FEATURES
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.data_entry_flow import FlowResult, section
+from homeassistant.data_entry_flow import section
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import selector
+from homeassistant.util.ulid import ulid_now
 
 from .const import (
     _LOGGER,
-    CONF_CLIMATE_MODE,
+    CONF_CLIMATE_ON,
     CONF_COVER_ENTITY,
+    CONF_MANUAL_DETECTION,
     CONF_MODE,
     CONF_SENSOR_TYPE,
-    CONFIG_ENTRY_MINOR_VERSION,
-    CONFIG_ENTRY_VERSION,
+    CONF_USE_IRRADIANCE,
+    CONF_USE_LUX,
+    CONF_USE_OUTSIDE_TEMP,
     DOMAIN,
+    HOUSE_ENTRY_MINOR_VERSION,
+    HOUSE_ENTRY_VERSION,
     SensorType,
 )
-from .settings.normalize import normalize_cover, window_cover, with_cover
+from .layers import (
+    copied_options,
+    effective_options,
+    initial_house_options,
+    new_window_record,
+    new_window_values,
+    window_record_after,
+)
+from .settings.spec import Group, Kind, Level, Opt, Scope
+from .settings.window_record import GEOMETRY_KEYS, WindowRecord, record_from_options
+from .windows import (
+    WINDOW_SUBENTRY,
+    WindowEntry,
+    all_windows,
+    find_window,
+)
+from .settings.lift import same_value
+from .settings.normalize import with_cover
 from .settings.schema import (
     CLEARABLE_KEYS,
     FIELD_COPY_FROM,
@@ -59,8 +102,8 @@ from .settings.schema import (
     PRESETS,
     SETUP_OPTION_KEYS,
     copy_from_values,
+    form_validator,
     flatten_sections,
-    options_section_fields,
     preset_values,
     setup_schema,
     setup_section,
@@ -72,8 +115,8 @@ from .window_cover import cover_problem, cover_registry_id
 
 # The picked cover cannot move the way the picked cover type needs.
 ERROR_COVER_TYPE: Final = "cover_type_unsupported"
-# Reconfigure was opened on the house entry, which has no window setup.
-ABORT_NOT_A_WINDOW: Final = "not_a_window"
+# "Add window" on a house that has not migrated to 3.x (upgrade.py).
+ABORT_CONSOLIDATE_FIRST: Final = "consolidate_first"
 
 _TYPE_FEATURE: Final = {
     SensorType.BLIND: CoverEntityFeature.SET_POSITION,
@@ -116,20 +159,16 @@ def cover_name(hass: HomeAssistant, cover: str) -> str:
 def copy_sources(
     hass: HomeAssistant, *, exclude_entry_id: str | None = None
 ) -> dict[str, str]:
-    """Return the windows "Copy from" offers: entry_id -> title, by title.
+    """Return the windows "Copy from" offers: window key -> title, by title.
 
-    Every window but ``exclude_entry_id`` (the one being reconfigured);
-    never the house entry.
+    Every window of the house but ``exclude_entry_id`` (the key of the one
+    being reconfigured).
     """
-    from .hub import is_hub_entry
-
     windows = [
-        entry
-        for entry in hass.config_entries.async_entries(DOMAIN, include_ignore=False)
-        if entry.entry_id != exclude_entry_id and not is_hub_entry(entry)
+        window for window in all_windows(hass) if window.window_key != exclude_entry_id
     ]
-    windows.sort(key=lambda entry: (entry.title.casefold(), entry.entry_id))
-    return {entry.entry_id: entry.title for entry in windows}
+    windows.sort(key=lambda window: (window.title.casefold(), window.window_key))
+    return {window.window_key: window.title for window in windows}
 
 
 def setup_errors(
@@ -155,11 +194,6 @@ def setup_errors(
     return errors
 
 
-def window_data(values: Mapping[str, Any]) -> dict[str, Any]:
-    """Return a new window's entry data: its name and cover type."""
-    return {"name": values[FIELD_NAME], CONF_SENSOR_TYPE: values[FIELD_SENSOR_TYPE]}
-
-
 def new_window_options(values: Mapping[str, Any]) -> dict[str, Any]:
     """Return the options a window added from the form stores.
 
@@ -174,17 +208,72 @@ def new_window_options(values: Mapping[str, Any]) -> dict[str, Any]:
     return with_cover(options, values.get(CONF_COVER_ENTITY))
 
 
-def reconfigured_window(
-    data: Mapping[str, Any], options: Mapping[str, Any], values: Mapping[str, Any]
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Return a window's entry data and options after the Reconfigure step.
+def _is_recurring(key: str) -> bool:
+    opt = OPTS_BY_KEY.get(key)
+    return opt is not None and opt.scope is Scope.RECURRING
 
-    The form's values replace the stored ones; every option the form did
-    not show (the recurring settings, another type's geometry) is kept.
+
+def reconfigured_window(
+    hass: HomeAssistant, window: WindowEntry, values: Mapping[str, Any]
+) -> WindowRecord:
+    """Return a window's record after its whole-form Reconfigure.
+
+    The one-time values (the name, the cover, the cover type, the
+    geometry) replace the stored ones; every one-time setting the form did
+    not show (another type's geometry) is kept. A recurring value that
+    differs from what the window acts on becomes the window's own value,
+    sparsely (``layers.window_record_after``: a value equal to what it
+    inherits, or a cleared field, inherits).
     """
-    changed = {key: value for key, value in values.items() if key in SETUP_OPTION_KEYS}
-    new_options = with_cover({**options, **changed}, values.get(CONF_COVER_ENTITY))
-    return {**data, **window_data(values)}, new_options
+    shown = effective_options(hass, window)
+    exceptions = {
+        key: value
+        for key, value in values.items()
+        if _is_recurring(key) and not same_value(value, shown.get(key))
+    }
+    record = window_record_after(hass, window, exceptions)
+    geometry = {
+        **record.geometry,
+        **{key: value for key, value in values.items() if key in GEOMETRY_KEYS},
+    }
+    return record.with_changes(
+        name=values[FIELD_NAME],
+        cover=values.get(CONF_COVER_ENTITY) or None,
+        cover_type=values[FIELD_SENSOR_TYPE],
+        geometry=geometry,
+    )
+
+
+def _copy_source(hass: HomeAssistant, window_key: str) -> WindowEntry | None:
+    """Return the "Copy from" window with this key."""
+    return find_window(hass, window_key)
+
+
+@callback
+def async_add_window_subentry(
+    hass: HomeAssistant,
+    house: ConfigEntry,
+    name: str,
+    cover_type: str,
+    options: Mapping[str, Any],
+) -> WindowEntry:
+    """Add a window to the house as a subentry; return it.
+
+    ``options`` are the flat values the window is created with (a form's
+    or a service's). The key of the new window is its subentry_id; its
+    unique_id is its cover's registry id. The house's update listener
+    starts it.
+    """
+    record = new_window_record(hass, house, name, cover_type, options)
+    subentry = ConfigSubentry(
+        data=MappingProxyType(record.as_data()),
+        subentry_id=ulid_now(),
+        subentry_type=WINDOW_SUBENTRY,
+        title=name,
+        unique_id=cover_registry_id(hass, record.cover),
+    )
+    hass.config_entries.async_add_subentry(house, subentry)
+    return WindowEntry(house, subentry.subentry_id)
 
 
 class WindowForm:
@@ -232,18 +321,25 @@ class WindowForm:
         }
 
     @classmethod
-    def for_entry(cls, hass: HomeAssistant, entry: ConfigEntry) -> WindowForm:
-        """Return the Reconfigure form of ``entry``: its one-time settings shown."""
+    def for_entry(
+        cls, hass: HomeAssistant, entry: WindowEntry, *, recurring: bool = False
+    ) -> WindowForm:
+        """Return the Reconfigure form of a window: its one-time settings shown.
+
+        ``recurring=True`` also shows the exceptions sections, pre-filled
+        with what the window acts on (a window subentry's Reconfigure).
+        """
+        options = effective_options(hass, entry) if recurring else entry.options
         values = {
-            **entry.options,
+            **options,
             FIELD_NAME: entry.title,
-            CONF_COVER_ENTITY: window_cover(entry.options),
+            CONF_COVER_ENTITY: entry.cover,
         }
         return cls(
             hass,
-            cover_type=entry.data.get(CONF_SENSOR_TYPE) or SensorType.BLIND,
+            cover_type=entry.cover_type,
             values=values,
-            recurring=False,
+            recurring=recurring,
             entry_id=entry.entry_id,
         )
 
@@ -309,8 +405,11 @@ class WindowForm:
         filled: dict[str, Any] = {}
         source = picked[FIELD_COPY_FROM]
         if source and source != self._applied[FIELD_COPY_FROM]:
-            if (entry := self.hass.config_entries.async_get_entry(source)) is not None:
-                filled |= copy_from_values(entry.data, entry.options)
+            if (window := _copy_source(self.hass, source)) is not None:
+                filled |= copy_from_values(
+                    {CONF_SENSOR_TYPE: window.cover_type},
+                    copied_options(self.hass, window),
+                )
         preset = picked[FIELD_PRESET]
         if preset and preset in PRESETS and preset != self._applied[FIELD_PRESET]:
             filled |= preset_values(preset)
@@ -332,10 +431,15 @@ def _form_errors(form: WindowForm) -> dict[str, str] | None:
 
 
 class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
-    """Add a window (one screen) and reconfigure its one-time settings."""
+    """Create the house with its first window (the one-screen form).
 
-    VERSION = CONFIG_ENTRY_VERSION
-    MINOR_VERSION = CONFIG_ENTRY_MINOR_VERSION
+    The integration has one config entry (``single_config_entry``): Home
+    Assistant starts this flow only while there is none. Every later
+    window is a subentry ("Add window", ``WindowSubentryFlow``).
+    """
+
+    VERSION = HOUSE_ENTRY_VERSION
+    MINOR_VERSION = HOUSE_ENTRY_MINOR_VERSION
 
     def __init__(self) -> None:  # noqa: D107
         super().__init__()
@@ -343,47 +447,29 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry):
-        """Get the options flow for this handler."""
-        return OptionsFlowHandler(config_entry)
+    def async_get_options_flow(config_entry: ConfigEntry) -> HouseOptionsFlow:
+        """Get the options flow: the house settings."""
+        return HouseOptionsFlow()
 
-    async def async_step_import(self, import_data: dict[str, Any] | None = None):
-        """Programmatic entry creation.
+    @classmethod
+    @callback
+    def async_supports_options_flow(cls, config_entry: ConfigEntry) -> bool:
+        """Only the house has options (a 1.x window entry left behind has none)."""
+        from .hub import is_hub_entry
 
-        Two shapes: {} bootstraps the singleton hub; {name, sensor_type,
-        options} creates a regular entry (used by the add_entry service so
-        new windows never require the form).
-        """
-        from .hub import CONF_IS_HUB, HUB_ENTRY_NAME, HUB_UNIQUE_ID
+        return is_hub_entry(config_entry)
 
-        if import_data and import_data.get("name") and not import_data.get(CONF_IS_HUB):
-            options = normalize_cover(import_data.get("options", {}))
-            await self._async_set_cover_unique_id(window_cover(options))
-            return self.async_create_entry(
-                title=import_data["name"],
-                data={
-                    "name": import_data["name"],
-                    CONF_SENSOR_TYPE: import_data.get(
-                        CONF_SENSOR_TYPE, SensorType.BLIND
-                    ),
-                },
-                options=options,
-            )
+    @classmethod
+    @callback
+    def async_get_supported_subentry_types(
+        cls, config_entry: ConfigEntry
+    ) -> dict[str, type[ConfigSubentryFlow]]:
+        """Return the subentry types: the house adds windows ("Add window")."""
+        from .hub import is_hub_entry
 
-        await self.async_set_unique_id(HUB_UNIQUE_ID)
-        self._abort_if_unique_id_configured()
-        return self.async_create_entry(
-            title=HUB_ENTRY_NAME,
-            data={"name": HUB_ENTRY_NAME, CONF_IS_HUB: True},
-            options={},
-        )
-
-    async def _async_set_cover_unique_id(self, cover: str | None) -> None:
-        """Key the new entry by its cover's registry id; abort a duplicate."""
-        await self.async_set_unique_id(
-            cover_registry_id(self.hass, cover), raise_on_progress=False
-        )
-        self._abort_if_unique_id_configured()
+        if is_hub_entry(config_entry):
+            return {WINDOW_SUBENTRY: WindowSubentryFlow}
+        return {}
 
     def _show(self, form: WindowForm, step_id: str) -> ConfigFlowResult:
         return self.async_show_form(
@@ -393,138 +479,244 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Add a window: the one-screen form."""
+        """Create the house with its first window: the one-screen form."""
         if self._form is None:
-            self._form = WindowForm(self.hass)
+            self._form = WindowForm(self.hass, values=new_window_values(self.hass))
         if user_input is not None:
             if (values := self._form.submit(user_input)) is not None:
-                await self._async_set_cover_unique_id(values[CONF_COVER_ENTITY])
+                return await self._async_create_house(values)
+        return self._show(self._form, "user")
+
+    async def _async_create_house(self, values: Mapping[str, Any]) -> ConfigFlowResult:
+        """Create the house, lifted from its first window, with that window in it."""
+        from .hub import CONF_IS_HUB, HUB_ENTRY_NAME, HUB_UNIQUE_ID
+
+        await self.async_set_unique_id(HUB_UNIQUE_ID)
+        self._abort_if_unique_id_configured()
+        options = new_window_options(values)
+        cover_type = values[FIELD_SENSOR_TYPE]
+        house_options, overrides = initial_house_options(self.hass, cover_type, options)
+        record = record_from_options(
+            values[FIELD_NAME], cover_type, options, overrides=overrides
+        )
+        return self.async_create_entry(
+            title=HUB_ENTRY_NAME,
+            data={"name": HUB_ENTRY_NAME, CONF_IS_HUB: True},
+            options=house_options,
+            subentries=[
+                {
+                    "data": record.as_data(),
+                    "subentry_type": WINDOW_SUBENTRY,
+                    "title": values[FIELD_NAME],
+                    "unique_id": cover_registry_id(self.hass, record.cover),
+                }
+            ],
+        )
+
+
+# ------------------------------------------------------------ subentries
+
+
+class WindowSubentryFlow(ConfigSubentryFlow):
+    """Add a window to the house, or reconfigure one ("window" subentries, P7).
+
+    Add is the one-screen form, as the config flow's. Reconfigure is the
+    same form with the window's values: its one-time settings and, in the
+    collapsed exceptions sections, what it acts on (a subentry has no
+    options flow). Edits land where they belong (one-time settings in the
+    window's options, recurring ones as its sparse overrides); the house's
+    update listener rebuilds only this window.
+    """
+
+    def __init__(self) -> None:  # noqa: D107
+        super().__init__()
+        self._form: WindowForm | None = None
+
+    def _show(self, step_id: str) -> SubentryFlowResult:
+        assert self._form is not None
+        return self.async_show_form(
+            step_id=step_id,
+            data_schema=self._form.schema(),
+            errors=_form_errors(self._form),
+        )
+
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Add a window: the one-screen form (pre-filled from the house)."""
+        from .upgrade import is_current_house
+
+        house = self._get_entry()
+        if not is_current_house(house):
+            return self.async_abort(reason=ABORT_CONSOLIDATE_FIRST)
+        if self._form is None:
+            self._form = WindowForm(self.hass, values=new_window_values(self.hass))
+        if user_input is not None:
+            if (values := self._form.submit(user_input)) is not None:
+                record = new_window_record(
+                    self.hass,
+                    house,
+                    values[FIELD_NAME],
+                    values[FIELD_SENSOR_TYPE],
+                    new_window_options(values),
+                )
                 return self.async_create_entry(
                     title=values[FIELD_NAME],
-                    data=window_data(values),
-                    options=new_window_options(values),
+                    data=record.as_data(),
+                    unique_id=cover_registry_id(self.hass, record.cover),
                 )
-        return self._show(self._form, "user")
+        return self._show("user")
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Change a window's one-time settings: the same form, no exceptions."""
-        from .hub import is_hub_entry
-
-        entry = self._get_reconfigure_entry()
-        if is_hub_entry(entry):
-            return self.async_abort(reason=ABORT_NOT_A_WINDOW)
+    ) -> SubentryFlowResult:
+        """Change a window: its one-time settings and its exceptions."""
+        house = self._get_entry()
+        subentry = self._get_reconfigure_subentry()
+        window = WindowEntry(house, subentry.subentry_id)
         if self._form is None:
-            self._form = WindowForm.for_entry(self.hass, entry)
+            self._form = WindowForm.for_entry(self.hass, window, recurring=True)
         if user_input is not None:
             if (values := self._form.submit(user_input)) is not None:
-                data, options = reconfigured_window(entry.data, entry.options, values)
-                # The entry's update listener reloads it.
+                record = reconfigured_window(self.hass, window, values)
+                # The house's update listener rebuilds this window alone.
                 return self.async_update_and_abort(
-                    entry, title=data["name"], data=data, options=options
+                    house,
+                    subentry,
+                    title=record.name,
+                    data=record.as_data(),
+                    unique_id=cover_registry_id(self.hass, record.cover),
                 )
-        return self._show(self._form, "reconfigure")
+        return self._show("reconfigure")
 
 
-class OptionsFlowHandler(OptionsFlow):
-    """Single-page options flow.
+# ------------------------------------------------------------ the house
 
-    Every applicable setting on one form, grouped into collapsible
-    sections, with current values pre-filled.
+# The house form's sections: spec groups, in order. The toggles that
+# replaced the per-window switches sit with their topic.
+HOUSE_SECTIONS: Final[Mapping[str, tuple[Group, ...]]] = MappingProxyType(
+    {
+        "house_positions": (Group.COVER, Group.SUN),
+        "house_schedule": (Group.AUTOMATION,),
+        "house_climate": (Group.CLIMATE_TOGGLE, Group.CLIMATE, Group.WEATHER),
+    }
+)
+HOUSE_TOGGLE_SECTIONS: Final[Mapping[str, str]] = MappingProxyType(
+    {
+        CONF_MANUAL_DETECTION: "house_schedule",
+        CONF_CLIMATE_ON: "house_climate",
+        CONF_USE_OUTSIDE_TEMP: "house_climate",
+        CONF_USE_LUX: "house_climate",
+        CONF_USE_IRRADIANCE: "house_climate",
+    }
+)
+ERROR_HOUSE_SETTING: Final = "house_setting_invalid"
+
+
+def house_opts() -> list[Opt]:
+    """Return the settings the house form shows: every one the house may store."""
+    from .layers import SPEC
+    from .settings.resolve import allowed_levels
+
+    return [
+        opt
+        for opt in SPEC.values()
+        if opt.scope is Scope.RECURRING and Level.HOUSE in allowed_levels(opt)
+    ]
+
+
+def _house_section(opt: Opt) -> str:
+    if opt.key in HOUSE_TOGGLE_SECTIONS:
+        return HOUSE_TOGGLE_SECTIONS[opt.key]
+    return next(name for name, groups in HOUSE_SECTIONS.items() if opt.group in groups)
+
+
+def house_section_fields(
+    values: Mapping[str, Any], temperature_unit: str | None
+) -> dict[str, dict[vol.Marker, Any]]:
+    """``{section: fields}`` of the house settings form, pre-filled with ``values``."""
+    sections: dict[str, dict[vol.Marker, Any]] = {name: {} for name in HOUSE_SECTIONS}
+    for opt in house_opts():
+        marker = vol.Optional(
+            opt.key, description={"suggested_value": values.get(opt.key)}
+        )
+        if opt.kind is Kind.INTERNAL:
+            validator: Any = selector.BooleanSelector()
+        else:
+            validator = form_validator(
+                opt, "options", temperature_unit=temperature_unit
+            )
+        sections[_house_section(opt)][marker] = validator
+    return sections
+
+
+class HouseOptionsFlow(OptionsFlow):
+    """The house settings: every value the house holds, on one form (P7).
+
+    The house entry's options. The same values as the house entities and
+    ``adaptive_cover.set_profile`` (scope house); a floor, a room or a
+    window may still have its own. Saving stores what changed
+    (``layers.async_set_profile``) and every window acts on it at once.
     """
-
-    def __init__(self, config_entry: ConfigEntry) -> None:
-        """Initialize options flow."""
-        self._entry_id = config_entry.entry_id
-        self.current_config: dict = dict(config_entry.data)
-        self.options = dict(config_entry.options)
-        self.sensor_type: str = (
-            self.current_config.get(CONF_SENSOR_TYPE) or SensorType.BLIND
-        )
-        self._shown_keys: set[str] = set()
-
-    def _section_fields(self) -> dict[str, dict]:
-        """Build {section_name: fields} for this entry's type and features."""
-        return options_section_fields(
-            self.sensor_type,
-            climate_on=bool(self.options.get(CONF_CLIMATE_MODE)),
-            # The cover field shows the cover the window drives (none for
-            # an entry from before P3 with several: the split repair fixes it).
-            options={**self.options, CONF_COVER_ENTITY: window_cover(self.options)},
-            temperature_unit=_temperature_unit(self.hass),
-        )
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
-        """Show and process the single options page."""
-        section_fields = self._section_fields()
-        self._shown_keys = {
-            marker.schema for fields in section_fields.values() for marker in fields
+    ) -> ConfigFlowResult:
+        """Open the house settings."""
+        return await self.async_step_house(user_input)
+
+    def _current(self) -> dict[str, Any]:
+        from .layers import profile_values
+        from .settings.resolve import spec_default
+
+        unit = _temperature_unit(self.hass)
+        stored = profile_values(self.config_entry.options, Level.HOUSE, None)
+        return {
+            opt.key: stored[opt.key] if opt.key in stored else spec_default(opt, unit)
+            for opt in house_opts()
         }
 
+    async def async_step_house(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Show and store the house settings."""
+        from .layers import ProfileError, async_set_profile, async_settings_changed
+        from .settings.schema import may_be_empty
+
+        current = self._current()
+        sections = house_section_fields(current, _temperature_unit(self.hass))
+        errors: dict[str, str] | None = None
         if user_input is not None:
-            flat: dict = {}
-            for section_data in user_input.values():
-                if isinstance(section_data, dict):
-                    flat.update(section_data)
-            # Absent clearable fields were cleared by the user
-            for key in CLEARABLE_KEYS & self._shown_keys:
-                if key not in flat:
-                    flat[key] = None
-            # The wizard's cross-field checks, on the options as they would
-            # be saved; and no cover another window drives.
-            errors = cross_field_errors({**self.options, **flat})
-            if cover := flat.get(CONF_COVER_ENTITY):
-                if problem := cover_problem(
-                    self.hass, [cover], exclude_entry_id=self._entry_id
-                ):
-                    errors[CONF_COVER_ENTITY] = problem
-            if errors:
-                return self.async_show_form(
-                    step_id="init",
-                    data_schema=self._build_schema(section_fields),
-                    errors={"base": next(iter(errors.values()))},
-                )
-            changed = {
-                key: value
-                for key, value in flat.items()
-                if self.options.get(key) != value and value is not None
-            }
-            cleared = sorted(
-                key
-                for key, value in flat.items()
-                if value is None and self.options.get(key) is not None
-            )
-            if changed or cleared:
-                _LOGGER.info(
-                    "Options updated for '%s': changed=%s cleared=%s",
-                    self.current_config.get("name"),
-                    sorted(changed),
-                    cleared,
-                )
-            self.options.update(flat)
-            if CONF_COVER_ENTITY in flat:
-                self.options = with_cover(self.options, flat[CONF_COVER_ENTITY])
-            return await self._update_options()
-
+            flat = flatten_sections(user_input)
+            changes: dict[str, Any] = {}
+            for opt in house_opts():
+                if opt.key in flat:
+                    value = flat[opt.key]
+                elif opt.clearable and may_be_empty(opt):
+                    value = None  # a cleared field (the form leaves it out)
+                else:
+                    continue
+                if not same_value(value, current.get(opt.key)):
+                    changes[opt.key] = value
+            try:
+                changed = async_set_profile(self.hass, Level.HOUSE, None, changes)
+            except ProfileError as err:
+                _LOGGER.warning("House settings not saved: %s", err)
+                errors = {"base": ERROR_HOUSE_SETTING}
+            else:
+                if changed:
+                    _LOGGER.info("House settings changed: %s", changed)
+                    await async_settings_changed(self.hass)
+                return self.async_create_entry(data=dict(self.config_entry.options))
         return self.async_show_form(
-            step_id="init", data_schema=self._build_schema(section_fields)
+            step_id="house",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(name): section(
+                        vol.Schema(fields), {"collapsed": False}
+                    )
+                    for name, fields in sections.items()
+                }
+            ),
+            errors=errors,
         )
-
-    def _build_schema(self, section_fields: dict[str, dict]) -> vol.Schema:
-        """Assemble the sectioned one-page schema."""
-        return vol.Schema(
-            {
-                vol.Required(name): section(
-                    vol.Schema(fields),
-                    {"collapsed": name != "covers_geometry"},
-                )
-                for name, fields in section_fields.items()
-            }
-        )
-
-    async def _update_options(self) -> FlowResult:
-        """Update config entry options."""
-        return self.async_create_entry(title="", data=self.options)

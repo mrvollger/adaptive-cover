@@ -146,6 +146,16 @@ Add the folder to `config/custom_components/`.
 
 Restart Home-Assistant and add the integration.
 
+### Updating to 2.1
+
+Since 2.1 every window is part of one house entry. A house that still
+has windows as their own entries (1.x) must move them into the house on
+2.0.x first: install 2.0.x, take a backup, fix the "Move your windows
+into the house" repair, then update to 2.1. Until then 2.1 shows the
+"Consolidate the house on Adaptive Cover 2.0 first" repair and moves no
+shade; it changes nothing, so 2.0.x can still consolidate. To go back
+from 2.1 to 2.0.x, restore the backup.
+
 ## Setup
 
 Adaptive Cover supports (for now) three types of covers/blinds; `Vertical` and `Horizontal` and `Venetian (Tilted)` blinds.
@@ -307,6 +317,7 @@ This mode is split up in two types of strategies; [Presence](https://github.com/
 | Indoor Temperature Entity     | `None`  |       | `climate.living_room` \| `sensor.indoor_temp` |                                                                                                                                                      |
 | Minimum Comfort Temperature   | 22 °C / 72 °F | 0-86  |                                         | The default follows Home Assistant's unit system.                                                                                                    |
 | Maximum Comfort Temperature   | 24 °C / 75 °F | 0-86  |                                         | The default follows Home Assistant's unit system.                                                                                                    |
+| Threshold Hysteresis          | `0` (off) | 0-3 °C / 0-5 °F |                                  | How far past a threshold the temperature must go before the season changes back. Stops the shades switching back and forth while the temperature hovers at a threshold. A house setting (a room can override it). Not kept across restarts: the first decision after one uses the plain thresholds. |
 | Outdoor Temperature Entity    | `None`  |       | `sensor.outdoor_temp`                         |                                                                                                                                                      |
 | Outdoor Temperature Threshold | `None`  |       |                                               | If the minimum outside temperature for summer mode is set and the outside temperature falls below this threshold, summer mode will not be activated. |
 | Presence Entity               | `None`  |       |                                               |                                                                                                                                                      |
@@ -339,16 +350,14 @@ These entities are always available:
 | `sensor.{type}_last_state_change_{name}` | | Records the most recent position change with old/new positions and reason |
 | `binary_sensor.{type}_manual_override_{name}` | `off` | Indicates if manual override is engaged for any blinds. |
 | `binary_sensor.{type}_sun_infront_{name}` | `off` | Indicates whether the sun is in front of the window within the designated field of view. |
-| `switch.{type}_toggle_control_{name}` | `on` | Activates the adaptive control feature. When enabled, blinds adjust based on calculated position, unless manually overridden. |
-| `switch.{type}_manual_override_{name}` | `on` | Enables detection of manual overrides. A cover is marked if its position differs from the calculated one, resetting to adaptive control after a set duration. |
-| `button.{type}_reset_manual_override_{name}` | `on` | Resets manual override tags for all covers; if `switch.{type}_toggle_control_{name}` is on, it also restores blinds to their correct positions. |
+| `select.{name}_mode` | `auto` | The window's Mode: `auto` follows the sun (and climate), `hold` keeps a manual position until it expires, `off` stops moves and manual-move detection. |
+| `button.{name}_return_to_auto` | | Ends a hold (or turns an `off` window on) and moves the covers back to the adaptive position. |
 
-When climate mode is setup you will also get these entities:
-
-| Entities                                   | Default | Description                                                                                                 |
-| ------------------------------------------ | ------- | ----------------------------------------------------------------------------------------------------------- |
-| `switch.{type}_climate_mode_{name}`        | `on`    | Enables climate mode strategy; otherwise, defaults to the standard strategy.                                |
-| `switch.{type}_outside_temperature_{name}` | `on`    | Switches between inside and outside temperatures as the basis for determining the climate control strategy. |
+The house device ("All shades") has the controls for every window: the
+aggregate cover, the house Mode, Return all to auto, and the house
+settings (the Climate switch, manual-move detection, the outside
+temperature / lux / irradiance switches, the thresholds, durations and
+times). Since v2.1 windows have no switches of their own.
 
 ![entities](https://github.com/mrvollger/adaptive-cover/blob/main/images/entities.png)
 

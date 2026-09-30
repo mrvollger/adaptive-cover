@@ -15,7 +15,6 @@ import voluptuous as vol
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util.unit_system import METRIC_SYSTEM, US_CUSTOMARY_SYSTEM
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     async_mock_service,
 )
 
@@ -31,6 +30,7 @@ from custom_components.adaptive_cover.const import (
     CONF_SENSOR_TYPE,
     CONF_TEMP_ENTITY,
     CONF_TEMP_HIGH,
+    CONF_TEMP_HYSTERESIS,
     CONF_TEMP_LOW,
     CONF_WEATHER_STATE,
     DOMAIN,
@@ -38,8 +38,10 @@ from custom_components.adaptive_cover.const import (
 )
 from custom_components.adaptive_cover.settings.schema import add_entry_baseline
 
+from .house_model import mock_window_entry
 from .conftest import COMMON_OPTIONS
 from .window_form import start_add
+from .window_handle import window_settings
 
 COVER = "cover.test_cover"
 TEMP = "sensor.room_temp"
@@ -71,8 +73,8 @@ async def _setup_climate_entry(hass, *, low, high, reading, unit):
     )
     hass.states.async_set(COVER, "open", {"current_position": 60})
     async_mock_service(hass, "cover", "set_cover_position")
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "Units test", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
@@ -85,7 +87,6 @@ async def _setup_climate_entry(hass, *, low, high, reading, unit):
             CONF_TEMP_HIGH: high,
         },
     )
-    entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     return entry
@@ -258,16 +259,16 @@ async def test_regression_thresholds_unit_aware_everywhere(
     entry = await _setup_climate_entry(
         hass, low=None, high=None, reading=shapes[CONF_TEMP_LOW][2], unit=unit
     )
+    # The house settings form (the per-window options form is gone, P8).
     result = await hass.config_entries.options.async_init(entry.entry_id)
-    climate = result["data_schema"].schema["climate"].schema
+    climate = result["data_schema"].schema["house_climate"].schema
     hass.config_entries.options.async_abort(result["flow_id"])
     registry = er.async_get(hass)
     for key, (low, high, default) in shapes.items():
         assert _selector_shape(climate, key) == (low, high, 0.5, unit)
+        # The house's threshold numbers (P5 flip: on the hub device).
         state = hass.states.get(
-            registry.async_get_entity_id(
-                "number", DOMAIN, f"{entry.entry_id}_number_{key}"
-            )
+            registry.async_get_entity_id("number", DOMAIN, f"adaptive_cover_hub_{key}")
         )
         assert float(state.state) == default
         assert (
@@ -283,7 +284,7 @@ async def test_regression_thresholds_unit_aware_everywhere(
         blocking=True,
     )
     await hass.async_block_till_done()
-    assert entry.options[CONF_TEMP_LOW] == inside
+    assert (await window_settings(hass, entry.entry_id))[CONF_TEMP_LOW] == inside
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
             DOMAIN,
@@ -291,4 +292,74 @@ async def test_regression_thresholds_unit_aware_everywhere(
             {"config_entry": entry.entry_id, CONF_TEMP_LOW: outside},
             blocking=True,
         )
-    assert entry.options[CONF_TEMP_LOW] == inside
+    assert (await window_settings(hass, entry.entry_id))[CONF_TEMP_LOW] == inside
+
+
+# (min, max, step) of the season's hysteresis per HA temperature unit.
+HYSTERESIS_SHAPES = {"°C": (0, 3, 0.5), "°F": (0, 5, 0.1)}
+
+
+@pytest.mark.parametrize(
+    ("system", "unit", "inside", "outside"),
+    [(METRIC_SYSTEM, "°C", 2.5, 4), (US_CUSTOMARY_SYSTEM, "°F", 4.5, 6)],
+    ids=["celsius", "fahrenheit"],
+)
+@pytest.mark.usefixtures("stub_sun_integration")
+async def test_threshold_hysteresis_is_unit_aware_everywhere(
+    hass, system, unit, inside, outside
+):
+    """The season's hysteresis is in HA's temperature unit on every surface.
+
+    Like the thresholds it widens (stored and compared in HA's unit): 0-3 °C
+    in 0.5 steps or 0-5 °F in 0.1 steps, default 0 (off), on the setup
+    form, the house options form, the hub's number, change_settings and
+    set_profile.
+    """
+    hass.config.units = system
+    low, high, step = HYSTERESIS_SHAPES[unit]
+
+    wizard = (await _wizard_forms(hass))["exceptions_climate"]
+    assert _selector_shape(wizard, CONF_TEMP_HYSTERESIS) == (low, high, step, unit)
+    assert _default_of(wizard, CONF_TEMP_HYSTERESIS) == 0
+
+    entry = await _setup_climate_entry(hass, low=None, high=None, reading=20, unit=unit)
+    # The house settings form (the per-window options form is gone, P8).
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    climate = result["data_schema"].schema["house_climate"].schema
+    hass.config_entries.options.async_abort(result["flow_id"])
+    assert _selector_shape(climate, CONF_TEMP_HYSTERESIS) == (low, high, step, unit)
+
+    number = er.async_get(hass).async_get_entity_id(
+        "number", DOMAIN, f"adaptive_cover_hub_{CONF_TEMP_HYSTERESIS}"
+    )
+    state = hass.states.get(number)
+    assert float(state.state) == 0
+    assert (
+        state.attributes["min"],
+        state.attributes["max"],
+        state.attributes["step"],
+        state.attributes["unit_of_measurement"],
+    ) == (low, high, step, unit)
+    assert (await window_settings(hass, entry.entry_id))[CONF_TEMP_HYSTERESIS] == 0
+
+    await hass.services.async_call(
+        DOMAIN,
+        "set_profile",
+        {"scope": "house", CONF_TEMP_HYSTERESIS: inside},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+    assert float(hass.states.get(number).state) == inside
+    assert (await window_settings(hass, entry.entry_id))[CONF_TEMP_HYSTERESIS] == inside
+    for service, data in (
+        ("set_profile", {"scope": "house"}),
+        ("change_settings", {"config_entry": entry.entry_id}),
+    ):
+        with pytest.raises(vol.Invalid):
+            await hass.services.async_call(
+                DOMAIN,
+                service,
+                {**data, CONF_TEMP_HYSTERESIS: outside},
+                blocking=True,
+            )
+    assert (await window_settings(hass, entry.entry_id))[CONF_TEMP_HYSTERESIS] == inside

@@ -107,32 +107,27 @@ def test_current_mode(control, held, mode):
 
 
 @pytest.mark.parametrize(
-    ("own", "until", "switch", "restored"),
+    ("own", "until", "restored"),
     [
-        # The Mode's own state wins over the switch.
-        ("auto", None, "off", Restored(Mode.AUTO)),
-        ("off", None, "on", Restored(Mode.OFF)),
-        ("hold", T0 + HOUR, None, Restored(Mode.HOLD, T0 + HOUR)),
+        # The Mode's own state.
+        ("auto", None, Restored(Mode.AUTO)),
+        ("off", None, Restored(Mode.OFF)),
+        ("hold", T0 + HOUR, Restored(Mode.HOLD, T0 + HOUR)),
         # A hold that ended while down, or without an end, is auto.
-        ("hold", T0 - HOUR, None, Restored(Mode.AUTO)),
-        ("hold", T0, None, Restored(Mode.AUTO)),
-        ("hold", None, "off", Restored(Mode.AUTO)),
-        # The select's options before the flip.
-        ("Manual", None, "on", Restored(Mode.OFF)),
-        ("Sun tracking", None, "off", Restored(Mode.AUTO)),
-        ("Sun + climate", None, None, Restored(Mode.AUTO)),
-        # First boot after the flip: the Toggle Control switch decides.
-        (None, None, "off", Restored(Mode.OFF)),
-        (None, None, "on", Restored(Mode.AUTO)),
-        ("unknown", None, "off", Restored(Mode.OFF)),
-        ("unavailable", None, "off", Restored(Mode.OFF)),
-        # Nothing to go on: a new window starts in auto.
-        (None, None, None, Restored(Mode.AUTO)),
-        (None, None, "unavailable", Restored(Mode.AUTO)),
+        ("hold", T0 - HOUR, Restored(Mode.AUTO)),
+        ("hold", T0, Restored(Mode.AUTO)),
+        ("hold", None, Restored(Mode.AUTO)),
+        # Nothing to go on (a new window, or a state that is no Mode): auto.
+        # Since v2.1 there is no fallback to the Toggle Control switch and
+        # the select's options from before the P5 flip are not read.
+        (None, None, Restored(Mode.AUTO)),
+        ("unknown", None, Restored(Mode.AUTO)),
+        ("unavailable", None, Restored(Mode.AUTO)),
+        ("Manual", None, Restored(Mode.AUTO)),
     ],
 )
-def test_restored_mode(own, until, switch, restored):
-    assert restored_mode(own, until, switch, T0) == restored
+def test_restored_mode(own, until, restored):
+    assert restored_mode(own, until, T0) == restored
 
 
 # ------------------------------------------------------------ requested holds

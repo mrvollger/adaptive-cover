@@ -7,7 +7,7 @@ get_forecast:
   fields:
     config_entry:
       name: Config entry
-      description: Config entry ID or title of the Adaptive Cover instance.
+      description: The window key (its config entry ID, kept when the house is consolidated) or the window's title.
       required: true
       example: "SE south shades"
       selector:
@@ -42,6 +42,106 @@ hold:
       selector:
         number: { min: 0, max: 100, step: 1, unit_of_measurement: "%", mode: slider }
 
+get_profile:
+  name: Get house, floor, room or window settings
+  description: >-
+    Read the stored settings (read-only; returns a response). No scope:
+    the house, every floor and every room. house: the house's settings.
+    floor / area with an id: what that floor or room stores itself.
+    window with its window key or Mode select entity: what the window
+    stores itself (overrides), what it acts on (settings) and where each
+    value comes from (provenance).
+  fields:
+    scope:
+      name: Scope
+      required: false
+      example: window
+      selector:
+        select:
+          options: [house, floor, area, window]
+    id:
+      name: Id
+      description: >-
+        The floor_id or area_id, or for a window its window key or its Mode
+        select entity.
+      required: false
+      example: select.office_north_mode
+      selector: { text: }
+
+set_profile:
+  name: Set house, floor or room settings
+  description: >-
+    Store recurring settings for the whole house, one floor or one room
+    (area). Every window inherits them unless a narrower level or the
+    window itself sets its own value; they apply at once, without a
+    reload. A floor or room value of null removes it (the windows inherit
+    again). Which level may hold which setting follows the option spec
+    (for example the heating threshold: house, floor or room; the position
+    delta: house only). Any recurring setting of change_settings is
+    accepted; the common ones are listed here.
+  fields:
+    scope:
+      name: Scope
+      required: true
+      example: area
+      selector:
+        select:
+          options: [house, floor, area]
+    id:
+      name: Floor or area id
+      description: The floor_id or area_id. Leave empty for the house.
+      required: false
+      example: office
+      selector: { text: }
+    climate_on:
+      name: Climate control
+      selector: { boolean: }
+    temp_low:
+      name: Heating threshold
+      selector: { number: { mode: box, step: 0.5 } }
+    temp_high:
+      name: Cooling threshold
+      selector: { number: { mode: box, step: 0.5 } }
+    temp_hysteresis:
+      name: Threshold hysteresis
+      selector: { number: { min: 0, max: 5, step: 0.1, mode: box } }
+    temp_entity:
+      name: Indoor temperature sensor
+      selector: { entity: { domain: [climate, sensor] } }
+    manual_override_duration:
+      name: Manual override duration
+      selector: { duration: }
+    manual_detection:
+      name: Detect manual moves
+      selector: { boolean: }
+    eye_height:
+      name: Eye height (m)
+      selector: { number: { min: 0.1, max: 3, step: 0.01, mode: box } }
+    occupied_distance:
+      name: Seat distance from window (m)
+      selector: { number: { min: 0.1, max: 10, step: 0.1, mode: box } }
+    default_percentage:
+      name: Default position (%)
+      selector: { number: { min: 0, max: 100, step: 1, mode: slider } }
+    sunset_position:
+      name: Sunset position (%)
+      selector: { number: { min: 0, max: 100, step: 1, mode: slider } }
+    sunset_offset:
+      name: Sunset offset (min)
+      selector: { number: { step: 1, mode: box } }
+    sunrise_offset:
+      name: Sunrise offset (min)
+      selector: { number: { step: 1, mode: box } }
+    start_time:
+      name: Start time
+      selector: { time: }
+    end_time:
+      name: End time
+      selector: { time: }
+    privacy_offset:
+      name: Privacy delay after sunset (min)
+      selector: { number: { min: 0, max: 180, step: 5, mode: box } }
+
 change_settings:
   name: Change settings
   description: >-
@@ -52,7 +152,7 @@ change_settings:
   fields:
     config_entry:
       name: Config entry
-      description: Entry ID, title, or internal name of the instance.
+      description: The window key (its config entry ID, kept when the house is consolidated), title, or internal name of the window.
       required: true
       example: "SE south shades"
     name:
@@ -109,6 +209,13 @@ change_settings:
         Above this indoor temperature it is "summer". In Home Assistant's
         temperature unit: 10-40 °C or 50-100 °F.
       selector: { number: { min: 10, max: 100, step: 0.5, mode: box } }
+    temp_hysteresis:
+      name: Threshold hysteresis (Home Assistant's temperature unit)
+      description: >-
+        How far past a threshold the temperature must go before the season
+        changes back (0: off). In Home Assistant's temperature unit: 0-3 °C
+        or 0-5 °F.
+      selector: { number: { min: 0, max: 5, step: 0.1, mode: box } }
 
 add_entry:
   name: Add a window

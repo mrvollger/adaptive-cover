@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
+from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import Any
 
 from homeassistant.components.cover import DOMAIN as COVER_DOMAIN
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     SERVICE_SET_COVER_POSITION,
@@ -21,12 +23,14 @@ from homeassistant.core import (
     HomeAssistant,
     State,
 )
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.event import async_call_later, async_track_point_in_time
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
 from .config_context_adapter import ConfigContextAdapter
+from .engine.season import Season
 from .runtime.clock import SYSTEM_CLOCK, Clock
 from .runtime.command_tracker import CommandTracker
 from .runtime.decider import Decider
@@ -53,13 +57,16 @@ from .const import (
     ATTR_POSITION,
     ATTR_TILT_POSITION,
     CONF_CLIMATE_MODE,
+    CONF_CLIMATE_ON,
     CONF_INTERP,
     CONF_INVERSE_STATE,
-    CONF_MANUAL_IGNORE_INTERMEDIATE,
-    CONF_RETURN_SUNSET,
+    CONF_MANUAL_DETECTION,
     CONF_SUNSET_POS,
     CONF_TEMP_HIGH,
     CONF_TEMP_LOW,
+    CONF_USE_IRRADIANCE,
+    CONF_USE_LUX,
+    CONF_USE_OUTSIDE_TEMP,
     DOMAIN,
     LOGGER,
 )
@@ -67,6 +74,9 @@ from .helpers import (
     get_safe_attr,
     get_safe_state,
 )
+from .layers import SETUP_KEYS, effective_settings
+from .windows import WindowEntry
+from .settings.lift import same_value
 
 
 # Seam: the clock a coordinator reads when none is passed in. Production
@@ -110,6 +120,15 @@ def localize_standard(naive: dt.datetime, tz: dt.tzinfo) -> dt.datetime:
     return first if not first.dst() else second
 
 
+def async_schedule_window_reload(hass: HomeAssistant, window: WindowEntry) -> None:
+    """Rebuild one window alone (its subentry; the rest of the house runs on)."""
+    from .house import house_runtime
+
+    runtime = house_runtime(window.config_entry)
+    if runtime is not None:
+        runtime.async_schedule_rebuild(window.subentry_id)
+
+
 @dataclass
 class StateChangedData:
     """StateChangedData class."""
@@ -136,30 +155,50 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     # The travel-time upper bound (the reset button waits at most this long).
     TARGET_TIMEOUT = CommandTracker.TARGET_TIMEOUT
 
-    def __init__(self, hass: HomeAssistant, clock: Clock | None = None) -> None:
-        """Initialize the coordinator.
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        clock: Clock | None = None,
+        *,
+        window: WindowEntry,
+    ) -> None:
+        """Initialize the coordinator of one window.
 
+        ``window`` is the window (a subentry of the house, windows.py).
         ``clock`` is where every "now" comes from (see runtime/clock.py);
         None means the module's ``default_clock``.
         """
-        super().__init__(hass, LOGGER, name=DOMAIN)
+        self.window: WindowEntry = window
+        # What the window acts on: its resolved settings (layers.py),
+        # re-read on every refresh (_read_settings). Read first: a window
+        # whose stored settings cannot be read fails here, before the
+        # house entry holds anything of it.
+        settings = effective_settings(hass, window)
+        # The owning entry: its unload shuts the coordinator down.
+        super().__init__(
+            hass, LOGGER, config_entry=self.window.config_entry, name=DOMAIN
+        )
         self.clock: Clock = clock if clock is not None else default_clock
 
         self.logger = ConfigContextAdapter(_LOGGER)
-        self.logger.set_config_name(self.config_entry.data.get("name"))
-        self._cover_type = self.config_entry.data.get("sensor_type")
-        self._climate_mode = self.config_entry.options.get(CONF_CLIMATE_MODE, False)
+        self.logger.set_config_name(self.window.name)
+        self._cover_type = self.window.cover_type
+        self.options: dict[str, Any] = settings.options
+        self.provenance: dict[str, str] = settings.provenance
+        # Read once: they decide the window's entities and listeners; a
+        # change reloads the window (SETUP_KEYS).
+        self._setup_values = {key: self.options.get(key) for key in SETUP_KEYS}
+        self._climate_mode = self.options.get(CONF_CLIMATE_MODE, False)
         self.controls = ControlState(climate=True if self._climate_mode else False)
+        self._apply_toggles(self.options)
         self.decider = Decider(
-            self.config_entry.options.get(CONF_INTERP, False),
-            self.config_entry.options.get(CONF_INVERSE_STATE, False),
+            self.options.get(CONF_INTERP, False),
+            self.options.get(CONF_INVERSE_STATE, False),
             self.logger,
         )
-        self._track_end_time = self.config_entry.options.get(CONF_RETURN_SUNSET)
         self._sun_end_time = None
         self._sun_start_time = None
-        # Re-read on every refresh (_update_options).
-        self.config = ShadeConfig.from_options(self.config_entry.options)
+        self.config = ShadeConfig.from_options(self.options)
         self.schedule = Schedule(
             lambda entity_id: get_safe_state(self.hass, entity_id),
             self.logger,
@@ -178,7 +217,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.manager = OverrideTracker(
             self.config.manual_duration,
             self.logger,
-            persisted_state=_manual_store.setdefault(self.config_entry.entry_id, {}),
+            persisted_state=_manual_store.setdefault(self.window.window_key, {}),
             clock=self.clock,
         )
         self.commands = CommandTracker(
@@ -188,15 +227,12 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self.logger,
         )
         self.detector = ManualDetector(self.manager, self.commands, self.logger)
-        # The window's Mode (auto / hold / off): the Mode select, its
-        # Toggle Control alias, the Return to auto button and the hold
-        # service change it here.
+        # The window's Mode (auto / hold / off): the Mode select, the house
+        # select, the Return to auto buttons and the hold service change it
+        # here.
         self.modes = ModeControl(self, self.logger)
         self._sun_table = None
         self._missing_warned: set[str] = set()
-        self.ignore_intermediate_states = self.config_entry.options.get(
-            CONF_MANUAL_IGNORE_INTERMEDIATE, False
-        )
         self.end_of_day = EndOfDay(
             lambda action, point: async_track_point_in_time(self.hass, action, point),
             self._now_local,
@@ -205,11 +241,14 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self.logger,
         )
 
-        self._cached_options = None
         self._basic_decision = None
         self._climate_decision = None
         # This refresh's climate snapshot (climate_mode_data builds it once).
         self._climate: ClimateCoverData | None = None
+        # The season the last climate decision found: the temp_hysteresis
+        # memory (engine/season.py). In memory only: a restart or reload
+        # starts from None, so its first decision uses the plain rule.
+        self._season: Season | None = None
         self._gate_blocks: dict[str, str | None] = {}
         self.explainer = Explainer(self.logger)
 
@@ -218,6 +257,83 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.events.push(RefreshEvent.STARTUP)
         await super().async_config_entry_first_refresh()
         self.logger.debug("Config entry first refresh")
+
+    async def async_window_first_refresh(self) -> None:
+        """Run the window's first refresh, while its entry sets up or later.
+
+        A window subentry added or rebuilt while the house runs sets up
+        after the house entry finished setting up, where HA's
+        ``async_config_entry_first_refresh`` refuses to run.
+
+        Raises
+        ------
+        ConfigEntryNotReady
+            The first refresh failed.
+
+        """
+        if self.config_entry.state is ConfigEntryState.SETUP_IN_PROGRESS:
+            await self.async_config_entry_first_refresh()
+            return
+        self.events.push(RefreshEvent.STARTUP)
+        await self.async_refresh()
+        if not self.last_update_success:
+            raise ConfigEntryNotReady(str(self.last_exception)) from (
+                self.last_exception
+            )
+        self.logger.debug("Window first refresh")
+
+    @property
+    def _track_end_time(self) -> bool | None:
+        """Close at the end time (``return_sunset``), as this refresh reads it."""
+        return self.config.return_sunset
+
+    @property
+    def ignore_intermediate_states(self) -> bool:
+        """Skip opening/closing reports (``manual_ignore_intermediate``)."""
+        return bool(self.config.ignore_intermediate)
+
+    def _apply_toggles(self, options: Mapping[str, Any]) -> None:
+        """Set the switch-era toggles from the resolved settings (P5 flip).
+
+        Climate needs climate mode as well: a window without it had no
+        Climate Mode switch, and its toggle followed the option.
+        """
+        self.controls.climate = bool(
+            options.get(CONF_CLIMATE_MODE) and options.get(CONF_CLIMATE_ON)
+        )
+        self.controls.outside_temp = bool(options.get(CONF_USE_OUTSIDE_TEMP))
+        self.controls.lux = bool(options.get(CONF_USE_LUX))
+        self.controls.irradiance = bool(options.get(CONF_USE_IRRADIANCE))
+        self.controls.manual = bool(options.get(CONF_MANUAL_DETECTION))
+
+    def _read_settings(self) -> dict[str, Any]:
+        """Re-read the window's resolved settings (every refresh).
+
+        A change to what the window read at setup (its listeners and which
+        entities it has) reloads it.
+        """
+        settings = effective_settings(self.hass, self.window)
+        self.options = settings.options
+        self.provenance = settings.provenance
+        changed = sorted(
+            key
+            for key in SETUP_KEYS
+            if not same_value(self.options.get(key), self._setup_values[key])
+        )
+        if changed:
+            self.logger.info("Settings %s changed: reloading the window", changed)
+            self._setup_values = {key: self.options.get(key) for key in SETUP_KEYS}
+            async_schedule_window_reload(self.hass, self.window)
+        return self.options
+
+    async def async_settings_changed(self) -> None:
+        """Act on changed settings now (layers.async_settings_changed).
+
+        The refresh re-reads the settings; a target that changed goes out
+        through the usual gates, as after a sensor change.
+        """
+        self.events.push(RefreshEvent.ENTITY_CHANGED)
+        await self.async_refresh()
 
     async def _request_end_close(self) -> None:
         """Run the end-of-day close on a refresh (EndOfDay calls this)."""
@@ -258,9 +374,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         """Fetch and process state change event."""
         self.logger.debug("Cover state change")
         data = event.data
-        if data["old_state"] is None:
+        old_state = data["old_state"]
+        new_state = data["new_state"]
+        if old_state is None:
             self.logger.debug("Old state is None")
-            if data["new_state"] is not None:
+            if new_state is not None:
                 # The cover's first state: its integration finished starting
                 # after ours (boot) or it was just added. Decide now instead
                 # of waiting for the next sun update, which is slow at night;
@@ -268,17 +386,14 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                 self.events.push(RefreshEvent.ENTITY_CHANGED)
                 await self.async_refresh()
             return
-        if data["new_state"] is None:
+        if new_state is None:
             self.logger.debug("New state is None")
             return
         self.state_change_data = StateChangedData(
-            data["entity_id"], data["old_state"], data["new_state"]
+            data["entity_id"], old_state, new_state
         )
-        if self.state_change_data.old_state.state in ("unknown", "unavailable"):
-            self.logger.debug(
-                "Old state is %s, not processing",
-                self.state_change_data.old_state.state,
-            )
+        if old_state.state in ("unknown", "unavailable"):
+            self.logger.debug("Old state is %s, not processing", old_state.state)
             # Device just came back: deliver any end-of-day close that
             # could not be sent while it was away.
             pending = self.end_of_day.take_retry(data["entity_id"], self.control_toggle)
@@ -293,11 +408,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
                     reason="retry after cover returned",
                 )
             return
-        if self.state_change_data.new_state.state in ("unknown", "unavailable"):
-            self.logger.debug(
-                "New state is %s, not processing",
-                self.state_change_data.new_state.state,
-            )
+        if new_state.state in ("unknown", "unavailable"):
+            self.logger.debug("New state is %s, not processing", new_state.state)
             return
         entity_id = data["entity_id"]
         # Our own command echoing back (service context preserved):
@@ -315,7 +427,6 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # only at journey end, so waiting for the landing report leaves a
         # 1-3 minute window where the cover reads as auto-controlled while a
         # person is actively moving it.
-        new_state = data["new_state"]  # the same State; checked not None above
         if new_state.state in ("opening", "closing") and not self.wait_for_target.get(
             entity_id
         ):
@@ -326,7 +437,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.commands.release_if_against(
             entity_id,
             new_state.state,
-            self.state_change_data.old_state.attributes.get(
+            old_state.attributes.get(
                 "current_tilt_position"
                 if self._cover_type == "cover_tilt"
                 else "current_position"
@@ -385,8 +496,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         """
         event = self.state_change_data
         self.logger.debug("Processing state change event: %s", event)
+        if event is None or event.new_state is None:
+            return None
         entity_id = event.entity_id
-        if self.ignore_intermediate_states and event.new_state.state in [
+        new_state = event.new_state
+        if self.ignore_intermediate_states and new_state.state in [
             "opening",
             "closing",
         ]:
@@ -394,8 +508,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             return None
         return self.commands.classify_report(
             entity_id,
-            event.new_state.state,
-            event.new_state.attributes.get(
+            new_state.state,
+            new_state.attributes.get(
                 "current_position"
                 if self._cover_type != "cover_tilt"
                 else "current_tilt_position"
@@ -440,9 +554,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             end=end,
             sun_table=self._sun_table,
             configured_end=configured_end,
-            end_position=self.config_entry.options.get(
-                CONF_SUNSET_POS, cover_data.sunset_pos
-            ),
+            end_position=self.options.get(CONF_SUNSET_POS, cover_data.sunset_pos),
             override_expiries=[
                 expiry
                 for cover in list(self.manager.manual_control_time)
@@ -452,11 +564,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
 
     async def _async_update_data(self) -> AdaptiveCoverData:
         self.logger.debug("Updating data")
-        if self.events.pending(RefreshEvent.STARTUP):
-            self._cached_options = self.config_entry.options
-
-        options = self.config_entry.options
+        options = self._read_settings()
         self._update_options(options)
+        self._apply_toggles(options)
 
         # Get data for the blind
         cover_data = self.get_blind_data()
@@ -689,11 +799,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     async def async_handle_first_refresh(self, state: int):
         """Handle first refresh."""
         if self.control_toggle is None:
-            # The first refresh runs before the switch platform restores,
-            # so the toggle is not known yet. Consuming the one-shot flag
-            # here silently skipped startup positioning; keep it pending —
-            # the switch's restore triggers another refresh that lands
-            # here with the toggle resolved.
+            # The first refresh runs before the Mode select restores, so
+            # the control toggle is not known yet. Consuming the one-shot
+            # flag here silently skipped startup positioning; keep it
+            # pending: the Mode's restore triggers another refresh that
+            # lands here with the toggle resolved.
             self.logger.debug("First refresh deferred: control switch not restored yet")
             return
         if self.control_toggle:
@@ -721,9 +831,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         )
         if self.control_toggle is None:
             # Startup/reload race: the timed close (or its catch-up) fired
-            # before the switch platform restored the control toggle.
-            # Keep END_TIME and the catch-up flag pending — the
-            # switch's restore refresh completes the close.
+            # before the Mode select restored the control toggle. Keep
+            # END_TIME and the catch-up flag pending: the Mode's restore
+            # refresh completes the close.
             self.logger.debug("Timed refresh deferred: control switch not restored yet")
             return
         if self.control_toggle:
@@ -876,10 +986,13 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         See CommandTracker.adopt_late_delivery; an adopted send is logged
         and polled like a delivered command. Returns True when adopted.
         """
+        change = self.state_change_data
+        if change is None or change.new_state is None or change.old_state is None:
+            return False
         sent = self.commands.adopt_late_delivery(
             entity_id,
-            self.state_change_data.new_state.state,
-            self.state_change_data.old_state.attributes.get(
+            change.new_state.state,
+            change.old_state.attributes.get(
                 "current_tilt_position"
                 if self._cover_type == "cover_tilt"
                 else "current_position"
@@ -1054,18 +1167,23 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         ]
 
     def _climate_data(self) -> ClimateCoverData:
-        """Build the climate adapter from the options and switch toggles."""
+        """Build the climate adapter from the options and switch toggles.
+
+        The season is sticky from the one the previous decision found.
+        """
         return ClimateCoverData.from_config(
             self.hass,
             self.logger,
             self.config.climate,
             self.controls,
             self._cover_type,
+            previous_season=self._season,
         )
 
     def climate_mode_data(self, options, cover_data):
         """Update climate mode data and control method."""
         climate = self._climate = self._climate_data()
+        self._season = climate.season
         self._climate_decision = ClimateCoverState(cover_data, climate).get_decision()
         self.climate_state = round(self._climate_decision.position)
         # Winter wins if both held (it was the later assignment); neither,
@@ -1093,12 +1211,12 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         """Apply interpolation / inversion output transforms."""
         return self.decider.transform(state, self.config)
 
-    # The switch platform sets these by name (setattr); the state lives in
-    # self.controls.
+    # The toggles by their historical names; the state lives in
+    # self.controls (set from the resolved settings and the Mode).
     switch_mode = ControlToggle[bool]("climate")
-    """Let switch toggle climate mode."""
+    """Climate mode on (climate_mode and climate_on)."""
     temp_toggle = ControlToggle[bool | None]("outside_temp")
-    """Let switch toggle between inside or outside temperature."""
+    """Use the outside temperature (use_outside_temp)."""
     control_toggle = ControlToggle[bool | None]("control")
     """Automatic control: False is Mode off (the Mode select sets it)."""
     manual_toggle = ControlToggle[bool | None]("manual")

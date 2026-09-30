@@ -10,10 +10,9 @@
 - ``off``: no moves and no manual-move detection.
 
 The select is the source of truth for the window's control state: it
-restores its own state (a hold with its end, the ``until`` attribute). On
-its first boot after the flip it has none and falls back to the Toggle
-Control switch's last state (runtime/mode.py ``restored_mode``). The
-options are translation keys; ``strings.json`` names them.
+restores its own state (a hold with its end, the ``until`` attribute;
+runtime/mode.py ``restored_mode``). The options are translation keys;
+``strings.json`` names them.
 
 The hub's house select lives in hub.py and shares this platform.
 """
@@ -25,22 +24,21 @@ from typing import Any
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers import restore_state
+from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info
 from .entity_surface import apply_surface, window_surface
 from .runtime.mode import MODE_OPTIONS, Mode, restored_mode
+from .windows import WindowEntry
 
 ATTR_UNTIL = "until"
-LEGACY_CONTROL_SWITCH = "Toggle Control"
 
 
 async def async_setup_entry(
@@ -48,14 +46,23 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the mode select for one config entry (or the hub's)."""
-    from .hub import HouseModeSelect, is_hub_entry
+    """Set up the house's Mode select and each window's."""
+    from .house import async_setup_house_platform
+    from .hub import HouseModeSelect
 
-    if is_hub_entry(config_entry):
-        async_add_entities([HouseModeSelect(hass)])
-        return
-    coordinator: AdaptiveDataUpdateCoordinator = config_entry.runtime_data
-    async_add_entities([AdaptiveCoverModeSelect(config_entry, coordinator)])
+    async_add_entities([HouseModeSelect(hass)])
+    await async_setup_house_platform(
+        hass, config_entry, Platform.SELECT, window_entities
+    )
+
+
+def window_entities(
+    hass: HomeAssistant,
+    config_entry: WindowEntry,
+    coordinator: AdaptiveDataUpdateCoordinator,
+) -> list[Entity]:
+    """Return one window's Mode select."""
+    return [AdaptiveCoverModeSelect(config_entry, coordinator)]
 
 
 def _parse_until(value: Any) -> dt.datetime | None:
@@ -85,13 +92,13 @@ class AdaptiveCoverModeSelect(
 
     def __init__(
         self,
-        config_entry: ConfigEntry,
+        config_entry: WindowEntry,
         coordinator: AdaptiveDataUpdateCoordinator,
     ) -> None:
         """Initialize the mode select."""
         super().__init__(coordinator=coordinator)
         self._config_entry = config_entry
-        self._name = config_entry.data["name"]
+        self._name = config_entry.name
         self._attr_unique_id = f"{config_entry.entry_id}_mode_select"
         apply_surface(self, window_surface("select", "mode_select"))
         self._device_id = config_entry.entry_id
@@ -110,24 +117,13 @@ class AdaptiveCoverModeSelect(
         until = modes.until if modes.mode is Mode.HOLD else None
         return {ATTR_UNTIL: iso_local(until)}
 
-    def _legacy_control_state(self) -> str | None:
-        """Return the Toggle Control switch's last recorded state (first boot)."""
-        entity_id = er.async_get(self.hass).async_get_entity_id(
-            "switch", DOMAIN, f"{self._device_id}_{LEGACY_CONTROL_SWITCH}"
-        )
-        if entity_id is None:
-            return None
-        stored = restore_state.async_get(self.hass).last_states.get(entity_id)
-        return stored.state.state if stored is not None else None
-
     async def async_added_to_hass(self) -> None:
-        """Restore the Mode (else the Toggle Control switch's last state)."""
+        """Restore the Mode (auto when there is nothing to restore)."""
         await super().async_added_to_hass()
         last = await self.async_get_last_state()
         restored = restored_mode(
             last.state if last is not None else None,
             _parse_until(last.attributes.get(ATTR_UNTIL)) if last is not None else None,
-            self._legacy_control_state(),
             self.coordinator.clock.utcnow(),
         )
         self.coordinator.logger.debug("Mode restores as %s", restored)

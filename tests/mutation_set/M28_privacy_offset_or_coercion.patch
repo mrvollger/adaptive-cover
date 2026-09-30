@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/runtime/shade_config.py b/custom_components/adaptive_cover/runtime/shade_config.py
 --- a/custom_components/adaptive_cover/runtime/shade_config.py
 +++ b/custom_components/adaptive_cover/runtime/shade_config.py
-@@ -289,9 +289,7 @@
+@@ -292,9 +292,7 @@
              privacy_mode=_read(options, CONF_PRIVACY_MODE),
              # explicit None check: an offset of 0 ("close right at sunset")
              # must not be coerced to the 30-minute fallback

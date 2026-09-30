@@ -9,13 +9,16 @@ accepts it describes it today: kind, default, min, max, step, unit and the
 places (surface, form, cover type, climate mode, HA temperature unit) where
 it appears. The surfaces are:
 
-- ``setup.user.<section>`` / ``setup.reconfigure.<section>``: the
-  one-screen window form (ConfigFlow add and Reconfigure steps), for each
-  cover type (it replaced the page-by-page wizard in P6);
-- ``options.init.<section>``: the one-page options form, for each cover type
-  with climate mode off and on;
+- ``setup.first.<section>``: the one-screen window form of a fresh
+  install (the config flow creates the house with its first window), for
+  each cover type (it replaced the page-by-page wizard in P6);
+- ``setup.user.<section>`` / ``setup.reconfigure.<section>``: the same form
+  as "Add window" and a window's Reconfigure (the house's ``window``
+  subentry flow, P7/P8), for each cover type;
+- ``options.house.<section>``: the house settings form (the house entry's
+  options; the one-page options form of a window entry is gone since P8);
 - ``change_settings`` / ``add_entry``: the service schemas as registered;
-  ``add_entry`` also records the baseline options an entry gets without
+  ``add_entry`` also records the baseline options a window gets without
   ``copy_from`` (its effective defaults);
 - ``services_yaml.<service>``: the service field selectors in services.yaml
   (what the HA service UI shows);
@@ -45,6 +48,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
+from unittest.mock import patch
 
 import voluptuous as vol
 import yaml
@@ -267,86 +271,128 @@ def _form(result: dict[str, Any], step_id: str) -> vol.Schema:
     return result["data_schema"]
 
 
-def _fake_window(entry_id: str, cover_type: str) -> SimpleNamespace:
-    """A window config entry, as the setup form reads one."""
+def _fake_subentry(subentry_id: str, cover_type: str) -> SimpleNamespace:
+    """A window subentry of the house, as the forms read one (3.1 record)."""
+    from custom_components.adaptive_cover.settings.window_record import WindowRecord
+
+    name = f"Spec parity {subentry_id}"
     return SimpleNamespace(
-        entry_id=entry_id,
-        title=f"Spec parity {entry_id}",
-        domain="adaptive_cover",
-        data={"name": f"Spec parity {entry_id}", "sensor_type": cover_type},
-        options={},
+        subentry_id=subentry_id,
+        subentry_type="window",
+        title=name,
+        unique_id=None,
+        data=WindowRecord(name=name, cover=None, cover_type=cover_type).as_data(),
     )
 
 
-def _entries(*windows: SimpleNamespace) -> SimpleNamespace:
-    """The config-entry registry calls the setup form makes."""
-    by_id = {window.entry_id: window for window in windows}
+def _fake_house(*subentries: SimpleNamespace) -> SimpleNamespace:
+    """The house entry (3.1, no stored profiles) holding ``subentries``."""
+    by_id = {subentry.subentry_id: subentry for subentry in subentries}
     return SimpleNamespace(
-        async_entries=lambda *_a, **_kw: list(windows),
+        entry_id="spec-parity-house",
+        title="Adaptive Cover All",
+        domain="adaptive_cover",
+        version=3,
+        minor_version=1,
+        data={"name": "Adaptive Cover All", "is_hub": True},
+        options={},
+        subentries=by_id,
+        get_subentries_of_type=lambda kind: [
+            sub for sub in by_id.values() if sub.subentry_type == kind
+        ],
+    )
+
+
+def _entries(*entries: SimpleNamespace) -> SimpleNamespace:
+    """The config-entry registry calls the forms make."""
+    by_id = {entry.entry_id: entry for entry in entries}
+    return SimpleNamespace(
+        async_entries=lambda *_a, **_kw: list(entries),
         async_get_entry=by_id.get,
         async_get_known_entry=by_id.__getitem__,
+    )
+
+
+def _no_registries():
+    """A window's area without HA's registries (the forms' fakes have none)."""
+    from custom_components.adaptive_cover.settings.resolve import Placement
+
+    return patch(
+        "custom_components.adaptive_cover.layers.window_placement",
+        lambda _hass, _window: Placement(),
     )
 
 
 async def _walk_setup(obs: Observations) -> None:
     """The one-screen window form, per cover type and unit.
 
-    ``setup.user``: the add form (one window exists, so "Copy from" shows),
-    shown for each cover type the way a user gets there: the blind form
-    first, then the type picked. ``setup.reconfigure``: the Reconfigure
-    form of a window of each type. Neither depends on climate mode.
+    ``setup.first``: a fresh install's form (the config flow; no window
+    exists, so no "Copy from"). ``setup.user``: "Add window" on the house
+    (one window exists, so "Copy from" shows). Both are shown for each
+    cover type the way a user gets there: the blind form first, then the
+    type picked. ``setup.reconfigure``: the Reconfigure form of a window of
+    each type (its exceptions pre-filled with what it acts on). None
+    depends on climate mode.
     """
-    from custom_components.adaptive_cover.config_flow import ConfigFlowHandler
+    from custom_components.adaptive_cover.config_flow import (
+        ConfigFlowHandler,
+        WindowSubentryFlow,
+    )
 
-    source = _fake_window("window", "cover_blind")
+    pick = {"window": {"cover_entity_id": "cover.spec_parity"}}
     for unit in UNITS:
         for cover_type in COVER_TYPES:
             ctx = _contexts(types=[cover_type], units=[unit])
-            hass = _fake_hass(unit, config_entries=_entries(source))
+            picked = {"window": {**pick["window"], "sensor_type": cover_type}}
+
+            hass = _fake_hass(unit, config_entries=_entries())
             flow = _prepare_flow(ConfigFlowHandler(), hass, "setup")
             result = await flow.async_step_user()
             if cover_type != "cover_blind":
-                result = await flow.async_step_user(
-                    {
-                        "window": {
-                            "cover_entity_id": "cover.spec_parity",
-                            "sensor_type": cover_type,
-                        }
-                    }
+                result = await flow.async_step_user(picked)
+            obs.add_form("setup.first", _form(result, "user"), ctx)
+
+            source = _fake_subentry("window", "cover_blind")
+            house = _fake_house(source)
+            hass = _fake_hass(unit, config_entries=_entries(house))
+            with _no_registries():
+                flow = _prepare_flow(
+                    WindowSubentryFlow(), hass, (house.entry_id, "window")
                 )
-            obs.add_form("setup.user", _form(result, "user"), ctx)
+                result = await flow.async_step_user()
+                if cover_type != "cover_blind":
+                    result = await flow.async_step_user(picked)
+                obs.add_form("setup.user", _form(result, "user"), ctx)
 
-            target = _fake_window("reconfigured", cover_type)
-            hass = _fake_hass(unit, config_entries=_entries(source, target))
-            flow = _prepare_flow(ConfigFlowHandler(), hass, "setup")
-            flow.context = {"source": "reconfigure", "entry_id": target.entry_id}
-            result = await flow.async_step_reconfigure()
-            obs.add_form("setup.reconfigure", _form(result, "reconfigure"), ctx)
+                target = _fake_subentry("reconfigured", cover_type)
+                house = _fake_house(source, target)
+                hass = _fake_hass(unit, config_entries=_entries(house))
+                flow = _prepare_flow(
+                    WindowSubentryFlow(), hass, (house.entry_id, "window")
+                )
+                flow.context = {
+                    "source": "reconfigure",
+                    "subentry_id": target.subentry_id,
+                }
+                result = await flow.async_step_reconfigure()
+                obs.add_form("setup.reconfigure", _form(result, "reconfigure"), ctx)
 
 
-async def _walk_options(obs: Observations) -> None:
-    """The options form, per cover type, climate mode and unit."""
-    from custom_components.adaptive_cover.config_flow import ConfigFlowHandler
+async def _walk_house_options(obs: Observations) -> None:
+    """The house settings form (the house entry's options), per unit.
+
+    It does not depend on a window's cover type or climate mode.
+    """
+    from custom_components.adaptive_cover.config_flow import HouseOptionsFlow
 
     for unit in UNITS:
-        for cover_type in COVER_TYPES:
-            for climate in CLIMATES:
-                entry = SimpleNamespace(
-                    entry_id="spec-parity",
-                    data={"name": "Spec parity", "sensor_type": cover_type},
-                    options={"climate_mode": climate == "on"},
-                )
-                flow = _prepare_flow(
-                    ConfigFlowHandler.async_get_options_flow(entry),
-                    _fake_hass(unit),
-                    "options",
-                )
-                result = await flow.async_step_init()
-                obs.add_form(
-                    "options.init",
-                    _form(result, "init"),
-                    [(cover_type, climate, unit)],
-                )
+        house = _fake_house()
+        flow = _prepare_flow(
+            HouseOptionsFlow(), _fake_hass(unit, config_entries=_entries(house)), ""
+        )
+        flow.handler = house.entry_id
+        result = await flow.async_step_init()
+        obs.add_form("options.house", _form(result, "house"), _contexts(units=[unit]))
 
 
 class _FakeServices:
@@ -362,15 +408,6 @@ class _FakeServices:
         self.registered[service] = (handler, schema)
 
 
-class _FakeFlowManager:
-    def __init__(self) -> None:
-        self.created: list[dict[str, Any]] = []
-
-    async def async_init(self, domain, *, context=None, data=None):
-        self.created.append(data)
-        return {"result": SimpleNamespace(entry_id="spec-parity", title="x")}
-
-
 async def _walk_services(obs: Observations) -> None:
     """change_settings / add_entry schemas and the add_entry baseline."""
     from custom_components.adaptive_cover import _async_register_services
@@ -378,13 +415,8 @@ async def _walk_services(obs: Observations) -> None:
     for unit in UNITS:
         ctx = _contexts(units=[unit])
         services = _FakeServices()
-        flows = _FakeFlowManager()
         hass = _fake_hass(
-            unit,
-            services=services,
-            config_entries=SimpleNamespace(
-                flow=flows, async_entries=lambda *_a, **_kw: []
-            ),
+            unit, services=services, config_entries=_entries(_fake_house())
         )
         _async_register_services(hass)
         for name in ("change_settings", "add_entry"):
@@ -399,11 +431,23 @@ async def _walk_services(obs: Observations) -> None:
                 {c: tuple(sorted(str(m.schema) for m in schema.schema)) for c in ctx}
             )
 
-        # The baseline an entry gets from add_entry without copy_from.
+        # The baseline a window gets from add_entry without copy_from (a
+        # house that stores no profile values).
         handler, _schema = services.registered["add_entry"]
-        await handler(SimpleNamespace(data={"name": "Spec parity", "cover": "cover.x"}))
-        (created,) = flows.created
-        baseline = dict(created["options"])
+        created: list[dict[str, Any]] = []
+
+        def _add(_hass, _house, _name, _cover_type, options):
+            created.append(dict(options))
+            return SimpleNamespace(window_key="spec-parity", title="x")
+
+        with patch(
+            "custom_components.adaptive_cover.config_flow.async_add_window_subentry",
+            _add,
+        ):
+            await handler(
+                SimpleNamespace(data={"name": "Spec parity", "cover": "cover.x"})
+            )
+        (baseline,) = created
         # the cover argument (both keys), not a default
         baseline.pop("group", None)
         baseline.pop("cover_entity_id", None)
@@ -433,25 +477,30 @@ def _walk_services_yaml(obs: Observations) -> None:
 
 
 async def _walk_numbers(obs: Observations) -> None:
-    """The live number entities, per cover type, climate mode and unit."""
+    """The live number entities, per cover type, climate mode and unit.
+
+    Since the P5 flip they are the house's (the hub device); they do not
+    depend on a window's cover type or climate mode, and show the spec
+    default before the house is lifted.
+    """
     from custom_components.adaptive_cover import number as number_platform
 
     for unit in UNITS:
         for cover_type in COVER_TYPES:
             for climate in CLIMATES:
-                entry = SimpleNamespace(
-                    entry_id="spec-parity",
-                    title="Spec parity",
-                    data={"name": "Spec parity", "sensor_type": cover_type},
-                    options={"climate_mode": climate == "on"},
-                    runtime_data=SimpleNamespace(),  # the window's coordinator
+                hub = SimpleNamespace(
+                    entry_id="spec-parity-hub",
+                    title="Adaptive Cover All",
+                    domain="adaptive_cover",
+                    data={"name": "Adaptive Cover All", "is_hub": True},
+                    options={},
                 )
-                hass = _fake_hass(unit)
+                hass = _fake_hass(unit, config_entries=_entries(hub))
                 added: list[Any] = []
-                await number_platform.async_setup_entry(hass, entry, added.extend)
+                await number_platform.async_setup_entry(hass, hub, added.extend)
                 order = []
                 for entity in added:
-                    key = entity.unique_id.removeprefix(f"{entry.entry_id}_number_")
+                    key = entity.unique_id.removeprefix("adaptive_cover_hub_")
                     order.append(key)
                     described = _clean(
                         {
@@ -545,7 +594,7 @@ async def build_snapshot() -> dict[str, Any]:
     """Walk every surface and return the snapshot (JSON-ready)."""
     obs = Observations()
     await _walk_setup(obs)
-    await _walk_options(obs)
+    await _walk_house_options(obs)
     await _walk_services(obs)
     _walk_services_yaml(obs)
     await _walk_numbers(obs)

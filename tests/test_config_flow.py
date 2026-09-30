@@ -1,4 +1,9 @@
-"""Tests for the config flow: the one-screen add-window form (P6)."""
+"""Tests for the config flow: the one-screen form of the first window (P6, P8).
+
+Since v2.1 the config flow runs once, on a fresh install: it creates the
+house entry with the window as its first ``window`` subentry. Later windows
+are added and changed on the house (tests/test_house_subentries.py).
+"""
 
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResultType
@@ -39,7 +44,6 @@ from custom_components.adaptive_cover.const import (
     CONF_QUIET_END,
     CONF_QUIET_START,
     CONF_RETURN_SUNSET,
-    CONF_SENSOR_TYPE,
     CONF_START_ENTITY,
     CONF_START_TIME,
     CONF_SUNRISE_OFFSET,
@@ -50,17 +54,22 @@ from custom_components.adaptive_cover.const import (
     CONF_TILT_MODE,
     SensorType,
 )
+from custom_components.adaptive_cover.hub import HUB_ENTRY_NAME
 from custom_components.adaptive_cover.settings.validate import ERROR_ELEVATION_ORDER
 
 from .window_form import (
     add_window,
     collapsed,
+    only_window,
     prefilled,
+    record,
     show_type,
     shown,
     start_add,
+    start_reconfigure,
     submit,
 )
+from .window_handle import window_settings
 
 # What a user enters for a vertical blind (flat; tests/window_form.py puts
 # each field in its section). The form has a default for everything else.
@@ -122,9 +131,9 @@ pytestmark = pytest.mark.usefixtures("stub_sun_integration")
 
 @pytest.fixture(autouse=True)
 async def unload_all_entries(hass):
-    """Unload every entry the flow created (incl. the auto-created hub).
+    """Unload the house the flow created.
 
-    Completing a flow sets the entry up, and the hub's aggregate cover
+    Completing a flow sets the entry up, and the house's aggregate cover
     polls on an interval; leaving it loaded leaks that timer past teardown.
     """
     yield
@@ -155,9 +164,11 @@ async def test_full_vertical_flow(hass):
         hass, {"name": "Living Room", **VERTICAL_STEP_INPUT, **AUTOMATION_STEP_INPUT}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == "Living Room"
-    assert result["data"][CONF_SENSOR_TYPE] == SensorType.BLIND
-    assert result["options"][CONF_AZIMUTH] == 180
+    assert result["title"] == HUB_ENTRY_NAME  # the house, holding the window
+    window = only_window(result["result"])
+    assert window.title == "Living Room"
+    assert record(window).cover_type == SensorType.BLIND
+    assert record(window).geometry[CONF_AZIMUTH] == 180
 
 
 async def test_full_horizontal_flow(hass):
@@ -177,9 +188,10 @@ async def test_full_horizontal_flow(hass):
         {"name": "Terrace", **HORIZONTAL_STEP_INPUT, **AUTOMATION_STEP_INPUT},
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == "Terrace"
-    assert result["data"][CONF_SENSOR_TYPE] == SensorType.AWNING
-    assert result["options"][CONF_LENGTH_AWNING] == 2.1
+    window = only_window(result["result"])
+    assert window.title == "Terrace"
+    assert record(window).cover_type == SensorType.AWNING
+    assert record(window).geometry[CONF_LENGTH_AWNING] == 2.1
 
 
 async def test_full_tilt_flow(hass):
@@ -195,9 +207,10 @@ async def test_full_tilt_flow(hass):
         hass, result, {"name": "Bedroom", **TILT_STEP_INPUT, **AUTOMATION_STEP_INPUT}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == "Bedroom"
-    assert result["data"][CONF_SENSOR_TYPE] == SensorType.TILT
-    assert result["options"][CONF_TILT_MODE] == "mode2"
+    window = only_window(result["result"])
+    assert window.title == "Bedroom"
+    assert record(window).cover_type == SensorType.TILT
+    assert record(window).geometry[CONF_TILT_MODE] == "mode2"
 
 
 async def test_regression_wizard_drops_automation_keys(hass):
@@ -208,7 +221,9 @@ async def test_regression_wizard_drops_automation_keys(hass):
     return_sunset, privacy_*, quiet_*, max_moves_hour, and overhang/glare
     keys — a fresh entry configured with an end time never closed at end of
     day.  The OptionsFlow already preserved these keys; the setup form
-    (the wizard before P6) must round-trip them too.
+    (the wizard before P6) must round-trip them too. Since v2.1 the one-time
+    ones are the window's geometry and the recurring ones the house's
+    (lifted from its first window): the window acts on every one.
     """
     geometry_input = {
         **VERTICAL_STEP_INPUT,
@@ -241,9 +256,14 @@ async def test_regression_wizard_drops_automation_keys(hass):
         hass, {"name": "Round Trip", **geometry_input, **automation_input}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
 
-    options = result["options"]
+    window = only_window(result["result"])
+    options = await window_settings(hass, window.subentry_id)
     for key, value in {**geometry_input, **automation_input}.items():
+        if key == CONF_COVER_ENTITY:
+            assert record(window).cover == value
+            continue
         assert key in options, f"setup form dropped option key: {key}"
         assert options[key] == value, (
             f"setup form mangled option {key}: {options[key]!r} != {value!r}"
@@ -281,13 +301,20 @@ async def _wizard_blind(hass, geometry: dict, automation: dict):
     )
 
 
-async def _options_submit(hass, entry, **sections: dict):
-    """Submit the one-page options form with only ``sections`` filled in."""
+async def _reconfigure(hass, entry, **values):
+    """A window's Reconfigure (its editor since v2.1), changing ``values``."""
+    window = only_window(entry)
+    result = await start_reconfigure(hass, entry, window.subentry_id)
+    result = await submit(hass, result, {**prefilled(result), **values})
+    await hass.async_block_till_done()
+    return result
+
+
+async def _house_submit(hass, entry, **values):
+    """Submit the house settings form with only ``values`` filled in."""
     result = await hass.config_entries.options.async_init(entry.entry_id)
-    user_input = {
-        name: sections.get(name, {})
-        for name in ("covers_geometry", "sun_behavior", "automation_timing", "climate")
-    }
+    user_input = {str(name): {} for name in result["data_schema"].schema}
+    user_input["house_schedule"] = values
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], user_input=user_input
     )
@@ -301,18 +328,19 @@ async def test_regression_height_distance_max_ten(hass):
     Before P3 the change_settings and add_entry services took 0.1-10 m, but
     the wizard and the options form capped the height at 6 m and the
     distance at 2 m. A tall window or a deep room set by the service could
-    not be saved from the options form again. Ledger L0006.
+    not be saved from the options form again. Ledger L0006. (Since v2.1 a
+    window's Reconfigure is where its geometry changes.)
     """
     result = await _wizard_blind(hass, {CONF_HEIGHT_WIN: 8.5, CONF_DISTANCE: 3.0}, {})
     assert result["type"] is FlowResultType.CREATE_ENTRY
     entry = result["result"]
-    assert (entry.options[CONF_HEIGHT_WIN], entry.options[CONF_DISTANCE]) == (8.5, 3.0)
+    geometry = record(only_window(entry)).geometry
+    assert (geometry[CONF_HEIGHT_WIN], geometry[CONF_DISTANCE]) == (8.5, 3.0)
 
-    result = await _options_submit(
-        hass, entry, covers_geometry={CONF_HEIGHT_WIN: 10, CONF_DISTANCE: 10}
-    )
-    assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert (entry.options[CONF_HEIGHT_WIN], entry.options[CONF_DISTANCE]) == (10, 10)
+    result = await _reconfigure(hass, entry, **{CONF_HEIGHT_WIN: 10, CONF_DISTANCE: 10})
+    assert result["reason"] == "reconfigure_successful"
+    geometry = record(only_window(entry)).geometry
+    assert (geometry[CONF_HEIGHT_WIN], geometry[CONF_DISTANCE]) == (10, 10)
 
 
 async def test_regression_delta_time_min_zero(hass):
@@ -321,15 +349,17 @@ async def test_regression_delta_time_min_zero(hass):
     Before P3 the services took delta_time >= 0 (and many entries run with
     0), but the wizard and the options form required at least 2 minutes, so
     such an entry could not be saved from the options form without raising
-    its throttle. Ledger L0007.
+    its throttle. Ledger L0007. (Since v2.1 the time delta is a house
+    setting: the house settings form.)
     """
     result = await _wizard_blind(hass, {}, {CONF_DELTA_TIME: 0})
     assert result["type"] is FlowResultType.CREATE_ENTRY
     entry = result["result"]
-    assert entry.options[CONF_DELTA_TIME] == 0
+    assert entry.options["house"][CONF_DELTA_TIME] == 0
 
-    result = await _options_submit(hass, entry, automation_timing={CONF_DELTA_TIME: 1})
+    result = await _house_submit(hass, entry, **{CONF_DELTA_TIME: 1})
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    result = await _options_submit(hass, entry, automation_timing={CONF_DELTA_TIME: 0})
+    assert entry.options["house"][CONF_DELTA_TIME] == 1
+    result = await _house_submit(hass, entry, **{CONF_DELTA_TIME: 0})
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert entry.options[CONF_DELTA_TIME] == 0
+    assert entry.options["house"][CONF_DELTA_TIME] == 0

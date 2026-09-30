@@ -8,6 +8,7 @@ from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.adaptive_cover.const import (
     CONF_DELTA_TIME,
+    CONF_DISTANCE,
     CONF_END_TIME,
     CONF_IRRADIANCE_ENTITY,
     CONF_LUX_ENTITY,
@@ -41,7 +42,7 @@ async def test_eid_entity_sensor_accessors(hass, freezer):
     assert state.state.isdigit()
     assert isinstance(house.sensor_attr("cover_position", "move_blocked_by"), dict)
     assert house.entity("binary_sensor", "sun_infront").state in ("on", "off")
-    assert house.entity("switch", "toggle_control").state == "on"
+    assert house.switch("toggle_control") == "on"
     await house.teardown()
 
 
@@ -80,32 +81,36 @@ async def test_two_covers_make_two_windows(hass, freezer):
 
 
 async def test_toggle_flips_real_switch_entity(hass, freezer):
-    """toggle() drives the control switch via a real service call."""
+    """toggle("toggle_control") drives the Mode select via a real service call.
+
+    The Toggle Control switch (a hidden alias since the P5 flip) is gone
+    since v2.1; ``house.switch("toggle_control")`` reads the Mode.
+    """
     house = await SimHouse.create(hass, freezer, date="2026-03-20")
     await house.advance_to("10:00")
 
     await house.toggle("toggle_control", False)
-    assert house.entity("switch", "toggle_control").state == "off"
+    assert house.switch("toggle_control") == "off"
     before = len(house.auto_moves(SHADE))
     await house.advance_to("11:00")
     assert len(house.auto_moves(SHADE)) == before, (
         "auto moves while the control switch entity is off"
     )
     await house.toggle("toggle_control", True)
-    assert house.entity("switch", "toggle_control").state == "on"
+    assert house.switch("toggle_control") == "on"
     await house.teardown()
 
 
 async def test_select_option_drives_mode(hass, freezer):
-    """select_option() sets the Mode; the control switch alias follows it."""
+    """select_option() sets the Mode; what Toggle Control was follows it."""
     house = await SimHouse.create(hass, freezer, date="2026-03-20")
     await house.advance_to("10:00")
 
     await house.select_option("mode_select", "off")
-    assert house.entity("switch", "toggle_control").state == "off"
+    assert house.switch("toggle_control") == "off"
     assert house.entity("select", "mode_select").state == "off"
     await house.select_option("mode_select", "auto")
-    assert house.entity("switch", "toggle_control").state == "on"
+    assert house.switch("toggle_control") == "on"
     assert house.entity("select", "mode_select").state == "auto"
     await house.teardown()
 
@@ -131,14 +136,23 @@ async def test_press_reset_button_resumes_auto(hass, freezer):
 
 
 async def test_set_options_survives_reload(hass, freezer):
-    """set_options() reloads the entry, re-wins services, keeps attribution."""
+    """set_options() reloads the entry, re-wins services, keeps attribution.
+
+    A one-time setting (the window's distance) reloads the window; a
+    recurring one (delta time) becomes the window's own value without a
+    reload (P5 flip).
+    """
     house = await SimHouse.create(hass, freezer, date="2026-03-20")
     await house.advance_to("11:00")
     teardowns_before = house.window().teardowns
 
     await house.set_options(**{CONF_DELTA_TIME: 5})
+    assert (await house.window().settings())[CONF_DELTA_TIME] == 5
+    assert house.window().teardowns == teardowns_before
 
-    assert house.entry.options[CONF_DELTA_TIME] == 5
+    await house.set_options(**{CONF_DISTANCE: 0.6})
+
+    assert house.entry.options[CONF_DISTANCE] == 0.6
     # The entry reloaded (entities torn down once, rebuilt, live again);
     # the closes below are attributed to the integration, so the harness
     # follows the rebuilt window.
@@ -153,7 +167,7 @@ async def test_set_options_survives_reload(hass, freezer):
 
 
 async def test_restart_preserves_timeline_and_restores_switches(hass, freezer):
-    """restart() keeps the timeline and restores captured switch states."""
+    """restart() keeps the timeline and restores captured states (the Mode)."""
     house = await SimHouse.create(hass, freezer, date="2026-03-20")
     await house.advance_to("11:00")
     await house.toggle("toggle_control", False)
@@ -162,14 +176,14 @@ async def test_restart_preserves_timeline_and_restores_switches(hass, freezer):
     await house.restart(at="11:30")
 
     assert len(house.timeline) >= events_before, "restart wiped the timeline"
-    assert house.entity("switch", "toggle_control").state == "off", (
+    assert house.switch("toggle_control") == "off", (
         "restart lost the captured switch state"
     )
     assert house.window().available  # the restarted window is live
 
-    # seed_states overrides the capture: force the control switch back on.
-    await house.restart(seed_states={house.eid("switch", "toggle_control"): "on"})
-    assert house.entity("switch", "toggle_control").state == "on"
+    # seed_states overrides the capture: force the Mode back to auto.
+    await house.restart(seed_states={house.eid("select", "mode_select"): "auto"})
+    assert house.switch("toggle_control") == "on"
     await house.teardown()
 
 
@@ -379,15 +393,17 @@ async def test_aux_climate_entities_wired(hass, freezer):
             "outside_temp": 28.0,
         },
     )
-    opts = house.entry.options
+    # The climate entities are recurring settings: the window resolves them.
+    opts = await house.window().settings()
     assert opts[CONF_LUX_ENTITY] == house.LUX_SENSOR
     assert opts[CONF_IRRADIANCE_ENTITY] == house.IRRADIANCE_SENSOR
     assert opts[CONF_OUTSIDETEMP_ENTITY] == house.OUTSIDE_TEMP_SENSOR
     assert house.presence_entity == "binary_sensor.sim_presence"
-    # the aux toggle switches exist for this entry
-    assert house.entity("switch", "lux") is not None
-    assert house.entity("switch", "irradiance") is not None
-    assert house.entity("switch", "outside_temperature") is not None
+    # the aux toggles are the house's switches (the window switch aliases
+    # are gone since v2.1)
+    assert house.switch("lux") is not None
+    assert house.switch("irradiance") is not None
+    assert house.switch("outside_temperature") is not None
 
     await house.advance_to("11:00")
     await house.set_lux("unavailable")  # garbage must not kill the loop

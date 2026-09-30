@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/settings/shadow.py b/custom_components/adaptive_cover/settings/shadow.py
 --- a/custom_components/adaptive_cover/settings/shadow.py
 +++ b/custom_components/adaptive_cover/settings/shadow.py
-@@ -347,7 +347,10 @@
+@@ -227,7 +227,10 @@
  ) -> tuple[str, ...]:
      """Return the options (in spec order) whose resolved value is not the legacy one."""
      return tuple(

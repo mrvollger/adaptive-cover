@@ -3,14 +3,13 @@
   "config": {
     "step": {
       "user": {
-        "title": "Add a window",
-        "description": "Pick the cover and enter the direction the window faces. Everything else has a default that you can change later in the options.",
+        "title": "Add your first window",
+        "description": "Adaptive Cover keeps every window in one house entry. Pick the cover of your first window and enter the direction the window faces; everything else has a default that you can change later. Add more windows with Add window on the Adaptive Cover integration page.",
         "sections": {
           "window": {
             "name": "Window",
             "description": "The cover and the direction the window faces are enough. Every other value has a default.",
             "data": {
-              "copy_from": "Copy from another window",
               "preset": "Start from a preset",
               "name": "Name",
               "cover_entity_id": "Cover",
@@ -29,7 +28,6 @@
               "tilt_mode": "Type of movement"
             },
             "data_description": {
-              "copy_from": "Fill this form with the settings of a window you already have (not its name or cover). Choose one and select Submit: the form comes back filled in, for you to check before you submit again.",
               "preset": "Fill in typical geometry: window height, glare zone, field of view, overhang and sun limits. Choose one and select Submit: the form comes back filled in, for you to check.",
               "name": "Leave empty to use the name of the cover.",
               "cover_entity_id": "The cover this window drives. A window drives one cover; a cover belongs to one window.",
@@ -146,6 +144,7 @@
               "temp_entity": "Inside temperature entity",
               "temp_low": "Low temperature threshold",
               "temp_high": "High temperature threshold",
+              "temp_hysteresis": "Threshold hysteresis",
               "outside_temp": "Outside temperature sensor (optional)",
               "outside_threshold": "Minimum outside temperature for summer mode",
               "presence_entity": "Presence entity (optional)",
@@ -160,6 +159,7 @@
               "climate_mode": "Use temperature, presence and weather to decide between blocking the sun and letting it in.",
               "temp_low": "Minimum comfortable temperature",
               "temp_high": "Maximum comfortable temperature",
+              "temp_hysteresis": "How far past a threshold the temperature must go before the season changes back. Stops the shades switching back and forth while the temperature hovers at a threshold. In Home Assistant's temperature unit; 0 turns it off.",
               "outside_temp": "Overrides outside temperature from weather entity if both are set",
               "presence_entity": "Entity representing room or home presence status",
               "lux_entity": "Use lux sensor to determine if cover should reduce glare in presence mode",
@@ -168,94 +168,6 @@
               "irradiance_threshold": "Threshold for irradiance sensor, above this value glare should be reduced",
               "weather_entity": "Monitors weather conditions, and outside temperature",
               "weather_state": "Choose weather conditions that indicate the possibility of direct sunlight."
-            }
-          }
-        }
-      },
-      "reconfigure": {
-        "title": "Change the window setup",
-        "description": "The settings you set once: the cover, its type and the window geometry. Everyday settings are in the options.",
-        "sections": {
-          "window": {
-            "name": "Window",
-            "description": "The cover and the direction the window faces are enough. Every other value has a default.",
-            "data": {
-              "copy_from": "Copy from another window",
-              "preset": "Start from a preset",
-              "name": "Name",
-              "cover_entity_id": "Cover",
-              "sensor_type": "Cover type",
-              "set_azimuth": "Window Azimuth",
-              "fov_left": "Field of view left",
-              "fov_right": "Field of view right",
-              "window_height": "Window Height",
-              "distance_shaded_area": "Glare Zone",
-              "overhang_depth": "Overhang depth (balcony/eave above window)",
-              "overhang_height": "Overhang height above window sill",
-              "length_awning": "Awning Span Length",
-              "angle": "Awning Angle",
-              "slat_depth": "Slat Depth",
-              "slat_distance": "Slat Spacing",
-              "tilt_mode": "Type of movement"
-            },
-            "data_description": {
-              "copy_from": "Fill this form with the settings of a window you already have (not its name or cover). Choose one and select Submit: the form comes back filled in, for you to check before you submit again.",
-              "preset": "Fill in typical geometry: window height, glare zone, field of view, overhang and sun limits. Choose one and select Submit: the form comes back filled in, for you to check.",
-              "name": "Leave empty to use the name of the cover.",
-              "cover_entity_id": "The cover this window drives. A window drives one cover; a cover belongs to one window.",
-              "sensor_type": "If you change the type, select Submit: the form comes back with the fields for that type.",
-              "set_azimuth": "The compass direction the window faces, in degrees (north 0, east 90, south 180, west 270).",
-              "fov_left": "Field of view angle to the left of the window center",
-              "fov_right": "Field of view angle to the right of the window center",
-              "window_height": "Specify window height in meters",
-              "distance_shaded_area": "Objects within this distance from the cover receive direct sunlight. Distance measured horizontally from the bottom of the cover when the cover is fully extended.",
-              "length_awning": "Total span length in meters",
-              "angle": "Angle of the attached awning measured perpendicular from the wall to the ground",
-              "slat_depth": "Depth of each individual slat in centimeters",
-              "slat_distance": "Vertical distance between two slats in centimeters",
-              "tilt_mode": "Choose the type of movement"
-            }
-          },
-          "sun_limits": {
-            "name": "Sun limits and blind spot",
-            "description": "Optional. Ignore the sun below or above an elevation, or behind an object outside the window.",
-            "data": {
-              "min_elevation": "Minimum Elevation of the sun",
-              "max_elevation": "Maximum Elevation of the sun",
-              "blind_spot": "Setup Blindspot",
-              "blind_spot_left": "Start blindspot left",
-              "blind_spot_right": "End blindspot right",
-              "blind_spot_elevation": "Blindspot elevation"
-            },
-            "data_description": {
-              "blind_spot_left": "Left edge of the blindspot",
-              "blind_spot_right": "Right edge of the blindspot",
-              "blind_spot_elevation": "Any value equal or less is considered within the blindspot. Useful if the sun can shine over the object in the blindspot"
-            }
-          },
-          "advanced": {
-            "name": "Advanced",
-            "description": "Optional. Position limits, covers that report positions inverted, custom position mapping, transparent blinds and privacy after dusk.",
-            "data": {
-              "max_position": "Maximum Position",
-              "enable_max_position": "Only force the maximum position when the sun is in front of the window",
-              "min_position": "Minimum Position",
-              "enable_min_position": "Only force the minimum position when the sun is in front of the window",
-              "inverse_state": "Inverse the state (needed for some covers that don't follow HA guidelines)",
-              "interp": "Set custom open/close positions for My Cover, if it doesn't fully operate at 0-100%",
-              "interp_start": "Value where opening starts",
-              "interp_end": "Value where closing starts",
-              "interp_list": "List of interpolation",
-              "interp_list_new": "Custom interpolation list",
-              "privacy_mode": "Close after dusk for privacy",
-              "transparent_blind": "Transparent blind"
-            },
-            "data_description": {
-              "max_position": "Maximum adjustable cover position as a percentage",
-              "min_position": "Minimum adjustable cover position as a percentage",
-              "interp_list": "List of interpolation values, where 0 is fully closed and 100 is fully open",
-              "interp_list_new": "Custom range of interpolation values, where the beginning should represent closed and the end open",
-              "transparent_blind": "The blind is transparent and should always close fully when summer mode is active"
             }
           }
         }
@@ -269,91 +181,36 @@
       "cover_type_unsupported": "This cover cannot move the way this cover type needs (a position for a vertical or horizontal blind, a tilt for a tilted blind). Choose another cover type or another cover."
     },
     "abort": {
-      "already_configured": "A window for this cover already exists.",
-      "reconfigure_successful": "The window setup is saved.",
-      "not_a_window": "This is the house entry. It has no window setup to change."
+      "already_configured": "A window for this cover already exists."
     }
   },
   "options": {
     "step": {
-      "init": {
+      "house": {
+        "title": "House settings",
+        "description": "The settings every window starts from. A floor, a room or a window can have its own value (the room and floor sheets on the Shades dashboard, or a window's exceptions). Changes apply at once.",
         "sections": {
-          "covers_geometry": {
-            "name": "Cover & window geometry",
-            "description": "Cover entity, window height, shaded depth, overhang depth/height, eye height, seat distance.",
+          "house_positions": {
+            "name": "Positions and glare",
+            "description": "Default and sunset positions, sun offsets and the glare zone.",
             "data": {
-              "cover_entity_id": "Cover",
-              "window_height": "Window Height",
-              "distance_shaded_area": "Glare Zone",
-              "overhang_depth": "Overhang depth (balcony/eave above window)",
-              "overhang_height": "Overhang height above window sill",
               "eye_height": "Eye height (glare protection)",
               "occupied_distance": "Distance from window to nearest seat",
-              "length_awning": "Awning Span Length",
-              "angle": "Awning Angle",
-              "slat_depth": "Slat Depth",
-              "slat_distance": "Slat Spacing",
-              "tilt_mode": "Type of movement"
-            },
-            "data_description": {
-              "cover_entity_id": "The cover this window drives. A window drives one cover; a cover belongs to one window.",
-              "window_height": "Specify window height in meters",
-              "distance_shaded_area": "Objects within this distance from the cover receive direct sunlight. Distance measured horizontally from the bottom of the cover when the cover is fully extended.",
-              "length_awning": "Total span length in meters",
-              "angle": "Angle of the attached awning measured perpendicular from the wall to the ground",
-              "slat_depth": "Depth of each individual slat in centimeters",
-              "slat_distance": "Vertical distance between two slats in centimeters",
-              "tilt_mode": "Choose the type of movement"
-            }
-          },
-          "sun_behavior": {
-            "name": "Sun tracking & positions",
-            "description": "Azimuth, field of view, default/sunset positions, min/max limits, elevation range, blind spot, interpolation.",
-            "data": {
-              "set_azimuth": "Window Azimuth",
               "default_percentage": "Default Position",
-              "max_position": "Maximum Position",
-              "enable_max_position": "Only force the maximum position when the sun is in front of the window",
-              "min_position": "Minimum Position",
-              "enable_min_position": "Only force the minimum position when the sun is in front of the window",
-              "min_elevation": "Minimum Elevation of the sun",
-              "max_elevation": "Maximum Elevation of the sun",
-              "fov_left": "Field of view left",
-              "fov_right": "Field of view right",
               "sunset_position": "Sunset Position",
               "sunset_offset": "Sunset Offset",
-              "sunrise_offset": "Sunrise Offset",
-              "inverse_state": "Inverse the state (needed for some covers that don't follow HA guidelines)",
-              "blind_spot": "Setup Blindspot",
-              "interp": "Set custom open/close positions for My Cover, if it doesn't fully operate at 0-100%",
-              "blind_spot_left": "Start blindspot left",
-              "blind_spot_right": "End blindspot right",
-              "blind_spot_elevation": "Blindspot elevation",
-              "interp_start": "Value where opening starts",
-              "interp_end": "Value where closing starts",
-              "interp_list": "List of interpolation",
-              "interp_list_new": "Custom interpolation list"
+              "sunrise_offset": "Sunrise Offset"
             },
             "data_description": {
-              "set_azimuth": "Adjust Azimuth",
               "default_percentage": "Default cover position as a percentage",
-              "max_position": "Maximum adjustable cover position as a percentage",
-              "min_position": "Minimum adjustable cover position as a percentage",
-              "fov_left": "Field of view angle to the left of the window center",
-              "fov_right": "Field of view angle to the right of the window center",
               "sunset_position": "Position to switch to after sunset",
               "sunset_offset": "Offset (±) from sunset time in minutes",
-              "sunrise_offset": "Offset (±) from sunrise time in minutes",
-              "blind_spot_left": "Left edge of the blindspot",
-              "blind_spot_right": "Right edge of the blindspot",
-              "blind_spot_elevation": "Any value equal or less is considered within the blindspot. Useful if the sun can shine over the object in the blindspot",
-              "interp_list": "List of interpolation values, where 0 is fully closed and 100 is fully open",
-              "interp_list_new": "Custom range of interpolation values, where the beginning should represent closed and the end open"
+              "sunrise_offset": "Offset (±) from sunrise time in minutes"
             }
           },
-          "automation_timing": {
-            "name": "Automation, privacy & quiet hours",
-            "description": "Position/time deltas, start/end times, manual override handling, privacy after dusk, quiet hours, move cap.",
+          "house_schedule": {
+            "name": "Schedule and manual moves",
+            "description": "When the shades move, how often, and how a manual move holds them.",
             "data": {
               "delta_position": "Minimum position adjustment",
               "delta_time": "Minimum interval between position changes",
@@ -366,12 +223,12 @@
               "end_time": "End time",
               "end_entity": "Entity indicating ending time",
               "return_sunset": "Always adjust position to sunset default at end time; Useful if end time is before actual sunset",
-              "privacy_mode": "Close after dusk for privacy",
               "privacy_offset": "Privacy: minutes after sunset",
               "privacy_position": "Privacy position",
               "quiet_start": "Quiet hours start (no tracking moves)",
               "quiet_end": "Quiet hours end",
-              "max_moves_hour": "Max tracking moves per hour"
+              "max_moves_hour": "Max tracking moves per hour",
+              "manual_detection": "Manual-move detection"
             },
             "data_description": {
               "delta_position": "Minimum change in position required before adjusting the cover's position",
@@ -381,15 +238,15 @@
               "manual_override_duration": "The duration of manual control before resetting to automatic control",
               "manual_override_reset": "Option to reset the manual override duration after each manual adjustment; if disabled, the duration only applies to the first manual adjustment",
               "end_time": "Ending time for each day; after this time, the cover will remain stationary",
-              "end_entity": "Entity representing ending time state, overriding the fixed end time set above. Useful for automating the end time with an entity"
+              "end_entity": "Entity representing ending time state, overriding the fixed end time set above. Useful for automating the end time with an entity",
+              "manual_detection": "Detect a person moving a shade and hold it (rooms can turn it off)."
             }
           },
-          "climate": {
-            "name": "Climate & weather",
-            "description": "Enable climate mode here; temperature thresholds, presence, lux/irradiance, weather conditions appear once enabled.",
+          "house_climate": {
+            "name": "Climate",
+            "description": "Climate control, its sensors and thresholds, and the sunny weather states.",
             "data": {
-              "climate_mode": "Climate Mode",
-              "temp_entity": "Inside temperature entity",
+              "climate_mode": "Climate mode",
               "temp_low": "Low temperature threshold",
               "temp_high": "High temperature threshold",
               "outside_temp": "Outside temperature sensor (optional)",
@@ -399,12 +256,16 @@
               "lux_threshold": "Lux threshold",
               "irradiance_entity": "Irradiance sensor (optional)",
               "irradiance_threshold": "Irradiance threshold",
-              "transparent_blind": "Transparent blind",
               "weather_entity": "Weather entity (optional)",
-              "weather_state": "Weather Conditions"
+              "weather_state": "Weather Conditions",
+              "climate_on": "Climate",
+              "use_outside_temp": "Use outside temperature",
+              "use_lux": "Use lux sensor",
+              "use_irradiance": "Use irradiance sensor",
+              "temp_hysteresis": "Threshold hysteresis"
             },
             "data_description": {
-              "climate_mode": "Configure variables for climate mode",
+              "climate_mode": "Use temperature, presence and weather to decide between blocking the sun and letting it in.",
               "temp_low": "Minimum comfortable temperature",
               "temp_high": "Maximum comfortable temperature",
               "outside_temp": "Overrides outside temperature from weather entity if both are set",
@@ -413,19 +274,20 @@
               "lux_threshold": "Threshold for lux sensor, above this value glare should be reduced",
               "irradiance_entity": "Use irradiance sensor to determine if cover should reduce glare in presence mode",
               "irradiance_threshold": "Threshold for irradiance sensor, above this value glare should be reduced",
-              "transparent_blind": "The blind is transparent and should always close fully when summer mode is active",
               "weather_entity": "Monitors weather conditions, and outside temperature",
-              "weather_state": "Choose weather conditions that indicate the possibility of direct sunlight."
+              "weather_state": "Choose weather conditions that indicate the possibility of direct sunlight.",
+              "climate_on": "Climate control for the house: rooms and floors can turn it off.",
+              "use_outside_temp": "The season follows the outside temperature instead of the indoor one.",
+              "use_lux": "Dim light (below the lux threshold) counts as not sunny.",
+              "use_irradiance": "Low irradiance (below its threshold) counts as not sunny.",
+              "temp_hysteresis": "How far past a threshold the temperature must go before the season changes back. Stops the shades switching back and forth while the temperature hovers at a threshold. In Home Assistant's temperature unit; 0 turns it off."
             }
           }
         }
       }
     },
     "error": {
-      "max_elevation_not_above_min": "The maximum elevation must be greater than the minimum elevation.",
-      "blind_spot_right_not_above_left": "The blind spot's right edge must be greater than its left edge.",
-      "interp_lists_differ": "The custom interpolation list must have as many values as the interpolation list.",
-      "cover_in_use": "Another window already drives this cover. A cover belongs to one window."
+      "house_setting_invalid": "A value cannot be saved for the house. Check the log for which one."
     }
   },
   "selector": {
@@ -474,20 +336,20 @@
       "occupied_distance": {
         "name": "Seat distance from window"
       },
-      "overhang_depth": {
-        "name": "Overhang depth"
-      },
-      "overhang_height": {
-        "name": "Overhang height above sill"
-      },
       "privacy_offset": {
         "name": "Privacy delay after sunset"
       },
       "temp_high": {
         "name": "Cooling threshold"
       },
+      "temp_hysteresis": {
+        "name": "Threshold hysteresis"
+      },
       "temp_low": {
         "name": "Heating threshold"
+      },
+      "manual_override_duration": {
+        "name": "Manual override duration"
       }
     },
     "select": {
@@ -530,44 +392,417 @@
       }
     },
     "switch": {
-      "control_toggle": {
-        "name": "Automatic control"
+      "climate_on": {
+        "name": "Climate"
       },
-      "irradiance_toggle": {
-        "name": "Irradiance"
+      "manual_detection": {
+        "name": "Manual-move detection"
       },
-      "lux_toggle": {
-        "name": "Lux"
+      "use_outside_temp": {
+        "name": "Use outside temperature"
       },
-      "manual_toggle": {
-        "name": "Manual override detection"
+      "use_lux": {
+        "name": "Use lux sensor"
       },
-      "switch_mode": {
-        "name": "Climate mode"
+      "use_irradiance": {
+        "name": "Use irradiance sensor"
+      }
+    },
+    "time": {
+      "end_time": {
+        "name": "End time"
       },
-      "temp_toggle": {
-        "name": "Outside temperature"
+      "quiet_start": {
+        "name": "Quiet hours start"
+      },
+      "quiet_end": {
+        "name": "Quiet hours end"
       }
     }
   },
   "issues": {
-    "split_window": {
-      "title": "{window} drives several covers",
-      "fix_flow": {
-        "step": {
-          "confirm": {
-            "title": "Split {window} into one window per cover",
-            "description": "A window drives one cover. {window} keeps {kept}. New windows with a copy of its settings: {new_windows}. Removed because another window drives them: {dropped}."
+    "window_setup_failed": {
+      "title": "{window} could not be set up",
+      "description": "The window {window} failed to set up ({error}). The rest of the house keeps running, and the window tries again every minute. Check its cover and its settings (Change window)."
+    },
+    "consolidate_first": {
+      "title": "Consolidate the house on Adaptive Cover 2.0 first",
+      "description": "Adaptive Cover 2.1 runs windows only inside the house entry, and {count} window entries are not in it yet: {windows}. Until they are, no shade moves.\n\n1. In HACS, open Adaptive Cover, select Redownload and pick version 2.0.x. Restart Home Assistant.\n2. Take a backup, then fix the \"Move your windows into the house\" repair (Settings > System > Repairs).\n3. Update to 2.1 again and restart.\n\nAdaptive Cover 2.1 changes nothing until then, so version 2.0.x finds every entry as it was."
+    }
+  },
+  "config_subentries": {
+    "window": {
+      "initiate_flow": {
+        "user": "Add window",
+        "reconfigure": "Change window"
+      },
+      "entry_type": "Window",
+      "step": {
+        "user": {
+          "title": "Add a window",
+          "description": "Pick the cover and enter the direction the window faces. Everything else has a default that you can change later in the options.",
+          "sections": {
+            "window": {
+              "name": "Window",
+              "description": "The cover and the direction the window faces are enough. Every other value has a default.",
+              "data": {
+                "copy_from": "Copy from another window",
+                "preset": "Start from a preset",
+                "name": "Name",
+                "cover_entity_id": "Cover",
+                "sensor_type": "Cover type",
+                "set_azimuth": "Window Azimuth",
+                "fov_left": "Field of view left",
+                "fov_right": "Field of view right",
+                "window_height": "Window Height",
+                "distance_shaded_area": "Glare Zone",
+                "overhang_depth": "Overhang depth (balcony/eave above window)",
+                "overhang_height": "Overhang height above window sill",
+                "length_awning": "Awning Span Length",
+                "angle": "Awning Angle",
+                "slat_depth": "Slat Depth",
+                "slat_distance": "Slat Spacing",
+                "tilt_mode": "Type of movement"
+              },
+              "data_description": {
+                "copy_from": "Fill this form with the settings of a window you already have (not its name or cover). Choose one and select Submit: the form comes back filled in, for you to check before you submit again.",
+                "preset": "Fill in typical geometry: window height, glare zone, field of view, overhang and sun limits. Choose one and select Submit: the form comes back filled in, for you to check.",
+                "name": "Leave empty to use the name of the cover.",
+                "cover_entity_id": "The cover this window drives. A window drives one cover; a cover belongs to one window.",
+                "sensor_type": "If you change the type, select Submit: the form comes back with the fields for that type.",
+                "set_azimuth": "The compass direction the window faces, in degrees (north 0, east 90, south 180, west 270).",
+                "fov_left": "Field of view angle to the left of the window center",
+                "fov_right": "Field of view angle to the right of the window center",
+                "window_height": "Specify window height in meters",
+                "distance_shaded_area": "Objects within this distance from the cover receive direct sunlight. Distance measured horizontally from the bottom of the cover when the cover is fully extended.",
+                "length_awning": "Total span length in meters",
+                "angle": "Angle of the attached awning measured perpendicular from the wall to the ground",
+                "slat_depth": "Depth of each individual slat in centimeters",
+                "slat_distance": "Vertical distance between two slats in centimeters",
+                "tilt_mode": "Choose the type of movement"
+              }
+            },
+            "sun_limits": {
+              "name": "Sun limits and blind spot",
+              "description": "Optional. Ignore the sun below or above an elevation, or behind an object outside the window.",
+              "data": {
+                "min_elevation": "Minimum Elevation of the sun",
+                "max_elevation": "Maximum Elevation of the sun",
+                "blind_spot": "Setup Blindspot",
+                "blind_spot_left": "Start blindspot left",
+                "blind_spot_right": "End blindspot right",
+                "blind_spot_elevation": "Blindspot elevation"
+              },
+              "data_description": {
+                "blind_spot_left": "Left edge of the blindspot",
+                "blind_spot_right": "Right edge of the blindspot",
+                "blind_spot_elevation": "Any value equal or less is considered within the blindspot. Useful if the sun can shine over the object in the blindspot"
+              }
+            },
+            "advanced": {
+              "name": "Advanced",
+              "description": "Optional. Position limits, covers that report positions inverted, custom position mapping, transparent blinds and privacy after dusk.",
+              "data": {
+                "max_position": "Maximum Position",
+                "enable_max_position": "Only force the maximum position when the sun is in front of the window",
+                "min_position": "Minimum Position",
+                "enable_min_position": "Only force the minimum position when the sun is in front of the window",
+                "inverse_state": "Inverse the state (needed for some covers that don't follow HA guidelines)",
+                "interp": "Set custom open/close positions for My Cover, if it doesn't fully operate at 0-100%",
+                "interp_start": "Value where opening starts",
+                "interp_end": "Value where closing starts",
+                "interp_list": "List of interpolation",
+                "interp_list_new": "Custom interpolation list",
+                "privacy_mode": "Close after dusk for privacy",
+                "transparent_blind": "Transparent blind"
+              },
+              "data_description": {
+                "max_position": "Maximum adjustable cover position as a percentage",
+                "min_position": "Minimum adjustable cover position as a percentage",
+                "interp_list": "List of interpolation values, where 0 is fully closed and 100 is fully open",
+                "interp_list_new": "Custom range of interpolation values, where the beginning should represent closed and the end open",
+                "transparent_blind": "The blind is transparent and should always close fully when summer mode is active"
+              }
+            },
+            "exceptions_positions": {
+              "name": "Exceptions for this window: positions and glare",
+              "description": "House-wide settings. Change them only if this window needs other values. Until house settings are available, each window keeps its own copy, which starts at the defaults.",
+              "data": {
+                "eye_height": "Eye height (glare protection)",
+                "occupied_distance": "Distance from window to nearest seat",
+                "default_percentage": "Default Position",
+                "sunset_position": "Sunset Position",
+                "sunset_offset": "Sunset Offset",
+                "sunrise_offset": "Sunrise Offset"
+              },
+              "data_description": {
+                "default_percentage": "Default cover position as a percentage",
+                "sunset_position": "Position to switch to after sunset",
+                "sunset_offset": "Offset (±) from sunset time in minutes",
+                "sunrise_offset": "Offset (±) from sunrise time in minutes"
+              }
+            },
+            "exceptions_schedule": {
+              "name": "Exceptions for this window: schedule and manual moves",
+              "description": "House-wide settings. Change them only if this window needs other values. Until house settings are available, each window keeps its own copy, which starts at the defaults.",
+              "data": {
+                "delta_position": "Minimum position adjustment",
+                "delta_time": "Minimum interval between position changes",
+                "start_time": "Starting time",
+                "start_entity": "Entity indicating starting time",
+                "manual_override_duration": "Duration of manual override",
+                "manual_override_reset": "Reset Manual override duration",
+                "manual_threshold": "Manual override threshold",
+                "manual_ignore_intermediate": "Ignore intermediate positions during manual override (opening and closing)",
+                "end_time": "End time",
+                "end_entity": "Entity indicating ending time",
+                "return_sunset": "Always adjust position to sunset default at end time; Useful if end time is before actual sunset",
+                "privacy_offset": "Privacy: minutes after sunset",
+                "privacy_position": "Privacy position",
+                "quiet_start": "Quiet hours start (no tracking moves)",
+                "quiet_end": "Quiet hours end",
+                "max_moves_hour": "Max tracking moves per hour"
+              },
+              "data_description": {
+                "delta_position": "Minimum change in position required before adjusting the cover's position",
+                "delta_time": "Minimum time interval between position changes; minimum is 2 minutes",
+                "start_time": "Starting time for each day; before this time, the cover will remain stationary",
+                "start_entity": "Entity representing starting time state, overriding the fixed start time set above. Useful for automating the start time with an entity",
+                "manual_override_duration": "The duration of manual control before resetting to automatic control",
+                "manual_override_reset": "Option to reset the manual override duration after each manual adjustment; if disabled, the duration only applies to the first manual adjustment",
+                "end_time": "Ending time for each day; after this time, the cover will remain stationary",
+                "end_entity": "Entity representing ending time state, overriding the fixed end time set above. Useful for automating the end time with an entity"
+              }
+            },
+            "exceptions_climate": {
+              "name": "Exceptions for this window: climate",
+              "description": "House-wide settings. Change them only if this window needs other values. Until house settings are available, each window keeps its own copy, which starts at the defaults.",
+              "data": {
+                "climate_mode": "Climate mode",
+                "temp_entity": "Inside temperature entity",
+                "temp_low": "Low temperature threshold",
+                "temp_high": "High temperature threshold",
+                "outside_temp": "Outside temperature sensor (optional)",
+                "outside_threshold": "Minimum outside temperature for summer mode",
+                "presence_entity": "Presence entity (optional)",
+                "lux_entity": "Lux sensor (optional)",
+                "lux_threshold": "Lux threshold",
+                "irradiance_entity": "Irradiance sensor (optional)",
+                "irradiance_threshold": "Irradiance threshold",
+                "weather_entity": "Weather entity (optional)",
+                "weather_state": "Weather Conditions",
+                "temp_hysteresis": "Threshold hysteresis"
+              },
+              "data_description": {
+                "climate_mode": "Use temperature, presence and weather to decide between blocking the sun and letting it in.",
+                "temp_low": "Minimum comfortable temperature",
+                "temp_high": "Maximum comfortable temperature",
+                "outside_temp": "Overrides outside temperature from weather entity if both are set",
+                "presence_entity": "Entity representing room or home presence status",
+                "lux_entity": "Use lux sensor to determine if cover should reduce glare in presence mode",
+                "lux_threshold": "Threshold for lux sensor, above this value glare should be reduced",
+                "irradiance_entity": "Use irradiance sensor to determine if cover should reduce glare in presence mode",
+                "irradiance_threshold": "Threshold for irradiance sensor, above this value glare should be reduced",
+                "weather_entity": "Monitors weather conditions, and outside temperature",
+                "weather_state": "Choose weather conditions that indicate the possibility of direct sunlight.",
+                "temp_hysteresis": "How far past a threshold the temperature must go before the season changes back. Stops the shades switching back and forth while the temperature hovers at a threshold. In Home Assistant's temperature unit; 0 turns it off."
+              }
+            }
           }
         },
-        "abort": {
-          "entry_removed": "This window no longer exists."
+        "reconfigure": {
+          "title": "Change the window",
+          "description": "The settings you set once (the cover, its type and the window geometry) and, in the collapsed sections, this window's exceptions to the house settings. Clear an exception, or set it to the house value, to inherit it again.",
+          "sections": {
+            "window": {
+              "name": "Window",
+              "description": "The cover and the direction the window faces are enough. Every other value has a default.",
+              "data": {
+                "copy_from": "Copy from another window",
+                "preset": "Start from a preset",
+                "name": "Name",
+                "cover_entity_id": "Cover",
+                "sensor_type": "Cover type",
+                "set_azimuth": "Window Azimuth",
+                "fov_left": "Field of view left",
+                "fov_right": "Field of view right",
+                "window_height": "Window Height",
+                "distance_shaded_area": "Glare Zone",
+                "overhang_depth": "Overhang depth (balcony/eave above window)",
+                "overhang_height": "Overhang height above window sill",
+                "length_awning": "Awning Span Length",
+                "angle": "Awning Angle",
+                "slat_depth": "Slat Depth",
+                "slat_distance": "Slat Spacing",
+                "tilt_mode": "Type of movement"
+              },
+              "data_description": {
+                "copy_from": "Fill this form with the settings of a window you already have (not its name or cover). Choose one and select Submit: the form comes back filled in, for you to check before you submit again.",
+                "preset": "Fill in typical geometry: window height, glare zone, field of view, overhang and sun limits. Choose one and select Submit: the form comes back filled in, for you to check.",
+                "name": "Leave empty to use the name of the cover.",
+                "cover_entity_id": "The cover this window drives. A window drives one cover; a cover belongs to one window.",
+                "sensor_type": "If you change the type, select Submit: the form comes back with the fields for that type.",
+                "set_azimuth": "The compass direction the window faces, in degrees (north 0, east 90, south 180, west 270).",
+                "fov_left": "Field of view angle to the left of the window center",
+                "fov_right": "Field of view angle to the right of the window center",
+                "window_height": "Specify window height in meters",
+                "distance_shaded_area": "Objects within this distance from the cover receive direct sunlight. Distance measured horizontally from the bottom of the cover when the cover is fully extended.",
+                "length_awning": "Total span length in meters",
+                "angle": "Angle of the attached awning measured perpendicular from the wall to the ground",
+                "slat_depth": "Depth of each individual slat in centimeters",
+                "slat_distance": "Vertical distance between two slats in centimeters",
+                "tilt_mode": "Choose the type of movement"
+              }
+            },
+            "sun_limits": {
+              "name": "Sun limits and blind spot",
+              "description": "Optional. Ignore the sun below or above an elevation, or behind an object outside the window.",
+              "data": {
+                "min_elevation": "Minimum Elevation of the sun",
+                "max_elevation": "Maximum Elevation of the sun",
+                "blind_spot": "Setup Blindspot",
+                "blind_spot_left": "Start blindspot left",
+                "blind_spot_right": "End blindspot right",
+                "blind_spot_elevation": "Blindspot elevation"
+              },
+              "data_description": {
+                "blind_spot_left": "Left edge of the blindspot",
+                "blind_spot_right": "Right edge of the blindspot",
+                "blind_spot_elevation": "Any value equal or less is considered within the blindspot. Useful if the sun can shine over the object in the blindspot"
+              }
+            },
+            "advanced": {
+              "name": "Advanced",
+              "description": "Optional. Position limits, covers that report positions inverted, custom position mapping, transparent blinds and privacy after dusk.",
+              "data": {
+                "max_position": "Maximum Position",
+                "enable_max_position": "Only force the maximum position when the sun is in front of the window",
+                "min_position": "Minimum Position",
+                "enable_min_position": "Only force the minimum position when the sun is in front of the window",
+                "inverse_state": "Inverse the state (needed for some covers that don't follow HA guidelines)",
+                "interp": "Set custom open/close positions for My Cover, if it doesn't fully operate at 0-100%",
+                "interp_start": "Value where opening starts",
+                "interp_end": "Value where closing starts",
+                "interp_list": "List of interpolation",
+                "interp_list_new": "Custom interpolation list",
+                "privacy_mode": "Close after dusk for privacy",
+                "transparent_blind": "Transparent blind"
+              },
+              "data_description": {
+                "max_position": "Maximum adjustable cover position as a percentage",
+                "min_position": "Minimum adjustable cover position as a percentage",
+                "interp_list": "List of interpolation values, where 0 is fully closed and 100 is fully open",
+                "interp_list_new": "Custom range of interpolation values, where the beginning should represent closed and the end open",
+                "transparent_blind": "The blind is transparent and should always close fully when summer mode is active"
+              }
+            },
+            "exceptions_positions": {
+              "name": "Exceptions for this window: positions and glare",
+              "description": "House-wide settings. Change them only if this window needs other values. Until house settings are available, each window keeps its own copy, which starts at the defaults.",
+              "data": {
+                "eye_height": "Eye height (glare protection)",
+                "occupied_distance": "Distance from window to nearest seat",
+                "default_percentage": "Default Position",
+                "sunset_position": "Sunset Position",
+                "sunset_offset": "Sunset Offset",
+                "sunrise_offset": "Sunrise Offset"
+              },
+              "data_description": {
+                "default_percentage": "Default cover position as a percentage",
+                "sunset_position": "Position to switch to after sunset",
+                "sunset_offset": "Offset (±) from sunset time in minutes",
+                "sunrise_offset": "Offset (±) from sunrise time in minutes"
+              }
+            },
+            "exceptions_schedule": {
+              "name": "Exceptions for this window: schedule and manual moves",
+              "description": "House-wide settings. Change them only if this window needs other values. Until house settings are available, each window keeps its own copy, which starts at the defaults.",
+              "data": {
+                "delta_position": "Minimum position adjustment",
+                "delta_time": "Minimum interval between position changes",
+                "start_time": "Starting time",
+                "start_entity": "Entity indicating starting time",
+                "manual_override_duration": "Duration of manual override",
+                "manual_override_reset": "Reset Manual override duration",
+                "manual_threshold": "Manual override threshold",
+                "manual_ignore_intermediate": "Ignore intermediate positions during manual override (opening and closing)",
+                "end_time": "End time",
+                "end_entity": "Entity indicating ending time",
+                "return_sunset": "Always adjust position to sunset default at end time; Useful if end time is before actual sunset",
+                "privacy_offset": "Privacy: minutes after sunset",
+                "privacy_position": "Privacy position",
+                "quiet_start": "Quiet hours start (no tracking moves)",
+                "quiet_end": "Quiet hours end",
+                "max_moves_hour": "Max tracking moves per hour"
+              },
+              "data_description": {
+                "delta_position": "Minimum change in position required before adjusting the cover's position",
+                "delta_time": "Minimum time interval between position changes; minimum is 2 minutes",
+                "start_time": "Starting time for each day; before this time, the cover will remain stationary",
+                "start_entity": "Entity representing starting time state, overriding the fixed start time set above. Useful for automating the start time with an entity",
+                "manual_override_duration": "The duration of manual control before resetting to automatic control",
+                "manual_override_reset": "Option to reset the manual override duration after each manual adjustment; if disabled, the duration only applies to the first manual adjustment",
+                "end_time": "Ending time for each day; after this time, the cover will remain stationary",
+                "end_entity": "Entity representing ending time state, overriding the fixed end time set above. Useful for automating the end time with an entity"
+              }
+            },
+            "exceptions_climate": {
+              "name": "Exceptions for this window: climate",
+              "description": "House-wide settings. Change them only if this window needs other values. Until house settings are available, each window keeps its own copy, which starts at the defaults.",
+              "data": {
+                "climate_mode": "Climate mode",
+                "temp_entity": "Inside temperature entity",
+                "temp_low": "Low temperature threshold",
+                "temp_high": "High temperature threshold",
+                "outside_temp": "Outside temperature sensor (optional)",
+                "outside_threshold": "Minimum outside temperature for summer mode",
+                "presence_entity": "Presence entity (optional)",
+                "lux_entity": "Lux sensor (optional)",
+                "lux_threshold": "Lux threshold",
+                "irradiance_entity": "Irradiance sensor (optional)",
+                "irradiance_threshold": "Irradiance threshold",
+                "weather_entity": "Weather entity (optional)",
+                "weather_state": "Weather Conditions",
+                "temp_hysteresis": "Threshold hysteresis"
+              },
+              "data_description": {
+                "climate_mode": "Use temperature, presence and weather to decide between blocking the sun and letting it in.",
+                "temp_low": "Minimum comfortable temperature",
+                "temp_high": "Maximum comfortable temperature",
+                "outside_temp": "Overrides outside temperature from weather entity if both are set",
+                "presence_entity": "Entity representing room or home presence status",
+                "lux_entity": "Use lux sensor to determine if cover should reduce glare in presence mode",
+                "lux_threshold": "Threshold for lux sensor, above this value glare should be reduced",
+                "irradiance_entity": "Use irradiance sensor to determine if cover should reduce glare in presence mode",
+                "irradiance_threshold": "Threshold for irradiance sensor, above this value glare should be reduced",
+                "weather_entity": "Monitors weather conditions, and outside temperature",
+                "weather_state": "Choose weather conditions that indicate the possibility of direct sunlight.",
+                "temp_hysteresis": "How far past a threshold the temperature must go before the season changes back. Stops the shades switching back and forth while the temperature hovers at a threshold. In Home Assistant's temperature unit; 0 turns it off."
+              }
+            }
+          }
         }
+      },
+      "error": {
+        "max_elevation_not_above_min": "The maximum elevation must be greater than the minimum elevation.",
+        "blind_spot_right_not_above_left": "The blind spot's right edge must be greater than its left edge.",
+        "interp_lists_differ": "The custom interpolation list must have as many values as the interpolation list.",
+        "cover_in_use": "Another window already drives this cover. A cover belongs to one window.",
+        "cover_type_unsupported": "This cover cannot move the way this cover type needs (a position for a vertical or horizontal blind, a tilt for a tilted blind). Choose another cover type or another cover."
+      },
+      "abort": {
+        "already_configured": "A window for this cover already exists.",
+        "reconfigure_successful": "The window is saved.",
+        "consolidate_first": "The house is not updated to 2.1 yet: see Settings > System > Repairs."
       }
+    }
+  },
+  "exceptions": {
+    "consolidate_first": {
+      "message": "{count} window entries are not in the house yet. Install Adaptive Cover 2.0.x, fix its \"Move your windows into the house\" repair, then update again (see Settings > System > Repairs)."
     },
-    "settings_differ": {
-      "title": "{window}: the house settings differ from its own settings",
-      "description": "{window} still runs on its own settings. The house, floor and room settings that will replace them in a later version give a different value for: {keys}. Nothing changes yet. Set these options back, or tell the maintainer, so the switch-over keeps the window as it is. This notice goes away when the values agree again."
+    "house_not_migrated": {
+      "message": "The house entry (version {version}) could not be updated to 2.1; the log says why. Start Adaptive Cover 2.0.x once so every window is set up, then update again."
     }
   }
 }

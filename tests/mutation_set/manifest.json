@@ -292,11 +292,11 @@
  },
  {
   "id": "M34",
-  "file": "custom_components/adaptive_cover/calculation.py",
-  "function": "ClimateCoverData.is_summer",
+  "file": "custom_components/adaptive_cover/engine/season.py",
+  "function": "decide_season",
   "description": "summer test temp > temp_high -> temp > temp_low",
   "patch": "M34_season_boundary_low.patch",
-  "deviation": "roadmap filed this under engine/evaluate.py; the season threshold comparison actually lives in calculation.ClimateCoverData."
+  "deviation": "roadmap filed this under engine/evaluate.py; the season threshold comparison lived in calculation.ClimateCoverData until the temp_hysteresis option moved it to engine/season.decide_season."
  },
  {
   "id": "M35",
@@ -330,11 +330,11 @@
  },
  {
   "id": "M39",
-  "file": "custom_components/adaptive_cover/__init__.py",
-  "function": "handle_change_settings",
+  "file": "custom_components/adaptive_cover/layers.py",
+  "function": "window_record_after",
   "description": "options merge inverted: existing options win over the requested changes",
   "patch": "M39_settings_merge_inverted.patch",
-  "deviation": "roadmap filed this under coordinator.py 'config merge'; no literal data/options merge exists there \u2014 the real options-over-changes merge lives in __init__.handle_change_settings."
+  "deviation": "roadmap filed this under coordinator.py 'config merge'; no literal data/options merge exists there. Since the P5 flip the merge of a window's edits (change_settings, Reconfigure) into its stored settings lives in layers.window_record_after (v2.1: the window's geometry)."
  },
  {
   "id": "M40",
@@ -393,11 +393,32 @@
   "patch": "M48_hold_ignores_its_duration.patch"
  },
  {
-  "id": "M51",
-  "file": "custom_components/adaptive_cover/runtime/mode.py",
-  "function": "restored_mode",
-  "description": "Mode restore ignores the legacy switch fallback: a window whose Toggle Control was off comes back in auto on the first boot after the flip",
-  "patch": "M51_mode_restore_ignores_switch_fallback.patch"
+  "id": "M90",
+  "file": "custom_components/adaptive_cover/layers.py",
+  "function": "effective_settings",
+  "description": "the runtime ignores a window's own values: every window acts on what it would inherit from its area, floor and the house",
+  "patch": "M90_runtime_ignores_window_override.patch"
+ },
+ {
+  "id": "M91",
+  "file": "custom_components/adaptive_cover/layers.py",
+  "function": "async_set_profile",
+  "description": "set_profile writes the wrong level: a floor's values are stored as the area of that id and an area's as the floor",
+  "patch": "M91_set_profile_writes_the_wrong_level.patch"
+ },
+ {
+  "id": "M92",
+  "file": "custom_components/adaptive_cover/house_settings.py",
+  "function": "HouseSetting._store",
+  "description": "a house entity's change is stored but not propagated: the windows act on it only at their next refresh",
+  "patch": "M92_house_setting_change_does_not_propagate.patch"
+ },
+ {
+  "id": "M93",
+  "file": "custom_components/adaptive_cover/layers.py",
+  "function": "profile_values",
+  "description": "a floor's stored values are read from the area of that id and an area's from the floor (get_profile answers with the wrong profile)",
+  "patch": "M93_get_profile_reads_the_wrong_level.patch"
  },
  {
   "id": "M70",
@@ -405,13 +426,6 @@
   "function": "differing_keys",
   "description": "the shadow comparison ignores a differing key: only one-time options are compared, so a changed recurring option raises no repair issue",
   "patch": "M70_shadow_diff_ignores_layered_key.patch"
- },
- {
-  "id": "M71",
-  "file": "custom_components/adaptive_cover/shadow.py",
-  "function": "_switch_state",
-  "description": "the lift ignores a switch's restored state and records its initial state instead (a switch the user turned on is lost at the flip)",
-  "patch": "M71_switch_capture_ignores_restored_state.patch"
  },
  {
   "id": "M52",
@@ -490,6 +504,104 @@
   "function": "WindowForm.submit",
   "description": "picking another cover type saves at once instead of showing its geometry",
   "patch": "M83_cover_type_switch_not_shown.patch"
+ },
+ {
+  "id": "M102",
+  "file": "custom_components/adaptive_cover/house.py",
+  "function": "HouseRuntime.async_sync",
+  "description": "the house's update listener rebuilds every window, not only the changed one (plan M49)",
+  "patch": "M102_listener_rebuilds_every_window.patch"
+ },
+ {
+  "id": "M130",
+  "file": "custom_components/adaptive_cover/upgrade.py",
+  "function": "async_migrate_house",
+  "description": "the house migrates while window entries are left: v2.0.x can no longer finish the consolidation",
+  "patch": "M130_migrates_with_window_entries_left.patch"
+ },
+ {
+  "id": "M131",
+  "file": "custom_components/adaptive_cover/upgrade.py",
+  "function": "_is_alias_row",
+  "description": "the migration keeps the window switch aliases' registry rows",
+  "patch": "M131_switch_alias_rows_kept.patch"
+ },
+ {
+  "id": "M132",
+  "file": "custom_components/adaptive_cover/upgrade.py",
+  "function": "house_options_3_1",
+  "description": "the house keeps the hub's leftover options (its geometry and its group listing its own cover)",
+  "patch": "M132_hub_leftovers_kept.patch"
+ },
+ {
+  "id": "M133",
+  "file": "custom_components/adaptive_cover/settings/window_record.py",
+  "function": "record_from_v2_0",
+  "description": "a migrated window loses its own overrides: it acts on what it would inherit (an edit made since the P5 flip is lost)",
+  "patch": "M133_migrated_window_loses_overrides.patch"
+ },
+ {
+  "id": "M134",
+  "file": "custom_components/adaptive_cover/settings/window_record.py",
+  "function": "GEOMETRY_KEYS",
+  "description": "the window record drops a one-time setting (max_elevation): a window forgets its sun limit",
+  "patch": "M134_record_drops_a_one_time_setting.patch"
+ },
+ {
+  "id": "M135",
+  "file": "custom_components/adaptive_cover/upgrade.py",
+  "function": "async_check_consolidate_issue",
+  "description": "a house with window entries raises no consolidate_first repair issue (nothing says why no shade moves)",
+  "patch": "M135_no_consolidate_first_nag.patch"
+ },
+ {
+  "id": "M136",
+  "file": "custom_components/adaptive_cover/upgrade.py",
+  "function": "async_migrate_house",
+  "description": "the migration leaves the house at major version 2: v2.0.x would load a house it cannot read",
+  "patch": "M136_house_stays_2_x.patch"
+ },
+ {
+  "id": "M137",
+  "file": "custom_components/adaptive_cover/windows.py",
+  "function": "WindowEntry.name",
+  "description": "a window's device takes its subentry title instead of its stored name (a window whose title was renamed gets a new device name)",
+  "patch": "M137_device_takes_the_title.patch"
+ },
+ {
+  "id": "M138",
+  "file": "custom_components/adaptive_cover/house.py",
+  "function": "HouseRuntime.async_sync",
+  "description": "a change of only a window's overrides rebuilds the window (its entities drop out for a moment) instead of re-reading them",
+  "patch": "M138_overrides_change_rebuilds_the_window.patch"
+ },
+ {
+  "id": "M139",
+  "file": "custom_components/adaptive_cover/layers.py",
+  "function": "new_window_record",
+  "description": "a new window gets no overrides: it acts on what it inherits, not on the values it was created with",
+  "patch": "M139_new_window_without_overrides.patch"
+ },
+ {
+  "id": "M140",
+  "file": "custom_components/adaptive_cover/layers.py",
+  "function": "initial_house_options",
+  "description": "a fresh install's house stores nothing: its first window's values give way to the spec defaults",
+  "patch": "M140_fresh_house_stores_nothing.patch"
+ },
+ {
+  "id": "M110",
+  "file": "custom_components/adaptive_cover/engine/season.py",
+  "function": "_margin",
+  "description": "the season's hysteresis is applied in the wrong direction: a season is left h before its threshold and entered h before it (it flips sooner, not later)",
+  "patch": "M110_season_hysteresis_wrong_direction.patch"
+ },
+ {
+  "id": "M111",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "AdaptiveDataUpdateCoordinator._climate_data",
+  "description": "the previous season is ignored: every climate decision uses the plain threshold rule, whatever the hysteresis",
+  "patch": "M111_season_previous_ignored.patch"
  },
  {
   "id": "M120",

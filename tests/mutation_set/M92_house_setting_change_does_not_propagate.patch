@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/house_settings.py b/custom_components/adaptive_cover/house_settings.py
+--- a/custom_components/adaptive_cover/house_settings.py
++++ b/custom_components/adaptive_cover/house_settings.py
+@@ -163,7 +163,7 @@
+         except ProfileError as err:
+             raise HomeAssistantError(str(err)) from err
+         self.async_write_ha_state()
+-        await async_settings_changed(self.hass)
++        pass
+ 
+     async def async_added_to_hass(self) -> None:
+         """Follow the layered settings (a profile, a lift)."""

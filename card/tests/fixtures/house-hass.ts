@@ -391,3 +391,320 @@ export function p5House(fx: HouseFixture, hass: HouseTestHass = fx.hass): HouseT
   }
   return { ...out, entities } as HouseTestHass;
 }
+
+export const HUB_DEVICE = 'd256706cec9e1aab19295d3b7c942f4c';
+export const HUB_CLIMATE_SWITCH = 'switch.adaptive_cover_all_climate';
+
+// ------------------------------------------------ v1.20 layered settings
+
+const UP = 'sensor.upstairs_indoor_temperature';
+const DOWN = 'sensor.downstairs_indoor_temperature';
+const INERT = { outside_threshold: null, lux_threshold: null, irradiance_threshold: null };
+
+/**
+ * The live house's layered settings after the lift, as the integration
+ * stores them: a copy of HOUSE / FLOORS / AREAS / WINDOWS in
+ * tests/test_shadow_settings.py (°F). WINDOWS: title → [window overrides,
+ * legacy values].
+ */
+export const LIVE_LAYERS = {
+  house: {
+    climate_mode: true,
+    eye_height: 1.2,
+    occupied_distance: 2.0,
+    default_percentage: 99,
+    sunset_position: 0,
+    sunset_offset: 20,
+    sunrise_offset: 0,
+    delta_position: 1,
+    delta_time: 2,
+    start_time: '00:00:00',
+    start_entity: null,
+    manual_override_duration: { hours: 2, minutes: 0, seconds: 0 },
+    manual_override_reset: false,
+    manual_threshold: null,
+    manual_ignore_intermediate: false,
+    end_time: '00:00:00',
+    end_entity: null,
+    return_sunset: false,
+    privacy_offset: null,
+    privacy_position: null,
+    quiet_start: null,
+    quiet_end: null,
+    max_moves_hour: null,
+    temp_low: 72,
+    temp_high: 75,
+    outside_temp: null,
+    outside_threshold: 0,
+    presence_entity: null,
+    lux_entity: null,
+    lux_threshold: 1000,
+    irradiance_entity: null,
+    irradiance_threshold: 300,
+    weather_entity: 'weather.forecast_home_2',
+    weather_state: ['sunny', 'partlycloudy', 'clear', 'windy', 'windy-variant'],
+    climate_on: true,
+    use_outside_temp: false,
+    use_lux: true,
+    use_irradiance: true,
+    manual_detection: true,
+  } as Record<string, unknown>,
+  floors: {
+    ground: { temp_entity: DOWN },
+    main: { temp_entity: DOWN },
+    upstairs: { temp_entity: UP },
+  } as Record<string, Record<string, unknown>>,
+  areas: {
+    den: { default_percentage: 97, sunset_offset: -30, start_time: '06:00:00' },
+    family_room: { sunrise_offset: -20 },
+    master_bedroom: { sunrise_offset: -20 },
+    office: {
+      default_percentage: 100,
+      sunset_offset: 0,
+      sunrise_offset: 45,
+      start_time: '07:30:00',
+    },
+    sw_bedroom: { default_percentage: 97, sunset_offset: -30, start_time: '06:00:00' },
+  } as Record<string, Record<string, unknown>>,
+  windows: {
+    'Master trap': [{}, { sunset_offset: 15, sunrise_offset: 0 }],
+    'Office north': [{}, {}],
+    'Office east': [{}, {}],
+    'Office door': [{}, {}],
+    "Leanne's door": [{ sunset_position: 5 }, INERT],
+    "Leanne's south": [{}, INERT],
+    'Den south': [{}, INERT],
+    'Den southwest': [{ sunset_position: 5 }, INERT],
+    'Den west': [{ sunset_position: 5 }, INERT],
+    'Master east': [{}, {}],
+    'Family east': [{}, {}],
+    'Master door': [{ default_percentage: 100, sunset_position: 3 }, {}],
+    'Family door': [{ default_percentage: 100, sunset_position: 3 }, {}],
+    'Master south': [{}, { privacy_offset: 30, privacy_position: 0 }],
+    'Family south': [{}, { privacy_offset: 30, privacy_position: 0 }],
+  } as Record<string, [Record<string, unknown>, Record<string, unknown>]>,
+};
+
+/** The room (area) of each window of the live house. */
+export const WINDOW_AREA: Record<string, string> = {
+  'Master trap': 'master_bedroom',
+  'Master east': 'master_bedroom',
+  'Master door': 'master_bedroom',
+  'Master south': 'master_bedroom',
+  'Office north': 'office',
+  'Office east': 'office',
+  'Office door': 'office',
+  "Leanne's door": 'sw_bedroom',
+  "Leanne's south": 'sw_bedroom',
+  'Family east': 'family_room',
+  'Family door': 'family_room',
+  'Family south': 'family_room',
+  'Den south': 'den',
+  'Den southwest': 'den',
+  'Den west': 'den',
+};
+
+/** The house device's setting entities (house_settings.py), by setting key. */
+export const HUB_SETTINGS: Record<string, string> = {
+  climate_on: HUB_CLIMATE_SWITCH,
+  manual_detection: 'switch.adaptive_cover_all_manual_move_detection',
+  use_outside_temp: 'switch.adaptive_cover_all_use_outside_temperature',
+  use_lux: 'switch.adaptive_cover_all_use_lux_sensor',
+  use_irradiance: 'switch.adaptive_cover_all_use_irradiance_sensor',
+  temp_low: 'number.adaptive_cover_all_heating_threshold',
+  temp_high: 'number.adaptive_cover_all_cooling_threshold',
+  manual_override_duration: 'number.adaptive_cover_all_manual_override_duration',
+  eye_height: 'number.adaptive_cover_all_eye_height',
+  occupied_distance: 'number.adaptive_cover_all_seat_distance_from_window',
+  privacy_offset: 'number.adaptive_cover_all_privacy_delay_after_sunset',
+  end_time: 'time.adaptive_cover_all_end_time',
+  quiet_start: 'time.adaptive_cover_all_quiet_hours_start',
+  quiet_end: 'time.adaptive_cover_all_quiet_hours_end',
+};
+
+// What each house number shows (house_settings.py: the thresholds in HA's
+// unit, the duration in minutes, the privacy delay's default while unset).
+const HUB_NUMBER_STATES: Record<string, [string, string]> = {
+  temp_low: ['72.0', '°F'],
+  temp_high: ['75.0', '°F'],
+  manual_override_duration: ['120.0', 'min'],
+  eye_height: ['1.2', 'm'],
+  occupied_distance: ['2.0', 'm'],
+  privacy_offset: ['30.0', 'min'],
+};
+
+const has = (o: Record<string, unknown>, k: string) => Object.prototype.hasOwnProperty.call(o, k);
+
+/** One window's layered resolution: {key: [value, source]} for every key a
+ *  layer sets (settings/resolve.py order: legacy, window, area, floor, house). */
+function resolveWindow(title: string): Record<string, [unknown, string]> {
+  const area = WINDOW_AREA[title];
+  const floor = (FLOORS_AREAS.areas.find((a) => a.area_id === area)?.floor_id ?? '') as string;
+  const [values, legacy] = LIVE_LAYERS.windows[title];
+  const layers: Array<[Record<string, unknown>, string]> = [
+    [legacy, 'legacy'],
+    [values, 'window'],
+    [LIVE_LAYERS.areas[area] ?? {}, 'area'],
+    [LIVE_LAYERS.floors[floor] ?? {}, 'floor'],
+    [LIVE_LAYERS.house, 'house'],
+  ];
+  const out: Record<string, [unknown, string]> = {};
+  for (const [layer, source] of layers) {
+    for (const key of Object.keys(layer)) {
+      if (!has(out, key)) out[key] = [layer[key], source];
+    }
+  }
+  return out;
+}
+
+export interface LayeredOptions {
+  /**
+   * How `adaptive_cover.get_profile` answers: `ok` (default), `not_lifted`
+   * (a validation error: the house has no layered settings yet) or
+   * `missing` (an integration without the service).
+   */
+  profiles?: 'ok' | 'not_lifted' | 'missing';
+}
+
+type WsError = { code: string; message: string };
+const validation = (message: string): WsError => ({ code: 'service_validation_error', message });
+
+/**
+ * The v1.20 entity surface projected onto the house (default: the P5
+ * projection of the fixture):
+ *
+ * - the house device's setting entities (switches, numbers and times, °F;
+ *   no quiet hours: their times are unknown);
+ * - each Position sensor's `provenance` ({option: area | floor | window |
+ *   legacy}, like `provenance_summary`) and its resolved `default`,
+ *   `sunset_default` and `sunset_offset`;
+ * - `adaptive_cover.get_profile` over the websocket `call_service` with
+ *   `return_response`, answering like profile_service.py.
+ */
+export function layeredHouse(
+  fx: HouseFixture,
+  hass: HouseTestHass = p5House(fx),
+  opts: LayeredOptions = {},
+): HouseTestHass {
+  const changes: Record<string, { state?: string; attributes?: Record<string, unknown> }> = {};
+  for (const e of WINDOW_ENTRIES) {
+    const resolved = resolveWindow(e.title);
+    const provenance: Record<string, string> = {};
+    for (const [key, [, source]] of Object.entries(resolved)) {
+      if (source !== 'house') provenance[key] = source;
+    }
+    changes[fx.eid(e.title, 'position')] = {
+      attributes: {
+        provenance,
+        default: resolved.default_percentage[0],
+        sunset_default: resolved.sunset_position[0],
+        sunset_offset: resolved.sunset_offset[0],
+      },
+    };
+  }
+  for (const [key, id] of Object.entries(HUB_SETTINGS)) {
+    if (id.startsWith('switch.')) {
+      changes[id] = { state: LIVE_LAYERS.house[key] ? 'on' : 'off', attributes: {} };
+    } else if (id.startsWith('time.')) {
+      const value = LIVE_LAYERS.house[key];
+      changes[id] = { state: typeof value === 'string' ? value : 'unknown', attributes: {} };
+    } else {
+      const [state, unit] = HUB_NUMBER_STATES[key];
+      changes[id] = { state, attributes: { unit_of_measurement: unit, mode: 'box' } };
+    }
+  }
+  const out = withStates(hass, changes);
+  const entities = { ...out.entities };
+  for (const [key, id] of Object.entries(HUB_SETTINGS)) {
+    entities[id] = {
+      entity_id: id,
+      platform: 'adaptive_cover',
+      device_id: HUB_DEVICE,
+      area_id: null,
+      translation_key: key,
+    };
+  }
+
+  const mode = opts.profiles ?? 'ok';
+  const clone = <T>(v: T): T => structuredClone(v);
+  const getProfile = (data: { scope?: string; id?: string }): unknown => {
+    if (mode === 'missing') {
+      throw { code: 'not_found', message: 'Service adaptive_cover.get_profile not found.' };
+    }
+    if (data.scope === 'window') {
+      const entry = WINDOW_ENTRIES.find(
+        (e) => e.entry_id === data.id || fx.eid(e.title, 'mode') === data.id,
+      );
+      if (!entry) throw validation(`No Adaptive Cover window '${data.id}'`);
+      const resolved = resolveWindow(entry.title);
+      const area = WINDOW_AREA[entry.title];
+      const [values, legacy] = LIVE_LAYERS.windows[entry.title];
+      return {
+        scope: 'window',
+        id: entry.entry_id,
+        title: entry.title,
+        area_id: area,
+        floor_id: FLOORS_AREAS.areas.find((a) => a.area_id === area)?.floor_id ?? null,
+        overrides: { values: clone(values), legacy: clone(legacy) },
+        settings: Object.fromEntries(Object.entries(resolved).map(([k, [v]]) => [k, clone(v)])),
+        provenance: Object.fromEntries(Object.entries(resolved).map(([k, [, src]]) => [k, src])),
+      };
+    }
+    if (mode === 'not_lifted') throw validation('the house has no layered settings yet');
+    const house = { values: clone(LIVE_LAYERS.house), temperature_unit: '°F' };
+    if (!data.scope) {
+      return { house, floors: clone(LIVE_LAYERS.floors), areas: clone(LIVE_LAYERS.areas) };
+    }
+    if (data.scope === 'house') return { scope: 'house', id: null, ...house };
+    const bucket = data.scope === 'floor' ? LIVE_LAYERS.floors : LIVE_LAYERS.areas;
+    const known =
+      data.scope === 'floor'
+        ? FLOORS_AREAS.floors.some((f) => f.floor_id === data.id)
+        : FLOORS_AREAS.areas.some((a) => a.area_id === data.id);
+    if (!known) throw validation(`no ${data.scope} '${data.id}'`);
+    return { scope: data.scope, id: data.id, values: clone(bucket[data.id!] ?? {}) };
+  };
+
+  const baseWS = hass.callWS;
+  const callWS = vi.fn(
+    async (msg: {
+      type: string;
+      domain?: string;
+      service?: string;
+      service_data?: { scope?: string; id?: string };
+      return_response?: boolean;
+    }) => {
+      if (
+        msg.type === 'call_service' &&
+        msg.domain === 'adaptive_cover' &&
+        msg.service === 'get_profile'
+      ) {
+        if (!msg.return_response) throw validation('get_profile only returns a response');
+        return { context: { id: 'ctx' }, response: getProfile(msg.service_data ?? {}) };
+      }
+      return baseWS(msg);
+    },
+  );
+  return {
+    ...out,
+    entities,
+    callWS,
+    config: { ...out.config, unit_system: { temperature: '°F', length: 'mi' } },
+  } as unknown as HouseTestHass;
+}
+
+/** The house's Climate switch on the hub device (P5 flip), in `state`. */
+export function withHubClimate(hass: HouseTestHass, state: 'on' | 'off'): HouseTestHass {
+  const out = withStates(hass, { [HUB_CLIMATE_SWITCH]: { state, attributes: {} } });
+  const entities = {
+    ...out.entities,
+    [HUB_CLIMATE_SWITCH]: {
+      entity_id: HUB_CLIMATE_SWITCH,
+      platform: 'adaptive_cover',
+      device_id: HUB_DEVICE,
+      area_id: null,
+      translation_key: 'climate_on',
+    },
+  };
+  return { ...out, entities } as HouseTestHass;
+}

@@ -1,44 +1,18 @@
-"""Switch platform for the Adaptive Cover integration.
+"""Switch platform: the house's toggles on the hub device.
 
-P5 flip: the six per-window switches are hidden aliases (removed in P8).
-They stay registered and enabled for one release so existing automations
-keep working:
-
-- **Toggle Control** writes through to the window's Mode (on: automatic
-  control on, off: Mode off) and mirrors it. It no longer restores
-  itself: the Mode select restores the control state, and reads this
-  switch's last state on its first boot after the flip.
-- **Manual Override, Climate Mode, Outside Temperature, Lux,
-  Irradiance** keep restoring and setting the window's ``ControlState``
-  (detection, climate, the outside temperature / lux / irradiance
-  use-flags); migration 1.4 recorded their states as the house settings
-  ``manual_detection``, ``climate_on``, ``use_outside_temp``, ``use_lux``
-  and ``use_irradiance``.
+Climate, manual-move detection and the outside-temperature, lux and
+irradiance use-flags (``house_settings.py``). Windows have no switches:
+their six switch aliases (hidden since the P5 flip) are gone since v2.1,
+and migration 3.1 removes their registry rows (``upgrade.py``). A window's
+control state is its Mode select; the toggles are house settings that a
+room (and for some, a window) may override.
 """
 
 from __future__ import annotations
 
-from typing import Any
-
-from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import STATE_ON
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-
-from .const import (
-    CONF_CLIMATE_MODE,
-    CONF_ENTITIES,
-    CONF_IRRADIANCE_ENTITY,
-    CONF_LUX_ENTITY,
-    CONF_OUTSIDETEMP_ENTITY,
-    CONF_WEATHER_ENTITY,
-)
-from .coordinator import AdaptiveDataUpdateCoordinator
-from .entity_shared import adaptive_cover_device_info
-from .entity_surface import apply_surface, window_surface
 
 
 async def async_setup_entry(
@@ -46,166 +20,8 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the demo switch platform."""
-    coordinator: AdaptiveDataUpdateCoordinator = config_entry.runtime_data
+    """Set up the house's switches."""
+    from .hub import hub_device_info
+    from .house_settings import house_switches
 
-    manual_switch = AdaptiveCoverSwitch(
-        config_entry,
-        config_entry.entry_id,
-        "Manual Override",
-        True,
-        "manual_toggle",
-        coordinator,
-    )
-    control_switch = ControlAliasSwitch(
-        config_entry,
-        config_entry.entry_id,
-        "Toggle Control",
-        True,
-        "control_toggle",
-        coordinator,
-    )
-    climate_switch = AdaptiveCoverSwitch(
-        config_entry,
-        config_entry.entry_id,
-        "Climate Mode",
-        True,
-        "switch_mode",
-        coordinator,
-    )
-    temp_switch = AdaptiveCoverSwitch(
-        config_entry,
-        config_entry.entry_id,
-        "Outside Temperature",
-        False,
-        "temp_toggle",
-        coordinator,
-    )
-    lux_switch = AdaptiveCoverSwitch(
-        config_entry,
-        config_entry.entry_id,
-        "Lux",
-        True,
-        "lux_toggle",
-        coordinator,
-    )
-    irradiance_switch = AdaptiveCoverSwitch(
-        config_entry,
-        config_entry.entry_id,
-        "Irradiance",
-        True,
-        "irradiance_toggle",
-        coordinator,
-    )
-
-    climate_mode = config_entry.options.get(CONF_CLIMATE_MODE)
-    weather_entity = config_entry.options.get(CONF_WEATHER_ENTITY)
-    sensor_entity = config_entry.options.get(CONF_OUTSIDETEMP_ENTITY)
-    lux_entity = config_entry.options.get(CONF_LUX_ENTITY)
-    irradiance_entity = config_entry.options.get(CONF_IRRADIANCE_ENTITY)
-    switches = []
-
-    if len(config_entry.options.get(CONF_ENTITIES)) >= 1:
-        switches = [control_switch, manual_switch]
-
-    if climate_mode:
-        switches.append(climate_switch)
-        if weather_entity or sensor_entity:
-            switches.append(temp_switch)
-        if lux_entity:
-            switches.append(lux_switch)
-        if irradiance_entity:
-            switches.append(irradiance_switch)
-
-    async_add_entities(switches)
-
-
-class AdaptiveCoverSwitch(
-    CoordinatorEntity[AdaptiveDataUpdateCoordinator], SwitchEntity, RestoreEntity
-):
-    """Representation of a adaptive cover switch."""
-
-    _attr_has_entity_name = True
-    _attr_should_poll = False
-
-    def __init__(
-        self,
-        config_entry,
-        unique_id: str,
-        switch_name: str,
-        initial_state: bool,
-        key: str,
-        coordinator: AdaptiveDataUpdateCoordinator,
-        device_class: SwitchDeviceClass | None = None,
-    ) -> None:
-        """Initialize the switch."""
-        super().__init__(coordinator=coordinator)
-        self._name = config_entry.data["name"]
-        self._state: bool | None = None
-        self._key = key
-        self._switch_name = switch_name
-        self._attr_device_class = device_class
-        self._initial_state = initial_state
-        self._attr_unique_id = f"{unique_id}_{switch_name}"
-        apply_surface(self, window_surface("switch", switch_name))
-        self._device_id = unique_id
-        self._attr_device_info = adaptive_cover_device_info(config_entry)
-
-        self.coordinator.logger.debug("Setup switch")
-
-    async def async_turn_on(self, **kwargs: Any) -> None:
-        """Turn the switch on."""
-        self.coordinator.logger.debug("Turning on")
-        self._attr_is_on = True
-        setattr(self.coordinator, self._key, True)
-        await self.coordinator.async_refresh()
-        self.schedule_update_ha_state()
-
-    async def async_turn_off(self, **kwargs: Any) -> None:
-        """Turn the device off."""
-        self.coordinator.logger.debug("Turning off")
-        self._attr_is_on = False
-        setattr(self.coordinator, self._key, False)
-        await self.coordinator.async_refresh()
-        self.schedule_update_ha_state()
-
-    async def async_added_to_hass(self) -> None:
-        """Call when entity about to be added to hass."""
-        last_state = await self.async_get_last_state()
-        self.coordinator.logger.debug("%s: last state is %s", self._name, last_state)
-        if (last_state is None and self._initial_state) or (
-            last_state is not None and last_state.state == STATE_ON
-        ):
-            await self.async_turn_on(added=True)
-        else:
-            await self.async_turn_off(added=True)
-
-
-class ControlAliasSwitch(AdaptiveCoverSwitch):
-    """Toggle Control: a hidden alias of the window's Mode (P5 flip).
-
-    On is automatic control (Mode auto or hold), off is Mode off. Turning
-    it on works as it always did: control comes back on and the target
-    position goes out now to every cover that is not held. Turning it off
-    is Mode off (every hold ends). Its state follows the Mode select; it
-    does not restore itself.
-    """
-
-    @property
-    def is_on(self) -> bool | None:
-        """Automatic control (unknown until the Mode select restores)."""
-        return self.coordinator.control_toggle
-
-    async def async_turn_on(self, **kwargs: Any) -> None:
-        """Automatic control on (Mode auto; holds are kept)."""
-        await self.coordinator.modes.enable()
-        self.async_write_ha_state()
-
-    async def async_turn_off(self, **kwargs: Any) -> None:
-        """Mode off."""
-        await self.coordinator.modes.off()
-        self.async_write_ha_state()
-
-    async def async_added_to_hass(self) -> None:
-        """Follow the coordinator; the Mode select restores the state."""
-        await super(AdaptiveCoverSwitch, self).async_added_to_hass()
+    async_add_entities(house_switches(hass, hub_device_info()))
