@@ -1,101 +1,94 @@
 {
- "generated": "2026-09-30T01:31:02+00:00",
+ "generated": "2026-09-30T15:09:15+00:00",
  "tiers": [
-  "simulation",
   "characterization",
   "engine",
+  "simulation",
   "entity"
  ],
  "aborted": false,
  "timing": {
-  "started": "2026-09-30T01:29:09+00:00",
-  "jobs": 1,
+  "started": "2026-09-30T14:47:43+00:00",
+  "jobs": 8,
   "cpu_count": 16,
   "xdist": {
-   "simulation": "-n auto",
    "characterization": null,
-   "engine": "-n auto",
-   "entity": "-n auto"
+   "engine": "-n 2",
+   "simulation": "-n 2",
+   "entity": "-n 2"
   },
   "scheduled_longest_first": true,
-  "wall_seconds": 113.2
+  "wall_seconds": 1292.1
  },
  "control": {
   "id": "CONTROL",
   "tiers": {
-   "simulation": {
-    "caught": false,
-    "exit_code": 0,
-    "timeout": false,
-    "seconds": 12.0,
-    "tail": "........................................................................ [ 52%]\n..................................................................       [100%]\n138 passed in 10.64s"
-   },
    "characterization": {
     "caught": false,
     "exit_code": 0,
     "timeout": false,
-    "seconds": 2.7,
-    "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 1.80s"
+    "seconds": 3.2,
+    "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.18s"
    },
    "engine": {
     "caught": false,
     "exit_code": 0,
     "timeout": false,
-    "seconds": 6.2,
-    "tail": "........................................................................ [ 96%]\n..............................................                           [100%]\n1414 passed in 4.89s"
+    "seconds": 11.8,
+    "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.06s"
+   },
+   "simulation": {
+    "caught": false,
+    "exit_code": 0,
+    "timeout": false,
+    "seconds": 63.9,
+    "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 62.14s (0:01:02)"
    },
    "entity": {
     "caught": false,
     "exit_code": 0,
     "timeout": false,
-    "seconds": 36.3,
-    "tail": "........................................................................ [ 99%]\n..                                                                       [100%]\n1874 passed in 34.92s"
+    "seconds": 160.4,
+    "tail": "........................................................................ [ 96%]\n.............................................................            [100%]\n1933 passed in 158.57s (0:02:38)"
    }
   },
   "caught_by": [],
   "missed_by": [
-   "simulation",
    "characterization",
    "engine",
+   "simulation",
    "entity"
   ],
-  "seconds": 57.2
+  "seconds": 239.6
  },
  "results": {
-  "M120": {
-   "id": "M120",
+  "M64": {
+   "id": "M64",
    "file": "custom_components/adaptive_cover/coordinator.py",
-   "function": "async_check_cover_state_change",
-   "description": "a cover's first state (its integration started late) does not trigger a decision",
-   "patch": "M120_late_cover_waits_for_sun.patch",
+   "function": "climate_mode_data",
+   "description": "control_method keeps the last season when neither winter nor summer applies",
+   "patch": "M64_control_method_sticks.patch",
    "tiers": {
-    "simulation": {
-     "caught": true,
-     "exit_code": 2,
-     "timeout": false,
-     "seconds": 9.3,
-     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 45 passed in 8.03s"
-    },
     "characterization": {
      "caught": false,
      "exit_code": 0,
      "timeout": false,
-     "seconds": 2.7,
-     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 1.80s"
+     "seconds": 3.2,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.18s"
     },
     "engine": {
      "caught": false,
      "exit_code": 0,
      "timeout": false,
-     "seconds": 6.3,
-     "tail": "........................................................................ [ 96%]\n..............................................                           [100%]\n1414 passed in 4.97s"
+     "seconds": 11.7,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.08s"
     },
-    "entity": {
-     "caught": false,
-     "exit_code": 0,
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
      "timeout": false,
-     "seconds": 37.4,
-     "tail": "........................................................................ [ 99%]\n..                                                                       [100%]\n1874 passed in 36.00s"
+     "seconds": 55.9,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 124 passed in 54.28s"
     }
    },
    "caught_by": [
@@ -103,16 +96,2565 @@
    ],
    "missed_by": [
     "characterization",
-    "engine",
+    "engine"
+   ],
+   "skipped": [
     "entity"
    ],
-   "seconds": 55.8
+   "seconds": 71.1
+  },
+  "M09": {
+   "id": "M09",
+   "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+   "function": "CommandTracker.is_own_landing",
+   "description": "<= TARGET_TOLERANCE -> > (own landings latch as manual)",
+   "patch": "M09_own_landing_tolerance_flip.patch",
+   "tiers": {
+    "characterization": {
+     "caught": true,
+     "exit_code": 1,
+     "timeout": false,
+     "seconds": 3.0,
+     "tail": "FAILED tests/characterization/test_service_calls.py::test_regression_1b2b668_override_visible_same_cycle - assert False is True\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 231 passed in 2.04s"
+    }
+   },
+   "caught_by": [
+    "characterization"
+   ],
+   "missed_by": [],
+   "skipped": [
+    "engine",
+    "simulation",
+    "entity"
+   ],
+   "seconds": 3.3
+  },
+  "M10": {
+   "id": "M10",
+   "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+   "function": "CommandTracker.release_if_against",
+   "description": "expected opening/closing swapped in the travel-window direction check",
+   "patch": "M10_travel_direction_swap.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.2,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.17s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.8,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.03s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 15.6,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 26 passed in 14.05s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 30.9
+  },
+  "M13": {
+   "id": "M13",
+   "file": "custom_components/adaptive_cover/runtime/shade_config.py",
+   "function": "ControlState.clears_overrides",
+   "description": "swap the None (restart: preserve) and False (toggle-off: clear) branches",
+   "patch": "M13_toggle_none_false_branch_swap.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.1,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.16s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.8,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.11s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 33.9,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 2 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n2 failed, 72 passed in 32.33s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 49.2
+  },
+  "M27": {
+   "id": "M27",
+   "file": "custom_components/adaptive_cover/runtime/shade_config.py",
+   "function": "_sunrise_offset",
+   "description": "sunrise-offset fallback falls back to 0 instead of sunset_offset",
+   "patch": "M27_sunrise_fallback_zero.patch",
+   "deviation": "roadmap filed this under engine/geometry.py; the fallback actually lives in runtime/shade_config._sunrise_offset (moved there from coordinator.common_data in P3, ledger L0017).",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.1,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.17s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.7,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.13s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 63.8,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 61.93s (0:01:01)"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 160.6,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 353 passed in 158.73s (0:02:38)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 239.5
+  },
+  "M28": {
+   "id": "M28",
+   "file": "custom_components/adaptive_cover/runtime/shade_config.py",
+   "function": "CoverGeometry.from_options",
+   "description": "'offset or DEFAULT' coercion so privacy_offset=0 becomes 30",
+   "patch": "M28_privacy_offset_or_coercion.patch",
+   "deviation": "roadmap filed this under engine/geometry.py; the None-check actually lives in runtime/shade_config.CoverGeometry.from_options (moved there from coordinator._apply_extended_config in P3, ledger L0017).",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.1,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.18s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.8,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.11s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 64.0,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 62.18s (0:01:02)"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 160.1,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 359 passed in 158.36s (0:02:38)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 239.4
+  },
+  "M39": {
+   "id": "M39",
+   "file": "custom_components/adaptive_cover/layers.py",
+   "function": "window_record_after",
+   "description": "options merge inverted: existing options win over the requested changes",
+   "patch": "M39_settings_merge_inverted.patch",
+   "deviation": "roadmap filed this under coordinator.py 'config merge'; no literal data/options merge exists there. Since the P5 flip the merge of a window's edits (change_settings, Reconfigure) into its stored settings lives in layers.window_record_after (v2.1: the window's geometry).",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.1,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.17s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.8,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.11s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 16.6,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 19 passed in 15.09s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 32.0
+  },
+  "M43": {
+   "id": "M43",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_set_manual_position",
+   "description": "tilt entries routed to set_cover_position instead of set_cover_tilt_position",
+   "patch": "M43_tilt_routed_to_position.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 5.0,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.98s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.6,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.01s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 14.7,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 18 passed in 13.03s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 31.4
+  },
+  "M47": {
+   "id": "M47",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_handle_state_change",
+   "description": "gates ignore Mode off: the sun-tracking path moves a window whose Mode is off",
+   "patch": "M47_gates_ignore_mode_off.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.2,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.01s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.6,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.78s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 33.1,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 64 passed in 31.31s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 50.0
+  },
+  "M90": {
+   "id": "M90",
+   "file": "custom_components/adaptive_cover/layers.py",
+   "function": "effective_settings",
+   "description": "the runtime ignores a window's own values: every window acts on what it would inherit from its area, floor and the house",
+   "patch": "M90_runtime_ignores_window_override.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.2,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.03s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.5,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.72s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 4.6,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 2 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n2 failed in 2.81s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 21.4
+  },
+  "M91": {
+   "id": "M91",
+   "file": "custom_components/adaptive_cover/layers.py",
+   "function": "async_set_profile",
+   "description": "set_profile writes the wrong level: a floor's values are stored as the area of that id and an area's as the floor",
+   "patch": "M91_set_profile_writes_the_wrong_level.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.8,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.68s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.4,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.49s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 63.1,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 61.33s (0:01:01)"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 155.9,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1688 passed in 154.09s (0:02:34)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 236.4
+  },
+  "M93": {
+   "id": "M93",
+   "file": "custom_components/adaptive_cover/layers.py",
+   "function": "profile_values",
+   "description": "a floor's stored values are read from the area of that id and an area's from the floor (get_profile answers with the wrong profile)",
+   "patch": "M93_get_profile_reads_the_wrong_level.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.8,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.45s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.7,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.70s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 61.6,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 59.81s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 154.3,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1690 passed in 152.40s (0:02:32)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 233.5
+  },
+  "M70": {
+   "id": "M70",
+   "file": "custom_components/adaptive_cover/settings/shadow.py",
+   "function": "differing_keys",
+   "description": "the shadow comparison ignores a differing key: only one-time options are compared, so a changed recurring option raises no repair issue",
+   "patch": "M70_shadow_diff_ignores_layered_key.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 5.0,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.78s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.5,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.63s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 61.1,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 59.22s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 154.6,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1421 passed in 152.83s (0:02:32)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 233.3
+  },
+  "M56": {
+   "id": "M56",
+   "file": "custom_components/adaptive_cover/__init__.py",
+   "function": "_async_register_services",
+   "description": "change_settings validates climate thresholds in \u00b0C whatever HA's unit",
+   "patch": "M56_threshold_service_ignores_unit.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.9,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.68s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.5,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 9.61s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 58.6,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 56.83s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 157.5,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1613 passed in 155.60s (0:02:35)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 232.6
+  },
+  "M57": {
+   "id": "M57",
+   "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+   "function": "CommandTracker.adopt_late_delivery",
+   "description": "motion toward a failed-but-delivered command is never adopted as ours",
+   "patch": "M57_late_delivery_never_adopted.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.3,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.04s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.9,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.16s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 15.8,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 26 passed in 14.03s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 32.1
+  },
+  "M58": {
+   "id": "M58",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_set_manual_position",
+   "description": "a window whose cover entity no longer exists still commands it",
+   "patch": "M58_missing_cover_commanded.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.9,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.75s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.6,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 9.82s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 14.8,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 28 passed in 13.08s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 30.4
+  },
+  "M80": {
+   "id": "M80",
+   "file": "custom_components/adaptive_cover/settings/schema.py",
+   "function": "copy_from_values",
+   "description": "\"Copy from\" also copies the source window's cover (its identity)",
+   "patch": "M80_copy_from_copies_the_cover.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.7,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.48s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 9.5,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 7.83s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 47.3,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 45.76s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 172.8,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1414 passed in 170.97s (0:02:50)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 233.3
+  },
+  "M81": {
+   "id": "M81",
+   "file": "custom_components/adaptive_cover/settings/schema.py",
+   "function": "setup_section",
+   "description": "recurring settings other than climate land in the one-time sections",
+   "patch": "M81_recurring_settings_outside_exceptions.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.3,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.29s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 10.4,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 8.73s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 59.1,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 57.42s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 168.1,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1341 passed in 166.20s (0:02:46)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 241.1
+  },
+  "M82": {
+   "id": "M82",
+   "file": "custom_components/adaptive_cover/settings/schema.py",
+   "function": "_setup_marker",
+   "description": "the setup form gives no field its spec default (a new window stores None)",
+   "patch": "M82_setup_form_drops_spec_defaults.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.3,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.29s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 10.5,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 8.74s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 59.2,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 57.57s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 168.3,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1322 passed in 166.39s (0:02:46)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 241.4
+  },
+  "M83": {
+   "id": "M83",
+   "file": "custom_components/adaptive_cover/config_flow.py",
+   "function": "WindowForm.submit",
+   "description": "picking another cover type saves at once instead of showing its geometry",
+   "patch": "M83_cover_type_switch_not_shown.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.3,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.29s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 10.4,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 8.76s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 58.8,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 57.03s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 168.1,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1322 passed in 166.13s (0:02:46)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 240.8
+  },
+  "M130": {
+   "id": "M130",
+   "file": "custom_components/adaptive_cover/upgrade.py",
+   "function": "async_migrate_house",
+   "description": "the house migrates while window entries are left: v2.0.x can no longer finish the consolidation",
+   "patch": "M130_migrates_with_window_entries_left.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.9,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.65s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 10.6,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 8.80s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 63.7,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 61.91s (0:01:01)"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 166.3,
+     "tail": "........................................................................ [ 96%]\n.............................................................            [100%]\n1933 passed in 164.30s (0:02:44)"
+    }
+   },
+   "caught_by": [],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation",
+    "entity"
+   ],
+   "seconds": 244.6
+  },
+  "M131": {
+   "id": "M131",
+   "file": "custom_components/adaptive_cover/upgrade.py",
+   "function": "_is_alias_row",
+   "description": "the migration keeps the window switch aliases' registry rows",
+   "patch": "M131_switch_alias_rows_kept.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.0,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.75s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.6,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.70s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 61.6,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 59.76s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 167.3,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1899 passed in 165.26s (0:02:45)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 245.7
+  },
+  "M132": {
+   "id": "M132",
+   "file": "custom_components/adaptive_cover/upgrade.py",
+   "function": "house_options_3_1",
+   "description": "the house keeps the hub's leftover options (its geometry and its group listing its own cover)",
+   "patch": "M132_hub_leftovers_kept.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 5.0,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.75s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.5,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.60s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 61.0,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 59.10s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 168.1,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1899 passed in 165.99s (0:02:45)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 246.7
+  },
+  "M133": {
+   "id": "M133",
+   "file": "custom_components/adaptive_cover/settings/window_record.py",
+   "function": "record_from_v2_0",
+   "description": "a migrated window loses its own overrides: it acts on what it would inherit (an edit made since the P5 flip is lost)",
+   "patch": "M133_migrated_window_loses_overrides.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 5.0,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.71s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.5,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.54s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 58.3,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 56.43s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 142.5,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 2 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n2 failed, 1449 passed in 140.47s (0:02:20)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 218.4
+  },
+  "M134": {
+   "id": "M134",
+   "file": "custom_components/adaptive_cover/settings/window_record.py",
+   "function": "GEOMETRY_KEYS",
+   "description": "the window record drops a one-time setting (max_elevation): a window forgets its sun limit",
+   "patch": "M134_record_drops_a_one_time_setting.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.1,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.79s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.2,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.29s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 49.6,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 47.82s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 5.0,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 424 passed in 3.45s"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 71.0
+  },
+  "M135": {
+   "id": "M135",
+   "file": "custom_components/adaptive_cover/upgrade.py",
+   "function": "async_check_consolidate_issue",
+   "description": "a house with window entries raises no consolidate_first repair issue (nothing says why no shade moves)",
+   "patch": "M135_no_consolidate_first_nag.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.4,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.29s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 9.2,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 7.61s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 54.4,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 52.73s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 196.7,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1747 passed in 194.78s (0:03:14)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 263.8
+  },
+  "M136": {
+   "id": "M136",
+   "file": "custom_components/adaptive_cover/upgrade.py",
+   "function": "async_migrate_house",
+   "description": "the migration leaves the house at major version 2: v2.0.x would load a house it cannot read",
+   "patch": "M136_house_stays_2_x.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.6,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.47s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.5,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 9.71s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 66.9,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 65.16s (0:01:05)"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 5.8,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 242 passed in 3.88s"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 88.0
+  },
+  "M139": {
+   "id": "M139",
+   "file": "custom_components/adaptive_cover/layers.py",
+   "function": "new_window_record",
+   "description": "a new window gets no overrides: it acts on what it inherits, not on the values it was created with",
+   "patch": "M139_new_window_without_overrides.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.6,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.48s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.6,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 9.76s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 67.0,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 65.26s (0:01:05)"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 183.9,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1318 passed in 182.03s (0:03:02)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 266.2
+  },
+  "M140": {
+   "id": "M140",
+   "file": "custom_components/adaptive_cover/layers.py",
+   "function": "initial_house_options",
+   "description": "a fresh install's house stores nothing: its first window's values give way to the spec defaults",
+   "patch": "M140_fresh_house_stores_nothing.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.6,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.48s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.4,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 9.67s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 67.0,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 65.25s (0:01:05)"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 183.5,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1318 passed in 181.57s (0:03:01)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 265.7
+  },
+  "M111": {
+   "id": "M111",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "AdaptiveDataUpdateCoordinator._climate_data",
+   "description": "the previous season is ignored: every climate decision uses the plain threshold rule, whatever the hysteresis",
+   "patch": "M111_season_previous_ignored.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.3,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.00s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.9,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.90s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 64.4,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 134 passed in 62.53s (0:01:02)"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 81.8
+  },
+  "M120": {
+   "id": "M120",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_check_cover_state_change",
+   "description": "a cover's first state (its integration started late) does not trigger a decision",
+   "patch": "M120_late_cover_waits_for_sun.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 5.1,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.70s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.2,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.26s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 15.4,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 29 passed in 13.68s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 32.9
+  },
+  "M150": {
+   "id": "M150",
+   "file": "custom_components/adaptive_cover/consolidate.py",
+   "function": "_async_consolidate",
+   "description": "the upgrade skips its verification: a window that did not move intact is removed anyway",
+   "patch": "M150_upgrade_skips_verification.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.9,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.43s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 13.5,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 11.44s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 68.5,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 66.39s (0:01:06)"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 175.8,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1907 passed in 173.75s (0:02:53)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 262.8
+  },
+  "M151": {
+   "id": "M151",
+   "file": "custom_components/adaptive_cover/consolidate.py",
+   "function": "_async_consolidate",
+   "description": "the upgrade removes a window entry before it moves the window's rows: Home Assistant deletes the window's entities and device",
+   "patch": "M151_upgrade_removes_old_entries_before_moving_rows.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 5.0,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.49s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 14.1,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 12.14s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 67.1,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 65.14s (0:01:05)"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 5.5,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 242 passed in 3.60s"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 91.9
+  },
+  "M152": {
+   "id": "M152",
+   "file": "custom_components/adaptive_cover/consolidate.py",
+   "function": "async_reparent_window",
+   "description": "the upgrade moves a window's device before its entity rows: Home Assistant removes the rows still on the window entry",
+   "patch": "M152_upgrade_moves_the_device_before_its_rows.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 5.5,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 4.16s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 14.2,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 12.18s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 66.2,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 64.18s (0:01:04)"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 175.1,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1904 passed in 173.07s (0:02:53)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 261.1
+  },
+  "M153": {
+   "id": "M153",
+   "file": "custom_components/adaptive_cover/consolidate.py",
+   "function": "_async_consolidate",
+   "description": "the upgrade makes the house 2.1 before the moves are verified: a stopped upgrade leaves a house v1.19.x refuses",
+   "patch": "M153_upgrade_bumps_the_house_before_verifying.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 5.0,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.65s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 13.0,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 11.00s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 63.8,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 61.88s (0:01:01)"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 174.4,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1906 passed in 172.35s (0:02:52)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 256.4
+  },
+  "M154": {
+   "id": "M154",
+   "file": "custom_components/adaptive_cover/consolidate.py",
+   "function": "_async_consolidate",
+   "description": "a stopped upgrade leaves the moved rows and devices in the house: v1.19.x finds windows without their entities",
+   "patch": "M154_stopped_upgrade_does_not_undo_the_moves.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.4,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.01s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.0,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.05s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 62.0,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 60.15s (0:01:00)"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 176.7,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1907 passed in 174.70s (0:02:54)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 255.1
+  },
+  "M155": {
+   "id": "M155",
+   "file": "custom_components/adaptive_cover/consolidate.py",
+   "function": "_plan_window",
+   "description": "a window whose v1.19.x edit is only in its flat options is not adopted again: the upgrade stops on it (or it would lose the edit)",
+   "patch": "M155_drifted_window_keeps_its_stale_overrides.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.4,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.09s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.5,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.56s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 58.7,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 56.93s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 180.2,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1904 passed in 178.32s (0:02:58)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 256.1
+  },
+  "M156": {
+   "id": "M156",
+   "file": "custom_components/adaptive_cover/consolidate.py",
+   "function": "_switch_state",
+   "description": "the upgrade reads a window's toggles as the switches' defaults, not their restored states (a window with Climate Mode off turns it on)",
+   "patch": "M156_toggles_ignore_the_switch_states.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.9,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.67s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 9.9,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 8.19s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 52.7,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 51.00s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 188.8,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1910 passed in 187.00s (0:03:07)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 255.4
+  },
+  "M157": {
+   "id": "M157",
+   "file": "custom_components/adaptive_cover/consolidate.py",
+   "function": "_async_add_subentry",
+   "description": "a start after a crash adds a second subentry for a window that moved already",
+   "patch": "M157_resumed_upgrade_adds_a_second_subentry.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.6,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.46s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 10.6,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 8.88s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 59.2,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 57.49s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 183.6,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 2 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1906 passed, 1 error in 181.72s (0:03:01)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 257.2
+  },
+  "M158": {
+   "id": "M158",
+   "file": "custom_components/adaptive_cover/consolidate.py",
+   "function": "_async_consolidate",
+   "description": "the upgrade writes no snapshot of the 1.x house before it moves it",
+   "patch": "M158_upgrade_writes_no_snapshot.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.6,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.47s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 10.6,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 8.87s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 59.1,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 57.37s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 183.6,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1904 passed in 181.69s (0:03:01)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 257.0
+  },
+  "M159": {
+   "id": "M159",
+   "file": "custom_components/adaptive_cover/consolidate.py",
+   "function": "async_upgrade_house",
+   "description": "a finished upgrade creates no notification",
+   "patch": "M159_upgrade_notifies_nobody.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.0,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.77s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.0,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 9.19s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 65.3,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 63.40s (0:01:03)"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 178.1,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1904 passed in 175.98s (0:02:55)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 258.6
+  },
+  "M160": {
+   "id": "M160",
+   "file": "custom_components/adaptive_cover/consolidate.py",
+   "function": "async_undo",
+   "description": "the undo leaves a window's subentry in the house next to its entry",
+   "patch": "M160_undo_leaves_the_subentry.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.3,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.02s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.5,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.59s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 64.5,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 62.55s (0:01:02)"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 178.2,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1907 passed in 176.20s (0:02:56)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 259.7
+  },
+  "M161": {
+   "id": "M161",
+   "file": "custom_components/adaptive_cover/consolidate.py",
+   "function": "async_bring_to_1_5",
+   "description": "a house v1.19.x never lifted is not lifted by the upgrade: it stops for want of layers",
+   "patch": "M161_upgrade_skips_the_lift.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.3,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.98s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.4,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.41s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 64.9,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 62.94s (0:01:02)"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 178.8,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1909 passed in 176.71s (0:02:56)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 260.6
+  },
+  "M162": {
+   "id": "M162",
+   "file": "custom_components/adaptive_cover/consolidate.py",
+   "function": "OLDEST_MINOR",
+   "description": "the upgrade moves entries older than 1.2 (their registry rows never got the P1 surface)",
+   "patch": "M162_upgrade_takes_entries_older_than_1_2.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.8,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.49s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.6,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.62s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 61.4,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 59.63s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 184.0,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1912 passed in 182.04s (0:03:02)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 263.0
+  },
+  "M170": {
+   "id": "M170",
+   "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+   "function": "CommandTracker.first_sight",
+   "description": "a cover first seen moving has nothing under way: the landing of a move cut short by a restart latches as manual",
+   "patch": "M170_moving_cover_inherits_nothing.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.3,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.01s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.4,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.48s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 49.8,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 2 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n2 failed, 123 passed in 47.97s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 66.7
+  },
+  "M171": {
+   "id": "M171",
+   "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+   "function": "CommandTracker.note_report",
+   "description": "an inherited travel never expires: a stale restored motion state hides a person's move minutes later",
+   "patch": "M171_inherited_travel_never_expires.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.9,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.65s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 10.0,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 8.27s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 47.3,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 135 passed in 45.66s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 61.3
+  },
+  "M172": {
+   "id": "M172",
+   "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+   "function": "CommandTracker.note_report",
+   "description": "motion either way continues the inherited travel: a person reversing the shade right after a restart is not seen",
+   "patch": "M172_inherited_travel_either_direction.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.8,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.63s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 10.0,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 8.29s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 48.0,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 132 passed in 46.25s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 61.9
+  },
+  "M173": {
+   "id": "M173",
+   "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+   "function": "CommandTracker.classify_report",
+   "description": "the landing of the move under way before our command is a foreign landing inside our travel window (latched as a redirect)",
+   "patch": "M173_inherited_landing_is_foreign.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.6,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.46s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.5,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 9.73s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 53.7,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 2 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n2 failed, 124 passed in 51.96s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 69.0
+  },
+  "M174": {
+   "id": "M174",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_check_cover_state_change",
+   "description": "a report on the way of the move under way at a restart is judged as a motion start (latched as manual)",
+   "patch": "M174_inherited_motion_is_a_start.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.6,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.47s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.6,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 9.86s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 53.6,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 126 passed in 51.83s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 68.9
+  },
+  "M175": {
+   "id": "M175",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_handle_cover_state_change",
+   "description": "the landing of the move under way at a restart is judged by the landing check (latched as manual)",
+   "patch": "M175_inherited_landing_judged.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 3.6,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.46s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.5,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 9.71s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 54.6,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 128 passed in 52.82s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 69.8
+  },
+  "M176": {
+   "id": "M176",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_handle_cover_state_change",
+   "description": "the landing of the move under way does not decide again: the shade waits for the next sun update",
+   "patch": "M176_inherited_landing_not_redecided.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.1,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.78s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 11.1,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 9.28s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 59.2,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 128 passed in 57.22s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 74.5
+  },
+  "M177": {
+   "id": "M177",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "AdaptiveDataUpdateCoordinator.__init__",
+   "description": "the window does not look at its cover at setup: the landing of a move under way at a restart or reload latches as a redirect",
+   "patch": "M177_setup_ignores_moving_cover.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.3,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.02s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.5,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.52s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 57.7,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 125 passed in 55.70s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 74.7
+  },
+  "M178": {
+   "id": "M178",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_check_cover_state_change",
+   "description": "a cover back from unavailable is not looked at: the move ZHA restores at boot latches as manual when it lands",
+   "patch": "M178_returning_cover_not_looked_at.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.8,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.45s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.7,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.83s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 57.3,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 2 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n2 failed, 124 passed in 55.47s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 75.0
+  },
+  "M179": {
+   "id": "M179",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_check_cover_state_change",
+   "description": "a cover's first state is not looked at: a move it restores at boot latches as a redirect when it lands",
+   "patch": "M179_first_state_not_looked_at.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.3,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.98s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 13.3,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 11.31s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 57.8,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 129 passed in 55.91s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 75.5
+  },
+  "M180": {
+   "id": "M180",
+   "file": "custom_components/adaptive_cover/runtime/command_tracker.py",
+   "function": "CommandTracker.release",
+   "description": "a change with a user id does not end the inherited travel: a person's move in its direction is not seen",
+   "patch": "M180_person_keeps_inherited_travel.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.3,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.99s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 13.3,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 11.32s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 63.1,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 61.39s (0:01:01)"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 119.2,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1850 passed in 117.61s (0:01:57)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 199.9
+  },
+  "M190": {
+   "id": "M190",
+   "file": "custom_components/adaptive_cover/runtime/shade_config.py",
+   "function": "climate_capable",
+   "description": "ignore_climate is ignored: a window that opts out of climate control still runs it whenever a temperature source resolves for it",
+   "patch": "M190_ignore_climate_ignored.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.2,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 2.85s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 12.8,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.63s"
+    },
+    "simulation": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 19.1,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 19 passed in 17.17s"
+    }
+   },
+   "caught_by": [
+    "simulation"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine"
+   ],
+   "skipped": [
+    "entity"
+   ],
+   "seconds": 36.3
+  },
+  "M191": {
+   "id": "M191",
+   "file": "custom_components/adaptive_cover/upgrade.py",
+   "function": "record_3_2",
+   "description": "migration 3.2 drops a window's climate opt-out: a window whose climate_mode was off runs climate control after the upgrade",
+   "patch": "M191_migration_drops_climate_opt_out.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 4.9,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.52s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 13.5,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 11.59s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 58.5,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 56.64s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 116.8,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1793 passed in 115.38s (0:01:55)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 193.9
+  },
+  "M193": {
+   "id": "M193",
+   "file": "custom_components/adaptive_cover/settings/shadow.py",
+   "function": "stored_profiles",
+   "description": "a layer's leftover climate_mode is read as an option: the upgrade from v1.19.x stops (\"'climate_mode' is not an option\")",
+   "patch": "M193_retired_climate_mode_read.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 5.0,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.61s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 13.0,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.97s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 52.6,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 50.79s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 4.2,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 242 passed in 2.72s"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 74.9
+  },
+  "M192": {
+   "id": "M192",
+   "file": "custom_components/adaptive_cover/consolidate.py",
+   "function": "_plan_window",
+   "description": "the upgrade from v1.19.x leaves each window's climate_mode behind: migration 3.2 then opts every window out of climate control",
+   "patch": "M192_upgrade_drops_climate_mode.patch",
+   "tiers": {
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 5.0,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 3.52s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 13.0,
+     "tail": "........................................................................ [ 99%]\n............                                                             [100%]\n1452 passed in 10.91s"
+    },
+    "simulation": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 50.2,
+     "tail": "........................................................................ [ 96%]\n......                                                                   [100%]\n150 passed in 48.50s"
+    },
+    "entity": {
+     "caught": true,
+     "exit_code": 2,
+     "timeout": false,
+     "seconds": 112.7,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 1909 passed in 111.43s (0:01:51)"
+    }
+   },
+   "caught_by": [
+    "entity"
+   ],
+   "missed_by": [
+    "characterization",
+    "engine",
+    "simulation"
+   ],
+   "seconds": 181.0
   }
  },
  "summary": {
-  "run": 1,
-  "killed": 1,
-  "survivors": [],
+  "run": 59,
+  "killed": 58,
+  "survivors": [
+   "M130"
+  ],
   "errors": [],
   "control_failed": []
  }

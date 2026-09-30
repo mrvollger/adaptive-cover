@@ -352,6 +352,39 @@ async def test_a_house_consolidated_part_way_on_2_0_finishes_at_the_first_start(
     assert ir.async_get(hass).async_get_issue(DOMAIN, "consolidate_first") is None
 
 
+async def test_migration_3_1_refuses_while_window_entries_are_left(hass):
+    """Migration 3.1 itself refuses a house that still has window entries.
+
+    ``async_migrate`` sends such a house to the upgrade first, which runs
+    the migration only after it removed them; this is the migration's own
+    guard, so a house never becomes 3.x with a window left outside it.
+    """
+    from custom_components.adaptive_cover.upgrade import (
+        MigrationRefused,
+        async_migrate_house,
+    )
+
+    house = load_consolidated_house(hass)
+    template = next(iter(house.subentries.values())).data
+    MockConfigEntry(
+        domain=DOMAIN,
+        title="Left behind",
+        data={"name": "Left behind", "sensor_type": "cover_blind"},
+        options={k: v for k, v in template["options"].items() if k != "overrides"},
+        version=1,
+        minor_version=5,
+    ).add_to_hass(hass)
+    v2_0_subentries = {sid: dict(s.data) for sid, s in house.subentries.items()}
+
+    with pytest.raises(MigrationRefused, match="1 window entries"):
+        await async_migrate_house(hass, house)
+
+    assert (house.version, house.minor_version) == (2, 1)
+    assert {sid: dict(s.data) for sid, s in house.subentries.items()} == (
+        v2_0_subentries
+    )
+
+
 async def test_a_window_v2_0_never_ran_refuses_the_migration(hass, caplog):
     """No layered settings of its own: the house stays 2.1, without the nag."""
     house = load_consolidated_house(hass)
