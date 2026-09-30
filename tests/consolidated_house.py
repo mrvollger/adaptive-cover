@@ -138,7 +138,7 @@ def load_consolidated_house(hass) -> MockConfigEntry:
             entry_type=dr.DeviceEntryType(device["entry_type"])
             if device["entry_type"]
             else None,
-            via_device=tuple(device["via"]) if device["via"] else None,
+            via_device_id=device_ids[tuple(device["via"])] if device["via"] else None,
         )
         dev_reg.async_update_device(
             created.id, name_by_user=device["name_by_user"], area_id=device["area_id"]

@@ -121,10 +121,13 @@ def _row_view(row: er.RegistryEntry, devices: dict[str, Any]) -> tuple:
 
 
 def _devices(hass) -> dict[str, Any]:
-    """Every adaptive_cover device, by id: its identity and placement."""
+    """Every adaptive_cover device (all on the house), by id: identity and placement."""
     dev_reg = dr.async_get(hass)
+    house = next(
+        e for e in hass.config_entries.async_entries(DOMAIN) if e.data.get("is_hub")
+    )
     found: dict[str, Any] = {}
-    for device in dev_reg.devices.values():
+    for device in dr.async_entries_for_config_entry(dev_reg, house.entry_id):
         keys = sorted(value for domain, value in device.identifiers if domain == DOMAIN)
         if not keys:
             continue
