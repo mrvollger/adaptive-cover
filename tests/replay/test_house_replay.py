@@ -59,6 +59,11 @@ async def test_house_replay(hass, freezer, window, label):
     assert path.exists(), (
         f"Missing golden {path.name}; run with UPDATE_GOLDENS=1 to create it"
     )
+    _assert_matches_golden(rendered, window, label)
+
+
+def _assert_matches_golden(rendered: str, window, label: str) -> None:
+    path = golden_path(window, label)
     expected = path.read_text()
     if rendered != expected:
         diff = "\n".join(
@@ -72,3 +77,20 @@ async def test_house_replay(hass, freezer, window, label):
             )
         )
         pytest.fail(f"House replay changed for {window.title} on {label}:\n{diff}")
+
+
+@pytest.mark.parametrize(
+    ("window", "label"),
+    CASES,
+    ids=[f"{window.slug}-{label}" for window, label in CASES],
+)
+async def test_house_replay_consolidated(hass, freezer, window, label):
+    """The same day through a house consolidated at 00:30 (P7): same golden.
+
+    The window entry becomes a subentry of the house entry (the repair
+    fix flow), keeping its key and entities; every outbound command and
+    sensor sample must match the legacy golden byte for byte.
+    """
+    replay = await run_replay(hass, freezer, window, label, consolidated=True)
+    assert golden_path(window, label).exists()
+    _assert_matches_golden(render(replay), window, label)

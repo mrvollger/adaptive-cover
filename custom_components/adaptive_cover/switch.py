@@ -29,8 +29,9 @@ from typing import Any
 
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import STATE_ON
+from homeassistant.const import STATE_ON, Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -52,6 +53,7 @@ from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info
 from .entity_surface import apply_surface, window_surface
 from .layers import async_write_window, is_layered
+from .windows import WindowEntry, as_window
 
 # The coordinator attribute each switch used to set -> the toggle setting.
 TOGGLE_KEYS: dict[str, str] = {
@@ -72,12 +74,25 @@ async def async_setup_entry(
     from .hub import hub_device_info, is_hub_entry
 
     if is_hub_entry(config_entry):
+        from .house import async_setup_house_platform
         from .house_settings import house_switches
 
         async_add_entities(house_switches(hass, hub_device_info()))
+        await async_setup_house_platform(
+            hass, config_entry, Platform.SWITCH, window_entities
+        )
         return
-    coordinator: AdaptiveDataUpdateCoordinator = config_entry.runtime_data
+    async_add_entities(
+        window_entities(hass, as_window(config_entry), config_entry.runtime_data)
+    )
 
+
+def window_entities(
+    hass: HomeAssistant,
+    config_entry: WindowEntry,
+    coordinator: AdaptiveDataUpdateCoordinator,
+) -> list[Entity]:
+    """Return one window's switch aliases (P5 flip; removed in P8)."""
     manual_switch = AdaptiveCoverSwitch(
         config_entry,
         config_entry.entry_id,
@@ -133,7 +148,7 @@ async def async_setup_entry(
     sensor_entity = settings.get(CONF_OUTSIDETEMP_ENTITY)
     lux_entity = settings.get(CONF_LUX_ENTITY)
     irradiance_entity = settings.get(CONF_IRRADIANCE_ENTITY)
-    switches = []
+    switches: list[Entity] = []
 
     if len(config_entry.options.get(CONF_ENTITIES) or []) >= 1:
         switches = [control_switch, manual_switch]
@@ -147,7 +162,7 @@ async def async_setup_entry(
         if irradiance_entity:
             switches.append(irradiance_switch)
 
-    async_add_entities(switches)
+    return switches
 
 
 class AdaptiveCoverSwitch(

@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/house.py b/custom_components/adaptive_cover/house.py
+--- a/custom_components/adaptive_cover/house.py
++++ b/custom_components/adaptive_cover/house.py
+@@ -381,6 +381,8 @@
+                     await self._async_start_window(subentry_id)
+                     continue
+                 if runtime.seen == self._seen(subentry_id):
++                    await self._async_stop_window(subentry_id)
++                    await self._async_start_window(subentry_id)
+                     continue
+                 if only_overrides_changed(self.hass, runtime.window):
+                     runtime.seen = self._seen(subentry_id)

@@ -65,23 +65,47 @@ _COVER_POSITION_SERVICES = {
 }
 
 
-def _find_window_key(hass: HomeAssistant, cover: str) -> str:
-    """The window key of the window driving ``cover`` (today: entry id).
+def window_configs(hass: HomeAssistant) -> dict[str, dict[str, Any]]:
+    """Every window's stored options, by window key, from the config entries.
 
-    The hub entry is not a window. (The live hub's leftover options list
-    every cover, so it must be skipped, not just ranked last.)
+    A window is an enabled window entry (its entry_id is the key) or, since P7, a
+    ``window`` subentry of the house entry (the key is the old entry_id it
+    stores, else the subentry_id). A window entry wins over a subentry of
+    the same key (a consolidation in progress). The hub entry is not a
+    window (the live hub's leftover options list every cover, so it must
+    be skipped, not just ranked last).
     """
+    windows: dict[str, dict[str, Any]] = {}
     for entry in hass.config_entries.async_entries(DOMAIN):
-        if entry.data.get("is_hub"):
+        if entry.disabled_by is not None:
+            continue  # a disabled window entry drives nothing
+        if not entry.data.get("is_hub"):
+            windows[entry.entry_id] = dict(entry.options)
             continue
-        if cover in (entry.options.get(CONF_ENTITIES) or []):
-            return entry.entry_id
+        for subentry in entry.subentries.values():
+            if subentry.subentry_type != "window":
+                continue
+            key = subentry.data.get("window_key") or subentry.subentry_id
+            windows.setdefault(key, dict(subentry.data.get("options") or {}))
+    return windows
+
+
+def _find_window_key(hass: HomeAssistant, cover: str) -> str:
+    """The window key of the window driving ``cover``."""
+    for key, options in window_configs(hass).items():
+        if cover in (options.get(CONF_ENTITIES) or []):
+            return key
     raise LookupError(f"No adaptive_cover window drives {cover}")
 
 
 def _entity_rows(hass: HomeAssistant, window_key: str) -> list[er.RegistryEntry]:
-    """Registry rows of one window (today: its config entry's rows)."""
-    return er.async_entries_for_config_entry(er.async_get(hass), window_key)
+    """Registry rows of one window: its unique_id prefix (frozen, P7-proof)."""
+    prefix = f"{window_key}_"
+    return [
+        row
+        for row in er.async_get(hass).entities.values()
+        if row.platform == DOMAIN and row.unique_id.startswith(prefix)
+    ]
 
 
 def _as_list(value: Any) -> list[str]:
@@ -342,16 +366,26 @@ class WindowHandle:
 
 
 async def window_settings(hass: HomeAssistant, window_key: str) -> dict[str, Any]:
-    """A loaded window's resolved settings, from the diagnostics download."""
+    """A loaded window's resolved settings, from the diagnostics download.
+
+    A window entry's own download; for a window subentry (P7), the house
+    entry's download lists it under ``windows``.
+    """
     from custom_components.adaptive_cover.diagnostics import (
         async_get_config_entry_diagnostics,
     )
 
     entry = hass.config_entries.async_get_entry(window_key)
-    assert entry is not None, window_key
-    diagnostics = await async_get_config_entry_diagnostics(hass, entry)
+    if entry is not None:
+        diagnostics = await async_get_config_entry_diagnostics(hass, entry)
+    else:
+        house = next(
+            e for e in hass.config_entries.async_entries(DOMAIN) if e.data.get("is_hub")
+        )
+        house_diagnostics = await async_get_config_entry_diagnostics(hass, house)
+        diagnostics = house_diagnostics["windows"][window_key]
     settings = diagnostics["settings"]
-    assert settings is not None, f"{entry.title} is not loaded"
+    assert settings is not None, f"{window_key} is not loaded"
     return settings
 
 
@@ -359,9 +393,12 @@ def internal_coordinator(hass: HomeAssistant, window_key: str):
     """The window's live coordinator object. NOT a public surface.
 
     contract: internal. The single place the test suite knows where the
-    integration keeps its runtime objects (``entry.runtime_data`` since
-    refactor P4). Use it only for a fact no entity, event, or service
+    integration keeps its runtime objects: a window entry's
+    ``runtime_data`` (P4), or the window index the house keeps for its
+    subentries (P7). Use it only for a fact no entity, event, or service
     exposes, and mark the call site ``# contract: internal (<reason>)``.
     """
     entry = hass.config_entries.async_get_entry(window_key)
-    return getattr(entry, "runtime_data", None) if entry is not None else None
+    if entry is not None:
+        return getattr(entry, "runtime_data", None)
+    return hass.data.get(DOMAIN, {}).get(window_key)

@@ -27,6 +27,7 @@ from homeassistant.helpers import issue_registry as ir
 
 from .const import CONF_SENSOR_TYPE, DOMAIN
 from .settings.normalize import window_covers, with_cover
+from .windows import WindowEntry, all_windows
 
 # Error keys (strings.json config.error / options.error).
 ERROR_ONE_COVER = "one_cover_per_window"
@@ -43,21 +44,19 @@ def cover_registry_id(hass: HomeAssistant, cover: str | None) -> str | None:
 
 def window_using_cover(
     hass: HomeAssistant, cover: str, *, exclude_entry_id: str | None = None
-) -> ConfigEntry | None:
+) -> WindowEntry | None:
     """Return the window that drives ``cover``, if any.
 
-    Only enabled windows count (a disabled entry drives nothing); the hub
-    is not a window (its leftover options list every cover).
+    Every window counts: the enabled window entries and the house's window
+    subentries (a disabled entry drives nothing); the hub is not a window
+    (its leftover options list every cover). ``exclude_entry_id`` is a
+    window key.
     """
-    from .hub import is_hub_entry
-
-    for entry in hass.config_entries.async_entries(
-        DOMAIN, include_ignore=False, include_disabled=False
-    ):
-        if entry.entry_id == exclude_entry_id or is_hub_entry(entry):
+    for window in all_windows(hass):
+        if window.window_key == exclude_entry_id:
             continue
-        if cover in window_covers(entry.options):
-            return entry
+        if cover in window_covers(window.options):
+            return window
     return None
 
 

@@ -1,4 +1,15 @@
-"""The Adaptive Cover integration."""
+"""The Adaptive Cover integration.
+
+Two config models run side by side until the owner consolidates (P7,
+ADR 0001; the legacy one goes in P8):
+
+- **legacy**: each window is its own config entry (1.x), plus the hub
+  entry ("All shades") with the house settings;
+- **house**: the hub entry is the house (2.x) and each window is one of
+  its config subentries (windows.py, house.py). A fresh install starts
+  here; an existing house moves here when the owner fixes the
+  "Consolidate" repair issue (consolidate.py).
+"""
 
 from __future__ import annotations
 
@@ -16,24 +27,27 @@ from homeassistant.core import (
 )
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.event import (
-    async_track_state_change_event,
-)
 from homeassistant.helpers.service import async_register_platform_entity_service
 from homeassistant.helpers.typing import VolDictType
 
 from .const import (
-    CONF_END_ENTITY,
     CONF_ENTITIES,
-    CONF_PRESENCE_ENTITY,
-    CONF_TEMP_ENTITY,
-    CONF_WEATHER_ENTITY,
     DOMAIN,
+    HOUSE_ENTRY_VERSION,
     _LOGGER,
 )
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .settings.normalize import normalize_cover
 from .window_cover import ERROR_ONE_COVER, cover_problem, window_using_cover
+from .windows import (
+    WindowEntry,
+    all_windows,
+    as_window,
+    async_update_window,
+    find_window,
+    house_entry,
+    uses_subentries,
+)
 
 PLATFORMS = [
     Platform.SENSOR,
@@ -42,23 +56,22 @@ PLATFORMS = [
     Platform.BUTTON,
     Platform.SELECT,
 ]
-# The hub also carries the house settings (P5 flip: house_settings.py).
+# The hub also carries the house settings (P5 flip: house_settings.py) and,
+# as the house entry, its window subentries' entities (P7: house.py).
 HUB_PLATFORMS = [
     Platform.COVER,
     Platform.SELECT,
     Platform.BUTTON,
     Platform.SWITCH,
     Platform.NUMBER,
+    Platform.SENSOR,
+    Platform.BINARY_SENSOR,
 ]
 CONF_SUN = ["sun.sun"]
 
 
 def _hub_entry_exists(hass: HomeAssistant) -> bool:
-    from .hub import is_hub_entry
-
-    return any(
-        is_hub_entry(entry) for entry in hass.config_entries.async_entries(DOMAIN)
-    )
+    return house_entry(hass) is not None
 
 
 async def _async_bootstrap_hub(hass: HomeAssistant) -> None:
@@ -85,25 +98,26 @@ HOLD_SCHEMA: VolDictType = {
 }
 
 
-def _window_coordinator(entry: ConfigEntry) -> AdaptiveDataUpdateCoordinator | None:
-    """Return the coordinator of a loaded window entry, or None.
-
-    HA drops ``runtime_data`` when the entry unloads; the hub entry never
-    has one.
-    """
-    coordinator = getattr(entry, "runtime_data", None)
+def _window_coordinator(
+    hass: HomeAssistant, window: WindowEntry
+) -> AdaptiveDataUpdateCoordinator | None:
+    """Return the coordinator of a loaded window, or None."""
+    coordinator = hass.data.get(DOMAIN, {}).get(window.window_key)
     if isinstance(coordinator, AdaptiveDataUpdateCoordinator):
         return coordinator
     return None
 
 
-def _resolve_entry(hass: HomeAssistant, reference: str) -> ConfigEntry:
-    """Find a config entry by entry_id, or a loaded window by title or name."""
-    entry = hass.config_entries.async_get_entry(reference)
-    if entry and entry.domain == DOMAIN:
-        return entry
-    for candidate in hass.config_entries.async_entries(DOMAIN):
-        if _window_coordinator(candidate) is not None and reference in (
+def _resolve_entry(hass: HomeAssistant, reference: str) -> WindowEntry:
+    """Find a window by its key (a window entry's entry_id), or a loaded one by title or name.
+
+    The services' ``config_entry`` field names a window: its key is what a
+    window entry's entry_id always was, before and after consolidation.
+    """
+    if (window := find_window(hass, reference)) is not None:
+        return window
+    for candidate in all_windows(hass):
+        if _window_coordinator(hass, candidate) is not None and reference in (
             candidate.title,
             candidate.data.get("name"),
         ):
@@ -144,7 +158,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
 
     async def handle_get_forecast(call: ServiceCall) -> ServiceResponse:
         entry = _resolve_entry(hass, call.data["config_entry"])
-        coordinator = _window_coordinator(entry)
+        coordinator = _window_coordinator(hass, entry)
         if coordinator is None:
             raise ServiceValidationError(f"Entry '{entry.title}' is not loaded")
         forecast: list[Any] = coordinator.forecast or []  # JSON-shaped entries
@@ -187,11 +201,12 @@ def _async_register_services(hass: HomeAssistant) -> None:
             # P5 flip: one-time settings go to the options, recurring ones
             # to the window's overrides (sparse; layers.py).
             update_kwargs["options"] = window_options_after(hass, entry, changes)
-        hass.config_entries.async_update_entry(entry, **update_kwargs)
-        if new_name and not changes:
+        async_update_window(hass, entry, **update_kwargs)
+        if new_name and not changes and not entry.is_subentry:
             # Options updates reload via the update listener; a pure rename
             # must reload explicitly so entities and device pick up the name.
-            await hass.config_entries.async_reload(entry.entry_id)
+            # (A window subentry's rename rebuilds it: house.async_sync.)
+            await hass.config_entries.async_reload(entry.config_entry.entry_id)
         changed = sorted([*changes, *(["name"] if new_name else [])])
         return {"entry": entry.title, "changed": changed}
 
@@ -204,7 +219,12 @@ def _async_register_services(hass: HomeAssistant) -> None:
     )
 
     async def handle_add_entry(call: ServiceCall) -> ServiceResponse:
-        """Create a new entry without the wizard, optionally from a template."""
+        """Add a window without the form, optionally from a template.
+
+        A window of the house (a subentry) once the house uses them
+        (windows.uses_subentries); a window entry before. ``entry_id`` in
+        the response is the window key either way.
+        """
         from homeassistant.config_entries import SOURCE_IMPORT
 
         name = call.data["name"]
@@ -232,6 +252,16 @@ def _async_register_services(hass: HomeAssistant) -> None:
         options.update(overrides)
         options[CONF_ENTITIES] = covers
         options = normalize_cover(options)
+
+        if uses_subentries(hass):
+            from .config_flow import async_add_window_subentry
+
+            house = house_entry(hass)
+            assert house is not None  # uses_subentries
+            window = async_add_window_subentry(
+                hass, house, {"name": name, "sensor_type": sensor_type}, options
+            )
+            return {"entry_id": window.window_key, "title": window.title}
 
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
@@ -326,12 +356,31 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     needs no migration: on its first boot it restores from the Toggle
     Control switch's last state (select.py).
 
+    2.x (P7): the house entry with window subentries (consolidated, or a
+    fresh install). The flow's version is 2, so Home Assistant asks to
+    migrate every 1.x entry at each start: window entries and a legacy hub
+    stay at 1.x (they only get the minor steps above), so a downgrade
+    before consolidation keeps working. Only consolidation moves the hub
+    to 2.x (consolidate.py).
+
     A newer MINOR version (after a downgrade) loads as is. A newer MAJOR
-    version is refused.
+    version is refused (Home Assistant does that before calling this).
     """
     from .const import CONFIG_ENTRY_VERSION
     from .entity_surface import async_apply_surface_to_registry
+    from .hub import is_hub_entry
 
+    if entry.version >= HOUSE_ENTRY_VERSION:
+        if is_hub_entry(entry):
+            return True  # a house at an older 2.x minor: nothing to migrate yet
+        _LOGGER.error(
+            "Cannot load %s: a window entry at version %s.%s (windows are 1.x "
+            "entries or subentries of the house)",
+            entry.title,
+            entry.version,
+            entry.minor_version,
+        )
+        return False
     if entry.version > CONFIG_ENTRY_VERSION:
         _LOGGER.error(
             "Cannot load %s: config entry version %s.%s is newer than this "
@@ -348,7 +397,6 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         hass.config_entries.async_update_entry(entry, minor_version=2)
     if entry.minor_version < 3:
-        from .hub import is_hub_entry
         from .migration import async_migrate_1_3
 
         if is_hub_entry(entry):
@@ -356,7 +404,6 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         else:
             async_migrate_1_3(hass, entry)
     if entry.minor_version < 4:
-        from .hub import is_hub_entry
         from .shadow import async_migrate_hub_1_4
 
         if is_hub_entry(entry):
@@ -374,20 +421,27 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
+async def _async_register_card(hass: HomeAssistant) -> None:
+    """Serve and register the bundled Lovelace card (once)."""
+    if not hass.data.get(f"{DOMAIN}_card_registered"):
+        hass.data[f"{DOMAIN}_card_registered"] = True
+        from homeassistant.loader import async_get_integration
+
+        from .frontend import async_register_card
+
+        integration = await async_get_integration(hass, DOMAIN)
+        hass.async_create_task(async_register_card(hass, str(integration.version)))
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up Adaptive Cover from a config entry."""
+    """Set up Adaptive Cover from a config entry (the house, or a legacy window)."""
+    from .consolidate import async_check_consolidate_issue
     from .hub import is_hub_entry
 
     hass.data.setdefault(DOMAIN, {})
 
     if is_hub_entry(entry):
-        # A house that was never lifted (a hub created at 1.4 or later)
-        # lifts itself; its windows act on the same values afterwards.
-        from .shadow import async_ensure_lifted
-
-        async_ensure_lifted(hass)
-        await hass.config_entries.async_forward_entry_setups(entry, HUB_PLATFORMS)
-        return True
+        return await _async_setup_house(hass, entry)
 
     # One cover per window (ADR 0002): the unique_id follows the cover, and
     # an entry from before P3 with several covers gets a "split" issue.
@@ -401,64 +455,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     async_remove_window_numbers(hass, entry)
 
-    # Prime the timezone cache off-loop: the first construction reads a
-    # zoneinfo file, and schedule math needs it inside the loop.
-    from .coordinator import cached_timezone
+    from .house import async_build_window
 
-    await hass.async_add_executor_job(cached_timezone, hass.config.time_zone)
-
-    # P5 flip: the window acts on its layered settings (layers.py). Record
-    # it, lift the house if it never was, adopt the window if it has no
-    # overrides of its own, then build the runtime on the resolved values.
-    from . import shadow
-
-    shadow.async_setup_window(hass, entry)
-    coordinator = AdaptiveDataUpdateCoordinator(hass)
-    settings = coordinator.options
-    _temp_entity = settings.get(CONF_TEMP_ENTITY)
-    _presence_entity = settings.get(CONF_PRESENCE_ENTITY)
-    _weather_entity = settings.get(CONF_WEATHER_ENTITY)
-    _cover_entities = entry.options.get(CONF_ENTITIES, [])
-    _end_time_entity = settings.get(CONF_END_ENTITY)
-    _entities = ["sun.sun"]
-    for entity in [_temp_entity, _presence_entity, _weather_entity, _end_time_entity]:
-        if entity is not None:
-            _entities.append(entity)
-
-    _LOGGER.debug("Setting up entry %s", entry.data.get("name"))
-
-    entry.async_on_unload(
-        async_track_state_change_event(
-            hass,
-            _entities,
-            coordinator.async_check_entity_state_change,
-        )
-    )
-
-    entry.async_on_unload(
-        async_track_state_change_event(
-            hass,
-            _cover_entities,
-            coordinator.async_check_cover_state_change,
-        )
-    )
-
-    await coordinator.async_config_entry_first_refresh()
+    coordinator, unsubs = await async_build_window(hass, as_window(entry))
+    for unsub in unsubs:
+        entry.async_on_unload(unsub)
     entry.runtime_data = coordinator
-    # Index of the loaded windows' coordinators, for the hub and the Mode
-    # select, which still look them up here (P4 moves them next).
-    hass.data[DOMAIN][entry.entry_id] = coordinator
     _async_register_services(hass)
     hass.async_create_task(_async_bootstrap_hub(hass))
-
-    if not hass.data.get(f"{DOMAIN}_card_registered"):
-        hass.data[f"{DOMAIN}_card_registered"] = True
-        from homeassistant.loader import async_get_integration
-
-        from .frontend import async_register_card
-
-        integration = await async_get_integration(hass, DOMAIN)
-        hass.async_create_task(async_register_card(hass, str(integration.version)))
+    await _async_register_card(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     # The window device exists now (the platforms created it): give it the
@@ -468,20 +473,51 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async_copy_cover_area(hass, entry)
 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+    # A house with legacy windows is offered the move to subentries (P7).
+    async_check_consolidate_issue(hass)
+    return True
+
+
+async def _async_setup_house(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up the house: its settings entities and its window subentries."""
+    from .consolidate import async_check_consolidate_issue
+    from .house import HouseRuntime
+
+    # A house that was never lifted (a hub created at 1.4 or later)
+    # lifts itself; its windows act on the same values afterwards.
+    from .shadow import async_ensure_lifted
+
+    async_ensure_lifted(hass)
+    runtime = HouseRuntime(hass, entry)
+    entry.runtime_data = runtime
+    # Each window subentry sets up in isolation (a failing one gets a
+    # repair issue); its entities come with the platforms below.
+    await runtime.async_start()
+    _async_register_services(hass)
+    await _async_register_card(hass)
+    await hass.config_entries.async_forward_entry_setups(entry, HUB_PLATFORMS)
+    # The window devices exist now: each gets its cover's area unless the
+    # user chose one.
+    runtime.async_copy_areas()
+    entry.async_on_unload(entry.add_update_listener(_async_house_update_listener))
+    async_check_consolidate_issue(hass)
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
+    from .house import async_forget_window, house_runtime
     from .hub import is_hub_entry
 
     if is_hub_entry(entry):
-        return await hass.config_entries.async_unload_platforms(entry, HUB_PLATFORMS)
+        unload_ok = await hass.config_entries.async_unload_platforms(
+            entry, HUB_PLATFORMS
+        )
+        if unload_ok and (runtime := house_runtime(entry)) is not None:
+            await runtime.async_unload()
+        return unload_ok
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        hass.data[DOMAIN].pop(entry.entry_id)
-        from .shadow import async_unload_window
-
-        async_unload_window(hass, entry.entry_id)
+        async_forget_window(hass, entry.entry_id)
 
     return unload_ok
 
@@ -490,11 +526,13 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Drop a removed window's repair issues (split; the retired settings differ)."""
     from homeassistant.helpers import issue_registry as ir
 
+    from .consolidate import async_check_consolidate_issue
     from .shadow import diff_issue_id
     from .window_cover import split_issue_id
 
     ir.async_delete_issue(hass, DOMAIN, split_issue_id(entry.entry_id))
     ir.async_delete_issue(hass, DOMAIN, diff_issue_id(entry.entry_id))
+    async_check_consolidate_issue(hass)
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -512,3 +550,16 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> Non
         await async_settings_changed(hass, [entry.entry_id])
         return
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def _async_house_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Bring the house's running windows in line with its subentries.
+
+    A new subentry starts, a removed one stops, a changed one is rebuilt
+    alone (house.HouseRuntime.async_sync). The house's own options (the
+    profiles) are acted on where they are written.
+    """
+    from .house import house_runtime
+
+    if (runtime := house_runtime(entry)) is not None:
+        await runtime.async_sync()

@@ -5,7 +5,9 @@ from __future__ import annotations
 
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -13,6 +15,7 @@ from .const import _LOGGER, CONF_ENTITIES
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info
 from .entity_surface import apply_surface, window_surface
+from .windows import WindowEntry, as_window
 
 
 async def async_setup_entry(
@@ -24,10 +27,24 @@ async def async_setup_entry(
     from .hub import ResetAllOverridesButton, is_hub_entry
 
     if is_hub_entry(config_entry):
-        async_add_entities([ResetAllOverridesButton(hass)])
-        return
-    coordinator: AdaptiveDataUpdateCoordinator = config_entry.runtime_data
+        from .house import async_setup_house_platform
 
+        async_add_entities([ResetAllOverridesButton(hass)])
+        await async_setup_house_platform(
+            hass, config_entry, Platform.BUTTON, window_entities
+        )
+        return
+    async_add_entities(
+        window_entities(hass, as_window(config_entry), config_entry.runtime_data)
+    )
+
+
+def window_entities(
+    hass: HomeAssistant,
+    config_entry: WindowEntry,
+    coordinator: AdaptiveDataUpdateCoordinator,
+) -> list[Entity]:
+    """Return one window's buttons (Return to auto, when it has a cover)."""
     reset_manual = AdaptiveCoverButton(
         config_entry,
         config_entry.entry_id,
@@ -35,13 +52,13 @@ async def async_setup_entry(
         coordinator,
     )
 
-    buttons = []
+    buttons: list[Entity] = []
 
     entities = config_entry.options.get(CONF_ENTITIES, [])
     if len(entities) >= 1:
         buttons = [reset_manual]
 
-    async_add_entities(buttons)
+    return buttons
 
 
 class AdaptiveCoverButton(

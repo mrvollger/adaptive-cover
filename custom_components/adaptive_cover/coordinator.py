@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.components.cover import DOMAIN as COVER_DOMAIN
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState, current_entry
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     SERVICE_SET_COVER_POSITION,
@@ -23,6 +23,7 @@ from homeassistant.core import (
     HomeAssistant,
     State,
 )
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.event import async_call_later, async_track_point_in_time
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
@@ -72,6 +73,7 @@ from .helpers import (
     get_safe_state,
 )
 from .layers import SETUP_KEYS, effective_settings
+from .windows import WindowEntry, WindowLike, as_window
 from .settings.lift import same_value
 
 
@@ -116,6 +118,18 @@ def localize_standard(naive: dt.datetime, tz: dt.tzinfo) -> dt.datetime:
     return first if not first.dst() else second
 
 
+def async_schedule_window_reload(hass: HomeAssistant, window: WindowEntry) -> None:
+    """Reload one window: its entry (legacy), or its subentry alone (house)."""
+    if not window.is_subentry:
+        hass.config_entries.async_schedule_reload(window.config_entry.entry_id)
+        return
+    from .house import house_runtime
+
+    runtime = house_runtime(window.config_entry)
+    if runtime is not None and window.subentry_id is not None:
+        runtime.async_schedule_rebuild(window.subentry_id)
+
+
 @dataclass
 class StateChangedData:
     """StateChangedData class."""
@@ -142,21 +156,38 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     # The travel-time upper bound (the reset button waits at most this long).
     TARGET_TIMEOUT = CommandTracker.TARGET_TIMEOUT
 
-    def __init__(self, hass: HomeAssistant, clock: Clock | None = None) -> None:
-        """Initialize the coordinator.
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        clock: Clock | None = None,
+        *,
+        window: WindowLike | None = None,
+    ) -> None:
+        """Initialize the coordinator of one window.
 
-        ``clock`` is where every "now" comes from (see runtime/clock.py);
-        None means the module's ``default_clock``.
+        ``window`` is the window (a legacy entry or a house subentry,
+        windows.py); None means the config entry being set up. ``clock``
+        is where every "now" comes from (see runtime/clock.py); None means
+        the module's ``default_clock``.
         """
-        super().__init__(hass, LOGGER, name=DOMAIN)
+        if window is None:
+            current = current_entry.get()
+            if current is None:
+                raise ValueError("A window coordinator needs its window")
+            window = current
+        self.window: WindowEntry = as_window(window)
+        # The owning entry: its unload shuts the coordinator down.
+        super().__init__(
+            hass, LOGGER, config_entry=self.window.config_entry, name=DOMAIN
+        )
         self.clock: Clock = clock if clock is not None else default_clock
 
         self.logger = ConfigContextAdapter(_LOGGER)
-        self.logger.set_config_name(self.config_entry.data.get("name"))
-        self._cover_type = self.config_entry.data.get("sensor_type")
+        self.logger.set_config_name(self.window.data.get("name"))
+        self._cover_type = self.window.data.get("sensor_type")
         # What the window acts on: its resolved settings (P5 flip,
         # layers.py), re-read on every refresh (_update_options).
-        settings = effective_settings(self.hass, self.config_entry)
+        settings = effective_settings(self.hass, self.window)
         self.options: dict[str, Any] = settings.options
         self.provenance: dict[str, str] | None = settings.provenance
         # Read once: they decide the window's entities and listeners; a
@@ -191,7 +222,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self.manager = OverrideTracker(
             self.config.manual_duration,
             self.logger,
-            persisted_state=_manual_store.setdefault(self.config_entry.entry_id, {}),
+            persisted_state=_manual_store.setdefault(self.window.window_key, {}),
             clock=self.clock,
         )
         self.commands = CommandTracker(
@@ -228,6 +259,30 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         await super().async_config_entry_first_refresh()
         self.logger.debug("Config entry first refresh")
 
+    async def async_window_first_refresh(self) -> None:
+        """Run the window's first refresh, while its entry sets up or later.
+
+        A window subentry added or rebuilt while the house runs sets up
+        after the house entry finished setting up, where HA's
+        ``async_config_entry_first_refresh`` refuses to run.
+
+        Raises
+        ------
+        ConfigEntryNotReady
+            The first refresh failed.
+
+        """
+        if self.config_entry.state is ConfigEntryState.SETUP_IN_PROGRESS:
+            await self.async_config_entry_first_refresh()
+            return
+        self.events.push(RefreshEvent.STARTUP)
+        await self.async_refresh()
+        if not self.last_update_success:
+            raise ConfigEntryNotReady(str(self.last_exception)) from (
+                self.last_exception
+            )
+        self.logger.debug("Window first refresh")
+
     @property
     def _track_end_time(self) -> bool | None:
         """Close at the end time (``return_sunset``), as this refresh reads it."""
@@ -258,7 +313,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         A change to what the window read at setup (its listeners and which
         entities it has) reloads it.
         """
-        settings = effective_settings(self.hass, self.config_entry)
+        settings = effective_settings(self.hass, self.window)
         self.options = settings.options
         self.provenance = settings.provenance
         changed = sorted(
@@ -269,7 +324,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         if changed:
             self.logger.info("Settings %s changed: reloading the window", changed)
             self._setup_values = {key: self.options.get(key) for key in SETUP_KEYS}
-            self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
+            async_schedule_window_reload(self.hass, self.window)
         return self.options
 
     async def async_settings_changed(self) -> None:

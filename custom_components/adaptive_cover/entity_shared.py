@@ -5,27 +5,32 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, Any
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.util import dt as dt_util
 
 from .const import CONF_ENTITIES, CONF_SENSOR_TYPE, DOMAIN
+from .windows import WindowLike, as_window
 
 if TYPE_CHECKING:
     from .coordinator import AdaptiveDataUpdateCoordinator
 
 
-def adaptive_cover_device_info(config_entry: ConfigEntry) -> DeviceInfo:
-    """Return the shared device info for all entities of a config entry.
+def adaptive_cover_device_info(config_entry: WindowLike) -> DeviceInfo:
+    """Return the shared device info for all entities of one window.
 
-    One service device per config entry, named after the user's entry name,
-    so entities render as "<entry name> <role>".
+    One service device per window (identifier: the window key), named
+    after the window, so entities render as "<window name> <role>". A
+    window subentry's device hangs off the house device (``via_device_id``).
     """
-    return DeviceInfo(
-        identifiers={(DOMAIN, config_entry.entry_id)},
-        name=config_entry.data["name"],
+    window = as_window(config_entry)
+    info = DeviceInfo(
+        identifiers={(DOMAIN, window.window_key)},
+        name=window.data["name"],
         entry_type=DeviceEntryType.SERVICE,
     )
+    if window.via_device_id is not None:
+        info["via_device_id"] = window.via_device_id
+    return info
 
 
 def _local_iso(value: dt.datetime | None) -> str | None:
@@ -52,12 +57,12 @@ def override_until(
 
 
 def window_attributes(
-    config_entry: ConfigEntry, coordinator: AdaptiveDataUpdateCoordinator
+    config_entry: WindowLike, coordinator: AdaptiveDataUpdateCoordinator
 ) -> dict[str, Any]:
     """Identity and schedule attributes for the Position sensor (P1).
 
-    - window_key: the entry_id (the card binding key; stays valid when the
-      entry later becomes a window subentry).
+    - window_key: the window key (the card binding key): a legacy entry's
+      entry_id, which a consolidated window keeps (windows.py).
     - cover_entity: the cover this window drives. An entry with several
       covers also gets cover_entities (the full list); cover_entity is the
       first.

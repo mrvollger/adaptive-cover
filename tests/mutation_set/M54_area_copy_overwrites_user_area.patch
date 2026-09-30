@@ -1,10 +1,10 @@
 diff --git a/custom_components/adaptive_cover/entity_surface.py b/custom_components/adaptive_cover/entity_surface.py
 --- a/custom_components/adaptive_cover/entity_surface.py
 +++ b/custom_components/adaptive_cover/entity_surface.py
-@@ -256,7 +256,7 @@
-     device = dev_reg.async_get_device_by_identifier(
-         (DOMAIN, entry.entry_id), config_entry_id=entry.entry_id
-     )
+@@ -257,7 +257,7 @@
+ 
+     dev_reg = dr.async_get(hass)
+     device = window_device(hass, entry)
 -    if device is None or device.area_id is not None:
 +    if device is None:
          return None

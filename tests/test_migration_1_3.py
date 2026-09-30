@@ -152,12 +152,13 @@ async def test_live_house_migrates_to_1_3(hass, cover_calls):
         "floors",
         "areas",
     }
-    # one cover per window already: nothing to split
-    assert not [
-        issue
+    # one cover per window already: nothing to split. (P7: the house is
+    # offered the move to subentries, the only issue it has.)
+    assert [
+        issue.translation_key
         for (domain, _id), issue in ir.async_get(hass).issues.items()
         if domain == DOMAIN
-    ]
+    ] == ["consolidate_house"]
 
 
 # ------------------------------------------------------ multi-cover entries

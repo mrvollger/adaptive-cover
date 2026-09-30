@@ -329,7 +329,9 @@ def _entry_factory(window: Window):
     return factory
 
 
-async def _create(hass, freezer, window: Window, date: str) -> ReplayHouse:
+async def _create(
+    hass, freezer, window: Window, date: str, *, consolidated: bool = False
+) -> ReplayHouse:
     house_cls = type("WindowReplayHouse", (ReplayHouse,), {"window": window})
     with patch.object(harness, "MockConfigEntry", _entry_factory(window)):
         house = await house_cls.create(
@@ -356,12 +358,26 @@ async def _create(hass, freezer, window: Window, date: str) -> ReplayHouse:
     # lifts itself), so the goldens pin the window acting on its resolved
     # layered settings; a window that is not lifted has no provenance.
     assert house.windows[window.cover].attributes.get("provenance") is not None
+    if consolidated:
+        # P7: the owner consolidates the house right away (00:30): the
+        # window entry becomes a subentry of the house, same key, same
+        # entities; the day must replay byte for byte.
+        await house.consolidate()
+        assert hass.config_entries.async_get_entry(window.entry_id) is None
+        handle = house.windows[window.cover]
+        assert handle.window_key == window.entry_id
+        assert handle.attributes["window_key"] == window.entry_id
     house.sample()
     return house
 
 
-async def run_replay(hass, freezer, window: Window, label: str) -> Replay:
-    """Replay one live window over one scripted local day."""
+async def run_replay(
+    hass, freezer, window: Window, label: str, *, consolidated: bool = False
+) -> Replay:
+    """Replay one live window over one scripted local day.
+
+    ``consolidated``: through a house consolidated at the start (P7).
+    """
     date = DATES[label]
     hass.config.units = US_CUSTOMARY_SYSTEM
     temp_entity = window.options[CONF_TEMP_ENTITY]
@@ -395,7 +411,7 @@ async def run_replay(hass, freezer, window: Window, label: str) -> Replay:
         key=lambda item: item[1],
     )
 
-    house = await _create(hass, freezer, window, date)
+    house = await _create(hass, freezer, window, date, consolidated=consolidated)
     try:
         for kind, hhmm, value in script:
             await house.advance_to(hhmm)
