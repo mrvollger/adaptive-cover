@@ -1,35 +1,37 @@
-"""P5 flip: a window acts on its layered settings, and edits store sparsely.
+"""A window acts on its layered settings, and edits store sparsely (P5, P8).
 
-Since the flip every window resolves its recurring settings from its own
-override, its area, its floor and the house (ADR 0003), and its one-time
-settings from its options. The editing surfaces store what the user
-changes where it belongs:
+Every window resolves its recurring settings from its own override, its
+area, its floor and the house (ADR 0003), and its one-time settings from
+its geometry. The editing surfaces store what the user changes where it
+belongs:
 
-- the options form and ``change_settings``: one-time settings in the
-  window's options; recurring ones as the window's own value in its
+- a window's Reconfigure and ``change_settings``: one-time settings in the
+  window's geometry; recurring ones as the window's own value in its
   ``overrides`` (``values`` where a window may override the option,
   ``legacy`` otherwise), only when it differs from what the window
   inherits; a value equal to the inherited one, or a cleared field,
-  removes the override. The legacy flat keys are left alone (a downgrade
-  reads them);
+  removes the override. Nothing else is stored (no copy of the recurring
+  settings in the window);
 - a new window starts from the house's settings, and a copy copies what
   the source window acts on;
-- stored layers that break the spec leave the window on its legacy
-  options (logged), never without settings.
+- stored layers that break the spec stop the window (it acts on nothing
+  it cannot read) until they are fixed.
 
-Observed through the config-entry store (where the edit went), the
-diagnostics settings (what the window acts on) and entity states.
+Observed through the house entry (where the edit went), the diagnostics
+settings (what the window acts on) and entity states.
 """
 
 from __future__ import annotations
 
+import datetime as dt
 from typing import Any
 
 import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
+    async_fire_time_changed,
     async_mock_service,
 )
 
@@ -45,20 +47,34 @@ from custom_components.adaptive_cover.const import (
     DOMAIN,
     SensorType,
 )
+from custom_components.adaptive_cover.settings.lift import legacy_flat
+from custom_components.adaptive_cover.settings.spec import OPTS_BY_KEY, Scope
 
 from .conftest import COMMON_OPTIONS
+from .house_model import mock_window_entry, window_subentry
+from .window_form import prefilled, record, start_add_window, start_reconfigure
+from .window_form import submit as submit_form
 from .window_handle import WindowHandle, window_settings
 
 COVER = "cover.office"
 OTHER = "cover.den"
 
+# Every recurring setting at its spec default (°C): the house of these
+# tests holds a value for each, as a real house does.
+RECURRING_DEFAULTS = {
+    key: value
+    for key, value in legacy_flat({}, temperature_unit="°C").items()
+    if OPTS_BY_KEY[key].scope is Scope.RECURRING
+}
 
-def _entry(hass, cover: str = COVER, name: str = "Office", **extra) -> MockConfigEntry:
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        title=name,
-        data={"name": name, CONF_SENSOR_TYPE: SensorType.BLIND},
-        options={
+
+def _entry(hass, cover: str = COVER, name: str = "Office", **extra):
+    """A house with one window (``entry_id`` is also the window key)."""
+    return mock_window_entry(
+        hass,
+        {"name": name, CONF_SENSOR_TYPE: SensorType.BLIND},
+        {
+            **RECURRING_DEFAULTS,
             **COMMON_OPTIONS,
             CONF_HEIGHT_WIN: 2.1,
             CONF_DISTANCE: 0.5,
@@ -67,8 +83,6 @@ def _entry(hass, cover: str = COVER, name: str = "Office", **extra) -> MockConfi
             **extra,
         },
     )
-    entry.add_to_hass(hass)
-    return entry
 
 
 @pytest.fixture(autouse=True)
@@ -83,59 +97,41 @@ async def _setup(hass, entry) -> None:
     await hass.async_block_till_done()
 
 
-def _hub(hass) -> MockConfigEntry:
-    (hub,) = [
-        e for e in hass.config_entries.async_entries(DOMAIN) if e.data.get("is_hub")
-    ]
-    return hub
-
-
-def _overrides(entry) -> tuple[dict, dict]:
-    stored = entry.options["overrides"]
-    assert stored["window_key"] == entry.entry_id
+def _overrides(entry, key: str | None = None) -> tuple[dict, dict]:
+    """The window's stored overrides: (values, legacy)."""
+    stored = window_subentry(entry, key or entry.entry_id).data["overrides"]
     return dict(stored["values"]), dict(stored["legacy"])
 
 
-async def _save_options(
+async def _save_reconfigure(
     hass, entry, changes: dict[str, Any], clear: frozenset[str] = frozenset()
 ) -> None:
-    """Save the options form: every shown value as suggested, with ``changes``.
+    """Save the window's Reconfigure: every shown value as suggested, with ``changes``.
 
     A field in ``clear`` is left empty (a cleared field).
     """
-    result = await hass.config_entries.options.async_init(entry.entry_id)
-    user_input: dict[str, dict[str, Any]] = {}
-    for marker, section in result["data_schema"].schema.items():
-        fields: dict[str, Any] = {}
-        for field in section.schema.schema:
-            key = str(field)
-            suggested = (field.description or {}).get("suggested_value")
-            if key in changes:
-                fields[key] = changes[key]
-            elif suggested is not None and key not in clear:
-                fields[key] = suggested
-        user_input[str(marker)] = fields
-    result = await hass.config_entries.options.async_configure(
-        result["flow_id"], user_input=user_input
-    )
-    assert result["type"] is FlowResultType.CREATE_ENTRY, result
+    subentry = window_subentry(entry, entry.entry_id)
+    result = await start_reconfigure(hass, entry, subentry.subentry_id)
+    values = {
+        key: value for key, value in prefilled(result).items() if key not in clear
+    }
+    result = await submit_form(hass, result, {**values, **changes})
+    assert result["type"] is FlowResultType.ABORT, result
+    assert result["reason"] == "reconfigure_successful"
     await hass.async_block_till_done()
 
 
-# ------------------------------------------------------------ options form
+# ------------------------------------------------------------ reconfigure
 
 
-async def test_options_form_stores_recurring_edits_as_sparse_overrides(
+async def test_reconfigure_stores_recurring_edits_as_sparse_overrides(
     hass, mock_sun_entity
 ):
     entry = _entry(hass)
     await _setup(hass, entry)
-    flat_before = {
-        key: entry.options.get(key) for key in (CONF_EYE_HEIGHT, CONF_DELTA_TIME)
-    }
-    house = dict(_hub(hass).options["house"])
+    house = dict(entry.options["house"])
 
-    await _save_options(
+    await _save_reconfigure(
         hass,
         entry,
         {CONF_EYE_HEIGHT: 1.5, CONF_DELTA_TIME: 7, CONF_QUIET_START: "22:00:00"},
@@ -150,9 +146,10 @@ async def test_options_form_stores_recurring_edits_as_sparse_overrides(
     settings = await window_settings(hass, entry.entry_id)
     assert settings[CONF_EYE_HEIGHT] == 1.5
     assert settings[CONF_DELTA_TIME] == 7
-    # The legacy flat keys are left for a downgrade; the house is untouched.
-    assert {key: entry.options.get(key) for key in flat_before} == flat_before
-    assert _hub(hass).options["house"] == house
+    # The window stores no copy of a recurring setting; the house is untouched.
+    geometry = record(window_subentry(entry, entry.entry_id)).geometry
+    assert not {CONF_EYE_HEIGHT, CONF_DELTA_TIME, CONF_QUIET_START} & set(geometry)
+    assert entry.options["house"] == house
     assert WindowHandle(hass, COVER).attributes["provenance"] == {
         CONF_EYE_HEIGHT: "window",
         CONF_DELTA_TIME: "legacy",
@@ -161,7 +158,7 @@ async def test_options_form_stores_recurring_edits_as_sparse_overrides(
 
     # Back to the inherited delta time, eye height and quiet start cleared:
     # nothing of the window's own is left; it inherits the house's again.
-    await _save_options(
+    await _save_reconfigure(
         hass,
         entry,
         {CONF_DELTA_TIME: 2},
@@ -174,17 +171,18 @@ async def test_options_form_stores_recurring_edits_as_sparse_overrides(
     assert WindowHandle(hass, COVER).attributes["provenance"] == {}
 
 
-async def test_options_form_one_time_edit_goes_to_the_options(hass, mock_sun_entity):
+async def test_reconfigure_one_time_edit_goes_to_the_geometry(hass, mock_sun_entity):
     entry = _entry(hass)
     await _setup(hass, entry)
-    await _save_options(hass, entry, {CONF_HEIGHT_WIN: 2.4})
-    assert entry.options[CONF_HEIGHT_WIN] == 2.4
+    await _save_reconfigure(hass, entry, {CONF_HEIGHT_WIN: 2.4})
+    subentry = window_subentry(entry, entry.entry_id)
+    assert record(subentry).geometry[CONF_HEIGHT_WIN] == 2.4
     assert _overrides(entry) == ({}, {})
     assert entry.state is ConfigEntryState.LOADED
     assert (await window_settings(hass, entry.entry_id))[CONF_HEIGHT_WIN] == 2.4
 
 
-async def test_options_form_shows_what_the_window_acts_on(hass, mock_sun_entity):
+async def test_reconfigure_shows_what_the_window_acts_on(hass, mock_sun_entity):
     entry = _entry(hass)
     await _setup(hass, entry)
     await hass.services.async_call(
@@ -194,16 +192,12 @@ async def test_options_form_shows_what_the_window_acts_on(hass, mock_sun_entity)
         blocking=True,
     )
     await hass.async_block_till_done()
-    assert entry.options[CONF_SUNSET_POS] == 0  # the legacy key, untouched
+    assert entry.options["house"][CONF_SUNSET_POS] == 0  # the house, untouched
 
-    result = await hass.config_entries.options.async_init(entry.entry_id)
-    suggested = {
-        str(field): (field.description or {}).get("suggested_value")
-        for section in result["data_schema"].schema.values()
-        for field in section.schema.schema
-    }
-    hass.config_entries.options.async_abort(result["flow_id"])
-    assert suggested[CONF_SUNSET_POS] == 30
+    subentry = window_subentry(entry, entry.entry_id)
+    result = await start_reconfigure(hass, entry, subentry.subentry_id)
+    hass.config_entries.subentries.async_abort(result["flow_id"])
+    assert prefilled(result)[CONF_SUNSET_POS] == 30
 
 
 # ------------------------------------------------------------ change_settings
@@ -212,7 +206,7 @@ async def test_options_form_shows_what_the_window_acts_on(hass, mock_sun_entity)
 async def test_change_settings_stores_sparse_overrides(hass, mock_sun_entity):
     entry = _entry(hass)
     await _setup(hass, entry)
-    house_eye = _hub(hass).options["house"][CONF_EYE_HEIGHT]
+    house_eye = entry.options["house"][CONF_EYE_HEIGHT]
 
     async def change(**changes):
         response = await hass.services.async_call(
@@ -243,19 +237,12 @@ async def test_change_settings_stores_sparse_overrides(hass, mock_sun_entity):
 async def test_a_new_window_starts_from_the_house(hass, mock_sun_entity):
     entry = _entry(hass, **{CONF_SUNSET_POS: 12})
     await _setup(hass, entry)
-    assert _hub(hass).options["house"][CONF_SUNSET_POS] == 12
+    assert entry.options["house"][CONF_SUNSET_POS] == 12
 
-    # The add form shows the house's value.
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": "user"}
-    )
-    suggested = {
-        str(field): (field.description or {}).get("suggested_value")
-        for section in result["data_schema"].schema.values()
-        for field in section.schema.schema
-    }
-    hass.config_entries.flow.async_abort(result["flow_id"])
-    assert suggested[CONF_SUNSET_POS] == 12
+    # The add form ("Add window") shows the house's value.
+    result = await start_add_window(hass, entry)
+    hass.config_entries.subentries.async_abort(result["flow_id"])
+    assert prefilled(result)[CONF_SUNSET_POS] == 12
 
     # add_entry without a template inherits everything recurring.
     response = await hass.services.async_call(
@@ -266,9 +253,9 @@ async def test_a_new_window_starts_from_the_house(hass, mock_sun_entity):
         return_response=True,
     )
     await hass.async_block_till_done()
-    new = hass.config_entries.async_get_entry(response["entry_id"])
-    assert _overrides(new) == ({}, {})
-    assert (await window_settings(hass, new.entry_id))[CONF_SUNSET_POS] == 12
+    key = response["entry_id"]
+    assert _overrides(entry, key) == ({}, {})
+    assert (await window_settings(hass, key))[CONF_SUNSET_POS] == 12
 
 
 async def test_a_copy_copies_what_the_source_acts_on(hass, mock_sun_entity):
@@ -290,37 +277,39 @@ async def test_a_copy_copies_what_the_source_acts_on(hass, mock_sun_entity):
         return_response=True,
     )
     await hass.async_block_till_done()
-    copy = hass.config_entries.async_get_entry(response["entry_id"])
-    assert (await window_settings(hass, copy.entry_id))[CONF_EYE_HEIGHT] == 1.6
-    assert _overrides(copy) == ({CONF_EYE_HEIGHT: 1.6}, {})
+    key = response["entry_id"]
+    assert (await window_settings(hass, key))[CONF_EYE_HEIGHT] == 1.6
+    assert _overrides(entry, key) == ({CONF_EYE_HEIGHT: 1.6}, {})
 
 
 # ------------------------------------------------------------ robustness
 
 
-async def test_invalid_layers_leave_the_window_on_its_options(
-    hass, mock_sun_entity, caplog
-):
+async def test_invalid_layers_stop_the_window_until_fixed(hass, mock_sun_entity):
+    """Stored layers that break the spec: the window acts on none of them.
+
+    Since v2.1 there are no legacy flat options to fall back on: the window
+    stops (its entities are unavailable, no cover is commanded) until the
+    layers are valid again.
+    """
     entry = _entry(hass, **{CONF_SUNSET_POS: 12})
     await _setup(hass, entry)
-    hub = _hub(hass)
-    # A floor-level option stored on the house breaks the spec.
-    house = {**hub.options["house"], CONF_SUNSET_POS: 40, "bogus_option": 1}
-    hass.config_entries.async_update_entry(hub, options={**hub.options, "house": house})
+    window = WindowHandle.by_key(hass, entry.entry_id)
+    assert window.available
+    good = dict(entry.options)
+    # An option the spec does not know, stored on the house.
+    house = {**entry.options["house"], "bogus_option": 1}
+    hass.config_entries.async_update_entry(entry, options={**good, "house": house})
+    calls = async_mock_service(hass, "cover", "set_cover_position")
     hass.states.async_set("sun.sun", "above_horizon", {"azimuth": 181, "elevation": 44})
     await hass.async_block_till_done()
+    assert not window.available
+    assert calls == []
 
-    assert (await window_settings(hass, entry.entry_id))[CONF_SUNSET_POS] == 12
-    assert WindowHandle(hass, COVER).attributes["provenance"] is None
-    assert "the layered settings are invalid" in caplog.text
-
-    # An edit meanwhile goes where the window reads it: its options.
-    await hass.services.async_call(
-        DOMAIN,
-        "change_settings",
-        {"config_entry": entry.entry_id, CONF_SUNSET_POS: 20},
-        blocking=True,
-    )
+    hass.config_entries.async_update_entry(entry, options=good)
+    hass.states.async_set("sun.sun", "above_horizon", {"azimuth": 182, "elevation": 43})
+    # (Refresh requests are debounced: the next one runs after the cooldown.)
+    async_fire_time_changed(hass, dt_util.utcnow() + dt.timedelta(seconds=11))
     await hass.async_block_till_done()
-    assert entry.options[CONF_SUNSET_POS] == 20
-    assert (await window_settings(hass, entry.entry_id))[CONF_SUNSET_POS] == 20
+    assert window.available
+    assert (await window_settings(hass, entry.entry_id))[CONF_SUNSET_POS] == 12

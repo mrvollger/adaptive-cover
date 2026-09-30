@@ -4,29 +4,19 @@ import logging
 
 DOMAIN = "adaptive_cover"
 
-# Config-entry schema version. Minor bumps are backward compatible (older
-# code loads the entry as is); async_migrate_entry in __init__.py upgrades.
-#   1.2 (P1): entity categories and disabled defaults applied to existing
-#             registry rows.
-#   1.3 (P3): fallback values written into the options, the cover written
-#             as cover_entity_id (group kept), unique_id = the cover's
-#             entity-registry id (migration.py).
-#   1.4 (P5 shadow): the hub stores the lifted house / floor / area
-#             profiles, each window its sparse ``overrides`` (shadow.py);
-#             the legacy flat keys stay and the runtime still acts on them.
-#   1.5 (P5 flip): the six per-window switches are hidden (still enabled)
-#             aliases of the Mode select and the house toggles.
-# Window entries (the legacy model) and a house that still has them stay
-# at 1.x, so a downgrade before consolidation keeps working.
-CONFIG_ENTRY_VERSION = 1
-CONFIG_ENTRY_MINOR_VERSION = 5
-# The house entry holding its windows as subentries (P7, ADR 0001): a
-# consolidated house, or a fresh install. The major bump makes older code
-# refuse the house entry (restore the backup to roll back). The config
-# flow's version is this one, so Home Assistant loads a 2.x house; window
-# entries keep their 1.x version.
-#   2.1 (P7): windows are subentries of type "window" (windows.py).
-HOUSE_ENTRY_VERSION = 2
+# Config-entry versions. Home Assistant refuses an entry whose major
+# version is above the config flow's, and loads a newer minor as is.
+#   1.x: a window config entry, or the hub of window entries (before P7).
+#        v2.1 runs neither: they must be consolidated on v2.0.x first
+#        (upgrade.py).
+#   2.1 (P7, v2.0): the house entry with its windows as subentries of type
+#        "window", each storing its entry's data and options verbatim.
+#   3.1 (P8, v2.1): the same house; each window subentry stores only what
+#        it uses (settings/window_record.py), the switch aliases are gone
+#        and the house options keep only the layers. The major bump makes
+#        v2.0.x refuse the house instead of running windows it cannot read.
+V2_0_HOUSE_VERSION = 2
+HOUSE_ENTRY_VERSION = 3
 HOUSE_ENTRY_MINOR_VERSION = 1
 LOGGER = logging.getLogger(__package__)
 _LOGGER = logging.getLogger(__name__)
@@ -41,8 +31,8 @@ CONF_DISTANCE = "distance_shaded_area"
 CONF_DEFAULT_HEIGHT = "default_percentage"
 CONF_FOV_LEFT = "fov_left"
 CONF_FOV_RIGHT = "fov_right"
-# The window's cover (one per window, ADR 0002). Until P8 every writer
-# also stores it as CONF_ENTITIES = [cover], which older versions read.
+# The window's cover (one per window, ADR 0002). The runtime's flat
+# options also carry it as CONF_ENTITIES = [cover]; nothing stores that.
 CONF_COVER_ENTITY = "cover_entity_id"
 CONF_ENTITIES = "group"
 CONF_HEIGHT_AWNING = "height_awning"
@@ -120,10 +110,9 @@ CONF_MANUAL_OVERRIDE_RESET = "manual_override_reset"
 CONF_MANUAL_THRESHOLD = "manual_threshold"
 CONF_MANUAL_IGNORE_INTERMEDIATE = "manual_ignore_intermediate"
 
-# The per-window switches P5 drops, as layered settings (plan: "Climate
-# on/off", the outside temp / lux / irradiance "use-flags", "Manual-move
-# detection"). v1.18.0 only records them (settings/shadow.py); the runtime
-# still reads the switches.
+# The toggles that replaced the per-window switches (P5), as layered
+# settings (plan: "Climate on/off", the outside temp / lux / irradiance
+# "use-flags", "Manual-move detection"); the house has them as switches.
 CONF_CLIMATE_ON = "climate_on"
 CONF_USE_OUTSIDE_TEMP = "use_outside_temp"
 CONF_USE_LUX = "use_lux"

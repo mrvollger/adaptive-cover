@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -1199,7 +1199,7 @@
+@@ -1193,7 +1193,7 @@
          elif climate.is_summer and self.switch_mode:
              self.control_method = "summer"
          else:

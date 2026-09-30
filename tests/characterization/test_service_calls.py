@@ -20,10 +20,7 @@ from types import SimpleNamespace
 import pytest
 from freezegun import freeze_time
 from homeassistant.util import dt as dt_util
-from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
-    async_mock_service,
-)
+from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.adaptive_cover.calculation import AdaptiveVerticalCover
 from custom_components.adaptive_cover.config_context_adapter import (
@@ -38,13 +35,13 @@ from custom_components.adaptive_cover.const import (
     CONF_FOV_RIGHT,
     CONF_HEIGHT_WIN,
     CONF_SENSOR_TYPE,
-    DOMAIN,
     SensorType,
 )
 from custom_components.adaptive_cover.engine import geometry as engine_geometry
 from custom_components.adaptive_cover.helpers import get_safe_attr
 
 from ..conftest import COMMON_OPTIONS
+from ..house_model import mock_window_entry
 from ..window_handle import WindowHandle, internal_coordinator
 from .golden_lib import SLC, FakeSunData, patch_sun_data
 
@@ -53,11 +50,11 @@ COVER = "cover.test_cover"
 
 @pytest.fixture
 def cover_entry(hass):
-    """Config entry driving one cover, with the time throttle disabled."""
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={"name": "Test Vertical", CONF_SENSOR_TYPE: SensorType.BLIND},
-        options={
+    """A house with one window driving one cover, the time throttle disabled."""
+    return mock_window_entry(
+        hass,
+        {"name": "Test Vertical", CONF_SENSOR_TYPE: SensorType.BLIND},
+        {
             **COMMON_OPTIONS,
             CONF_HEIGHT_WIN: 2.1,
             CONF_DISTANCE: 0.5,
@@ -65,8 +62,6 @@ def cover_entry(hass):
             CONF_DELTA_TIME: 0,
         },
     )
-    entry.add_to_hass(hass)
-    return entry
 
 
 @pytest.fixture
@@ -115,8 +110,8 @@ async def test_fresh_setup_positions_covers(
     sat at their stale position until the next sun change. The fix defers
     the flag, so the switch's restore-refresh performs the startup move.
     (The command itself is measured from HA's call_service bus event
-    because the hub bootstrap replaces any pre-setup service mock during
-    setup.)
+    because the house's aggregate cover loads the cover component, which
+    replaces any pre-setup service mock during setup.)
     """
     _set_cover(hass, 60)
     window = await _setup(hass, cover_entry)
@@ -233,10 +228,10 @@ async def test_regression_bbca2e9_predicted_entry_position(hass, cover_calls):
     await hass.config.async_set_time_zone(SLC["tz"])
     sun_data = FakeSunData(SLC["lat"], SLC["lon"], SLC["tz"], "2026-03-20")
     win_azi, fov = 250, 45
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={"name": "Predict", CONF_SENSOR_TYPE: SensorType.BLIND},
-        options={
+    entry = mock_window_entry(
+        hass,
+        {"name": "Predict", CONF_SENSOR_TYPE: SensorType.BLIND},
+        {
             **COMMON_OPTIONS,
             CONF_HEIGHT_WIN: 2.1,
             CONF_DISTANCE: 0.5,
@@ -247,7 +242,6 @@ async def test_regression_bbca2e9_predicted_entry_position(hass, cover_calls):
             CONF_DELTA_TIME: 0,
         },
     )
-    entry.add_to_hass(hass)
     _nudge_sun(hass, elevation=45.0)
     _set_cover(hass, 60)
     with patch_sun_data(sun_data):

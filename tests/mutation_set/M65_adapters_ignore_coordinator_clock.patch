@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/calculation.py b/custom_components/adaptive_cover/calculation.py
 --- a/custom_components/adaptive_cover/calculation.py
 +++ b/custom_components/adaptive_cover/calculation.py
-@@ -934,5 +934,5 @@
+@@ -935,5 +935,5 @@
      if adapter is None:
          raise ValueError(f"Unknown cover type {cover_type!r}")
      return adapter.from_config(

@@ -1,10 +1,11 @@
-"""The window Mode (auto / hold / off), the hold service and the switch aliases.
+"""The window Mode (auto / hold / off) and the hold service.
 
 P5 flip (refactor plan, "Entity surface" and "Services"): the Mode select
-is the source of truth for a window's control state. It restores its own
-state and, on its first boot after the flip, the Toggle Control switch's.
-``adaptive_cover.hold`` is an entity service on it. The six switches are
-hidden, enabled aliases.
+is the source of truth for a window's control state and restores its own
+state. ``adaptive_cover.hold`` is an entity service on it. Since v2.1 (P8)
+the six window switches (hidden aliases since the flip) are gone, and the
+select no longer falls back to the Toggle Control switch or maps its
+pre-flip options.
 
 Driven through public surfaces only: entity states, the registries, the
 restore cache and real service calls.
@@ -43,6 +44,7 @@ from custom_components.adaptive_cover.const import (
 )
 
 from .conftest import COMMON_OPTIONS
+from .house_model import mock_window_entry
 from .window_handle import WindowHandle
 
 COVER = "cover.test_cover"
@@ -69,13 +71,9 @@ def _entry(hass, *, climate: bool = False, **extra) -> MockConfigEntry:
                 CONF_TEMP_HIGH: 25,
             }
         )
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={"name": "Mode Test", CONF_SENSOR_TYPE: SensorType.BLIND},
-        options=options,
+    return mock_window_entry(
+        hass, {"name": "Mode Test", CONF_SENSOR_TYPE: SensorType.BLIND}, options
     )
-    entry.add_to_hass(hass)
-    return entry
 
 
 def _registry_id(hass, domain: str, entry: MockConfigEntry, suffix: str) -> str:
@@ -141,7 +139,6 @@ class TestOptions:
         assert state.attributes["options"] == ["auto", "hold", "off"]
         assert state.state == "auto"
         assert state.attributes["until"] is None
-        assert window.state("control").state == "on"
 
     async def test_off_stops_moves_and_auto_brings_them_back(
         self, hass, mock_sun_entity
@@ -150,7 +147,6 @@ class TestOptions:
         await _land(hass, window)
         await _select(hass, window, "off")
         assert window.mode == "off"
-        assert window.state("control").state == "off"
 
         calls = async_mock_service(hass, "cover", "set_cover_position")
         hass.states.async_set(
@@ -258,7 +254,6 @@ class TestHold:
         await _select(hass, window, "off")
         await _hold(hass, {"entity_id": window.entity_id("mode")})
         assert window.mode == "hold"
-        assert window.state("control").state == "on"
         assert window.hold_until == _iso(NOW + dt.timedelta(**DURATION))
 
     @pytest.mark.parametrize(
@@ -296,19 +291,26 @@ class TestHold:
 
 
 class TestRestore:
-    async def test_first_boot_restores_from_the_toggle_control_switch(
-        self, hass, mock_sun_entity
-    ):
-        """No Mode state yet (the flip): the switch's last state decides."""
+    async def test_an_old_toggle_control_state_is_not_read(self, hass, mock_sun_entity):
+        """No Mode state: auto, whatever the gone Toggle Control switch had (P8)."""
         entry = _entry(hass)
         switch = _registry_id(hass, "switch", entry, "Toggle Control")
         mock_restore_cache(hass, [State(switch, "off")])
+
+        window = await _setup(hass, entry)
+
+        assert window.mode == "auto"
+        assert window.last_command == window.target
+
+    async def test_a_restored_off_does_not_move_at_startup(self, hass, mock_sun_entity):
+        entry = _entry(hass)
+        mode = _registry_id(hass, "select", entry, "mode_select")
+        mock_restore_cache(hass, [State(mode, "off")])
         calls = async_mock_service(hass, "cover", "set_cover_position")
 
         window = await _setup(hass, entry)
 
         assert window.mode == "off"
-        assert window.state("control").state == "off"
         assert calls == [], "a window restored off must not move at startup"
 
     async def test_the_mode_wins_over_the_switch(self, hass, mock_sun_entity):
@@ -319,20 +321,6 @@ class TestRestore:
 
         window = await _setup(hass, entry)
         assert window.mode == "auto"
-
-    @pytest.mark.parametrize(
-        ("stored", "restored"),
-        [("Manual", "off"), ("Sun tracking", "auto"), ("Sun + climate", "auto")],
-    )
-    async def test_old_option_names_map_to_the_new_modes(
-        self, hass, mock_sun_entity, stored, restored
-    ):
-        entry = _entry(hass, climate=True)
-        mode = _registry_id(hass, "select", entry, "mode_select")
-        mock_restore_cache(hass, [State(mode, stored)])
-
-        window = await _setup(hass, entry)
-        assert window.mode == restored
 
     async def test_a_restored_hold_lasts_until_its_end(
         self, hass, mock_sun_entity, frozen
@@ -362,46 +350,20 @@ class TestRestore:
         assert window.last_command == window.target
 
 
-# ------------------------------------------------------------ switch aliases
+# ------------------------------------------------------------ no switches
 
 
-class TestSwitchAliases:
-    async def test_switches_are_hidden_and_enabled(self, hass, mock_sun_entity):
+class TestNoSwitches:
+    async def test_a_window_has_no_switch_entities(self, hass, mock_sun_entity):
+        """The six switch aliases are gone (P8): Mode and the house settings."""
         entry = _entry(hass, climate=True)
-        await _setup(hass, entry)
-        registry = er.async_get(hass)
+        window = await _setup(hass, entry)
+        prefix = f"{window.window_key}_"
         switches = [
-            row
-            for row in er.async_entries_for_config_entry(registry, entry.entry_id)
-            if row.domain == "switch"
+            row.entity_id
+            for row in er.async_get(hass).entities.values()
+            if row.platform == DOMAIN
+            and row.domain == "switch"
+            and row.unique_id.startswith(prefix)
         ]
-        assert {
-            row.unique_id.removeprefix(f"{entry.entry_id}_") for row in switches
-        } == {
-            "Toggle Control",
-            "Manual Override",
-            "Climate Mode",
-        }
-        for row in switches:
-            assert row.hidden_by is er.RegistryEntryHider.INTEGRATION, row.entity_id
-            assert row.disabled_by is None, row.entity_id
-            assert hass.states.get(row.entity_id) is not None, row.entity_id
-
-    async def test_toggle_control_writes_through_to_the_mode(
-        self, hass, mock_sun_entity
-    ):
-        window = await _setup(hass, _entry(hass))
-        await window.turn("control", False)
-        assert window.mode == "off"
-        assert window.state("control").state == "off"
-        await window.turn("control", True)
-        assert window.mode == "auto"
-        assert window.state("control").state == "on"
-
-    async def test_toggle_control_on_keeps_a_hold(self, hass, mock_sun_entity):
-        """The alias's on is what the switch always did: control on, holds kept."""
-        window = await _setup(hass, _entry(hass))
-        await _land(hass, window)
-        await _select(hass, window, "hold")
-        await window.turn("control", True)
-        assert window.mode == "hold"
+        assert switches == []

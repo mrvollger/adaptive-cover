@@ -5,7 +5,7 @@ Every settings surface comes from ``spec.OPTS``:
 - the one-screen setup form that adds a window and reconfigures it
   (``setup_section_fields``, ``setup_schema``), with its presets and
   "Copy from" values;
-- the one-page options form sections (``options_section_fields``);
+- the house options form (``form_validator`` on the ``options`` surface);
 - the ``change_settings`` and ``add_entry`` service schemas, and the
   options ``add_entry`` gives an entry without ``copy_from``;
 - the ``set_profile`` service schema (every recurring setting);
@@ -49,7 +49,6 @@ from .spec import (
     Kind,
     Opt,
     Scope,
-    opts_in,
 )
 
 ENTITY_ID_PATTERN: Final = r"^[a-z_]+\.[a-z0-9_]+$"
@@ -59,16 +58,6 @@ _COVER_FEATURE: Final = {
     SensorType.AWNING: "cover.CoverEntityFeature.SET_POSITION",
     SensorType.TILT: "cover.CoverEntityFeature.SET_TILT_POSITION",
 }
-
-# Options form: section -> groups, in order. The climate section holds only
-# the toggle while climate mode is off (so the feature stays discoverable).
-OPTIONS_SECTIONS: Final = {
-    "covers_geometry": (Group.COVER,),
-    "sun_behavior": (Group.SUN, Group.BLIND_SPOT, Group.INTERP),
-    "automation_timing": (Group.AUTOMATION,),
-    "climate": (Group.CLIMATE_TOGGLE, Group.CLIMATE, Group.WEATHER),
-}
-_CLIMATE_OFF_GROUPS: Final = (Group.CLIMATE_TOGGLE,)
 
 # Every option a form shows (a new window stores all of them).
 SETUP_OPTION_KEYS: Final = frozenset(
@@ -461,39 +450,6 @@ def flatten_sections(user_input: Mapping[str, Any]) -> dict[str, Any]:
         if isinstance(values, Mapping):
             flat.update(values)
     return flat
-
-
-# ---------------------------------------------------------- options form
-
-
-def options_section_fields(
-    cover_type: str,
-    *,
-    climate_on: bool,
-    options: Mapping[str, Any],
-    temperature_unit: str | None,
-) -> dict[str, dict[vol.Marker, Any]]:
-    """``{section: fields}`` of the one-page options form.
-
-    Every field is optional and pre-filled with the entry's current value.
-    """
-    sections: dict[str, dict[vol.Marker, Any]] = {}
-    for name, groups in OPTIONS_SECTIONS.items():
-        if name == "climate" and not climate_on:
-            groups = _CLIMATE_OFF_GROUPS
-        sections[name] = {
-            vol.Optional(
-                opt.key, description={"suggested_value": options.get(opt.key)}
-            ): form_validator(
-                opt,
-                "options",
-                cover_type=cover_type,
-                temperature_unit=temperature_unit,
-            )
-            for group in groups
-            for opt in opts_in(group, cover_type)
-        }
-    return sections
 
 
 # -------------------------------------------------------------- services

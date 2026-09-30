@@ -423,20 +423,21 @@ class ShadeConfig:
 
 @dataclass(slots=True)
 class ControlState:
-    """The window's switch toggles.
+    """The window's control toggles (the per-window switches until P8).
 
-    None means "not restored yet": the switch platform restores its state
-    after the coordinator's first refresh.
+    ``control`` is None until the Mode select restores it, after the
+    coordinator's first refresh; the others come from the resolved
+    settings.
     """
 
     control: bool | None = None
-    """Automatic control (the "Toggle Control" switch)."""
+    """Automatic control (False: Mode off)."""
     manual: bool | None = None
-    """Manual-override detection (the "Manual Override" switch)."""
+    """Manual-override detection (``manual_detection``)."""
     climate: bool = False
-    """Climate mode (the "Climate Mode" switch); starts from the option."""
+    """Climate mode (``climate_mode`` and ``climate_on``)."""
     outside_temp: bool | None = None
-    """Use the outside temperature (the "Outside Temperature" switch)."""
+    """Use the outside temperature (``use_outside_temp``)."""
     lux: bool | None = None
     irradiance: bool | None = None
 
@@ -460,8 +461,8 @@ class _HasControls(Protocol):
 class ControlToggle[T: bool | None]:
     """An attribute that reads and writes one :class:`ControlState` field.
 
-    The switch platform sets toggles by name (``setattr(coordinator,
-    "manual_toggle", True)``); declaring ``manual_toggle =
+    The runtime reads toggles by their historical names (the switch
+    platform set them by name until P8); declaring ``manual_toggle =
     ControlToggle[bool | None]("manual")`` on the coordinator keeps those
     names while the state lives in one ``ControlState``. ``T`` is the
     field's type.

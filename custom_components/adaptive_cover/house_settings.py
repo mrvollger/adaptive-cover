@@ -16,7 +16,7 @@ Each entity is one house-level value in the layered settings (the hub's
 Changing one stores it (``layers.async_set_profile``) and every window
 acts on it at once, without a reload. Floors, rooms and windows can still
 have their own value (``set_profile``, the options form); these entities
-show and set the house's. Before the house is lifted they are unavailable.
+show and set the house's.
 """
 
 from __future__ import annotations
@@ -64,7 +64,7 @@ from .layers import (
 from .settings.resolve import spec_default
 from .settings.schema import number_shape
 from .settings.spec import Level
-from .shadow import lifted_hub
+from .windows import house_entry
 
 HOUSE_SWITCHES: tuple[str, ...] = (
     CONF_CLIMATE_ON,
@@ -145,14 +145,9 @@ class HouseSetting(Entity):
         apply_surface(self, HUB_SURFACE[(platform, key)])
         self._attr_device_info = device_info
 
-    @property
-    def available(self) -> bool:
-        """Available once the house has layered settings."""
-        return lifted_hub(self.hass) is not None
-
     def _value(self) -> Any:
         """Return the house's value (the spec default when it stores none)."""
-        hub = lifted_hub(self.hass)
+        hub = house_entry(self.hass)
         unit = self.hass.config.units.temperature_unit
         if hub is None:
             return spec_default(SPEC[self._key], unit)

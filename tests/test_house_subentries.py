@@ -1,7 +1,9 @@
-"""The house entry with window subentries (P7, ADR 0001), through public surfaces.
+"""The house entry with window subentries (P7, P8, ADR 0001), through public surfaces.
 
-A fresh install starts in the house model: the add form creates the house
-entry (the hub) with the window as its first ``window`` subentry. Each
+A fresh install creates the house entry (the hub, 3.1) with the window as
+its first ``window`` subentry, storing only what the window uses (its
+name, cover, cover type, geometry and overrides); the house options are
+lifted from it. The integration has one config entry. Each
 window gets its own device, hanging off the house device, and its entities
 are the window subentry's. Windows are added with "Add window" (the
 subentry flow), changed with its Reconfigure (one-time settings and the
@@ -31,9 +33,7 @@ from custom_components.adaptive_cover.const import (
     CONF_COVER_ENTITY,
     CONF_DEFAULT_HEIGHT,
     CONF_DISTANCE,
-    CONF_ENTITIES,
     CONF_HEIGHT_WIN,
-    CONF_SENSOR_TYPE,
     CONF_SUNSET_POS,
     CONF_TEMP_HIGH,
     CONF_TEMP_LOW,
@@ -41,7 +41,7 @@ from custom_components.adaptive_cover.const import (
 )
 from custom_components.adaptive_cover.hub import HUB_UNIQUE_ID
 
-from .window_form import add_legacy_house, sectioned, start_add, submit
+from .window_form import add_legacy_house, record, sectioned, start_add, submit
 from .window_handle import WindowHandle, window_configs, window_settings
 
 pytestmark = pytest.mark.usefixtures("stub_sun_integration")
@@ -93,7 +93,7 @@ def _house(hass) -> MockConfigEntry:
 def _window_subentries(hass) -> dict[str, config_entries.ConfigSubentry]:
     """The house's window subentries by cover."""
     return {
-        subentry.data["options"][CONF_COVER_ENTITY]: subentry
+        subentry.data[CONF_COVER_ENTITY]: subentry
         for subentry in _house(hass).subentries.values()
         if subentry.subentry_type == "window"
     }
@@ -170,14 +170,28 @@ async def test_fresh_install_creates_the_house_with_the_window_as_subentry(
     (house,) = hass.config_entries.async_entries(DOMAIN)
     assert house.data["is_hub"] is True
     assert house.unique_id == HUB_UNIQUE_ID
-    assert (house.version, house.minor_version) == (2, 1)
+    assert (house.version, house.minor_version) == (3, 1)
     assert house.state is ConfigEntryState.LOADED
     (subentry,) = house.subentries.values()
     assert subentry.subentry_type == "window"
     assert subentry.title == "East"
     assert subentry.unique_id == er.async_get(hass).async_get(EAST).id
-    assert subentry.data["data"] == {"name": "East", CONF_SENSOR_TYPE: "cover_blind"}
-    assert subentry.data["options"][CONF_ENTITIES] == [EAST]
+    # The subentry stores only what the window uses (settings/window_record).
+    assert set(subentry.data) == {
+        "name",
+        CONF_COVER_ENTITY,
+        "cover_type",
+        "geometry",
+        "overrides",
+    }
+    window_record = record(subentry)
+    assert (window_record.name, window_record.cover) == ("East", EAST)
+    assert window_record.cover_type == "cover_blind"
+    assert window_record.geometry[CONF_AZIMUTH] == 100
+    # Lifted from its only window, the house holds every recurring value:
+    # the window overrides none of them.
+    assert window_record.overrides.values == {}
+    assert window_record.overrides.legacy == {}
     # A new window's key is its subentry_id.
     key = subentry.subentry_id
     assert window_configs(hass)[key][CONF_COVER_ENTITY] == EAST
@@ -204,10 +218,11 @@ async def test_fresh_install_creates_the_house_with_the_window_as_subentry(
     assert device.via_device_id == house_device.id
     assert device.area_id == office.id  # copied from the cover
     assert {row.device_id for row in rows} == {device.id}
-    # The house settings live on the house (lifted from the first window).
-    assert "house" in house.options
+    # The house settings live on the house (lifted from the first window),
+    # and the house options hold nothing else.
+    assert set(house.options) == {"house", "floors", "areas", "temperature_unit"}
     # A fresh house has nothing to consolidate.
-    assert ir.async_get(hass).async_get_issue(DOMAIN, "consolidate_house") is None
+    assert ir.async_get(hass).async_get_issue(DOMAIN, "consolidate_first") is None
 
 
 async def test_add_window_adds_a_subentry_and_leaves_the_others_running(
@@ -228,18 +243,16 @@ async def test_add_window_adds_a_subentry_and_leaves_the_others_running(
     assert east.teardowns == 0  # the house did not reload East
 
 
-async def test_the_config_flow_adds_a_window_to_the_house(hass, cover_calls):
+async def test_the_integration_has_one_config_entry(hass, cover_calls):
+    """``single_config_entry``: once the house exists the config flow aborts."""
     _world(hass)
     await _fresh_install(hass)
 
     result = await start_add(hass)
-    result = await submit(
-        hass, result, {"name": "West", CONF_COVER_ENTITY: WEST, CONF_AZIMUTH: 250}
-    )
     assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "window_added"
+    assert result["reason"] == "single_instance_allowed"
     await hass.async_block_till_done()
-    assert set(_window_subentries(hass)) == {EAST, WEST}
+    assert set(_window_subentries(hass)) == {EAST}
     assert len(hass.config_entries.async_entries(DOMAIN)) == 1
 
 
@@ -254,7 +267,7 @@ async def test_a_cover_another_window_drives_is_refused(hass, cover_calls):
 
 
 async def test_add_window_waits_for_the_consolidation(hass, cover_calls):
-    """A house that still has window entries adds window entries (legacy)."""
+    """A house not on 3.x (not consolidated on v2.0.x) adds no window."""
     add_legacy_house(hass)
     result = await hass.config_entries.subentries.async_init(
         (_house(hass).entry_id, "window"),
@@ -279,7 +292,8 @@ async def test_reconfigure_rebuilds_only_that_window(hass, cover_calls):
 
     subentry = _window_subentries(hass)[EAST]
     assert subentry.title == "East 2"
-    assert subentry.data["options"][CONF_HEIGHT_WIN] == 2.8
+    assert record(subentry).name == "East 2"
+    assert record(subentry).geometry[CONF_HEIGHT_WIN] == 2.8
     assert east.teardowns == 1  # rebuilt with its new geometry
     assert west.teardowns == 0  # untouched
     assert east.target is not None
@@ -294,13 +308,13 @@ async def test_reconfigure_stores_an_exception_sparsely(hass, cover_calls):
     inherited = (await east.settings())[CONF_SUNSET_POS]
 
     await _reconfigure(hass, EAST, **{CONF_SUNSET_POS: 42})
-    overrides = _window_subentries(hass)[EAST].data["options"]["overrides"]
+    overrides = _window_subentries(hass)[EAST].data["overrides"]
     assert overrides["values"] == {CONF_SUNSET_POS: 42}
     assert (await east.settings())[CONF_SUNSET_POS] == 42
     assert east.teardowns == 0  # an exception needs no rebuild
 
     await _reconfigure(hass, EAST, **{CONF_SUNSET_POS: inherited})
-    overrides = _window_subentries(hass)[EAST].data["options"]["overrides"]
+    overrides = _window_subentries(hass)[EAST].data["overrides"]
     assert overrides["values"] == {}
 
 
@@ -328,8 +342,9 @@ async def test_one_broken_window_does_not_fail_the_house(hass, cover_calls):
     _world(hass)
     await _fresh_install(hass)
     house = _house(hass)
+    # A v2.0-shaped subentry: v2.1 cannot read it.
     broken = config_entries.ConfigSubentry(
-        data={"data": {}, "options": {CONF_ENTITIES: [WEST]}},
+        data={"data": {}, "options": {CONF_COVER_ENTITY: WEST}},
         subentry_type="window",
         title="Broken",
         unique_id=None,

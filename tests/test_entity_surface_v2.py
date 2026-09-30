@@ -2,9 +2,10 @@
 
 Pins the per-window and hub entity surface: category, default visibility
 and "<Device> <Role>" names; the device area copied from the physical
-cover; the 1.1 -> 1.2 config-entry migration that applies the surface to
-EXISTING registry rows without overriding user choices; and the new
-Position sensor attributes.
+cover; the house entry's versions; and the new Position sensor
+attributes. (The 1.x migrations that applied the surface to existing
+rows are gone since v2.1: every house that runs v2.1 went through them
+on v2.0.x. The six window switches are gone too.)
 
 Public seams only: config entries, the entity/device/area registries,
 hass.states and the translation files. The expected surface below is
@@ -53,6 +54,8 @@ from custom_components.adaptive_cover.const import (
     CONF_WEATHER_ENTITY,
     CONF_WEATHER_STATE,
     DOMAIN,
+    HOUSE_ENTRY_MINOR_VERSION,
+    HOUSE_ENTRY_VERSION,
     SensorType,
 )
 from custom_components.adaptive_cover.house_settings import HOUSE_NUMBERS
@@ -64,6 +67,7 @@ from .characterization.golden_lib import (
     patch_sun_data,
 )
 from .conftest import COMMON_OPTIONS
+from .house_model import mock_window_entry, window_subentry
 from .window_handle import WindowHandle
 
 COVER = "cover.test_cover"
@@ -88,36 +92,7 @@ WINDOW_SURFACE = {
     ("sensor", "End Sun"): (DIAG, True, "End sun"),
     ("sensor", "Next State Change"): (DIAG, True, "Next change"),
     ("sensor", "Last State Change"): (DIAG, True, "Last change"),
-    # config; the switches are hidden aliases since the P5 flip (HIDDEN)
-    ("switch", "Toggle Control"): (CONFIG, True, "Automatic control"),
-    ("switch", "Manual Override"): (CONFIG, True, "Manual override detection"),
-    ("switch", "Climate Mode"): (CONFIG, True, "Climate mode"),
-    ("switch", "Outside Temperature"): (CONFIG, True, "Outside temperature"),
-    ("switch", "Lux"): (CONFIG, True, "Lux"),
-    ("switch", "Irradiance"): (CONFIG, True, "Irradiance"),
-}
-
-# The seven window numbers of v1.14-v1.19 (P5 flip: house settings and
-# layered edits; a window's old rows are removed at its setup).
-RETIRED_NUMBERS = (
-    "eye_height",
-    "occupied_distance",
-    "overhang_depth",
-    "overhang_height",
-    "temp_low",
-    "temp_high",
-    "privacy_offset",
-)
-
-# Hidden by default but enabled (P5 flip): the switch aliases of the Mode
-# select and the house toggles (migration 1.5 hides existing rows).
-HIDDEN = {
-    ("switch", "Toggle Control"),
-    ("switch", "Manual Override"),
-    ("switch", "Climate Mode"),
-    ("switch", "Outside Temperature"),
-    ("switch", "Lux"),
-    ("switch", "Irradiance"),
+    # The six switches (hidden aliases since the P5 flip) are gone (P8).
 }
 
 # Hub: unique_id -> (entity_id of a fresh install, friendly name).
@@ -136,7 +111,7 @@ HUB_SURFACE = {
     ),
 }
 
-# Every aux entity present: all 6 switches and all 7 numbers exist.
+# Every aux entity present (before P5 every switch and number existed).
 FULL_CLIMATE = {
     CONF_CLIMATE_MODE: True,
     CONF_TEMP_ENTITY: "sensor.indoor",
@@ -152,12 +127,12 @@ FULL_CLIMATE = {
 }
 
 
-def _entry(hass, name="Office Door", covers=(COVER,), minor_version=1, **extra):
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        title=name,
-        data={"name": name, CONF_SENSOR_TYPE: SensorType.BLIND},
-        options={
+def _entry(hass, name="Office Door", covers=(COVER,), **extra):
+    """A house with one window (its key is the house's entry_id)."""
+    return mock_window_entry(
+        hass,
+        {"name": name, CONF_SENSOR_TYPE: SensorType.BLIND},
+        {
             **COMMON_OPTIONS,
             CONF_HEIGHT_WIN: 2.1,
             CONF_DISTANCE: 0.5,
@@ -165,11 +140,7 @@ def _entry(hass, name="Office Door", covers=(COVER,), minor_version=1, **extra):
             CONF_DELTA_TIME: 0,
             **extra,
         },
-        version=1,
-        minor_version=minor_version,
     )
-    entry.add_to_hass(hass)
-    return entry
 
 
 async def _setup(hass, entry):
@@ -190,11 +161,12 @@ def _set_world(hass, *, cover_position=60):
 
 
 def _rows(hass, entry) -> dict[tuple[str, str], er.RegistryEntry]:
-    """The entry's registry rows keyed by (platform, unique_id suffix)."""
+    """The window's registry rows keyed by (platform, unique_id suffix)."""
     prefix = f"{entry.entry_id}_"
     return {
         (row.domain, row.unique_id.removeprefix(prefix)): row
         for row in er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
+        if row.unique_id.startswith(prefix)
     }
 
 
@@ -219,8 +191,7 @@ class TestFreshSurface:
         for key, (category, enabled, _name) in WINDOW_SURFACE.items():
             row = rows[key]
             assert row.entity_category == category, key
-            hidden = er.RegistryEntryHider.INTEGRATION if key in HIDDEN else None
-            assert row.hidden_by is hidden, key
+            assert row.hidden_by is None, key
             if enabled:
                 assert row.disabled_by is None, key
                 assert hass.states.get(row.entity_id) is not None, key
@@ -244,7 +215,8 @@ class TestFreshSurface:
     async def test_regression_manual_override_names_distinct(self, hass, cover_calls):
         """The override-detection switch and the override binary sensor were
         both named "<Device> Manual Override"; every role now has its own
-        name (P1 naming cleanup, decision 5)."""
+        name (P1 naming cleanup, decision 5). Since v2.1 detection is the
+        house's switch."""
         _set_world(hass)
         entry = _entry(hass, **FULL_CLIMATE)
         await _setup(hass, entry)
@@ -255,8 +227,11 @@ class TestFreshSurface:
             for key, row in rows.items()
             if row.disabled_by is None
         }
+        detection = er.async_get(hass).async_get_entity_id(
+            "switch", DOMAIN, "adaptive_cover_hub_manual_detection"
+        )
         assert (
-            friendly[("switch", "Manual Override")]
+            hass.states.get(detection).attributes["friendly_name"]
             != friendly[("binary_sensor", "Manual Override")]
         )
         assert len(set(friendly.values())) == len(friendly)
@@ -364,6 +339,7 @@ class TestDeviceArea:
         dev_reg = dr.async_get(hass)
         device = dev_reg.async_get_or_create(
             config_entry_id=entry.entry_id,
+            config_subentry_id=window_subentry(entry).subentry_id,
             identifiers={(DOMAIN, entry.entry_id)},
             name="Office Door",
         )
@@ -386,199 +362,21 @@ class TestDeviceArea:
         assert _window_device(hass, entry).area_id is None
 
 
-# -------------------------------------------------------------- migration
-
-# A legacy (1.1) entry as the live house has it: rows created by older
-# code, with their historical entity_ids, names and categories.
-LEGACY_ROWS = {
-    ("sensor", "Cover Position"): ("office_door_cover_position", None),
-    ("sensor", "Start Sun"): ("office_door_start_sun", None),
-    ("sensor", "End Sun"): ("office_door_end_sun", None),
-    ("sensor", "Control Method"): ("office_door_control_method", None),
-    ("sensor", "Next State Change"): ("office_door_next_state_change", None),
-    ("sensor", "Last State Change"): ("office_door_last_state_change", None),
-    ("binary_sensor", "Sun Infront"): ("office_door_sun_infront", None),
-    ("binary_sensor", "Manual Override"): ("office_door_manual_override", None),
-    ("switch", "Toggle Control"): ("office_door_toggle_control", None),
-    ("switch", "Manual Override"): ("office_door_manual_override", None),
-    ("switch", "Climate Mode"): ("office_door_climate_mode", None),
-    ("switch", "Outside Temperature"): ("office_door_outside_temperature", None),
-    ("switch", "Lux"): ("office_door_lux", None),
-    ("switch", "Irradiance"): ("office_door_irradiance", None),
-    ("button", "Reset Manual Override"): (
-        "office_door_reset_manual_override",
-        None,
-    ),
-    ("select", "mode_select"): ("office_door_mode", CONFIG),
-    **{
-        ("number", f"number_{key}"): (f"office_door_{key}", CONFIG)
-        for key in RETIRED_NUMBERS
-    },
-}
-
-
-def _legacy_entry(hass, row_overrides=None):
-    """A 1.1 entry whose registry rows already exist (pre-P1 upgrade).
-
-    row_overrides: {(platform, suffix): {registry field: value}} applied
-    after the row is created, to model user choices.
-    """
-    row_overrides = row_overrides or {}
-    entry = _entry(hass, minor_version=1, **FULL_CLIMATE)
-    registry = er.async_get(hass)
-    for (platform, suffix), (object_id, category) in LEGACY_ROWS.items():
-        row = registry.async_get_or_create(
-            platform,
-            DOMAIN,
-            f"{entry.entry_id}_{suffix}",
-            config_entry=entry,
-            suggested_object_id=object_id,
-            entity_category=category,
-            has_entity_name=True,
-            original_name=suffix,
-        )
-        if changes := row_overrides.get((platform, suffix)):
-            registry.async_update_entity(row.entity_id, **changes)
-    return entry
-
-
-def _snapshot(hass, entry) -> dict:
-    """The registry fields the migration may touch, plus identity."""
-    return {
-        key: (
-            row.entity_id,
-            row.unique_id,
-            row.entity_category,
-            row.disabled_by,
-            row.hidden_by,
-            row.name,
-        )
-        for key, row in _rows(hass, entry).items()
-    }
+# --------------------------------------------------------------- versions
 
 
 class TestMigration:
-    """Config entry 1.1 -> 1.2 applies the surface to existing rows."""
-
-    async def test_migration_applies_surface_to_legacy_rows(self, hass, cover_calls):
-        _set_world(hass)
-        entry = _legacy_entry(hass)
-        legacy_ids = {
-            key: (row.entity_id, row.unique_id)
-            for key, row in _rows(hass, entry).items()
-        }
-
-        await _setup(hass, entry)
-
-        assert entry.state is ConfigEntryState.LOADED
-        assert (entry.version, entry.minor_version) == (1, 5)
-        rows = _rows(hass, entry)
-        # Identity is frozen: same unique_ids, same entity_ids; the retired
-        # window numbers are gone (P5 flip).
-        assert {key: (row.entity_id, row.unique_id) for key, row in rows.items()} == {
-            key: ids for key, ids in legacy_ids.items() if key[0] != "number"
-        }
-        # Only the old select/number categories and the four diagnostic
-        # sensors change visibly; everything lands on the plan's surface.
-        for key, (category, enabled, name) in WINDOW_SURFACE.items():
-            row = rows[key]
-            assert row.entity_category == category, key
-            expected = None if enabled else er.RegistryEntryDisabler.INTEGRATION
-            assert row.disabled_by == expected, key
-            hidden = er.RegistryEntryHider.INTEGRATION if key in HIDDEN else None
-            assert row.hidden_by is hidden, key
-            if enabled:
-                state = hass.states.get(row.entity_id)
-                assert state.attributes["friendly_name"] == f"Office Door {name}"
-
-    async def test_migration_keeps_user_choices(self, hass, cover_calls):
-        _set_world(hass)
-        entry = _legacy_entry(
-            hass,
-            {
-                ("sensor", "Next State Change"): {"name": "Door next move"},
-                ("sensor", "Start Sun"): {"hidden_by": er.RegistryEntryHider.USER},
-                ("sensor", "Last State Change"): {
-                    "disabled_by": er.RegistryEntryDisabler.USER
-                },
-                ("sensor", "Control Method"): {
-                    "disabled_by": er.RegistryEntryDisabler.USER
-                },
-            },
-        )
-        await _setup(hass, entry)
-        rows = _rows(hass, entry)
-
-        # Renamed by the user: in use, stays enabled.
-        renamed = rows[("sensor", "Next State Change")]
-        assert renamed.disabled_by is None
-        assert renamed.name == "Door next move"
-        assert hass.states.get(renamed.entity_id) is not None
-        # Hidden by the user: visibility already chosen, stays enabled.
-        hidden = rows[("sensor", "Start Sun")]
-        assert hidden.disabled_by is None
-        assert hidden.hidden_by is er.RegistryEntryHider.USER
-        # Disabled by the user stays disabled BY THE USER, including a role
-        # that is enabled by default.
-        for key in (("sensor", "Last State Change"), ("sensor", "Control Method")):
-            assert rows[key].disabled_by is er.RegistryEntryDisabler.USER, key
-        # Untouched rows stay enabled (no role is disabled by default yet);
-        # categories apply regardless of user choices.
-        assert rows[("sensor", "End Sun")].disabled_by is None
-        for key, (category, _enabled, _name) in WINDOW_SURFACE.items():
-            assert rows[key].entity_category == category, key
-
-    async def test_regression_default_alias_is_not_a_user_choice(
-        self, hass, cover_calls
-    ):
-        """HA's computed name alias is not a user alias (fixed in a9eb63c).
-
-        Home Assistant lists the entity's own name as a computed alias on
-        every registry row. The "user touched this row" rule counted it, so
-        on HA 2026.x the surface migration treated every row as the user's
-        and could never hide (or disable) one. A typed alias still counts.
-        """
-        _set_world(hass)
-        entry = _legacy_entry(
-            hass,
-            {("switch", "Climate Mode"): {"aliases": [er.COMPUTED_NAME, "heat"]}},
-        )
-        await _setup(hass, entry)
-        rows = _rows(hass, entry)
-
-        # Default rows (only the computed alias) are hidden by the migration.
-        assert rows[("switch", "Toggle Control")].aliases == [er.COMPUTED_NAME]
-        assert (
-            rows[("switch", "Toggle Control")].hidden_by
-            is er.RegistryEntryHider.INTEGRATION
-        )
-        # A row the user gave an alias is theirs: left visible.
-        assert rows[("switch", "Climate Mode")].hidden_by is None
-
-    async def test_migration_is_idempotent(self, hass, cover_calls):
-        _set_world(hass)
-        entry = _legacy_entry(hass)
-        await _setup(hass, entry)
-        after_first = _snapshot(hass, entry)
-
-        # Force the migration to run a second time on the migrated rows.
-        assert await hass.config_entries.async_unload(entry.entry_id)
-        hass.config_entries.async_update_entry(entry, minor_version=1)
-        await _setup(hass, entry)
-
-        assert entry.minor_version == 5
-        assert _snapshot(hass, entry) == after_first
+    """The house entry's versions (the 1.x migrations are gone since v2.1)."""
 
     async def test_user_reenabled_entity_stays_enabled(self, hass, cover_calls):
-        """After the upgrade the migration never runs again, so a sensor the
-        user turns back on survives restarts and reloads."""
+        """No migration touches a running house's rows: a sensor the user
+        turns back on survives restarts and reloads."""
         _set_world(hass)
-        entry = _legacy_entry(hass)
+        entry = _entry(hass)
         await _setup(hass, entry)
         registry = er.async_get(hass)
         next_change = _rows(hass, entry)[("sensor", "Next State Change")]
-        # No role is disabled by default yet; simulate the P6 state where the
-        # integration disabled it, then the user turned it back on.
+        # Simulate a row the integration disabled, then the user turned back on.
         registry.async_update_entity(
             next_change.entity_id, disabled_by=er.RegistryEntryDisabler.INTEGRATION
         )
@@ -591,223 +389,29 @@ class TestMigration:
         assert hass.states.get(row.entity_id) is not None
 
     async def test_newer_minor_version_loads_unchanged(self, hass, cover_calls):
-        """A downgrade from a later 1.x keeps working (minor bumps are
+        """A downgrade from a later 3.x keeps working (minor bumps are
         backward compatible) and is not rewritten."""
         _set_world(hass)
-        entry = _entry(hass, minor_version=6)
+        entry = _entry(hass)
+        hass.config_entries.async_update_entry(
+            entry, minor_version=HOUSE_ENTRY_MINOR_VERSION + 1
+        )
         await _setup(hass, entry)
         assert entry.state is ConfigEntryState.LOADED
-        assert (entry.version, entry.minor_version) == (1, 6)
+        assert (entry.version, entry.minor_version) == (
+            HOUSE_ENTRY_VERSION,
+            HOUSE_ENTRY_MINOR_VERSION + 1,
+        )
 
     async def test_newer_major_version_is_refused(self, hass, cover_calls):
-        # 2.x is the house entry since P7 (ADR 0001): the next major is 3.
+        # 3.x is the house since v2.1 (P8): the next major is 4.
         _set_world(hass)
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="From the future",
-            data={"name": "From the future", CONF_SENSOR_TYPE: SensorType.BLIND},
-            options={**COMMON_OPTIONS, CONF_ENTITIES: [COVER]},
-            version=3,
-            minor_version=1,
+        entry = _entry(hass, name="From the future")
+        hass.config_entries.async_update_entry(
+            entry, version=HOUSE_ENTRY_VERSION + 1, minor_version=1
         )
-        entry.add_to_hass(hass)
         assert not await hass.config_entries.async_setup(entry.entry_id)
         assert entry.state is ConfigEntryState.MIGRATION_ERROR
-
-
-# ------------------------------------------------ the live house upgrade
-
-SNAPSHOT = Path(__file__).parent / "fixtures" / "house_snapshot"
-
-
-def _snapshot_json(name: str) -> dict:
-    return json.loads((SNAPSHOT / name).read_text())
-
-
-def _load_live_house(hass) -> tuple[list[dict], list[dict], dict[str, str | None]]:
-    """Put the live house's registries and 1.1 entries into hass.
-
-    Returns (window and hub entries, their registry rows, cover -> the
-    cover's effective area).
-    """
-    entries = [
-        entry
-        for entry in _snapshot_json("config_entries.json")["entries"]
-        if entry["role"] in ("window", "hub")
-    ]
-    entry_ids = {entry["entry_id"] for entry in entries}
-    rows = [
-        row
-        for row in _snapshot_json("entity_registry.json")["entities"]
-        if row["config_entry_id"] in entry_ids
-    ]
-    covers = [
-        cover
-        for cover in _snapshot_json("physical_covers.json")["covers"]
-        if cover["platform"] != DOMAIN
-    ]
-    area_reg = ar.async_get(hass)
-    for area in _snapshot_json("floors_areas.json")["areas"]:
-        created = area_reg.async_create(area["area_id"])
-        assert created.id == area["area_id"]
-        area_reg.async_update(created.id, name=area["name"])
-
-    # The physical covers belong to another integration, with their areas.
-    zha = MockConfigEntry(domain="zha")
-    zha.add_to_hass(hass)
-    dev_reg = dr.async_get(hass)
-    ent_reg = er.async_get(hass)
-    for cover in covers:
-        device = dev_reg.async_get_or_create(
-            config_entry_id=zha.entry_id,
-            identifiers={("zha", cover["device_id"])},
-            name=cover["device_name"],
-        )
-        dev_reg.async_update_device(device.id, area_id=cover["device_area_id"])
-        platform_domain, object_id = cover["entity_id"].split(".", 1)
-        ent_reg.async_get_or_create(
-            platform_domain,
-            "zha",
-            cover["entity_id"],
-            config_entry=zha,
-            device_id=device.id,
-            suggested_object_id=object_id,
-        )
-        ent_reg.async_update_entity(
-            cover["entity_id"], area_id=cover["registry_area_id"]
-        )
-        hass.states.async_set(
-            cover["entity_id"],
-            cover["state_now"],
-            {"current_position": cover["current_position_now"]},
-        )
-
-    for entry in entries:
-        MockConfigEntry(
-            domain=DOMAIN,
-            entry_id=entry["entry_id"],
-            title=entry["title"],
-            data=entry["data"],
-            options=entry["options"],
-            version=1,
-            minor_version=1,
-        ).add_to_hass(hass)
-        if temp := entry["options"].get(CONF_TEMP_ENTITY):
-            hass.states.async_set(temp, "72", {"unit_of_measurement": "°F"})
-        if weather := entry["options"].get(CONF_WEATHER_ENTITY):
-            hass.states.async_set(weather, "sunny")
-
-    for device in _snapshot_json("device_registry.json")["devices"]:
-        (entry_id,) = device["config_entries"]
-        created = dev_reg.async_get_or_create(
-            config_entry_id=entry_id,
-            identifiers={tuple(identifier) for identifier in device["identifiers"]},
-            name=device["name"],
-        )
-        dev_reg.async_update_device(
-            created.id, name_by_user=device["name_by_user"], area_id=device["area_id"]
-        )
-
-    for row in rows:
-        platform_domain, object_id = row["entity_id"].split(".", 1)
-        created = ent_reg.async_get_or_create(
-            platform_domain,
-            DOMAIN,
-            row["unique_id"],
-            config_entry=hass.config_entries.async_get_entry(row["config_entry_id"]),
-            suggested_object_id=object_id,
-            has_entity_name=True,
-            original_name=row["original_name"],
-        )
-        assert created.entity_id == row["entity_id"]
-
-    hass.states.async_set(
-        "sun.sun", "above_horizon", {"azimuth": 180.0, "elevation": 45.0}
-    )
-    cover_areas = {cover["entity_id"]: cover["effective_area_id"] for cover in covers}
-    return entries, rows, cover_areas
-
-
-async def test_live_house_upgrade(hass, cover_calls):
-    """The sanitized live house (tests/fixtures/house_snapshot) upgrades to
-    the P1 surface: identity frozen, surface applied, areas copied."""
-    entries, rows, cover_areas = _load_live_house(hass)
-    windows = [entry for entry in entries if entry["role"] == "window"]
-    assert len(windows) == 15
-    await _setup(hass, hass.config_entries.async_get_entry(windows[0]["entry_id"]))
-
-    # Every entry migrated and loaded.
-    for entry in hass.config_entries.async_entries(DOMAIN):
-        assert entry.state is ConfigEntryState.LOADED, entry.title
-        assert (entry.version, entry.minor_version) == (1, 5), entry.title
-
-    # Identity is frozen: the same (platform, unique_id) -> entity_id rows,
-    # no more, but for the P5 flip: the 105 window number rows are gone and
-    # the hub gained its 15 house settings (5 switches, 7 numbers, 3 times).
-    # ("X_Manual Override" is both a switch and a sensor.)
-    ent_reg = er.async_get(hass)
-    after = {
-        (row.domain, row.unique_id): row.entity_id
-        for row in ent_reg.entities.values()
-        if row.platform == DOMAIN
-    }
-    kept = {
-        (row["domain"], row["unique_id"]): row["entity_id"]
-        for row in rows
-        if row["domain"] != "number"
-    }
-    assert len(rows) - len(kept) == 105
-    house_settings = {key for key in after if key not in kept}
-    assert {domain for domain, _uid in house_settings} == {"switch", "number", "time"}
-    assert len(house_settings) == 15
-    assert all(uid.startswith("adaptive_cover_hub_") for _d, uid in house_settings)
-    assert {key: after[key] for key in kept} == kept
-    rows = [row for row in rows if row["domain"] != "number"]
-
-    # The surface lands on every window row; the hub stays primary.
-    window_ids = {entry["entry_id"] for entry in windows}
-    disabled = 0
-    for row in rows:
-        reg = ent_reg.async_get(row["entity_id"])
-        hidden = None
-        if row["config_entry_id"] in window_ids:
-            suffix = row["unique_id"].removeprefix(f"{row['config_entry_id']}_")
-            category, enabled, _name = WINDOW_SURFACE[(reg.domain, suffix)]
-            if (reg.domain, suffix) in HIDDEN:
-                hidden = er.RegistryEntryHider.INTEGRATION
-        else:
-            category, enabled = None, True
-        assert reg.entity_category == category, row["entity_id"]
-        # Migration 1.5 hides the 60 switch rows (15 windows x 4), enabled.
-        assert reg.hidden_by is hidden, row["entity_id"]
-        if enabled:
-            assert reg.disabled_by is None, row["entity_id"]
-        else:
-            assert reg.disabled_by is er.RegistryEntryDisabler.INTEGRATION
-            disabled += 1
-    assert disabled == 0  # nothing disabled until the card stops reading them (P6)
-
-    # Areas: the owner's stay; the others come from the physical cover.
-    dev_reg = dr.async_get(hass)
-    snapshot_devices = {
-        device["config_entries"][0]: device
-        for device in _snapshot_json("device_registry.json")["devices"]
-    }
-    for entry in windows:
-        device = dev_reg.async_get_device_by_identifier(
-            (DOMAIN, entry["entry_id"]), config_entry_id=entry["entry_id"]
-        )
-        user_area = snapshot_devices[entry["entry_id"]]["area_id"]
-        (cover,) = entry["options"][CONF_ENTITIES]
-        assert device.area_id == (user_area or cover_areas[cover]), entry["title"]
-        assert device.area_id is not None, entry["title"]  # every cover has one
-
-        # Cards keep binding by entry_id: it is the window_key.
-        window = WindowHandle(hass, cover)
-        assert window.attributes["window_key"] == entry["entry_id"]
-        assert window.attributes["cover_entity"] == cover
-        friendly = window.state("position").attributes["friendly_name"]
-        assert friendly == f"{device.name_by_user or device.name} Position"
 
 
 # ---------------------------------------------------- position attributes
@@ -846,15 +450,6 @@ class TestPositionAttributes:
         # Additive: the historical attributes are still there.
         for key in ("intent", "decision_trace", "forecast_today", "sun"):
             assert key in attrs
-
-    async def test_multi_cover_entry_lists_every_cover(self, hass, cover_calls):
-        _set_world(hass)
-        hass.states.async_set("cover.second", "open", {"current_position": 60})
-        entry = _entry(hass, covers=(COVER, "cover.second"))
-        await _setup(hass, entry)
-        attrs = WindowHandle(hass, "cover.second").attributes
-        assert attrs["cover_entity"] == COVER
-        assert attrs["cover_entities"] == [COVER, "cover.second"]
 
     @pytest.mark.parametrize(
         ("now_str", "time_str", "pos"),

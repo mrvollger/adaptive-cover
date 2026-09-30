@@ -1,16 +1,10 @@
 """The entity surface: category, default visibility and name key per role.
 
-One table, keyed by (platform, unique_id suffix), drives both
-
-- the entity classes, which set it on NEW registry rows, and
-- the config-entry migration 1.1 -> 1.2, which applies it to EXISTING rows.
-  HA turns ``entity_registry_enabled_default`` into ``disabled_by`` only
-  when a row is created, so an upgrade needs an explicit update. (HA
-  refreshes ``entity_category`` on every load; the migration sets it too,
-  so the rows are right before the platforms load.)
-
-so a fresh install and an upgraded house end up with the same surface.
-See docs/refactor_plan.md, "Entity surface" and "P1".
+One table, keyed by (platform, unique_id suffix), drives the entity
+classes, which set it on their registry rows. (Until v2.1 the config-entry
+migrations 1.2 and 1.5 also applied it to existing rows; every house that
+runs v2.1 went through them on v2.0.x.) See docs/refactor_plan.md,
+"Entity surface" and "P1".
 
 Unique_ids are never changed here: the suffix is only used as a lookup key.
 """
@@ -20,7 +14,6 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import (
@@ -30,8 +23,7 @@ from homeassistant.helpers import (
 )
 from homeassistant.helpers.entity import Entity
 
-from .const import CONF_ENTITIES, DOMAIN
-from .windows import WindowLike
+from .windows import WindowEntry
 
 # Hub unique_ids are f"{HUB_UNIQUE_ID}_{suffix}". Defined here (hub.py
 # imports it) so this module does not import the hub.
@@ -44,8 +36,7 @@ class SurfaceSpec:
 
     translation_key names the entity through strings.json ("<Device> <Role>").
     category None means a primary entity. visible_default False hides the
-    entity (hidden_by integration) but keeps it enabled: the P5 switch
-    aliases.
+    entity (hidden_by integration) but keeps it enabled.
     """
 
     translation_key: str | None
@@ -56,11 +47,6 @@ class SurfaceSpec:
 
 _DIAG = EntityCategory.DIAGNOSTIC
 _CONFIG = EntityCategory.CONFIG
-
-
-def _alias(translation_key: str) -> SurfaceSpec:
-    """Return the surface of a hidden, enabled config switch (a P5 alias)."""
-    return SurfaceSpec(translation_key, _CONFIG, visible_default=False)
 
 
 # Per-window entities, keyed by (platform, unique_id suffix after the
@@ -81,20 +67,9 @@ WINDOW_SURFACE: dict[tuple[str, str], SurfaceSpec] = {
     ("sensor", "End Sun"): SurfaceSpec("end_sun", _DIAG),
     ("sensor", "Next State Change"): SurfaceSpec("next_change", _DIAG),
     ("sensor", "Last State Change"): SurfaceSpec("last_change", _DIAG),
-    # Config, hidden but enabled (P5 flip): aliases of the Mode select and
-    # the house toggles for one release, so automations keep working;
-    # removed in P8 (switch.py).
-    ("switch", "Toggle Control"): _alias("control_toggle"),
-    ("switch", "Manual Override"): _alias("manual_toggle"),
-    ("switch", "Climate Mode"): _alias("switch_mode"),
-    ("switch", "Outside Temperature"): _alias("temp_toggle"),
-    ("switch", "Lux"): _alias("lux_toggle"),
-    ("switch", "Irradiance"): _alias("irradiance_toggle"),
+    # The six per-window switches (hidden aliases since the P5 flip) are
+    # gone since v2.1: migration 3.1 removes their rows (upgrade.py).
 }
-
-# The retired window number entities (removed in the P5 flip): unique_id
-# suffix f"number_{option_key}".
-NUMBER_SUFFIX_PREFIX = "number_"
 
 # Hub entities, keyed by (platform, unique_id suffix after HUB_UNIQUE_ID_).
 # The plan's house-level primary set, then the house settings (P5 flip,
@@ -128,27 +103,6 @@ def window_surface(platform: str, suffix: str) -> SurfaceSpec | None:
     return WINDOW_SURFACE.get((platform, suffix))
 
 
-@callback
-def async_remove_window_numbers(hass: HomeAssistant, entry: ConfigEntry) -> int:
-    """Remove a window's retired number rows (P5 flip); return how many.
-
-    The seven window numbers became house settings (``house_settings.py``)
-    and layered-settings edits. Idempotent; a downgrade creates them again.
-    """
-    registry = er.async_get(hass)
-    prefix = f"{entry.entry_id}_{NUMBER_SUFFIX_PREFIX}"
-    rows = [
-        row
-        for row in er.async_entries_for_config_entry(registry, entry.entry_id)
-        if row.platform == DOMAIN
-        and row.domain == "number"
-        and row.unique_id.startswith(prefix)
-    ]
-    for row in rows:
-        registry.async_remove(row.entity_id)
-    return len(rows)
-
-
 def apply_surface(entity: Entity, spec: SurfaceSpec | None) -> None:
     """Set an entity's name key, category and default visibility."""
     if spec is None:
@@ -157,76 +111,6 @@ def apply_surface(entity: Entity, spec: SurfaceSpec | None) -> None:
     entity._attr_entity_category = spec.category
     entity._attr_entity_registry_enabled_default = spec.enabled_default
     entity._attr_entity_registry_visible_default = spec.visible_default
-
-
-def _surface_for_row(entry: ConfigEntry, row: er.RegistryEntry) -> SurfaceSpec | None:
-    """Look up the surface of an existing registry row by its unique_id."""
-    window_prefix = f"{entry.entry_id}_"
-    hub_prefix = f"{HUB_UNIQUE_ID}_"
-    if row.unique_id.startswith(window_prefix):
-        return window_surface(row.domain, row.unique_id.removeprefix(window_prefix))
-    if row.unique_id.startswith(hub_prefix):
-        return HUB_SURFACE.get((row.domain, row.unique_id.removeprefix(hub_prefix)))
-    return None
-
-
-def _user_touched(row: er.RegistryEntry) -> bool:
-    """Return True when the registry row carries a choice the user made.
-
-    A user who renamed, re-iconed, labeled, aliased, categorized or placed
-    an entity uses it; the migration must not hide it from them. Hidden or
-    disabled rows already carry a visibility choice.
-
-    Only an alias the user typed counts: Home Assistant lists the entity's
-    own name as a computed alias on every row (a non-string marker), which
-    made every row look user-touched.
-    """
-    return bool(
-        row.disabled_by is not None
-        or row.hidden_by is not None
-        or row.name is not None
-        or row.icon is not None
-        or row.area_id is not None
-        or row.labels
-        or row.categories
-        or any(isinstance(alias, str) and alias for alias in row.aliases)
-    )
-
-
-@callback
-def async_apply_surface_to_registry(hass: HomeAssistant, entry: ConfigEntry) -> int:
-    """Bring an entry's EXISTING registry rows to the current surface.
-
-    - entity_category: always set to the surface value (users cannot set it).
-    - disabled_by: set to INTEGRATION only for roles that are disabled by
-      default, and only when the row carries no user choice (see
-      _user_touched). Rows are never enabled here.
-    - hidden_by: set to INTEGRATION for roles that are hidden by default
-      (the P5 switch aliases), under the same rule. Rows are never shown
-      here.
-
-    Idempotent: a second run finds nothing to change. Returns the number of
-    rows updated.
-    """
-    registry = er.async_get(hass)
-    updated = 0
-    for row in er.async_entries_for_config_entry(registry, entry.entry_id):
-        if row.platform != DOMAIN:
-            continue
-        spec = _surface_for_row(entry, row)
-        if spec is None:
-            continue
-        changes: dict = {}
-        if row.entity_category != spec.category:
-            changes["entity_category"] = spec.category
-        if not spec.enabled_default and not _user_touched(row):
-            changes["disabled_by"] = er.RegistryEntryDisabler.INTEGRATION
-        if not spec.visible_default and not _user_touched(row):
-            changes["hidden_by"] = er.RegistryEntryHider.INTEGRATION
-        if changes:
-            registry.async_update_entity(row.entity_id, **changes)
-            updated += 1
-    return updated
 
 
 def cover_area_id(hass: HomeAssistant, covers: Iterable[str]) -> str | None:
@@ -251,7 +135,7 @@ def cover_area_id(hass: HomeAssistant, covers: Iterable[str]) -> str | None:
 
 
 @callback
-def async_copy_cover_area(hass: HomeAssistant, entry: WindowLike) -> str | None:
+def async_copy_cover_area(hass: HomeAssistant, window: WindowEntry) -> str | None:
     """Give the window device its physical cover's area if it has none.
 
     Never overwrites an area already on the device (the user's choice).
@@ -260,10 +144,10 @@ def async_copy_cover_area(hass: HomeAssistant, entry: WindowLike) -> str | None:
     from .windows import window_device
 
     dev_reg = dr.async_get(hass)
-    device = window_device(hass, entry)
+    device = window_device(hass, window)
     if device is None or device.area_id is not None:
         return None
-    area_id = cover_area_id(hass, entry.options.get(CONF_ENTITIES) or [])
+    area_id = cover_area_id(hass, window.covers)
     if area_id is None:
         return None
     dev_reg.async_update_device(device.id, area_id=area_id)

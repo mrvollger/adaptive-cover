@@ -84,14 +84,24 @@ max-complexity = 25
 include = ["custom_components/adaptive_cover"]
 exclude = ["**/__pycache__", "custom_components/adaptive_cover/www"]
 pythonVersion = "3.14"
-typeCheckingMode = "basic"
-# The pure engine (P2), the runtime components (P4) and the layered
-# settings resolver and lift (P5) are held to strict mode with zero errors;
-# the `typecheck` task allows no baseline there.
+typeCheckingMode = "standard"
+# Home Assistant's entity properties are ``cached_property`` (its
+# CachedProperties metaclass); an integration overrides them with plain
+# properties, as Home Assistant's own integrations do. Pyright reads that
+# as an incompatible override, so the rule is off.
+reportIncompatibleVariableOverride = false
+# The pure engine (P2), the runtime components (P4) and the pure settings
+# modules (P5, P8; all but schema.py, which builds voluptuous schemas) are
+# held to strict mode; the rest of the integration to standard mode (P8).
+# The `typecheck` task's baseline is empty: any error fails.
 strict = [
   "custom_components/adaptive_cover/engine",
   "custom_components/adaptive_cover/runtime",
   "custom_components/adaptive_cover/settings/resolve.py",
   "custom_components/adaptive_cover/settings/lift.py",
   "custom_components/adaptive_cover/settings/shadow.py",
+  "custom_components/adaptive_cover/settings/spec.py",
+  "custom_components/adaptive_cover/settings/normalize.py",
+  "custom_components/adaptive_cover/settings/validate.py",
+  "custom_components/adaptive_cover/settings/window_record.py",
 ]

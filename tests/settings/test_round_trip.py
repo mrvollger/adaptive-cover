@@ -1,15 +1,16 @@
 """Spec round trip: setup form <-> options <-> service <-> normalize (plan P3).
 
 A value one settings surface accepts and stores must read back unchanged
-through every other surface: the options form shows it and saves it
-again as is, ``change_settings`` accepts it without changing it, and the
-normalizers (the cover's two keys, migration 1.3) keep it.
+through every other surface: a window's Reconfigure form shows it and
+saves it again as is, ``change_settings`` accepts it without changing it,
+and the normalizers (the cover's two keys, the window record the house
+stores, the runtime's fallback read) keep it.
 
 Property style, seeded: each case draws a random valid value for every
 option of a cover type from the spec's own shapes (the range every
 surface accepts), then pushes it through the generated validators
 (``settings/schema.py``). The flow-level cases at the bottom drive the
-real setup form, options form and services for a few draws.
+real setup form, Reconfigure and services for a few draws.
 """
 
 from __future__ import annotations
@@ -41,7 +42,7 @@ from custom_components.adaptive_cover.const import (
     DOMAIN,
     SensorType,
 )
-from custom_components.adaptive_cover.migration import options_1_3
+from custom_components.adaptive_cover.layers import runtime_options
 from custom_components.adaptive_cover.runtime.shade_config import ShadeConfig
 from custom_components.adaptive_cover.settings import schema
 from custom_components.adaptive_cover.settings.normalize import (
@@ -49,16 +50,30 @@ from custom_components.adaptive_cover.settings.normalize import (
     window_cover,
     with_cover,
 )
-from custom_components.adaptive_cover.settings.shadow import without_overrides
 from custom_components.adaptive_cover.settings.spec import (
     OPTS,
+    OPTS_BY_KEY,
     Group,
     Kind,
     Opt,
+    Scope,
 )
 from custom_components.adaptive_cover.settings.validate import cross_field_errors
+from custom_components.adaptive_cover.settings.window_record import (
+    GEOMETRY_KEYS,
+    WindowRecord,
+    record_from_options,
+)
 
-from ..window_form import add_legacy_house, add_window
+from ..window_form import (
+    add_window,
+    only_window,
+    prefilled,
+    record,
+    start_reconfigure,
+    submit,
+)
+from ..window_handle import window_settings
 
 COVER_TYPES = (SensorType.BLIND, SensorType.AWNING, SensorType.TILT)
 UNITS = ("°C", "°F")
@@ -160,16 +175,20 @@ def test_wizard_options_and_service_keep_every_value(seed, cover_type, unit):
     # (the drawn blind spot fits the drawn FOV, inside the form's full span)
     assert fov_span <= schema.FULL_FOV_SPAN
 
-    # options form: every section shows the stored value and saves it as is
-    sections = schema.options_section_fields(
-        cover_type, climate_on=True, options=wizard, temperature_unit=unit
+    # Reconfigure (the same form, pre-filled with what the window stores and
+    # acts on): every section shows the stored value and saves it as is
+    sections = schema.setup_section_fields(
+        cover_type, values=wizard, temperature_unit=unit
     )
     saved: dict[str, Any] = {}
     for fields in sections.values():
-        keys = {str(m) for m in fields}
-        for marker in fields:
+        options = {m: v for m, v in fields.items() if str(m) in OPTS_BY_KEY}
+        keys = {str(m) for m in options}
+        for marker in options:
             assert marker.description == {"suggested_value": wizard.get(str(marker))}
-        saved.update(vol.Schema(fields)({k: v for k, v in wizard.items() if k in keys}))
+        saved.update(
+            vol.Schema(options)({k: v for k, v in wizard.items() if k in keys})
+        )
     _same(saved, values)
 
     # services: change_settings takes every service option unchanged
@@ -188,10 +207,21 @@ def test_normalizers_keep_what_the_surfaces_store(seed, cover_type, unit):
     stored = with_cover(draw_options(seed, cover_type, unit), f"cover.w{seed}")
     assert window_cover(stored) == f"cover.w{seed}"
     assert normalize_cover(stored) == stored
-    migrated = options_1_3(stored)
-    assert options_1_3(migrated) == migrated
-    assert {k: migrated[k] for k in stored} == stored
-    assert ShadeConfig.from_options(migrated) == ShadeConfig.from_options(stored)
+    # The window record keeps every one-time value and the cover ...
+    window = record_from_options("w", cover_type, stored)
+    assert WindowRecord.from_data(window.as_data()) == window
+    one_time = {
+        key: value
+        for key, value in stored.items()
+        if OPTS_BY_KEY[key].scope is not Scope.RECURRING
+    }
+    assert {k: window.options[k] for k in one_time} == one_time
+    assert set(window.geometry) == set(GEOMETRY_KEYS) & set(stored)
+    # ... and the runtime's fallback read keeps what is stored.
+    read = runtime_options(stored)
+    assert runtime_options(read) == read
+    assert {k: read[k] for k in stored} == stored
+    assert ShadeConfig.from_options(read) == ShadeConfig.from_options(stored)
 
 
 def test_every_form_option_is_drawn():
@@ -208,8 +238,6 @@ FLOW_SEEDS = range(4)
 
 @pytest.fixture(autouse=False)
 async def unload_all(hass):
-    # The window-entry flows: a house that still has window entries (P7).
-    add_legacy_house(hass)
     yield
     for entry in hass.config_entries.async_entries():
         if entry.state is config_entries.ConfigEntryState.LOADED:
@@ -218,7 +246,7 @@ async def unload_all(hass):
 
 
 async def _wizard(hass, cover_type: str, values: dict[str, Any]):
-    """Add a window through the one-screen setup form."""
+    """Create the house with a first window through the one-screen form."""
     result = await add_window(
         hass, {"name": "Round trip", schema.FIELD_SENSOR_TYPE: cover_type, **values}
     )
@@ -238,62 +266,54 @@ async def test_real_flows_round_trip(hass, seed, cover_type):
     values[CONF_WEATHER_ENTITY] = "weather.round_trip"
     entry = await _wizard(hass, cover_type, values)
     await hass.async_block_till_done()
-    stored = dict(entry.options)
-    _same(stored, values)
-    assert stored[CONF_ENTITIES] == [values[CONF_COVER_ENTITY]]
+    window = only_window(entry)
+    key = window.subentry_id
+    stored = dict(window.data)
+    # The window stores its one-time values; it acts on every value.
+    assert record(window).cover == values[CONF_COVER_ENTITY]
+    settings = await window_settings(hass, key)
+    _same(settings, values)
+    assert settings[CONF_ENTITIES] == [values[CONF_COVER_ENTITY]]
 
-    # the options form, saved without a change, stores the same options
-    result = await hass.config_entries.options.async_init(entry.entry_id)
-    sections = {
-        str(marker): {
-            str(field): field.description["suggested_value"]
-            for field in section.schema.schema
-            if field.description["suggested_value"] is not None
-        }
-        for marker, section in result["data_schema"].schema.items()
-    }
-    result = await hass.config_entries.options.async_configure(
-        result["flow_id"], user_input=sections
-    )
-    assert result["type"] is FlowResultType.CREATE_ENTRY
+    # Reconfigure, saved without a change, stores the same window
+    result = await start_reconfigure(hass, entry, key)
+    result = await submit(hass, result, prefilled(result))
+    assert result["reason"] == "reconfigure_successful"
     await hass.async_block_till_done()
-    assert dict(entry.options) == stored
+    assert dict(entry.subentries[key].data) == stored
 
     # change_settings with every service option that is set: accepted,
-    # nothing moves. (A key the wizard stores as None because the cover
+    # nothing moves. (A key the form stores as None because the cover
     # type does not use it, e.g. a tilt blind's window_height, is left
     # out: most service fields do not take None.)
     service_keys = set(schema.changeable_options(unit))
     await hass.services.async_call(
         DOMAIN,
         "change_settings",
-        {"config_entry": entry.entry_id}
-        | {k: v for k, v in stored.items() if k in service_keys and v is not None},
+        {"config_entry": key}
+        | {k: v for k, v in settings.items() if k in service_keys and v is not None},
         blocking=True,
     )
     await hass.async_block_till_done()
-    assert dict(entry.options) == stored
+    assert dict(entry.subentries[key].data) == stored
 
     # add_entry copying it onto another cover: the same settings
     response = await hass.services.async_call(
         DOMAIN,
         "add_entry",
-        {"name": "Copy", "cover": "cover.round_trip_copy", "copy_from": entry.entry_id},
+        {"name": "Copy", "cover": "cover.round_trip_copy", "copy_from": key},
         blocking=True,
         return_response=True,
     )
     await hass.async_block_till_done()
-    copy = hass.config_entries.async_get_entry(response["entry_id"])
-    # The copy has overrides of its own (P5 flip: it joins the layered
-    # settings at its setup); everything else is the source's.
-    assert without_overrides(copy.options) == with_cover(
-        without_overrides(stored), "cover.round_trip_copy"
-    )
-    assert copy.options["overrides"]["window_key"] == copy.entry_id
+    copy = entry.subentries[response["entry_id"]]
+    source = record(entry.subentries[key])
+    assert record(copy).geometry == source.geometry
+    assert record(copy).cover == "cover.round_trip_copy"
+    assert record(copy).overrides == source.overrides
+    copied = await window_settings(hass, response["entry_id"])
     assert {
-        key: value
-        for key, value in copy.options["overrides"].items()
-        if key != "window_key"
+        k: v for k, v in copied.items() if k not in (CONF_COVER_ENTITY, CONF_ENTITIES)
     } == {
-        key: value for key, value in stored["overrides"].items() if key != "window_key"
+        k: v for k, v in settings.items() if k not in (CONF_COVER_ENTITY, CONF_ENTITIES)
     }

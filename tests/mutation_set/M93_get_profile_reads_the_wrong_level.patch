@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/layers.py b/custom_components/adaptive_cover/layers.py
 --- a/custom_components/adaptive_cover/layers.py
 +++ b/custom_components/adaptive_cover/layers.py
-@@ -363,7 +363,7 @@
+@@ -408,7 +408,7 @@
      """Return what one profile stores (sparse for a floor or an area)."""
      if level is Level.HOUSE:
          return dict(hub_options.get(HOUSE) or {})

@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -388,8 +388,7 @@
+@@ -383,8 +383,7 @@
                  # after ours (boot) or it was just added. Decide now instead
                  # of waiting for the next sun update, which is slow at night;
                  # the usual gates still decide whether anything moves.
@@ -9,5 +9,5 @@ diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components
 -                await self.async_refresh()
 +                pass
              return
-         if data["new_state"] is None:
+         if new_state is None:
              self.logger.debug("New state is None")

@@ -11,11 +11,11 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import _LOGGER, CONF_ENTITIES
+from .const import _LOGGER
 from .coordinator import AdaptiveDataUpdateCoordinator
 from .entity_shared import adaptive_cover_device_info
 from .entity_surface import apply_surface, window_surface
-from .windows import WindowEntry, as_window
+from .windows import WindowEntry
 
 
 async def async_setup_entry(
@@ -23,19 +23,13 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the button platform (regular entry or hub)."""
-    from .hub import ResetAllOverridesButton, is_hub_entry
+    """Set up the house's Return all button and each window's Return to auto."""
+    from .house import async_setup_house_platform
+    from .hub import ResetAllOverridesButton
 
-    if is_hub_entry(config_entry):
-        from .house import async_setup_house_platform
-
-        async_add_entities([ResetAllOverridesButton(hass)])
-        await async_setup_house_platform(
-            hass, config_entry, Platform.BUTTON, window_entities
-        )
-        return
-    async_add_entities(
-        window_entities(hass, as_window(config_entry), config_entry.runtime_data)
+    async_add_entities([ResetAllOverridesButton(hass)])
+    await async_setup_house_platform(
+        hass, config_entry, Platform.BUTTON, window_entities
     )
 
 
@@ -54,8 +48,7 @@ def window_entities(
 
     buttons: list[Entity] = []
 
-    entities = config_entry.options.get(CONF_ENTITIES, [])
-    if len(entities) >= 1:
+    if config_entry.covers:
         buttons = [reset_manual]
 
     return buttons
@@ -72,7 +65,7 @@ class AdaptiveCoverButton(
 
     def __init__(
         self,
-        config_entry,
+        config_entry: WindowEntry,
         unique_id: str,
         button_name: str,
         coordinator: AdaptiveDataUpdateCoordinator,
@@ -85,12 +78,12 @@ class AdaptiveCoverButton(
         covers back to the adaptive position, so it must not say "reset").
         """
         super().__init__(coordinator=coordinator)
-        self._name = config_entry.data["name"]
+        self._name = config_entry.name
         self._attr_unique_id = f"{unique_id}_{button_name}"
         apply_surface(self, window_surface("button", button_name))
         self._device_id = unique_id
         self._button_name = button_name
-        self._entities = config_entry.options.get(CONF_ENTITIES, [])
+        self._entities = config_entry.covers
         self._attr_device_info = adaptive_cover_device_info(config_entry)
 
     async def async_press(self) -> None:

@@ -5,7 +5,12 @@ they enter as one flat ``{field: value}`` dict; these helpers put each field
 in the section that shows it. A section the test leaves out is sent empty,
 which is what an untouched section is: every field keeps its default.
 
-Only public surfaces: the config-entry flow manager.
+Since v2.1 (P8) the form has three places: the config flow's user step (a
+fresh install: it creates the house with its first window), "Add window"
+on the house (the ``window`` subentry flow) and a window's Reconfigure (the
+subentry flow's reconfigure step, the exceptions included).
+
+Only public surfaces: the config-entry and subentry flow managers.
 """
 
 from __future__ import annotations
@@ -24,6 +29,7 @@ from custom_components.adaptive_cover.const import (
 )
 from custom_components.adaptive_cover.settings import schema
 from custom_components.adaptive_cover.settings.spec import OPTS_BY_KEY
+from custom_components.adaptive_cover.settings.window_record import WindowRecord
 
 # Form-only fields: all in the Window section.
 FORM_FIELDS = frozenset(
@@ -83,10 +89,8 @@ def collapsed(result: Mapping[str, Any]) -> dict[str, bool]:
 def add_legacy_house(hass) -> MockConfigEntry:
     """Add the hub of a house that still has window entries (1.5, not set up).
 
-    Since P7 the model decides where the add form puts a window: a 1.x hub
-    gets window entries (the legacy model, until the owner consolidates);
-    a fresh install creates the house with the window as a subentry. Tests
-    of the window-entry flows start from this hub.
+    v2.1 runs no such house: it must be consolidated on v2.0.x first
+    (``upgrade.py``). Tests of the ``consolidate_first`` answers start here.
     """
     from custom_components.adaptive_cover.hub import (
         CONF_IS_HUB,
@@ -107,20 +111,64 @@ def add_legacy_house(hass) -> MockConfigEntry:
     return hub
 
 
+def house(hass) -> config_entries.ConfigEntry:
+    """Return the house entry."""
+    return next(
+        entry
+        for entry in hass.config_entries.async_entries(DOMAIN)
+        if entry.data.get("is_hub")
+    )
+
+
+def window_subentries(entry: config_entries.ConfigEntry) -> list[Any]:
+    """Return the house's window subentries."""
+    return [
+        subentry
+        for subentry in entry.subentries.values()
+        if subentry.subentry_type == "window"
+    ]
+
+
+def only_window(entry: config_entries.ConfigEntry) -> Any:
+    """Return the house's only window subentry."""
+    (subentry,) = window_subentries(entry)
+    return subentry
+
+
+def record(subentry: Any) -> WindowRecord:
+    """Return what a window subentry stores, read."""
+    return WindowRecord.from_data(subentry.data)
+
+
+def _manager(hass, result: Mapping[str, Any]):
+    """The flow manager of ``result`` (a subentry flow's handler is a tuple)."""
+    if isinstance(result.get("handler"), tuple):
+        return hass.config_entries.subentries
+    return hass.config_entries.flow
+
+
 async def start_add(hass) -> dict[str, Any]:
-    """Open the add-window form."""
+    """Open the add form of a fresh install (the config flow's user step)."""
     return await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
 
 
-async def start_reconfigure(hass, entry) -> dict[str, Any]:
-    """Open the Reconfigure form of ``entry``."""
-    return await hass.config_entries.flow.async_init(
-        DOMAIN,
+async def start_add_window(hass, entry=None) -> dict[str, Any]:
+    """Open "Add window" on the house (the subentry flow)."""
+    entry = entry or house(hass)
+    return await hass.config_entries.subentries.async_init(
+        (entry.entry_id, "window"), context={"source": config_entries.SOURCE_USER}
+    )
+
+
+async def start_reconfigure(hass, entry, subentry_id: str) -> dict[str, Any]:
+    """Open the Reconfigure form of one window subentry of ``entry``."""
+    return await hass.config_entries.subentries.async_init(
+        (entry.entry_id, "window"),
         context={
             "source": config_entries.SOURCE_RECONFIGURE,
-            "entry_id": entry.entry_id,
+            "subentry_id": subentry_id,
         },
     )
 
@@ -133,7 +181,7 @@ async def submit(
 ) -> dict[str, Any]:
     """Submit ``values`` on the shown form (its own sections by default)."""
     names = list(sections) if sections is not None else list(shown(result))
-    return await hass.config_entries.flow.async_configure(
+    return await _manager(hass, result).async_configure(
         result["flow_id"], sectioned(values, names)
     )
 
@@ -149,13 +197,15 @@ async def show_type(hass, result: Mapping[str, Any], cover_type: str, cover: str
     return result
 
 
-async def add_window(hass, values: Mapping[str, Any]) -> dict[str, Any]:
+async def add_window(hass, values: Mapping[str, Any], *, start=None) -> dict[str, Any]:
     """Add a window from ``values`` (flat); return the final flow result.
 
-    A cover type other than the default is picked first, so the form shows
-    that type's geometry, as a user would.
+    ``start`` opens the form (default: a fresh install's config flow; pass
+    ``start_add_window`` for "Add window" on the house). A cover type other
+    than the default is picked first, so the form shows that type's
+    geometry, as a user would.
     """
-    result = await start_add(hass)
+    result = await (start or start_add)(hass)
     cover_type = values.get(schema.FIELD_SENSOR_TYPE, SensorType.BLIND)
     if cover_type != SensorType.BLIND:
         result = await show_type(hass, result, cover_type, values[CONF_COVER_ENTITY])

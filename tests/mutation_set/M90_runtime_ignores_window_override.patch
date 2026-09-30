@@ -1,12 +1,12 @@
 diff --git a/custom_components/adaptive_cover/layers.py b/custom_components/adaptive_cover/layers.py
 --- a/custom_components/adaptive_cover/layers.py
 +++ b/custom_components/adaptive_cover/layers.py
-@@ -184,7 +184,7 @@
-             stored_profiles(
-                 entry.entry_id,
-                 hub.options,
--                overrides,
-+                WindowOverrides(),
-                 _setup_values(hass, options),
-                 window_placement(hass, entry),
-             ),
+@@ -196,7 +196,7 @@
+         stored_profiles(
+             window.window_key,
+             window.config_entry.options,
+-            window.overrides,
++            WindowOverrides(),
+             _setup_values(hass, options),
+             window_placement(hass, window),
+         ),

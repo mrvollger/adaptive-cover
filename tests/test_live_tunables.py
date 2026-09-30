@@ -9,7 +9,6 @@ from __future__ import annotations
 import pytest
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     async_mock_service,
 )
 
@@ -29,6 +28,7 @@ from custom_components.adaptive_cover.const import (
     SensorType,
 )
 
+from .house_model import mock_window_entry
 from .conftest import COMMON_OPTIONS
 from .window_handle import WindowHandle
 
@@ -53,12 +53,11 @@ def _entry(hass, climate=False, **extra):
                 CONF_TEMP_HIGH: 25,
             }
         )
-    entry = MockConfigEntry(
-        domain=DOMAIN,
+    entry = mock_window_entry(
+        hass,
         data={"name": "Tunable Test", CONF_SENSOR_TYPE: SensorType.BLIND},
         options=options,
     )
-    entry.add_to_hass(hass)
     return entry
 
 

@@ -8,24 +8,23 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.util import dt as dt_util
 
-from .const import CONF_ENTITIES, CONF_SENSOR_TYPE, DOMAIN
-from .windows import WindowLike, as_window
+from .const import DOMAIN
+from .windows import WindowEntry
 
 if TYPE_CHECKING:
     from .coordinator import AdaptiveDataUpdateCoordinator
 
 
-def adaptive_cover_device_info(config_entry: WindowLike) -> DeviceInfo:
+def adaptive_cover_device_info(window: WindowEntry) -> DeviceInfo:
     """Return the shared device info for all entities of one window.
 
     One service device per window (identifier: the window key), named
     after the window, so entities render as "<window name> <role>". A
     window subentry's device hangs off the house device (``via_device_id``).
     """
-    window = as_window(config_entry)
     info = DeviceInfo(
         identifiers={(DOMAIN, window.window_key)},
-        name=window.data["name"],
+        name=window.name,
         entry_type=DeviceEntryType.SERVICE,
     )
     if window.via_device_id is not None:
@@ -57,31 +56,29 @@ def override_until(
 
 
 def window_attributes(
-    config_entry: WindowLike, coordinator: AdaptiveDataUpdateCoordinator
+    config_entry: WindowEntry, coordinator: AdaptiveDataUpdateCoordinator
 ) -> dict[str, Any]:
     """Identity and schedule attributes for the Position sensor (P1).
 
-    - window_key: the window key (the card binding key): a legacy entry's
-      entry_id, which a consolidated window keeps (windows.py).
-    - cover_entity: the cover this window drives. An entry with several
-      covers also gets cover_entities (the full list); cover_entity is the
-      first.
+    - window_key: the window key (the card binding key): a migrated
+      window's old entry_id, a new window's subentry_id (windows.py).
+    - cover_entity: the cover this window drives (None without one).
     - cover_type: cover_blind / cover_awning / cover_tilt.
     - override_until: local ISO time the manual override ends, or None.
     - next_move: {time, position} from the next-change computation, or None.
     - provenance (P5): where the window's settings come from, for the
       options that do not come from the house or the spec default and are
       not one-time window settings ({option: "area" | "floor" | "window" |
-      "legacy"}); None until the house is lifted (layers.py).
+      "legacy"}; layers.py).
     """
-    covers = list(config_entry.options.get(CONF_ENTITIES) or [])
+    covers = config_entry.covers
     states = coordinator.data.states
     next_time = states.get("next_change_time")
     next_position = states.get("next_change_position")
     attributes: dict[str, Any] = {
         "window_key": config_entry.entry_id,
         "cover_entity": covers[0] if covers else None,
-        "cover_type": config_entry.data.get(CONF_SENSOR_TYPE),
+        "cover_type": config_entry.cover_type,
         "override_until": _local_iso(override_until(coordinator, covers)),
         "next_move": {
             "time": _local_iso(next_time),
@@ -91,6 +88,4 @@ def window_attributes(
         else None,
         "provenance": coordinator.provenance,
     }
-    if len(covers) > 1:
-        attributes["cover_entities"] = covers
     return attributes

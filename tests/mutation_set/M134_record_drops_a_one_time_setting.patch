@@ -1,0 +1,15 @@
+diff --git a/custom_components/adaptive_cover/settings/window_record.py b/custom_components/adaptive_cover/settings/window_record.py
+--- a/custom_components/adaptive_cover/settings/window_record.py
++++ b/custom_components/adaptive_cover/settings/window_record.py
+@@ -73,7 +73,10 @@
+ """The cover keys of the flat options: stored as ``cover_entity_id`` only."""
+ 
+ GEOMETRY_KEYS: Final[tuple[str, ...]] = tuple(
+-    opt.key for opt in OPTS if opt.home is Level.WINDOW and opt.key not in COVER_KEYS
++    opt.key
++    for opt in OPTS
++    if opt.home is Level.WINDOW
++    and opt.key not in COVER_KEYS | {"max_elevation"}
+ )
+ """The options a window stores in ``geometry``: its one-time settings."""
+ 

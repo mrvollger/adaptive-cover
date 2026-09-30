@@ -4,6 +4,7 @@
 - **Date:** 2026-09-29
 - **Delivered in:** P7 (v2.0.0)
 - **Amends:** [ADR 0001](0001-house-entry-and-window-subentries.md) (the subentry data shape, when the house becomes 2.x, the order of the registry moves). The rest of ADR 0001 stands.
+- **Amended by:** [ADR 0007](0007-house-only-in-v2-1.md) (P8 reshapes the subentry data and makes the house 3.x).
 - **Source:** [`docs/refactor_plan.md`](../refactor_plan.md), "P7", "Migration of the live house"; Home Assistant 2026.8.0 and 2026.9.4 (`config_entries.py`, `helpers/device_registry.py`, `helpers/entity_registry.py`)
 
 ## Context

@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/layers.py b/custom_components/adaptive_cover/layers.py
+--- a/custom_components/adaptive_cover/layers.py
++++ b/custom_components/adaptive_cover/layers.py
+@@ -354,7 +354,7 @@
+         floors,
+         temperature_unit=_unit(hass),
+     )
+-    return hub_options(lifted), lifted.overrides[_NEW_WINDOW]
++    return {}, lifted.overrides[_NEW_WINDOW]
+ 
+ 
+ # ------------------------------------------------------------ profiles

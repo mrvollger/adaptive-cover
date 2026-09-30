@@ -80,5 +80,5 @@ def get_local_datetime_from_str(
 def get_last_updated(entity_id: str, hass: HomeAssistant):
     """Get last updated attribute from entity."""
     if entity_id is not None:
-        if hass.states.get(entity_id):
-            return hass.states.get(entity_id).last_updated
+        if state := hass.states.get(entity_id):
+            return state.last_updated

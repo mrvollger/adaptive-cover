@@ -18,7 +18,7 @@ the retry bookkeeping was dead code there. The control-on case is the
 designated killer of mutation M16 (retry condition on control inverted).
 
 Every scenario drives the real integration only through public seams:
-config entry options, state events, service calls, and entity states.
+window settings, state events, service calls, and entity states.
 """
 
 import datetime as dt

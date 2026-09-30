@@ -5,10 +5,7 @@ from __future__ import annotations
 import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.exceptions import ServiceValidationError
-from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
-    async_mock_service,
-)
+from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.adaptive_cover.const import (
     CONF_AZIMUTH,
@@ -21,6 +18,8 @@ from custom_components.adaptive_cover.const import (
 )
 
 from .conftest import COMMON_OPTIONS
+from .house_model import mock_window_entry, window_subentry
+from .window_form import record
 from .window_handle import WindowHandle
 
 TEMPLATE_COVER = "cover.template_cover"
@@ -28,11 +27,11 @@ TEMPLATE_COVER = "cover.template_cover"
 
 @pytest.fixture
 def template_entry(hass):
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        title="Template shades",
-        data={"name": "Template shades", CONF_SENSOR_TYPE: SensorType.BLIND},
-        options={
+    """A house with the "Template shades" window (key: the house's entry_id)."""
+    return mock_window_entry(
+        hass,
+        {"name": "Template shades", CONF_SENSOR_TYPE: SensorType.BLIND},
+        {
             **COMMON_OPTIONS,
             CONF_HEIGHT_WIN: 2.1,
             CONF_DISTANCE: 0.2,
@@ -40,8 +39,6 @@ def template_entry(hass):
             CONF_ENTITIES: [TEMPLATE_COVER],
         },
     )
-    entry.add_to_hass(hass)
-    return entry
 
 
 async def _setup(hass, entry):
@@ -69,13 +66,16 @@ async def test_add_entry_from_template(hass, template_entry, mock_sun_entity):
     )
     await hass.async_block_till_done()
 
-    entry = hass.config_entries.async_get_entry(response["entry_id"])
-    assert entry.title == "New window"
-    assert entry.options[CONF_AZIMUTH] == 280  # override applied
-    assert entry.options[CONF_DISTANCE] == 0.2  # template value kept
-    assert entry.options[CONF_ENTITIES] == ["cover.new_cover"]
-    # Loaded and running: the new window serves its Position sensor.
-    assert entry.state is ConfigEntryState.LOADED
+    # A window of the house (the integration's one entry).
+    assert len(hass.config_entries.async_entries(DOMAIN)) == 1
+    window = window_subentry(template_entry, response["entry_id"])
+    stored = record(window)
+    assert window.title == "New window"
+    assert stored.geometry[CONF_AZIMUTH] == 280  # override applied
+    assert stored.geometry[CONF_DISTANCE] == 0.2  # template value kept
+    assert stored.cover == "cover.new_cover"
+    # Running: the new window serves its Position sensor.
+    assert template_entry.state is ConfigEntryState.LOADED
     assert WindowHandle(hass, "cover.new_cover").available
 
 
@@ -91,9 +91,9 @@ async def test_add_entry_defaults_without_template(
         return_response=True,
     )
     await hass.async_block_till_done()
-    entry = hass.config_entries.async_get_entry(response["entry_id"])
-    assert entry.options[CONF_AZIMUTH] == 90
-    assert entry.options[CONF_HEIGHT_WIN] == 2.1  # default
+    stored = record(window_subentry(template_entry, response["entry_id"]))
+    assert stored.geometry[CONF_AZIMUTH] == 90
+    assert stored.geometry[CONF_HEIGHT_WIN] == 2.1  # default
 
 
 async def test_add_entry_bad_template_raises(hass, template_entry, mock_sun_entity):

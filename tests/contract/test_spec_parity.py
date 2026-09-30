@@ -16,6 +16,8 @@ import difflib
 
 import pytest
 
+from custom_components.adaptive_cover.config_flow import HOUSE_SECTIONS
+
 from .generate_spec_parity import SPEC_PARITY_PATH, build_snapshot, dumps
 
 
@@ -43,7 +45,6 @@ async def test_snapshot_covers_every_surface():
     """A walk that silently skips a surface would pin nothing."""
     forms = (await build_snapshot())["forms"]
     places = {name.split(" ")[0] for name in forms}
-    places = {p for p in places if not p.startswith("options.init.")}
     setup_sections = (
         "window",
         "sun_limits",
@@ -53,11 +54,13 @@ async def test_snapshot_covers_every_surface():
         "exceptions_climate",
     )
     assert places >= {
-        "setup.user",
-        *(f"setup.user.{name}" for name in setup_sections),
-        "setup.reconfigure",
-        *(f"setup.reconfigure.{name}" for name in setup_sections[:3]),
-        "options.init",
+        *(
+            f"setup.{form}{section}"
+            for form in ("first", "user", "reconfigure")
+            for section in ("", *(f".{name}" for name in setup_sections))
+        ),
+        "options.house",
+        *(f"options.house.{name}" for name in HOUSE_SECTIONS),
         "change_settings",
         "add_entry",
         "add_entry.baseline",

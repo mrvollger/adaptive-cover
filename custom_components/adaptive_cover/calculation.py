@@ -362,7 +362,7 @@ class AdaptiveGeneralCover(ABC):
     # --- delegated geometry properties (public API preserved) ---
 
     @property
-    def _get_azimuth_edges(self) -> tuple[int, int]:
+    def _get_azimuth_edges(self) -> float:
         """Calculate azimuth edges."""
         return self.fov_left + self.fov_right
 
@@ -476,7 +476,7 @@ class AdaptiveGeneralCover(ABC):
         """Calculate the position of the blind."""
         raise NotImplementedError
 
-    def calculate_percentage(self) -> int:
+    def calculate_percentage(self) -> float:
         """Calculate percentage from position."""
         return engine_geometry.calculated_percentage(
             self.engine_config(), self.sun_snapshot()
@@ -504,7 +504,7 @@ class NormalCoverState:
         )
         return decision
 
-    def get_state(self) -> int:
+    def get_state(self) -> float:
         """Return state."""
         return self.get_decision().position
 
@@ -656,7 +656,7 @@ class ClimateCoverData:
         )
 
     @property
-    def get_current_temperature(self) -> float:
+    def get_current_temperature(self) -> float | None:
         """Get temperature."""
         if self.temp_switch:
             outside = self._as_float(self.outside_temperature)
@@ -730,8 +730,8 @@ class ClimateCoverData:
         return self.season.summer
 
     @property
-    def is_sunny(self) -> bool:
-        """Check if condition can contain radiation in winter."""
+    def is_sunny(self) -> bool | None:
+        """Check if condition can contain radiation in winter (None: no sunny states)."""
         weather_state = None
         if self.weather_entity is not None:
             weather_state = get_safe_state(self.hass, self.weather_entity)
@@ -742,6 +742,7 @@ class ClimateCoverData:
             matches = weather_state in self.weather_condition
             self.logger.debug("is_sunny(): Weather: %s = %s", weather_state, matches)
             return matches
+        return None
 
     @property
     def lux(self) -> bool:
@@ -802,7 +803,7 @@ class ClimateCoverState(NormalCoverState):
         )
         return decision
 
-    def get_state(self) -> int:
+    def get_state(self) -> float:
         """Return state."""
         return self.get_decision().position
 

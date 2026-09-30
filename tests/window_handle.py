@@ -18,9 +18,9 @@ Build the handle BEFORE the entry is set up when a test needs the startup
 command or its provenance: commands and moves are recorded from the bus
 from construction on. Entity lookups are lazy, so they work either way.
 
-Repointing to the house + subentry model (refactor plan P7) changes only
-``_find_window_key`` and ``_entity_rows``; the role vocabulary and every
-read helper stay put.
+Since v2.1 (P8) every window is a ``window`` subentry of the house entry;
+repointing to it (refactor plan P7, P8) changed only ``window_configs`` and
+``_entity_rows``; the role vocabulary and every read helper stayed put.
 
 ``internal_coordinator`` is deliberately NOT a WindowHandle feature: it is
 the one sanctioned way to reach an internal fact no public surface exposes,
@@ -35,7 +35,7 @@ from homeassistant.const import EVENT_CALL_SERVICE, EVENT_STATE_CHANGED
 from homeassistant.core import Context, Event, HomeAssistant, State, callback
 from homeassistant.helpers import entity_registry as er
 
-from custom_components.adaptive_cover.const import CONF_ENTITIES, DOMAIN
+from custom_components.adaptive_cover.const import CONF_COVER_ENTITY, DOMAIN
 
 # role -> (platform, unique-id suffix). Suffixes are the legacy unique-id
 # tails, which the refactor contract freezes.
@@ -50,12 +50,6 @@ ROLES: dict[str, tuple[str, str]] = {
     "manual_override": ("binary_sensor", "Manual Override"),
     "mode": ("select", "mode_select"),
     "return_to_auto": ("button", "Reset Manual Override"),
-    "control": ("switch", "Toggle Control"),
-    "manual_detection": ("switch", "Manual Override"),
-    "climate_mode": ("switch", "Climate Mode"),
-    "outside_temp": ("switch", "Outside Temperature"),
-    "lux": ("switch", "Lux"),
-    "irradiance": ("switch", "Irradiance"),
 }
 
 MOVED_EVENT = "adaptive_cover_moved"
@@ -66,34 +60,28 @@ _COVER_POSITION_SERVICES = {
 
 
 def window_configs(hass: HomeAssistant) -> dict[str, dict[str, Any]]:
-    """Every window's stored options, by window key, from the config entries.
+    """Every window's stored data, by window key, from the house entry.
 
-    A window is an enabled window entry (its entry_id is the key) or, since P7, a
-    ``window`` subentry of the house entry (the key is the old entry_id it
-    stores, else the subentry_id). A window entry wins over a subentry of
-    the same key (a consolidation in progress). The hub entry is not a
-    window (the live hub's leftover options list every cover, so it must
-    be skipped, not just ranked last).
+    A window is a ``window`` subentry of the house entry: its key is the
+    old entry_id it stores, else its subentry_id. Window entries left from
+    1.x do not run and are not windows.
     """
     windows: dict[str, dict[str, Any]] = {}
     for entry in hass.config_entries.async_entries(DOMAIN):
-        if entry.disabled_by is not None:
-            continue  # a disabled window entry drives nothing
         if not entry.data.get("is_hub"):
-            windows[entry.entry_id] = dict(entry.options)
             continue
         for subentry in entry.subentries.values():
             if subentry.subentry_type != "window":
                 continue
             key = subentry.data.get("window_key") or subentry.subentry_id
-            windows.setdefault(key, dict(subentry.data.get("options") or {}))
+            windows[key] = dict(subentry.data)
     return windows
 
 
 def _find_window_key(hass: HomeAssistant, cover: str) -> str:
     """The window key of the window driving ``cover``."""
-    for key, options in window_configs(hass).items():
-        if cover in (options.get(CONF_ENTITIES) or []):
+    for key, data in window_configs(hass).items():
+        if data.get(CONF_COVER_ENTITY) == cover:
             return key
     raise LookupError(f"No adaptive_cover window drives {cover}")
 
@@ -189,7 +177,7 @@ class WindowHandle:
 
     @property
     def window_key(self) -> str:
-        """The window's key (today the config entry id)."""
+        """The window's key (a migrated window's old entry_id, else its subentry_id)."""
         if self._window_key is None:
             self._window_key = _find_window_key(self.hass, self.cover)
         return self._window_key
@@ -351,40 +339,24 @@ class WindowHandle:
         )
         await self.hass.async_block_till_done()
 
-    async def turn(
-        self, role: str, on: bool, *, context: Context | None = None
-    ) -> None:
-        """Flip one of the window's switches via a real service call."""
-        await self.hass.services.async_call(
-            "switch",
-            "turn_on" if on else "turn_off",
-            {"entity_id": self.entity_id(role)},
-            blocking=True,
-            context=context,
-        )
-        await self.hass.async_block_till_done()
+
+def _house(hass: HomeAssistant):
+    return next(
+        e for e in hass.config_entries.async_entries(DOMAIN) if e.data.get("is_hub")
+    )
 
 
 async def window_settings(hass: HomeAssistant, window_key: str) -> dict[str, Any]:
-    """A loaded window's resolved settings, from the diagnostics download.
+    """A running window's resolved settings, from the diagnostics download.
 
-    A window entry's own download; for a window subentry (P7), the house
-    entry's download lists it under ``windows``.
+    The house entry's download lists each window under ``windows``.
     """
     from custom_components.adaptive_cover.diagnostics import (
         async_get_config_entry_diagnostics,
     )
 
-    entry = hass.config_entries.async_get_entry(window_key)
-    if entry is not None:
-        diagnostics = await async_get_config_entry_diagnostics(hass, entry)
-    else:
-        house = next(
-            e for e in hass.config_entries.async_entries(DOMAIN) if e.data.get("is_hub")
-        )
-        house_diagnostics = await async_get_config_entry_diagnostics(hass, house)
-        diagnostics = house_diagnostics["windows"][window_key]
-    settings = diagnostics["settings"]
+    house_diagnostics = await async_get_config_entry_diagnostics(hass, _house(hass))
+    settings = house_diagnostics["windows"][window_key]["settings"]
     assert settings is not None, f"{window_key} is not loaded"
     return settings
 
@@ -393,12 +365,16 @@ def internal_coordinator(hass: HomeAssistant, window_key: str):
     """The window's live coordinator object. NOT a public surface.
 
     contract: internal. The single place the test suite knows where the
-    integration keeps its runtime objects: a window entry's
-    ``runtime_data`` (P4), or the window index the house keeps for its
-    subentries (P7). Use it only for a fact no entity, event, or service
-    exposes, and mark the call site ``# contract: internal (<reason>)``.
+    integration keeps its runtime objects: the house entry's
+    ``runtime_data`` (``house.HouseRuntime``), which runs one coordinator
+    per window subentry. Use it only for a fact no entity, event, or
+    service exposes, and mark the call site ``# contract: internal
+    (<reason>)``.
     """
-    entry = hass.config_entries.async_get_entry(window_key)
-    if entry is not None:
-        return getattr(entry, "runtime_data", None)
-    return hass.data.get(DOMAIN, {}).get(window_key)
+    runtime = getattr(_house(hass), "runtime_data", None)
+    if runtime is None:
+        return None
+    for window in runtime.windows.values():
+        if window.window.window_key == window_key:
+            return window.coordinator
+    return None

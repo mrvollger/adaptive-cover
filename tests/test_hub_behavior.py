@@ -10,20 +10,15 @@ house-mode-select, aggregate-cover.
 
 from __future__ import annotations
 
-from homeassistant.config_entries import ConfigEntryState
 from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
-from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
-    async_mock_service,
-)
+from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.adaptive_cover.const import (
     CONF_DELTA_TIME,
     CONF_DISTANCE,
     CONF_ENTITIES,
     CONF_HEIGHT_WIN,
-    CONF_SENSOR_TYPE,
     CONF_TILT_DEPTH,
     CONF_TILT_DISTANCE,
     CONF_TILT_MODE,
@@ -33,17 +28,16 @@ from custom_components.adaptive_cover.const import (
 from custom_components.adaptive_cover.hub import HUB_UNIQUE_ID
 
 from .conftest import COMMON_OPTIONS
+from .house_model import Window, mock_house
 from .window_handle import WindowHandle
 
 AGGREGATE_COVER = "cover.adaptive_cover_all"
 
 
-def _vertical_entry(hass, name, cover):
-    """Create one vertical-blind entry driving a single cover."""
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        title=name,
-        data={"name": name, CONF_SENSOR_TYPE: SensorType.BLIND},
+def _vertical_entry(hass, name, cover) -> Window:
+    """One vertical-blind window driving a single cover."""
+    return Window(
+        name=name,
         options={
             **COMMON_OPTIONS,
             CONF_HEIGHT_WIN: 2.1,
@@ -52,16 +46,13 @@ def _vertical_entry(hass, name, cover):
             CONF_DELTA_TIME: 0,
         },
     )
-    entry.add_to_hass(hass)
-    return entry
 
 
-def _tilt_entry(hass, name, cover):
-    """Create one venetian-tilt entry driving a single cover."""
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        title=name,
-        data={"name": name, CONF_SENSOR_TYPE: SensorType.TILT},
+def _tilt_entry(hass, name, cover) -> Window:
+    """One venetian-tilt window driving a single cover."""
+    return Window(
+        name=name,
+        sensor_type=SensorType.TILT,
         options={
             **COMMON_OPTIONS,
             CONF_TILT_DEPTH: 3,
@@ -71,21 +62,18 @@ def _tilt_entry(hass, name, cover):
             CONF_DELTA_TIME: 0,
         },
     )
-    entry.add_to_hass(hass)
-    return entry
 
 
-async def _setup_entries(hass, entries):
-    """Set up config entries; the first setup may bootstrap the hub."""
-    for entry in entries:
-        if entry.state is not ConfigEntryState.LOADED:
-            await hass.config_entries.async_setup(entry.entry_id)
-        await hass.async_block_till_done()
+async def _setup_entries(hass, windows):
+    """Set up one house holding ``windows``."""
+    house = mock_house(hass, windows)
+    await hass.config_entries.async_setup(house.entry_id)
+    await hass.async_block_till_done()
     await async_setup_component(hass, "homeassistant", {})
 
 
 async def _setup_two_entries(hass):
-    """Two vertical entries over fake cover states, hub bootstrapped."""
+    """Two vertical windows of one house over fake cover states."""
     hass.states.async_set("cover.a", "open", {"current_position": 80})
     hass.states.async_set("cover.b", "open", {"current_position": 20})
     e1 = _vertical_entry(hass, "Room A", "cover.a")
@@ -94,12 +82,10 @@ async def _setup_two_entries(hass):
     return e1, e2
 
 
-def _entry_eid(hass, domain, entry, suffix):
-    """Resolve an entry's entity id from its unique-id suffix."""
+def _entry_eid(hass, domain, window, suffix):
+    """Resolve a window's entity id from its unique-id suffix."""
     registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id(
-        domain, DOMAIN, f"{entry.entry_id}_{suffix}"
-    )
+    entity_id = registry.async_get_entity_id(domain, DOMAIN, f"{window.key}_{suffix}")
     assert entity_id, f"no {domain} entity with unique-id suffix {suffix!r}"
     return entity_id
 
@@ -221,11 +207,10 @@ async def test_reset_all_button(hass, mock_sun_entity):
 async def test_house_mode_mixed_and_auto(hass, mock_sun_entity):
     """Windows in different Modes show Mixed; Auto sets every window to auto.
 
-    Entry 1 goes off through its Toggle Control alias (a hidden switch that
-    writes through to the Mode), entry 2 is on hold after a remote move.
-    The house Auto turns entry 1 back on and ends entry 2's hold: both
-    covers are commanded to their targets (P5 flip: the house select sets
-    each window's Mode directly).
+    Window 1 goes off through its Mode select, window 2 is on hold after a
+    remote move. The house Auto turns window 1 back on and ends window 2's
+    hold: both covers are commanded to their targets (P5 flip: the house
+    select sets each window's Mode directly).
     """
     e1, e2 = await _setup_two_entries(hass)
 
@@ -234,13 +219,8 @@ async def test_house_mode_mixed_and_auto(hass, mock_sun_entity):
     assert _manual_binary(hass, e2).state == "on"
     assert WindowHandle(hass, "cover.b").mode == "hold"
 
-    # Turn entry 1's Toggle Control off through the real switch service.
-    switch_id = _entry_eid(hass, "switch", e1, "Toggle Control")
-    await hass.services.async_call(
-        "switch", "turn_off", {"entity_id": switch_id}, blocking=True
-    )
-    await hass.async_block_till_done()
-    assert hass.states.get(switch_id).state == "off"
+    # Turn window 1 off through its real Mode select.
+    await WindowHandle(hass, "cover.a").select_mode("off")
     assert WindowHandle(hass, "cover.a").mode == "off"
 
     select_id = _hub_eid(hass, "select", "house_mode")
@@ -255,7 +235,6 @@ async def test_house_mode_mixed_and_auto(hass, mock_sun_entity):
     )
     await hass.async_block_till_done()
 
-    assert hass.states.get(switch_id).state == "on"
     assert (await _poll(hass, select_id)).state == "auto"
     targeted = [call.data["entity_id"] for call in calls]
     assert "cover.a" in targeted, "the window that was off must be re-commanded"
