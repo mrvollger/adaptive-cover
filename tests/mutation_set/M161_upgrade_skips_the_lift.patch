@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
+--- a/custom_components/adaptive_cover/consolidate.py
++++ b/custom_components/adaptive_cover/consolidate.py
+@@ -433,7 +433,7 @@
+         if entry.minor_version < 3:
+             _async_migrate_window_1_3(hass, entry)
+             migrated.append(f"{entry.title} 1.3")
+-    if house.version == 1 and not is_lifted(house.options):
++    if False:
+         _async_lift(hass, house, windows)
+         migrated.append(f"{house.title} lifted")
+     for entry in legacy:

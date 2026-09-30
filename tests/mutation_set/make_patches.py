@@ -66,6 +66,7 @@ LAYERS = "custom_components/adaptive_cover/layers.py"
 HOUSE_SETTINGS = "custom_components/adaptive_cover/house_settings.py"
 HOUSE = "custom_components/adaptive_cover/house.py"
 UPGRADE = "custom_components/adaptive_cover/upgrade.py"
+CONSOLIDATE = "custom_components/adaptive_cover/consolidate.py"
 WINDOW_RECORD = "custom_components/adaptive_cover/settings/window_record.py"
 WINDOWS = "custom_components/adaptive_cover/windows.py"
 SEASON = "custom_components/adaptive_cover/engine/season.py"
@@ -951,8 +952,8 @@ MUTATIONS: list[Mutation] = [
         "async_migrate_house",
         "the house migrates while window entries are left: v2.0.x can no "
         "longer finish the consolidation",
-        "    if windows := needs_consolidation(hass):\n",
-        "    if windows := []:\n",
+        "    if windows := legacy_window_entries(hass):\n        raise MigrationRefused(",
+        "    if windows := []:\n        raise MigrationRefused(",
     ),
     Mutation(
         "M131",
@@ -1093,6 +1094,155 @@ MUTATIONS: list[Mutation] = [
         "a cover's first state (its integration started late) does not trigger a decision",
         "                self.events.push(RefreshEvent.ENTITY_CHANGED)\n                await self.async_refresh()\n",
         "                pass\n",
+    ),
+    # ADR 0008 (v2.1): the house upgrades from v1.19.x at its first start.
+    Mutation(
+        "M150",
+        "upgrade_skips_verification",
+        CONSOLIDATE,
+        "_async_consolidate",
+        "the upgrade skips its verification: a window that did not move "
+        "intact is removed anyway",
+        "        if problems:\n            raise UpgradeStopped(\" \".join(problems))\n"
+        "    except UpgradeStopped as stop:\n",
+        "        if False:\n            raise UpgradeStopped(\" \".join(problems))\n"
+        "    except UpgradeStopped as stop:\n",
+    ),
+    Mutation(
+        "M151",
+        "upgrade_removes_old_entries_before_moving_rows",
+        CONSOLIDATE,
+        "_async_consolidate",
+        "the upgrade removes a window entry before it moves the window's rows: "
+        "Home Assistant deletes the window's entities and device",
+        "        for window in plan.windows:\n"
+        "            moved[window.window_key] = async_move_window(hass, house, window)\n",
+        "        for window in plan.windows:\n"
+        "            await hass.config_entries.async_remove(window.window_key)\n"
+        "            moved[window.window_key] = async_move_window(hass, house, window)\n",
+    ),
+    Mutation(
+        "M152",
+        "upgrade_moves_the_device_before_its_rows",
+        CONSOLIDATE,
+        "async_reparent_window",
+        "the upgrade moves a window's device before its entity rows: Home "
+        "Assistant removes the rows still on the window entry",
+        "    for row in _window_rows(hass, window_key):\n"
+        "        changes: dict[str, Any] = {}\n",
+        "    if moved is None and legacy is not None:\n"
+        "        dev_reg.async_update_device(\n"
+        "            legacy.id,\n"
+        "            new_config_entry_id=house.entry_id,\n"
+        "            new_config_subentry_id=subentry_id,\n"
+        "            via_device_id=_house_device_id(hass, house),\n"
+        "        )\n"
+        "        legacy = None\n"
+        "    for row in _window_rows(hass, window_key):\n"
+        "        changes: dict[str, Any] = {}\n",
+    ),
+    Mutation(
+        "M153",
+        "upgrade_bumps_the_house_before_verifying",
+        CONSOLIDATE,
+        "_async_consolidate",
+        "the upgrade makes the house 2.1 before the moves are verified: a "
+        "stopped upgrade leaves a house v1.19.x refuses",
+        "    moved: dict[str, str] = {}\n    try:\n",
+        "    hass.config_entries.async_update_entry(\n"
+        "        house, version=V2_0_HOUSE_VERSION, minor_version=1\n"
+        "    )\n"
+        "    moved: dict[str, str] = {}\n    try:\n",
+    ),
+    Mutation(
+        "M154",
+        "stopped_upgrade_does_not_undo_the_moves",
+        CONSOLIDATE,
+        "_async_consolidate",
+        "a stopped upgrade leaves the moved rows and devices in the house: "
+        "v1.19.x finds windows without their entities",
+        "        left = await async_undo(hass, house, plan.windows)\n",
+        "        left: list[str] = []\n",
+    ),
+    Mutation(
+        "M155",
+        "drifted_window_keeps_its_stale_overrides",
+        CONSOLIDATE,
+        "_plan_window",
+        "a window whose v1.19.x edit is only in its flat options is not "
+        "adopted again: the upgrade stops on it (or it would lose the edit)",
+        "        if readopted or overrides is None:\n",
+        "        if overrides is None:\n",
+    ),
+    Mutation(
+        "M156",
+        "toggles_ignore_the_switch_states",
+        CONSOLIDATE,
+        "_switch_state",
+        "the upgrade reads a window's toggles as the switches' defaults, not "
+        "their restored states (a window with Climate Mode off turns it on)",
+        "    stored = restore_state.async_get(hass).last_states.get(entity_id)\n"
+        "    if stored is None:\n",
+        "    stored = None\n"
+        "    if stored is None:\n",
+    ),
+    Mutation(
+        "M157",
+        "resumed_upgrade_adds_a_second_subentry",
+        CONSOLIDATE,
+        "_async_add_subentry",
+        "a start after a crash adds a second subentry for a window that "
+        "moved already",
+        "    if (subentry := subentry_for(house, plan.window_key)) is not None:\n",
+        "    if (subentry := None) is not None:\n",
+    ),
+    Mutation(
+        "M158",
+        "upgrade_writes_no_snapshot",
+        CONSOLIDATE,
+        "_async_consolidate",
+        "the upgrade writes no snapshot of the 1.x house before it moves it",
+        "    written = await async_write_snapshot(hass, house)\n",
+        "    written = False\n",
+    ),
+    Mutation(
+        "M159",
+        "upgrade_notifies_nobody",
+        CONSOLIDATE,
+        "async_upgrade_house",
+        "a finished upgrade creates no notification",
+        "    _notify(hass, report)\n",
+        "",
+    ),
+    Mutation(
+        "M160",
+        "undo_leaves_the_subentry",
+        CONSOLIDATE,
+        "async_undo",
+        "the undo leaves a window's subentry in the house next to its entry",
+        "            hass.config_entries.async_remove_subentry(house, subentry.subentry_id)\n",
+        "            pass\n",
+    ),
+    Mutation(
+        "M161",
+        "upgrade_skips_the_lift",
+        CONSOLIDATE,
+        "async_bring_to_1_5",
+        "a house v1.19.x never lifted is not lifted by the upgrade: it stops "
+        "for want of layers",
+        "    if house.version == 1 and not is_lifted(house.options):\n"
+        "        _async_lift(hass, house, windows)\n",
+        "    if False:\n        _async_lift(hass, house, windows)\n",
+    ),
+    Mutation(
+        "M162",
+        "upgrade_takes_entries_older_than_1_2",
+        CONSOLIDATE,
+        "OLDEST_MINOR",
+        "the upgrade moves entries older than 1.2 (their registry rows never "
+        "got the P1 surface)",
+        "OLDEST_MINOR: Final = 2\n",
+        "OLDEST_MINOR: Final = 1\n",
     ),
 ]
 

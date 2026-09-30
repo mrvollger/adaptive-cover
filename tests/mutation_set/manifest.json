@@ -609,5 +609,96 @@
   "function": "async_check_cover_state_change",
   "description": "a cover's first state (its integration started late) does not trigger a decision",
   "patch": "M120_late_cover_waits_for_sun.patch"
+ },
+ {
+  "id": "M150",
+  "file": "custom_components/adaptive_cover/consolidate.py",
+  "function": "_async_consolidate",
+  "description": "the upgrade skips its verification: a window that did not move intact is removed anyway",
+  "patch": "M150_upgrade_skips_verification.patch"
+ },
+ {
+  "id": "M151",
+  "file": "custom_components/adaptive_cover/consolidate.py",
+  "function": "_async_consolidate",
+  "description": "the upgrade removes a window entry before it moves the window's rows: Home Assistant deletes the window's entities and device",
+  "patch": "M151_upgrade_removes_old_entries_before_moving_rows.patch"
+ },
+ {
+  "id": "M152",
+  "file": "custom_components/adaptive_cover/consolidate.py",
+  "function": "async_reparent_window",
+  "description": "the upgrade moves a window's device before its entity rows: Home Assistant removes the rows still on the window entry",
+  "patch": "M152_upgrade_moves_the_device_before_its_rows.patch"
+ },
+ {
+  "id": "M153",
+  "file": "custom_components/adaptive_cover/consolidate.py",
+  "function": "_async_consolidate",
+  "description": "the upgrade makes the house 2.1 before the moves are verified: a stopped upgrade leaves a house v1.19.x refuses",
+  "patch": "M153_upgrade_bumps_the_house_before_verifying.patch"
+ },
+ {
+  "id": "M154",
+  "file": "custom_components/adaptive_cover/consolidate.py",
+  "function": "_async_consolidate",
+  "description": "a stopped upgrade leaves the moved rows and devices in the house: v1.19.x finds windows without their entities",
+  "patch": "M154_stopped_upgrade_does_not_undo_the_moves.patch"
+ },
+ {
+  "id": "M155",
+  "file": "custom_components/adaptive_cover/consolidate.py",
+  "function": "_plan_window",
+  "description": "a window whose v1.19.x edit is only in its flat options is not adopted again: the upgrade stops on it (or it would lose the edit)",
+  "patch": "M155_drifted_window_keeps_its_stale_overrides.patch"
+ },
+ {
+  "id": "M156",
+  "file": "custom_components/adaptive_cover/consolidate.py",
+  "function": "_switch_state",
+  "description": "the upgrade reads a window's toggles as the switches' defaults, not their restored states (a window with Climate Mode off turns it on)",
+  "patch": "M156_toggles_ignore_the_switch_states.patch"
+ },
+ {
+  "id": "M157",
+  "file": "custom_components/adaptive_cover/consolidate.py",
+  "function": "_async_add_subentry",
+  "description": "a start after a crash adds a second subentry for a window that moved already",
+  "patch": "M157_resumed_upgrade_adds_a_second_subentry.patch"
+ },
+ {
+  "id": "M158",
+  "file": "custom_components/adaptive_cover/consolidate.py",
+  "function": "_async_consolidate",
+  "description": "the upgrade writes no snapshot of the 1.x house before it moves it",
+  "patch": "M158_upgrade_writes_no_snapshot.patch"
+ },
+ {
+  "id": "M159",
+  "file": "custom_components/adaptive_cover/consolidate.py",
+  "function": "async_upgrade_house",
+  "description": "a finished upgrade creates no notification",
+  "patch": "M159_upgrade_notifies_nobody.patch"
+ },
+ {
+  "id": "M160",
+  "file": "custom_components/adaptive_cover/consolidate.py",
+  "function": "async_undo",
+  "description": "the undo leaves a window's subentry in the house next to its entry",
+  "patch": "M160_undo_leaves_the_subentry.patch"
+ },
+ {
+  "id": "M161",
+  "file": "custom_components/adaptive_cover/consolidate.py",
+  "function": "async_bring_to_1_5",
+  "description": "a house v1.19.x never lifted is not lifted by the upgrade: it stops for want of layers",
+  "patch": "M161_upgrade_skips_the_lift.patch"
+ },
+ {
+  "id": "M162",
+  "file": "custom_components/adaptive_cover/consolidate.py",
+  "function": "OLDEST_MINOR",
+  "description": "the upgrade moves entries older than 1.2 (their registry rows never got the P1 surface)",
+  "patch": "M162_upgrade_takes_entries_older_than_1_2.patch"
  }
 ]

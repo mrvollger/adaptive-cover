@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
+--- a/custom_components/adaptive_cover/consolidate.py
++++ b/custom_components/adaptive_cover/consolidate.py
+@@ -941,7 +941,7 @@
+                 "it keeps what it acts on",
+                 window.title,
+             )
+-    written = await async_write_snapshot(hass, house)
++    written = False
+     _LOGGER.info(
+         "Upgrade phase 3 (snapshot): .storage/%s %s",
+         SNAPSHOT_KEY,

@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
+--- a/custom_components/adaptive_cover/consolidate.py
++++ b/custom_components/adaptive_cover/consolidate.py
+@@ -127,7 +127,7 @@
+ STOPPED_ISSUE: Final = "upgrade_stopped"
+ """The repair issue of an upgrade that stopped (nothing removed)."""
+ NOTIFICATION_ID: Final = f"{DOMAIN}_upgraded"
+-OLDEST_MINOR: Final = 2
++OLDEST_MINOR: Final = 1
+ """The oldest 1.x minor version the upgrade brings to 1.5 itself."""
+ LATEST_1X_MINOR: Final = 5
+ 

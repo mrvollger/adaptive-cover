@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
+--- a/custom_components/adaptive_cover/consolidate.py
++++ b/custom_components/adaptive_cover/consolidate.py
+@@ -670,7 +670,7 @@
+ ) -> ConfigSubentry:
+     """Add (or bring up to date) the window's subentry, keyed by its old entry_id."""
+     data = plan.record.as_data()
+-    if (subentry := subentry_for(house, plan.window_key)) is not None:
++    if (subentry := None) is not None:
+         if dict(subentry.data) != data:
+             hass.config_entries.async_update_subentry(house, subentry, data=data)
+         return subentry

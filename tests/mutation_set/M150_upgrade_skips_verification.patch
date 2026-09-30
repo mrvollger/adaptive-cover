@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
+--- a/custom_components/adaptive_cover/consolidate.py
++++ b/custom_components/adaptive_cover/consolidate.py
+@@ -957,7 +957,7 @@
+             for window in plan.windows
+             for problem in verify_window(hass, house, window, moved[window.window_key])
+         ]
+-        if problems:
++        if False:
+             raise UpgradeStopped(" ".join(problems))
+     except UpgradeStopped as stop:
+         left = await async_undo(hass, house, plan.windows)
