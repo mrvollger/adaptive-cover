@@ -1,18 +1,23 @@
 """Upgrading to v2.1 (P8): the house's migration 2.1 -> 3.1, and the nag.
 
 Since v2.1 the house entry is the only config entry that runs; its
-windows are its ``window`` subentries (ADR 0001, ADR 0007). v2.1 has
-neither the window-entry runtime of 1.x nor the consolidation that moves
-window entries into the house (v2.0.x has both).
+windows are its ``window`` subentries (ADR 0001, ADR 0007). v2.1 has no
+window-entry runtime.
 
-**Needs consolidation.** A house that still has enabled window entries (a
-1.x house, or a consolidation that stopped part way) cannot run on v2.1.
-Every entry of such a house (the window entries and the house) fails to
-set up with the ``consolidate_first`` message, and the ``consolidate_first``
-repair issue says what to do: install v2.0.x, fix its "Consolidate the
-house" repair, then update again. Nothing is written, so v2.0.x finds
-every entry as it left it. Disabled window entries drive nothing and do
-not count; one that is enabled again fails the same way.
+**A 1.x house upgrades at its first start** (ADR 0008). While the house
+is below 3.x and window entries are left (the live house on v1.19.x, or
+a consolidation v2.0.x stopped part way), the house's migration moves
+them into the house first (``consolidate.async_upgrade_house``), then
+runs migration 2.1 -> 3.1 below. The window entries do not set up; if
+the upgrade stops, the ``upgrade_stopped`` repair says why and nothing is
+removed.
+
+**The nag** (ADR 0007) stays for what the upgrade cannot take: enabled
+window entries next to a house that is 3.x already (an old entry enabled
+again), or with no house entry at all. Each of those entries fails to set
+up with the ``consolidate_first`` message and the ``consolidate_first``
+repair issue says what to do; nothing is written. Disabled window entries
+drive nothing and do not count.
 
 **Migration 2.1 -> 3.1** (a consolidated house, ``async_migrate_house``):
 
@@ -34,9 +39,9 @@ not count; one that is enabled again fails the same way.
    instead of running windows it can no longer read.
 
 The migration is refused, with nothing written, while window entries are
-left (the nag), and when a window cannot be read (it never ran on v2.0,
-so it has no layered settings of its own; or it drives several covers):
-the house then stays 2.1 and fails to set up, and v2.0.x still runs it.
+left, and when a window cannot be read (it never ran on v2.0, so it has
+no layered settings of its own; or it drives several covers): the house
+then stays 2.1 and fails to set up, and v2.0.x still runs it.
 """
 
 from __future__ import annotations
@@ -64,6 +69,7 @@ from .settings.shadow import AREAS, FLOORS, HOUSE, TEMPERATURE_UNIT
 from .settings.window_record import RecordError, is_v2_0, record_from_v2_0
 from .windows import (
     WINDOW_SUBENTRY,
+    house_entry,
     legacy_window_entries,
     subentry_window_key,
 )
@@ -97,7 +103,14 @@ class MigrationRefused(Exception):
 
 
 def needs_consolidation(hass: HomeAssistant) -> list[ConfigEntry]:
-    """Return the enabled window entries a house must consolidate first."""
+    """Return the enabled window entries the upgrade cannot move (the nag).
+
+    Those of a house that is 3.x already, or of no house. A house below
+    3.x moves its window entries itself at its first start.
+    """
+    house = house_entry(hass)
+    if house is not None and not is_current_house(house):
+        return []
     return legacy_window_entries(hass)
 
 
@@ -212,7 +225,7 @@ async def async_migrate_house(hass: HomeAssistant, house: ConfigEntry) -> None:
         written.
 
     """
-    if windows := needs_consolidation(hass):
+    if windows := legacy_window_entries(hass):
         raise MigrationRefused(
             f"{len(windows)} window entries are not consolidated yet"
         )
@@ -258,16 +271,24 @@ async def async_migrate_house(hass: HomeAssistant, house: ConfigEntry) -> None:
 
 
 async def async_migrate(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """``async_migrate_entry``: the house 2.1 -> 3.1; everything else waits.
+    """``async_migrate_entry``: the house moves its window entries in, then 3.1.
 
-    A window entry (1.x), a 1.x house and a house that must consolidate
-    first are left exactly as they are (True: their setup then fails with
-    the ``consolidate_first`` message). A newer major version is refused
-    by Home Assistant before this runs; a newer minor loads as is.
+    A house below 3.x with enabled window entries runs the whole upgrade
+    (``consolidate.async_upgrade_house``: 1.x schema, consolidation, then
+    migration 3.1); a 2.1 house without them runs migration 3.1. A window
+    entry is left as it is (the house moves it). Always True: a house the
+    upgrade could not move stays at its version and its setup says why. A
+    newer major version is refused by Home Assistant before this runs; a
+    newer minor loads as is.
     """
     from .hub import is_hub_entry
 
-    if not is_hub_entry(entry) or entry.version < V2_0_HOUSE_VERSION:
+    if not is_hub_entry(entry) or entry.version >= HOUSE_ENTRY_VERSION:
+        return True
+    if windows := legacy_window_entries(hass):
+        from .consolidate import async_upgrade_house
+
+        await async_upgrade_house(hass, entry, windows)
         return True
     if entry.version == V2_0_HOUSE_VERSION:
         try:

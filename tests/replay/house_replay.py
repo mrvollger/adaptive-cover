@@ -6,21 +6,25 @@ Each replay runs ONE real window from the sanitized live snapshot
 what the house would do: the OUTBOUND cover-command timeline plus the
 position sensor (value and ``intent``), run-length encoded per step.
 
-The window runs the way the live house holds it after it is consolidated
-on v2.0.x and updated to v2.1 (P8): a house entry at 2.1 with the window
-as a ``window`` subentry storing the entry's data and options verbatim
-(ADR 0006; options as migration 1.3 wrote them, and the overrides the lift
-gave it), which migration 3.1 rewrites at setup (``upgrade.py``). The
-house's layers are the lift of this one window (its switch states
-included), as the hub a v2.0 window entry bootstrapped stored them.
+The window runs the way the live house gets to v2.1 (ADR 0008): from
+v1.19.x, the hub at 1.5 holding the lift of this one window (its switch
+states included) and the window as its own config entry at 1.5 (options
+as migration 1.3 wrote them, and the overrides the lift gave it), with its
+switches restoring their live states. At setup, v2.1 moves the window
+into the house and migrates the house to 3.1 (``consolidate.py``,
+``upgrade.py``). ``UPGRADE_PATHS`` also has the path through v2.0.x: a
+house entry at 2.1 with the window as a ``window`` subentry storing the
+entry's data and options verbatim (ADR 0006), which migration 3.1
+rewrites at setup.
 
 Taken from the snapshot, verbatim:
 - the entry's ``entry_id`` (the window key), title, ``data`` and complete
   ``options`` (geometry, limits, offsets, climate thresholds, the real
   cover and the real temperature/weather entity ids);
-- the entry's entity-registry rows (pre-registered on the house and the
-  window's subentry, so the sim runs with the live entity_ids and
-  unique_ids; migration 3.1 removes the switch and number rows);
+- the entry's entity-registry rows (pre-registered on the window entry,
+  or on the house and the window's subentry for the v2.0.x path, so the
+  sim runs with the live entity_ids and unique_ids; migration 3.1 removes
+  the switch and number rows);
 - the live on/off state of the entry's switches (Toggle Control, Manual
   Override detection, Climate Mode, Outside Temperature): the toggles the
   lift records and, for Toggle Control, the Mode the window restores.
@@ -95,6 +99,12 @@ from tests.simulation.harness import SimHouse
 REPLAY_DIR = Path(__file__).parent
 GOLDENS_DIR = REPLAY_DIR / "goldens"
 SNAPSHOT_DIR = REPLAY_DIR.parent / "fixtures" / "house_snapshot"
+
+# How the house reaches v2.1: straight from v1.19.x (the live house's
+# path, ADR 0008), or consolidated on v2.0.x first (ADR 0006/0007).
+FROM_V1_19 = "v1_19"
+FROM_V2_0 = "v2_0"
+UPGRADE_PATHS = (FROM_V1_19, FROM_V2_0)
 
 STEP_MINUTES = 5
 TRAVEL_SECONDS = 90
@@ -284,6 +294,7 @@ class ReplayHouse(SimHouse):
     """
 
     window: Window  # bound per replay by a one-off subclass (see _create)
+    path: str = FROM_V1_19
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -292,7 +303,7 @@ class ReplayHouse(SimHouse):
         self._replay_seeded = False
 
     def _house_entry(self, windows: list[HouseWindow]) -> MockConfigEntry:
-        """The house as v2.0 consolidated it: 2.1, the window stored verbatim."""
+        """The house as v1.19.x (or v2.0.x) left it, before v2.1 starts."""
         (spec,) = windows
         window = self.window
         unit = self.hass.config.units.temperature_unit
@@ -311,6 +322,35 @@ class ReplayHouse(SimHouse):
             temperature_unit=unit,
         )
         overrides = lifted.overrides[window.entry_id]
+        window_options = {
+            **options,
+            "overrides": {
+                "window_key": window.entry_id,
+                "values": dict(overrides.values),
+                "legacy": dict(overrides.legacy),
+            },
+        }
+        if self.path == FROM_V1_19:
+            house = MockConfigEntry(
+                domain=DOMAIN,
+                title=HUB_ENTRY_NAME,
+                unique_id=HUB_UNIQUE_ID,
+                data={"name": HUB_ENTRY_NAME, CONF_IS_HUB: True},
+                options=hub_options(lifted),
+                version=1,
+                minor_version=5,
+            )
+            house.add_to_hass(self.hass)
+            MockConfigEntry(
+                domain=DOMAIN,
+                entry_id=window.entry_id,
+                title=window.title,
+                data=dict(window.data),
+                options=window_options,
+                version=1,
+                minor_version=5,
+            ).add_to_hass(self.hass)
+            return house
         house = MockConfigEntry(
             domain=DOMAIN,
             title=HUB_ENTRY_NAME,
@@ -324,14 +364,7 @@ class ReplayHouse(SimHouse):
                     "data": {
                         "window_key": window.entry_id,
                         "data": dict(window.data),
-                        "options": {
-                            **options,
-                            "overrides": {
-                                "window_key": window.entry_id,
-                                "values": dict(overrides.values),
-                                "legacy": dict(overrides.legacy),
-                            },
-                        },
+                        "options": window_options,
                     },
                     "subentry_id": spec.subentry_id,
                     "subentry_type": "window",
@@ -353,12 +386,19 @@ class ReplayHouse(SimHouse):
     def _seed_registry_and_restore(self) -> None:
         """Pre-register the live entity rows and restore the window's Mode.
 
-        The rows go on the house and the window's subentry, as v2.0's
-        consolidation left them. The Toggle Control switch's live state is
-        the Mode the window restores (off, else auto).
+        The rows go on the window entry (v1.19.x), or on the house and the
+        window's subentry as v2.0's consolidation left them. The switches
+        restore their live states (v1.19.x reads its toggles from them).
+        The Toggle Control switch's live state is the Mode the window
+        restores (off, else auto).
         """
         registry = er.async_get(self.hass)
-        subentry_id = next(iter(self.house_entry.subentries))
+        if self.path == FROM_V1_19:
+            owner = self.hass.config_entries.async_get_entry(self.window.entry_id)
+            subentry_id = None
+        else:
+            owner = self.house_entry
+            subentry_id = next(iter(self.house_entry.subentries))
         for row in self.window.registry_rows:
             domain, object_id = row["entity_id"].split(".", 1)
             registry.async_get_or_create(
@@ -366,14 +406,21 @@ class ReplayHouse(SimHouse):
                 DOMAIN,
                 row["unique_id"],
                 suggested_object_id=object_id,
-                config_entry=self.house_entry,
+                config_entry=owner,
                 config_subentry_id=subentry_id,
             )
+        restored = (
+            [State(entity_id, state) for entity_id, state in self.window.switch_states]
+            if self.path == FROM_V1_19
+            else []
+        )
         if self.window.switch_state("Toggle Control") == "off":
             mode = registry.async_get_entity_id(
                 "select", DOMAIN, f"{self.window.entry_id}_mode_select"
             )
-            mock_restore_cache(self.hass, [State(mode, "off")])
+            restored.append(State(mode, "off"))
+        if restored:
+            mock_restore_cache(self.hass, restored)
 
     def mark(self, kind: str, *payload) -> None:
         self.marks.append((len(self.timeline), self.now, kind, payload))
@@ -437,8 +484,12 @@ class Replay:
     lines: list[tuple[tuple, dt.datetime, str]] = field(default_factory=list)
 
 
-async def _create(hass, freezer, window: Window, date: str) -> ReplayHouse:
-    house_cls = type("WindowReplayHouse", (ReplayHouse,), {"window": window})
+async def _create(
+    hass, freezer, window: Window, date: str, path: str = FROM_V1_19
+) -> ReplayHouse:
+    house_cls = type(
+        "WindowReplayHouse", (ReplayHouse,), {"window": window, "path": path}
+    )
     house = await house_cls.create(
         hass,
         freezer,
@@ -454,9 +505,13 @@ async def _create(hass, freezer, window: Window, date: str) -> ReplayHouse:
         # At 00:30 the shade sits where the evening left it.
         initial_position=int(window.options.get("sunset_position") or 0),
     )
-    # Migration 3.1 rewrote the house the v2.0 consolidation left: the
-    # window keeps its key and entities, and acts on its resolved layered
-    # settings (a window acting on them has a provenance).
+    # The upgrade moved the window into the house (or v2.0 had) and
+    # migration 3.1 rewrote it: the window keeps its key and entities, and
+    # acts on its resolved layered settings (a window acting on them has a
+    # provenance). No window entry is left.
+    assert [entry.entry_id for entry in hass.config_entries.async_entries(DOMAIN)] == [
+        house.house_entry.entry_id
+    ]
     assert (house.house_entry.version, house.house_entry.minor_version) == (
         HOUSE_ENTRY_VERSION,
         HOUSE_ENTRY_MINOR_VERSION,
@@ -469,8 +524,10 @@ async def _create(hass, freezer, window: Window, date: str) -> ReplayHouse:
     return house
 
 
-async def run_replay(hass, freezer, window: Window, label: str) -> Replay:
-    """Replay one live window over one scripted local day."""
+async def run_replay(
+    hass, freezer, window: Window, label: str, path: str = FROM_V1_19
+) -> Replay:
+    """Replay one live window over one scripted local day (``path``: see UPGRADE_PATHS)."""
     date = DATES[label]
     hass.config.units = US_CUSTOMARY_SYSTEM
     temp_entity = window.options[CONF_TEMP_ENTITY]
@@ -504,7 +561,7 @@ async def run_replay(hass, freezer, window: Window, label: str) -> Replay:
         key=lambda item: item[1],
     )
 
-    house = await _create(hass, freezer, window, date)
+    house = await _create(hass, freezer, window, date, path)
     try:
         for kind, hhmm, value in script:
             await house.advance_to(hhmm)
