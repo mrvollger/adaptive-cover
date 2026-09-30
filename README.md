@@ -146,20 +146,24 @@ Add the folder to `config/custom_components/`.
 
 Restart Home-Assistant and add the integration.
 
-### Updating to 2.1
+### Updating to 2.2
 
 Since 2.1 every window is part of one house entry. Take a backup, then
-update from 1.19.x (or 2.0.x) straight to 2.1 and restart once: at its
-first start 2.1 moves every window entry into the house, checks that
+update from 1.19.x, 2.0.x or 2.1.x straight to 2.2 and restart once. At
+its first start 2.2 moves any window entries into the house, checks that
 every entity, device, setting and Mode came through unchanged, then
 removes the old entries. A notification says what was done; the log has
 each step, and `.storage/adaptive_cover.v1_snapshot` keeps a copy of what
 was there.
 
-If a check fails, 2.1 removes nothing, puts every window back as 1.19.x
+2.2 also folds the per-window "Climate mode" setting into the one
+Climate switch: a window whose climate mode was off gets **Ignore climate
+control** instead, so every window keeps doing what it did.
+
+If a check fails, 2.2 removes nothing, puts every window back as 1.19.x
 left it and shows the "The Adaptive Cover upgrade stopped" repair with
 the reason; install 1.19.x again (or restore the backup) to run the house
-as before. To go back from 2.1 after the upgrade, restore the backup.
+as before. To go back from 2.2 after the upgrade, restore the backup.
 
 ## Setup
 
