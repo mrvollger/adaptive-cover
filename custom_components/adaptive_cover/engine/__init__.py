@@ -22,6 +22,7 @@ from .models import (
     TimeContext,
 )
 from .evaluate import evaluate
+from .season import Season, SeasonInputs, decide_season
 
 __all__ = [
     "BlindSpot",
@@ -33,7 +34,10 @@ __all__ = [
     "Overhang",
     "PositionLimits",
     "PrivacyConfig",
+    "Season",
+    "SeasonInputs",
     "SunSnapshot",
     "TimeContext",
+    "decide_season",
     "evaluate",
 ]
