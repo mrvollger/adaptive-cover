@@ -42,6 +42,32 @@ hold:
       selector:
         number: { min: 0, max: 100, step: 1, unit_of_measurement: "%", mode: slider }
 
+get_profile:
+  name: Get house, floor, room or window settings
+  description: >-
+    Read the stored settings (read-only; returns a response). No scope:
+    the house, every floor and every room. house: the house's settings.
+    floor / area with an id: what that floor or room stores itself.
+    window with its window key or Mode select entity: what the window
+    stores itself (overrides), what it acts on (settings) and where each
+    value comes from (provenance).
+  fields:
+    scope:
+      name: Scope
+      required: false
+      example: window
+      selector:
+        select:
+          options: [house, floor, area, window]
+    id:
+      name: Id
+      description: >-
+        The floor_id or area_id, or for a window its window key or its Mode
+        select entity.
+      required: false
+      example: select.office_north_mode
+      selector: { text: }
+
 set_profile:
   name: Set house, floor or room settings
   description: >-

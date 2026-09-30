@@ -115,6 +115,9 @@ HUB_SURFACE: dict[tuple[str, str], SurfaceSpec] = {
     ("number", "eye_height"): SurfaceSpec("eye_height", _CONFIG),
     ("number", "occupied_distance"): SurfaceSpec("occupied_distance", _CONFIG),
     ("number", "privacy_offset"): SurfaceSpec("privacy_offset", _CONFIG),
+    ("time", "end_time"): SurfaceSpec("end_time", _CONFIG),
+    ("time", "quiet_start"): SurfaceSpec("quiet_start", _CONFIG),
+    ("time", "quiet_end"): SurfaceSpec("quiet_end", _CONFIG),
 }
 
 

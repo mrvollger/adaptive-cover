@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/layers.py b/custom_components/adaptive_cover/layers.py
+--- a/custom_components/adaptive_cover/layers.py
++++ b/custom_components/adaptive_cover/layers.py
+@@ -365,7 +365,7 @@
+     """Return what one profile stores (sparse for a floor or an area)."""
+     if level is Level.HOUSE:
+         return dict(hub_options.get(HOUSE) or {})
+-    bucket = FLOORS if level is Level.FLOOR else AREAS
++    bucket = AREAS if level is Level.FLOOR else FLOORS
+     return dict((hub_options.get(bucket) or {}).get(scope_id or "", {}))
+ 
+ 

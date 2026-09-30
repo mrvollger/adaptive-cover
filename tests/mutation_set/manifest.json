@@ -421,6 +421,13 @@
   "patch": "M92_house_setting_change_does_not_propagate.patch"
  },
  {
+  "id": "M93",
+  "file": "custom_components/adaptive_cover/layers.py",
+  "function": "profile_values",
+  "description": "a floor's stored values are read from the area of that id and an area's from the floor (get_profile answers with the wrong profile)",
+  "patch": "M93_get_profile_reads_the_wrong_level.patch"
+ },
+ {
   "id": "M70",
   "file": "custom_components/adaptive_cover/settings/shadow.py",
   "function": "differing_keys",

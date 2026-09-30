@@ -9,7 +9,9 @@ Each entity is one house-level value in the layered settings (the hub's
 - numbers: the heating and cooling thresholds (``temp_low``,
   ``temp_high``; HA's temperature unit and ranges), the manual override
   duration (minutes), the eye height, the seat distance and the privacy
-  delay after sunset.
+  delay after sunset;
+- times: the end time and the quiet hours' start and end (``end_time``,
+  ``quiet_start``, ``quiet_end``; stored as "HH:MM:SS").
 
 Changing one stores it (``layers.async_set_profile``) and every window
 acts on it at once, without a reload. Floors, rooms and windows can still
@@ -19,24 +21,30 @@ show and set the house's. Before the house is lifted they are unavailable.
 
 from __future__ import annotations
 
+import datetime as dt
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.components.time import TimeEntity
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
+from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_CLIMATE_ON,
+    CONF_END_TIME,
     CONF_EYE_HEIGHT,
     CONF_MANUAL_DETECTION,
     CONF_MANUAL_OVERRIDE_DURATION,
     CONF_OCCUPIED_DISTANCE,
     CONF_PRIVACY_OFFSET,
+    CONF_QUIET_END,
+    CONF_QUIET_START,
     CONF_TEMP_HIGH,
     CONF_TEMP_LOW,
     CONF_USE_IRRADIANCE,
@@ -238,6 +246,37 @@ class HouseSettingNumber(HouseSetting, NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         """Store the house's value."""
         await self._store(self._to_value(value))
+
+
+HOUSE_TIMES: dict[str, str] = {
+    CONF_END_TIME: "mdi:clock-end",
+    CONF_QUIET_START: "mdi:sleep",
+    CONF_QUIET_END: "mdi:sleep-off",
+}
+
+
+class HouseSettingTime(HouseSetting, TimeEntity):
+    """A house-level time of day (the end time, the quiet hours)."""
+
+    def __init__(self, hass: HomeAssistant, key: str, device_info: Any) -> None:
+        """Initialize the time."""
+        super().__init__(hass, "time", key, device_info)
+        self._attr_icon = HOUSE_TIMES[key]
+
+    @property
+    def native_value(self) -> dt.time | None:
+        """The house's time (unknown when it has none, e.g. no quiet hours)."""
+        value = self._value()
+        return dt_util.parse_time(value) if isinstance(value, str) else None
+
+    async def async_set_value(self, value: dt.time) -> None:
+        """Store the house's time as "HH:MM:SS"."""
+        await self._store(value.strftime("%H:%M:%S"))
+
+
+def house_times(hass: HomeAssistant, device_info: Any) -> list[HouseSettingTime]:
+    """Return the hub's house times."""
+    return [HouseSettingTime(hass, key, device_info) for key in HOUSE_TIMES]
 
 
 def house_switches(hass: HomeAssistant, device_info: Any) -> list[HouseSettingSwitch]:

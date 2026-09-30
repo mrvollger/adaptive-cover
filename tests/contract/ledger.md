@@ -1030,3 +1030,41 @@ The example below is inside an HTML comment. The checker ignores it.
     opens the house device page. Bundle rebuilt.
   - Goldens, truth table and house replay unchanged (no replay reads a
     number entity).
+
+## L0031 · 2026-09-29 · get_profile reads the stored layers; house times on the hub (C6, C7, P5 flip)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins `tests/test_get_profile.py::*` (the
+  response shapes for no scope, the house, a floor, an area and a window by
+  window key or Mode select entity; the errors; a read-only user may call
+  it), `tests/test_house_settings.py::test_house_times_reach_every_window_without_a_reload`
+  and `tests/simulation/test_house_settings.py::test_house_end_time_change_moves_the_close`
+  (the house end time re-arms every window's close, no reload).
+  Behavior-tier test body changed without changing its id:
+  `tests/test_entity_surface_v2.py::test_live_house_upgrade` (the hub now
+  gains 14 house-setting rows: 5 switches, 6 numbers, 3 times).
+- **Mutations re-targeted:** added M93 (`layers.py` `profile_values`: a
+  floor's stored values are read from the area of that id and vice versa).
+  Killed by the entity tier (`--mutations M93 --jobs 3`).
+- **Contract change:** C6 (a new read service) and C7 (the plan's house
+  time entities)
+- **Reason:** P5 flip follow-up for the P6 card, which read the stored
+  layers from the admin-only diagnostics.
+  - `adaptive_cover.get_profile(scope?: house|floor|area|window, id?)`,
+    response only (`SupportsResponse.ONLY`), read-only, callable by any
+    user. No scope: `{house: {values, temperature_unit}, floors: {id:
+    values}, areas: {id: values}}`. `house`: `{scope, id: null, values,
+    temperature_unit}` (every house-level setting, the five toggles
+    included). `floor` / `area` + id: `{scope, id, values}` (sparse; `{}`
+    when the profile stores nothing). `window` + a window key or its Mode
+    select entity: `{scope, id: window_key, title, area_id, floor_id,
+    overrides: {values, legacy}, settings, provenance}`, `settings` being
+    every setting the window acts on and `provenance` each one's source
+    (`window`, `legacy`, `area`, `floor`, `house`, `default`). Unknown ids
+    and missing ids are `ServiceValidationError`s. The service lives in
+    `profile_service.py`; `__init__.py` only registers it.
+  - The hub gains the plan's house time entities (CONFIG): End time, Quiet
+    hours start, Quiet hours end (`house_settings.HouseSettingTime`,
+    `time.py`), stored as "HH:MM:SS" in the house profile like the hub
+    numbers; a change reaches every window at once, without a reload.
+  - Goldens, truth table and house replay unchanged.
