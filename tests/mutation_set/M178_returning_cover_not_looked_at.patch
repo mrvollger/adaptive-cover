@@ -1,0 +1,11 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -401,7 +401,6 @@
+             return
+         if old_state.state in ("unknown", "unavailable"):
+             self.logger.debug("Old state is %s, not processing", old_state.state)
+-            self.commands.first_sight(data["entity_id"], new_state.state)
+             # Device just came back: deliver any end-of-day close that
+             # could not be sent while it was away.
+             pending = self.end_of_day.take_retry(data["entity_id"], self.control_toggle)

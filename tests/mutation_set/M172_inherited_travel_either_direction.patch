@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/runtime/command_tracker.py b/custom_components/adaptive_cover/runtime/command_tracker.py
+--- a/custom_components/adaptive_cover/runtime/command_tracker.py
++++ b/custom_components/adaptive_cover/runtime/command_tracker.py
+@@ -169,7 +169,7 @@
+         if self.clock.utcnow() - travel.seen_at > self.TARGET_TIMEOUT:
+             del self._inherited[entity]
+             return None
+-        if report == travel.direction:
++        if report in MOTION:
+             return "continues"
+         del self._inherited[entity]
+         return None if report in MOTION else "landed"

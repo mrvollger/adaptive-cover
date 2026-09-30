@@ -1,12 +1,13 @@
 diff --git a/custom_components/adaptive_cover/runtime/command_tracker.py b/custom_components/adaptive_cover/runtime/command_tracker.py
 --- a/custom_components/adaptive_cover/runtime/command_tracker.py
 +++ b/custom_components/adaptive_cover/runtime/command_tracker.py
-@@ -325,7 +325,7 @@
-         direction of its target restores the in-flight state instead.
-         Returns the adopted send, or None.
+@@ -165,9 +165,6 @@
          """
--        sent = self._unconfirmed_sends.get(entity)
-+        sent = None
-         if sent is None:
+         travel = self._inherited.get(entity)
+         if travel is None:
+-            return None
+-        if self.clock.utcnow() - travel.seen_at > self.TARGET_TIMEOUT:
+-            del self._inherited[entity]
              return None
-         target, sent_at = sent.target, sent.sent_at
+         if report == travel.direction:
+             return "continues"

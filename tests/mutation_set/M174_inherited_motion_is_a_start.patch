@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -437,7 +437,7 @@
+         if self.is_own_context(event.context):
+             self.process_entity_state_change(own_context=True)
+             return
+-        if self.state_change_data.inherited == "continues":
++        if False:
+             # Still finishing the move it had before this coordinator saw
+             # it (a restart or reload mid-travel): no start, no landing.
+             return

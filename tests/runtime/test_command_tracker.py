@@ -236,6 +236,56 @@ def test_a_delivered_send_forgets_the_failed_one(h):
     assert h.tracker.adopt_late_delivery(COVER, "opening", 20) is None
 
 
+# ------------------------------------------------------ inherited travel
+
+
+def test_a_cover_first_seen_moving_is_followed_until_it_lands(h):
+    h.tracker.first_sight(COVER, "opening")
+    assert h.tracker.note_report(COVER, "opening") == "continues"
+    assert h.tracker.note_report(COVER, "open") == "landed"
+    assert h.tracker.note_report(COVER, "closing") is None  # over
+
+
+def test_a_cover_first_seen_at_rest_has_nothing_under_way(h):
+    h.tracker.first_sight(COVER, "open")
+    assert h.tracker.note_report(COVER, "open") is None
+
+
+def test_seeing_a_cover_at_rest_again_forgets_its_travel(h):
+    h.tracker.first_sight(COVER, "opening")
+    h.tracker.first_sight(COVER, "unavailable")
+    assert h.tracker.note_report(COVER, "open") is None
+
+
+def test_motion_the_other_way_ends_the_inherited_travel(h):
+    h.tracker.first_sight(COVER, "opening")
+    assert h.tracker.note_report(COVER, "closing") is None
+    assert h.tracker.note_report(COVER, "closed") is None
+
+
+def test_an_inherited_travel_lasts_the_travel_time(h):
+    h.tracker.first_sight(COVER, "closing")
+    h.clock.advance(seconds=TIMEOUT.total_seconds())
+    assert h.tracker.note_report(COVER, "closing") == "continues"
+    h.clock.advance(seconds=1)
+    assert h.tracker.note_report(COVER, "closed") is None
+
+
+def test_a_person_ends_the_inherited_travel(h):
+    h.tracker.first_sight(COVER, "opening")
+    h.tracker.release(COVER)
+    assert h.tracker.note_report(COVER, "opening") is None
+
+
+def test_the_inherited_landing_inside_our_travel_is_not_foreign(h):
+    h.tracker.start(COVER, 97)
+    assert (
+        h.tracker.classify_report(COVER, "open", 5, ends_inherited=True) == "in_travel"
+    )
+    assert h.tracker.wait_for_target[COVER] is True
+    assert h.tracker.classify_report(COVER, "open", 97) == "arrived"
+
+
 # --------------------------------------------------------- arrival polls
 
 

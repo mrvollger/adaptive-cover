@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/runtime/command_tracker.py b/custom_components/adaptive_cover/runtime/command_tracker.py
+--- a/custom_components/adaptive_cover/runtime/command_tracker.py
++++ b/custom_components/adaptive_cover/runtime/command_tracker.py
+@@ -149,7 +149,7 @@
+         it lands. A cover at rest has nothing under way.
+         """
+         if report in MOTION:
+-            self._inherited[entity] = InheritedTravel(report, self.clock.utcnow())
++            self._inherited.pop(entity, None)
+         else:
+             self._inherited.pop(entity, None)
+ 

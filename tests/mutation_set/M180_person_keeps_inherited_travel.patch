@@ -1,0 +1,11 @@
+diff --git a/custom_components/adaptive_cover/runtime/command_tracker.py b/custom_components/adaptive_cover/runtime/command_tracker.py
+--- a/custom_components/adaptive_cover/runtime/command_tracker.py
++++ b/custom_components/adaptive_cover/runtime/command_tracker.py
+@@ -132,7 +132,6 @@
+         acts.
+         """
+         self.wait_for_target[entity] = False
+-        self._inherited.pop(entity, None)
+ 
+     # --------------------------------------------------- inherited travel
+ 

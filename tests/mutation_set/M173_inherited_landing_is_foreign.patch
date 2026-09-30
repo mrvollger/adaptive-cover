@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/runtime/command_tracker.py b/custom_components/adaptive_cover/runtime/command_tracker.py
+--- a/custom_components/adaptive_cover/runtime/command_tracker.py
++++ b/custom_components/adaptive_cover/runtime/command_tracker.py
+@@ -262,7 +262,7 @@
+                 )
+                 return "expired"
+             if not own_context and settled and position is not None:
+-                if ends_inherited:
++                if False:
+                     # The move under way before our command (a restart or
+                     # reload mid-travel) has landed; ours still travels.
+                     self.logger.debug(

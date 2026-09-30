@@ -264,6 +264,15 @@ class FakeShade:
             setattr(self, self.moving_field, stuck)
         self.jammed = True
 
+    def stop(self, now: dt.datetime) -> None:
+        """Stop mid-travel at the interpolated position; the next command moves."""
+        self.jam(now)
+        self.jammed = False
+        self.moving_to = None
+        self.eta = None
+        self.travel_from = None
+        self.travel_started = None
+
 
 class SimHouse:
     """Simulated house driving the real adaptive_cover integration."""
@@ -558,6 +567,7 @@ class SimHouse:
         restore: bool = True,
         seed_states: dict[str, str] | None = None,
         cold: bool = False,
+        covers_late: bool = False,
     ) -> None:
         """Simulate an HA restart of the house, preserving the timeline.
 
@@ -573,6 +583,12 @@ class SimHouse:
         store, as a real Home Assistant process restart does (by default it
         survives, as it does an entry reload): what the windows hold then
         comes only from their restored entity states.
+
+        ``covers_late=True`` models the boot order of the house, where Zigbee
+        starts after the integration: the covers are registered but have no
+        state while the windows set up. The test drives what comes next:
+        HA's ``unavailable`` placeholder (``shade_goes_unavailable``) and
+        the device's reports (``device_reports``).
         """
         if at is not None:
             await self.advance_to(at)
@@ -594,6 +610,15 @@ class SimHouse:
             self.hass.data.pop(f"{DOMAIN}_manual_state", None)
         if seeded:
             mock_restore_cache(self.hass, list(seeded.values()))
+        if covers_late:
+            registry = er.async_get(self.hass)
+            for entity_id in self.shades:
+                domain, object_id = entity_id.split(".", 1)
+                registry.async_get_or_create(
+                    domain, "zha", f"sim-{object_id}", suggested_object_id=object_id
+                )
+                self.hass.states.async_remove(entity_id)
+            await self.hass.async_block_till_done()
         await self._setup_entry()
 
     async def set_options(self, **option_changes) -> None:
@@ -869,6 +894,34 @@ class SimHouse:
         position (distinguishing a jam from drop_landing_report).
         """
         self.shades[entity_id].jam(self.now)
+
+    def stop_motor(self, entity_id: str) -> None:
+        """The motor stops where it is and reports nothing.
+
+        What a restart in the middle of a Zigbee journey did in the house
+        (2026-09-30): the shade never finished the move. The entity keeps
+        its last state (``opening``) until the device reports; the next
+        command moves the shade normally.
+        """
+        self.shades[entity_id].stop(self.now)
+
+    async def device_reports(
+        self, entity_id: str, state: str | None = None, *, position: int | None = None
+    ) -> None:
+        """The device reports ``state`` (default: at rest) at its true position.
+
+        A report with a fresh device context: a Zigbee attribute report, or
+        the state the cover's integration restores when it starts.
+        ``position`` first moves the shade there (a report on the way while
+        it travels; it still lands where it was going).
+        """
+        shade = self.shades[entity_id]
+        if position is not None:
+            setattr(shade, shade.moving_field, position)
+        self._write_shade_state(
+            shade, state or self._shade_state_str(shade), Context(), actor="device"
+        )
+        await self.hass.async_block_till_done()
 
     def drop_landing_report(self, entity_id: str) -> None:
         """The next landing is silent: target reached, state report lost."""
