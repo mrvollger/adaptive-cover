@@ -575,7 +575,6 @@ export const en = {
       manual_ignore_intermediate: 'Ignore moves while opening or closing',
       manual_threshold: 'Smallest hand move that counts',
       climate_on: 'Climate control',
-      climate_mode: 'Use climate inputs',
       temp_low: 'Let sun in below',
       temp_high: 'Block heat above',
       temp_hysteresis: 'Margin past the thresholds',
@@ -613,9 +612,8 @@ export const en = {
     },
     hint: {
       manual_override_duration: 'Then it goes back to auto',
-      climate_on: 'Day to day: temperature, presence and weather steer the shades',
-      climate_mode:
-        'Setup: whether these windows read the climate inputs at all (a change reloads them)',
+      climate_on:
+        'Temperature, presence and weather steer the shades (windows with a temperature sensor; a window can ignore climate in its setup)',
       presence_entity: 'Away: shades close in summer and open in winter',
       outside_threshold: 'Lowest outside temperature for summer mode',
       delta_position: 'Smaller changes wait',

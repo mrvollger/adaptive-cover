@@ -142,7 +142,7 @@ describe('settingsAt', () => {
 
   it('a room sheet has every room setting, grouped by section', () => {
     const keys = settingsAt('area').map((s) => s.key);
-    expect(keys).toHaveLength(24);
+    expect(keys).toHaveLength(23);
     expect(keys.slice(0, 3)).toEqual([
       'manual_override_duration',
       'manual_override_reset',
@@ -157,9 +157,11 @@ describe('settingsAt', () => {
     expect(house).toHaveLength(PROFILE_SETTINGS.length - 1);
     expect(house.map((s) => s.key)).not.toContain('temp_entity');
     expect(house.slice(-8).map((s) => s.section)).toEqual(Array(8).fill('sensors'));
-    // climate_mode sits with Climate, after the day-to-day switch.
+    // One Climate switch (house 3.2) leads Climate; climate_mode is gone.
     const climate = house.filter((s) => s.section === 'climate').map((s) => s.key);
-    expect(climate.slice(0, 2)).toEqual(['climate_on', 'climate_mode']);
+    expect(climate[0]).toBe('climate_on');
+    expect(SETTINGS_BY_KEY.has('climate_mode')).toBe(false);
+    expect(SETTINGS_BY_KEY.has('ignore_climate')).toBe(false);
   });
 });
 
