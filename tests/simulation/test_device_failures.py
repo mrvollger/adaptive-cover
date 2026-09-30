@@ -186,6 +186,54 @@ async def test_regression_missing_cover_not_commanded(hass, freezer, caplog):
     await house.teardown()
 
 
+async def test_regression_late_cover_positioned_when_it_appears(hass, freezer, caplog):
+    """A cover whose integration starts after ours is positioned on arrival.
+
+    House, 2026-09-29 19:16: at boot the windows set up before Zigbee had
+    created their covers, so every window logged "no such entity (renamed
+    or removed?)" and skipped its command until the next sun update - a
+    false alarm for a registered cover, and a slow recovery at night.
+    """
+    from homeassistant.helpers import entity_registry as er
+
+    house = await SimHouse.create(hass, freezer, date="2026-03-20")
+    await house.advance_to("10:00")
+    await settle_idle(house)
+    hass.states.async_remove(SHADE)  # the cover's integration isn't up yet...
+    er.async_get(hass).async_get_or_create(
+        "cover", "zha", "late-shade", suggested_object_id=SHADE.split(".", 1)[1]
+    )  # ...but the cover is registered
+    await hass.async_block_till_done()
+    gone_at = house.now
+    await house.advance_to("10:30")
+    assert not [
+        e
+        for e in house.timeline
+        if e.kind == "service_call" and e.entity_id == SHADE and e.time > gone_at
+    ], "commanded a cover that has no state yet"
+    assert "no such entity" not in caplog.text, (
+        "a registered cover was reported as missing"
+    )
+
+    back_at = house.now
+    target = int(float(house.entity("sensor", "cover_position").state))
+    away = 0 if target > 50 else 100
+    house.shades[SHADE].position = away
+    hass.states.async_set(
+        SHADE,
+        "closed" if away == 0 else "open",
+        {"current_position": away, "supported_features": 15},
+    )
+    await hass.async_block_till_done()
+    calls = [
+        e
+        for e in house.timeline
+        if e.kind == "service_call" and e.entity_id == SHADE and e.time >= back_at
+    ]
+    assert calls, "the cover was not positioned when its first state arrived"
+    await house.teardown()
+
+
 # --------------------------------------------- unknown-position-commands-anyway
 
 

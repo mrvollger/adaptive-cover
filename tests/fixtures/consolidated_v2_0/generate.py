@@ -5,7 +5,7 @@ house as the owner will have it just before installing v2.1: consolidated
 on v2.0.x (every window a ``window`` subentry of the house, stored
 verbatim, ADR 0006). v2.1 no longer has the consolidation code, so this
 fixture was produced once by running the v2.0 code (integ/v2.0.0 at
-8b5f02b) on the sanitized live snapshot (``tests/fixtures/house_snapshot``)
+14b4e27, with temp_hysteresis) on the sanitized live snapshot (``tests/fixtures/house_snapshot``)
 and dumping what Home Assistant stores afterwards:
 
 - ``house.json``: the house entry (2.1, its options and its 15 window

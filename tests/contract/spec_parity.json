@@ -48,6 +48,7 @@
    "sunset_position",
    "temp_entity",
    "temp_high",
+   "temp_hysteresis",
    "temp_low",
    "tilt_mode",
    "weather_entity",
@@ -124,6 +125,7 @@
    "sunset_position",
    "temp_entity",
    "temp_high",
+   "temp_hysteresis",
    "temp_low",
    "tilt_mode",
    "weather_entity",
@@ -136,6 +138,7 @@
    "occupied_distance",
    "privacy_offset",
    "temp_high",
+   "temp_hysteresis",
    "temp_low"
   ],
   "options.house": [
@@ -147,6 +150,7 @@
    "climate_mode",
    "temp_low",
    "temp_high",
+   "temp_hysteresis",
    "outside_temp",
    "outside_threshold",
    "presence_entity",
@@ -210,7 +214,8 @@
    "weather_entity",
    "weather_state",
    "temp_low",
-   "temp_high"
+   "temp_high",
+   "temp_hysteresis"
   ],
   "setup.first": [
    "window",
@@ -239,6 +244,7 @@
    "temp_entity",
    "temp_low",
    "temp_high",
+   "temp_hysteresis",
    "outside_temp",
    "outside_threshold",
    "presence_entity",
@@ -356,6 +362,7 @@
    "temp_entity",
    "temp_low",
    "temp_high",
+   "temp_hysteresis",
    "outside_temp",
    "outside_threshold",
    "presence_entity",
@@ -476,6 +483,7 @@
    "temp_entity",
    "temp_low",
    "temp_high",
+   "temp_hysteresis",
    "outside_temp",
    "outside_threshold",
    "presence_entity",
@@ -3131,6 +3139,145 @@
     "unit": "°F",
     "required": true,
     "default": 75,
+    "suggested": true
+   }
+  ],
+  "temp_hysteresis": [
+   {
+    "where": [
+     "add_entry [units=°C]",
+     "change_settings [units=°C]"
+    ],
+    "kind": "float",
+    "min": 0,
+    "max": 3,
+    "required": false
+   },
+   {
+    "where": [
+     "add_entry [units=°F]",
+     "change_settings [units=°F]"
+    ],
+    "kind": "float",
+    "min": 0,
+    "max": 5,
+    "required": false
+   },
+   {
+    "where": [
+     "number [units=°C]"
+    ],
+    "default": 0,
+    "kind": "number",
+    "max": 3,
+    "min": 0,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°C"
+   },
+   {
+    "where": [
+     "number [units=°F]"
+    ],
+    "default": 0,
+    "kind": "number",
+    "max": 5,
+    "min": 0,
+    "mode": "box",
+    "step": 0.1,
+    "unit": "°F"
+   },
+   {
+    "where": [
+     "options.house.house_climate [units=°C]"
+    ],
+    "kind": "number",
+    "max": 3,
+    "min": 0,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°C",
+    "required": false,
+    "suggested": true
+   },
+   {
+    "where": [
+     "options.house.house_climate [units=°F]"
+    ],
+    "kind": "number",
+    "max": 5,
+    "min": 0,
+    "mode": "box",
+    "step": 0.1,
+    "unit": "°F",
+    "required": false,
+    "suggested": true
+   },
+   {
+    "where": [
+     "services_yaml.change_settings"
+    ],
+    "kind": "number",
+    "max": 5,
+    "min": 0,
+    "mode": "box",
+    "step": 0.1,
+    "required": false
+   },
+   {
+    "where": [
+     "setup.first.exceptions_climate [units=°C]",
+     "setup.user.exceptions_climate [units=°C]"
+    ],
+    "kind": "number",
+    "max": 3,
+    "min": 0,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°C",
+    "required": false,
+    "default": 0
+   },
+   {
+    "where": [
+     "setup.first.exceptions_climate [units=°F]",
+     "setup.user.exceptions_climate [units=°F]"
+    ],
+    "kind": "number",
+    "max": 5,
+    "min": 0,
+    "mode": "box",
+    "step": 0.1,
+    "unit": "°F",
+    "required": false,
+    "default": 0
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_climate [units=°C]"
+    ],
+    "kind": "number",
+    "max": 3,
+    "min": 0,
+    "mode": "box",
+    "step": 0.5,
+    "unit": "°C",
+    "required": false,
+    "default": 0,
+    "suggested": true
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_climate [units=°F]"
+    ],
+    "kind": "number",
+    "max": 5,
+    "min": 0,
+    "mode": "box",
+    "step": 0.1,
+    "unit": "°F",
+    "required": false,
+    "default": 0,
     "suggested": true
    }
   ],

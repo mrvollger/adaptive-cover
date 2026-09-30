@@ -309,6 +309,7 @@
     "sunset_offset": 20.0,
     "sunset_position": 0.0,
     "temp_high": 75.0,
+    "temp_hysteresis": 0,
     "temp_low": 72.0,
     "use_irradiance": true,
     "use_lux": true,
@@ -424,6 +425,7 @@
       "sunset_position": 0.0,
       "temp_entity": "sensor.downstairs_indoor_temperature",
       "temp_high": 75.0,
+      "temp_hysteresis": 0,
       "temp_low": 72.0,
       "tilt_mode": null,
       "transparent_blind": false,
@@ -439,10 +441,10 @@
      },
      "window_key": "01KWHKT5SWNSNC9QD4QC2SQMTR"
     },
-    "subentry_id": "01M3R05SHXAR0B3AX79H7NN1QJ",
+    "subentry_id": "01M3R1XPRZTP871PM7ZYYTYJJV",
     "subentry_type": "window",
     "title": "Den south",
-    "unique_id": "0eca4df9304aeaabd7568302307dcd7f"
+    "unique_id": "b33cbf6ad52d6d289e127ca53e7f3e7a"
    },
    {
     "data": {
@@ -530,6 +532,7 @@
       "sunset_position": 5.0,
       "temp_entity": "sensor.downstairs_indoor_temperature",
       "temp_high": 75.0,
+      "temp_hysteresis": 0,
       "temp_low": 72.0,
       "tilt_mode": null,
       "transparent_blind": false,
@@ -545,10 +548,10 @@
      },
      "window_key": "01KWHKTS0C0HTDDQTW75W04HKZ"
     },
-    "subentry_id": "01M3R05SJ8PQQ40TG1VC4A43K2",
+    "subentry_id": "01M3R1XPS2WWXBF7B817111AG5",
     "subentry_type": "window",
     "title": "Den southwest",
-    "unique_id": "c2a21e8dfcac85d8ae76c40bef7e6752"
+    "unique_id": "9beeccd449bdebd92587878b4e6b725d"
    },
    {
     "data": {
@@ -636,6 +639,7 @@
       "sunset_position": 5.0,
       "temp_entity": "sensor.downstairs_indoor_temperature",
       "temp_high": 75.0,
+      "temp_hysteresis": 0,
       "temp_low": 72.0,
       "tilt_mode": null,
       "transparent_blind": false,
@@ -651,10 +655,10 @@
      },
      "window_key": "01KWHKV52MF7T5N16XVXRR11C1"
     },
-    "subentry_id": "01M3R05SJKGEX6YW6WD3KTH29Q",
+    "subentry_id": "01M3R1XPSAZE1XEJARWVS756F5",
     "subentry_type": "window",
     "title": "Den west",
-    "unique_id": "96ee6bd8815695d0ad1ef0444776f5af"
+    "unique_id": "52c0b1d9ac750d31f09cb03f7c70b04e"
    },
    {
     "data": {
@@ -739,6 +743,7 @@
       "sunset_position": 3.0,
       "temp_entity": "sensor.downstairs_indoor_temperature",
       "temp_high": 75.0,
+      "temp_hysteresis": 0,
       "temp_low": 72.0,
       "tilt_mode": null,
       "transparent_blind": false,
@@ -754,10 +759,10 @@
      },
      "window_key": "01KWP2H31Q4F3BYTR9JP9W4K9C"
     },
-    "subentry_id": "01M3R05SJW9R7XW59JWE1VYG83",
+    "subentry_id": "01M3R1XPSJANF5YPGTM8WWKANF",
     "subentry_type": "window",
     "title": "Family door",
-    "unique_id": "63a883a84b9b1d60340a702dd1892283"
+    "unique_id": "de67f9708ccf90c915614cf9dc8b103c"
    },
    {
     "data": {
@@ -839,6 +844,7 @@
       "sunset_position": 0.0,
       "temp_entity": "sensor.downstairs_indoor_temperature",
       "temp_high": 75.0,
+      "temp_hysteresis": 0,
       "temp_low": 72.0,
       "tilt_mode": null,
       "transparent_blind": false,
@@ -854,10 +860,10 @@
      },
      "window_key": "01KWP1K4XH1C9J89HP8ME35CNZ"
     },
-    "subentry_id": "01M3R05SK2G59P4DSF91G04XN9",
+    "subentry_id": "01M3R1XPSWR0A967SERB1EF1NS",
     "subentry_type": "window",
     "title": "Family east",
-    "unique_id": "5a7b5008efad054bfdea52796e31bb9b"
+    "unique_id": "783fc7a39a505eca35418839e5948898"
    },
    {
     "data": {
@@ -942,6 +948,7 @@
       "sunset_position": 0.0,
       "temp_entity": "sensor.downstairs_indoor_temperature",
       "temp_high": 75.0,
+      "temp_hysteresis": 0,
       "temp_low": 72.0,
       "tilt_mode": null,
       "transparent_blind": false,
@@ -957,10 +964,10 @@
      },
      "window_key": "01KWQEPHPX2QRC9BQ0NNZ9857Z"
     },
-    "subentry_id": "01M3R05SK9DTZ9M05WP4FF8BZE",
+    "subentry_id": "01M3R1XPT89D7E44JME48HPCT1",
     "subentry_type": "window",
     "title": "Family south",
-    "unique_id": "cd27a5344314dd98e0eff9f5ca12cc15"
+    "unique_id": "d465ba1fc68b3b5090635ac9a5bf8dea"
    },
    {
     "data": {
@@ -1048,6 +1055,7 @@
       "sunset_position": 5.0,
       "temp_entity": "sensor.upstairs_indoor_temperature",
       "temp_high": 75.0,
+      "temp_hysteresis": 0,
       "temp_low": 72.0,
       "tilt_mode": null,
       "transparent_blind": false,
@@ -1063,10 +1071,10 @@
      },
      "window_key": "01KSBFBK88WRN0NYVSHNR37QJX"
     },
-    "subentry_id": "01M3R05SKG7PFCPE30TNT78XQA",
+    "subentry_id": "01M3R1XPTMNSTMF5JJXFJM72W1",
     "subentry_type": "window",
     "title": "Leanne's door",
-    "unique_id": "81e186062e296a509b00c977213129c3"
+    "unique_id": "2cc36e700c9e92b554df1a75a5b31d8b"
    },
    {
     "data": {
@@ -1154,6 +1162,7 @@
       "sunset_position": 0.0,
       "temp_entity": "sensor.upstairs_indoor_temperature",
       "temp_high": 75.0,
+      "temp_hysteresis": 0,
       "temp_low": 72.0,
       "tilt_mode": null,
       "transparent_blind": false,
@@ -1169,10 +1178,10 @@
      },
      "window_key": "01KSBFGWN5RBTYPB2XNR700ZTD"
     },
-    "subentry_id": "01M3R05SKQ5SJ8272WMCCE6P8H",
+    "subentry_id": "01M3R1XPTX5QDMJEMD0BA00WFT",
     "subentry_type": "window",
     "title": "Leanne's south",
-    "unique_id": "5570045218c682b5a3e0903b89596f97"
+    "unique_id": "822100408c980920ecc55161874d7d77"
    },
    {
     "data": {
@@ -1257,6 +1266,7 @@
       "sunset_position": 3.0,
       "temp_entity": "sensor.upstairs_indoor_temperature",
       "temp_high": 75.0,
+      "temp_hysteresis": 0,
       "temp_low": 72.0,
       "tilt_mode": null,
       "transparent_blind": false,
@@ -1272,10 +1282,10 @@
      },
      "window_key": "01KWP1KBER8D63ZW8C5326F7AC"
     },
-    "subentry_id": "01M3R05SKY5G4MCQWQRP5FNR91",
+    "subentry_id": "01M3R1XPV5FW942004YSQ4YAN6",
     "subentry_type": "window",
     "title": "Master door",
-    "unique_id": "0f6f42e20f5429289d4378d25f2d2135"
+    "unique_id": "25d5e612ce9c74e9172904fccb10357f"
    },
    {
     "data": {
@@ -1357,6 +1367,7 @@
       "sunset_position": 0.0,
       "temp_entity": "sensor.upstairs_indoor_temperature",
       "temp_high": 75.0,
+      "temp_hysteresis": 0,
       "temp_low": 72.0,
       "tilt_mode": null,
       "transparent_blind": false,
@@ -1372,10 +1383,10 @@
      },
      "window_key": "01KWP1JY50D79YNJ6A6MG5RC15"
     },
-    "subentry_id": "01M3R05SM5SRT74K2XF0DVCR7F",
+    "subentry_id": "01M3R1XPVC4HA0QEST81CNS8TH",
     "subentry_type": "window",
     "title": "Master east",
-    "unique_id": "f33ab73b6536c681994974008bcdfcf2"
+    "unique_id": "863ec916eb1c63cff3796e4e81761fb7"
    },
    {
     "data": {
@@ -1460,6 +1471,7 @@
       "sunset_position": 0.0,
       "temp_entity": "sensor.upstairs_indoor_temperature",
       "temp_high": 75.0,
+      "temp_hysteresis": 0,
       "temp_low": 72.0,
       "tilt_mode": null,
       "transparent_blind": false,
@@ -1475,10 +1487,10 @@
      },
      "window_key": "01KWQEPAFBRZQ463CW35SKE8GH"
     },
-    "subentry_id": "01M3R05SMHVHQ1H59B8E6R50EM",
+    "subentry_id": "01M3R1XPVR6ER5BAN87T951H1E",
     "subentry_type": "window",
     "title": "Master south",
-    "unique_id": "b7304f5e44a1ca09c7f693c115115c47"
+    "unique_id": "e7d1a9f0a432e273e41dda38bf76ee48"
    },
    {
     "data": {
@@ -1563,6 +1575,7 @@
       "sunset_position": 0.0,
       "temp_entity": "sensor.upstairs_indoor_temperature",
       "temp_high": 75.0,
+      "temp_hysteresis": 0,
       "temp_low": 72.0,
       "tilt_mode": null,
       "transparent_blind": false,
@@ -1578,10 +1591,10 @@
      },
      "window_key": "01KAA8FJRH4VKCWPDMFA1JSHBT"
     },
-    "subentry_id": "01M3R05SMSZZ98CC7SGVMZW4CF",
+    "subentry_id": "01M3R1XPW2XEZHV6YZ3VZAPBJ7",
     "subentry_type": "window",
     "title": "Master trap",
-    "unique_id": "a160efe1aa39c33479d0da90b2f51d94"
+    "unique_id": "8a271547c01664baa0cba4acb5556585"
    },
    {
     "data": {
@@ -1663,6 +1676,7 @@
       "sunset_position": 0.0,
       "temp_entity": "sensor.upstairs_indoor_temperature",
       "temp_high": 75.0,
+      "temp_hysteresis": 0,
       "temp_low": 72.0,
       "tilt_mode": null,
       "transparent_blind": false,
@@ -1678,10 +1692,10 @@
      },
      "window_key": "01KGZNRGJ39Q0S8GH12BW15QY3"
     },
-    "subentry_id": "01M3R05SN1WYRDE5J5TAQ8RRRP",
+    "subentry_id": "01M3R1XPWBN8QFPDKVJ2S5QBAG",
     "subentry_type": "window",
     "title": "Office door",
-    "unique_id": "b9e6b01976955708223b2ee3fbcb0006"
+    "unique_id": "715b1cb39bf853022618daaf5a5319d2"
    },
    {
     "data": {
@@ -1763,6 +1777,7 @@
       "sunset_position": 0.0,
       "temp_entity": "sensor.upstairs_indoor_temperature",
       "temp_high": 75.0,
+      "temp_hysteresis": 0,
       "temp_low": 72.0,
       "tilt_mode": null,
       "transparent_blind": false,
@@ -1778,10 +1793,10 @@
      },
      "window_key": "01KAD50Y5394DV5VKX96T6R9JZ"
     },
-    "subentry_id": "01M3R05SN8DZQB4R1G3VTGW3R7",
+    "subentry_id": "01M3R1XPWJAH8HDSJ4FSY53VKN",
     "subentry_type": "window",
     "title": "Office east",
-    "unique_id": "4f0b7e820021c1b39f27194af76fa361"
+    "unique_id": "a3ddced68993dc233950a31331104a48"
    },
    {
     "data": {
@@ -1863,6 +1878,7 @@
       "sunset_position": 0.0,
       "temp_entity": "sensor.upstairs_indoor_temperature",
       "temp_high": 75.0,
+      "temp_hysteresis": 0,
       "temp_low": 72.0,
       "tilt_mode": null,
       "transparent_blind": false,
@@ -1878,10 +1894,10 @@
      },
      "window_key": "01KAD4XDDT8YPF97FN3095Y9C3"
     },
-    "subentry_id": "01M3R05SNFCFPYRJRC3SMSB47M",
+    "subentry_id": "01M3R1XPWX9SZYKNTDW1SF4KWF",
     "subentry_type": "window",
     "title": "Office north",
-    "unique_id": "3afede0f401a4dc8f8c287a0d479030c"
+    "unique_id": "11b042b9e1a2cb2f8aac2a1f8ceb92b9"
    }
   ],
   "title": "Adaptive Cover All",

@@ -1069,7 +1069,7 @@ The example below is inside an HTML comment. The checker ignores it.
     numbers; a change reaches every window at once, without a reload.
   - Goldens, truth table and house replay unchanged.
 
-## L0032 · 2026-09-29 · One house entry with window subentries; the "Consolidate" repair (C8, P7)
+## L0033 · 2026-09-29 · One house entry with window subentries; the "Consolidate" repair (C8, P7)
 - **Removed:** none
 - **Renamed:** none
 - **Replacements:** none retired. New pins:
@@ -1150,6 +1150,72 @@ The example below is inside an HTML comment. The checker ignores it.
   - Goldens, truth table and the house replay unchanged; the replay also
     runs byte-identical through a consolidated house.
 
+## L0032 · 2026-09-29 · Season hysteresis: temp_hysteresis (C3, C6, C7)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins `tests/engine/test_season.py::*` (the
+  sticky rule on both thresholds in both directions, the band edges, a jump
+  across the band, the outside condition, missing thresholds, a missing
+  reading leaving no memory, and hysteresis 0 deciding exactly as the plain
+  rule for every previous season), `tests/simulation/test_season_hysteresis.py::*`
+  (a °F house whose indoor reading wobbles 71.9 <-> 72.1 °F flips the
+  season and the shade with every reading today and holds with 1 °F set on
+  the hub, without a reload; a °C house with 0.5 °C; the first decision
+  after a restart uses the plain rule) and
+  `tests/test_units_and_defaults.py::test_threshold_hysteresis_is_unit_aware_everywhere[*]`
+  (0-3 °C step 0.5 / 0-5 °F step 0.1, default 0, on the setup form, the
+  options form, the hub number, change_settings and set_profile).
+  Behavior-tier test bodies changed without changing their ids:
+  `tests/test_entity_surface_v2.py::test_live_house_upgrade` (the hub gains
+  15 house-setting rows: 5 switches, 7 numbers, 3 times),
+  `tests/test_migration_1_3.py::test_migration_only_adds_keys[*]` (1.3 also
+  writes the new option's runtime fallback, 0) and
+  `tests/settings/test_house_lift.py::test_house_profile` (the lifted house
+  stores `temp_hysteresis: 0`); implementation tier:
+  `tests/test_shadow_settings.py::test_live_house_lifts_into_house_floor_and_area_profiles`
+  (the same) and `tests/settings/test_spec.py` (the plan table row).
+  `tests/contract/spec_parity.json` regenerated: the new option on the
+  setup form's climate exceptions, the options form's climate section,
+  change_settings / add_entry (0-3 °C, 0-5 °F) and the house numbers.
+- **Mutations re-targeted:** M34 re-anchored (description unchanged): the
+  season comparison moved from `calculation.ClimateCoverData.is_summer`
+  to `engine/season.py` `decide_season`. Added M110 (`engine/season.py`
+  `_margin`: the hysteresis is applied in the wrong direction) and M111
+  (`coordinator.py` `_climate_data`: the previous season is ignored, every
+  decision uses the plain rule). `--mutations M34,M110,M111 --jobs 3`: 3/3
+  killed. The other patches are regenerated for line offsets only.
+- **Contract change:** C3 (a new spec row on every generated surface), C6
+  (a new recurring setting: house, with an area override) and C7 (a new
+  house number on the hub)
+- **Reason:** owner request. With the indoor temperature hovering at a
+  threshold (72 °F heating in the house) the season flipped with every
+  reading and the shades followed.
+  - `temp_hysteresis` (HA's temperature unit; default 0 = off): once
+    winter, the season stays winter until the temperature reaches low + h;
+    once summer, until it falls to high - h; the intermediate band is left
+    only h past a threshold (below low - h, above high + h). The rule is
+    pure (`engine/season.decide_season(inputs, previous) -> Season`): the
+    previous season is an input and the new one the output. Each window's
+    coordinator keeps the last season in memory only: after a restart or
+    reload, and after a decision without a temperature reading, the first
+    decision uses the plain rule (not restored, by design).
+  - The adapter (`ClimateCoverData.season`) decides the season once per
+    refresh, so the position, the reason, the Control method and the
+    forecast agree on it.
+  - Hysteresis 0 decides exactly as before whatever the previous season:
+    goldens, truth table and house replay unchanged.
+  - Card: the house and room sheets list the setting (the house number,
+    unit-aware range); bundle rebuilt.
+
+## L0040 · 2026-09-29 · A late cover is positioned when it appears; registered covers are not "missing" (C5)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none. New pin:
+  `tests/simulation/test_device_failures.py::test_regression_late_cover_positioned_when_it_appears`
+- **Mutations re-targeted:** none; M120 added (the first-state decision removed).
+- **Contract change:** C5
+- **Reason:** at the 2026-09-29 19:16 boot the windows set up before Zigbee created their covers: each logged "no such entity (renamed or removed?)" and skipped its command until the next sun update. A cover that is in the entity registry but has no state yet is now waited for quietly (debug), and a cover's first state triggers a normal decision (every gate still applies). A cover that is not in the registry at all (renamed or removed) is still skipped and reported once. No pinned output changed.
+
 ## L0050 · 2026-09-29 · The house is the only runtime: legacy path removed, migration 3.1, the consolidate_first nag (C7, C8, P8)
 - **Removed:**
   - `tests/test_consolidation.py::*` (the P7 consolidation fix flow: v2.1 has none; a house consolidates on v2.0.x)
@@ -1200,5 +1266,5 @@ The example below is inside an HTML comment. The checker ignores it.
   - A consolidated house (2.1) migrates at its first start to 3.1: a snapshot (`.storage/adaptive_cover.v2_0_snapshot`), each subentry rewritten to the window record `{window_key?, name, cover_entity_id, cover_type, geometry, overrides}`, the switch alias rows removed, the house options cut to the layers. The major bump makes v2.0.x refuse the house.
   - Removed: the legacy window-entry runtime (`windows.py` legacy view, the hub bootstrap, the per-window options flow and the window-entry reconfigure and import steps), the split repair, `consolidate.py`, `repairs.py`, `migration.py`, `shadow.py` (lift and adoption at setup, switch-state reading), the switch aliases, the `group` dual-write (the runtime derives `[cover]` from the record), the legacy flat keys, `hass.data[DOMAIN]` (the coordinators are found through the house's `runtime_data`), the Toggle Control restore fallback and the pre-flip Mode option names, `cover_entities`, `is_lifted`/`house_not_lifted`, the `model=legacy` simulation parametrization and the `test-house-model` task.
   - New windows get their overrides when they are created (`layers.new_window_record`, `layers.initial_house_options`), as v2.0 adopted them at their first setup.
-  - `spec_parity.json` regenerated: the per-window options form (`options.init.*`) is gone; the first-window config flow (`setup.first.*`, the add form without "Copy from"), the house options form (`options.house.*`; the 34 keys it shares with the old options form have the same descriptors) and the Reconfigure form's exceptions sections (`setup.reconfigure.exceptions_*`, fields pre-filled with what the window acts on) are pinned.
+  - `spec_parity.json` regenerated: the per-window options form (`options.init.*`) is gone; the first-window config flow (`setup.first.*`, the add form without "Copy from"), the house options form (`options.house.*`; the 34 keys it shares with the old options form have the same descriptors) and the Reconfigure form's exceptions sections (`setup.reconfigure.exceptions_*`, fields pre-filled with what the window acts on) are pinned (with `temp_hysteresis`, merged from v1.21.0, on each of them).
   - Goldens and the truth table unchanged; the house replay byte-identical through the 2.1 -> 3.1 migration.

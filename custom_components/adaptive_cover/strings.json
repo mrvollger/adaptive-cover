@@ -144,6 +144,7 @@
               "temp_entity": "Inside temperature entity",
               "temp_low": "Low temperature threshold",
               "temp_high": "High temperature threshold",
+              "temp_hysteresis": "Threshold hysteresis",
               "outside_temp": "Outside temperature sensor (optional)",
               "outside_threshold": "Minimum outside temperature for summer mode",
               "presence_entity": "Presence entity (optional)",
@@ -158,6 +159,7 @@
               "climate_mode": "Use temperature, presence and weather to decide between blocking the sun and letting it in.",
               "temp_low": "Minimum comfortable temperature",
               "temp_high": "Maximum comfortable temperature",
+              "temp_hysteresis": "How far past a threshold the temperature must go before the season changes back. Stops the shades switching back and forth while the temperature hovers at a threshold. In Home Assistant's temperature unit; 0 turns it off.",
               "outside_temp": "Overrides outside temperature from weather entity if both are set",
               "presence_entity": "Entity representing room or home presence status",
               "lux_entity": "Use lux sensor to determine if cover should reduce glare in presence mode",
@@ -259,7 +261,8 @@
               "climate_on": "Climate",
               "use_outside_temp": "Use outside temperature",
               "use_lux": "Use lux sensor",
-              "use_irradiance": "Use irradiance sensor"
+              "use_irradiance": "Use irradiance sensor",
+              "temp_hysteresis": "Threshold hysteresis"
             },
             "data_description": {
               "climate_mode": "Use temperature, presence and weather to decide between blocking the sun and letting it in.",
@@ -276,7 +279,8 @@
               "climate_on": "Climate control for the house: rooms and floors can turn it off.",
               "use_outside_temp": "The season follows the outside temperature instead of the indoor one.",
               "use_lux": "Dim light (below the lux threshold) counts as not sunny.",
-              "use_irradiance": "Low irradiance (below its threshold) counts as not sunny."
+              "use_irradiance": "Low irradiance (below its threshold) counts as not sunny.",
+              "temp_hysteresis": "How far past a threshold the temperature must go before the season changes back. Stops the shades switching back and forth while the temperature hovers at a threshold. In Home Assistant's temperature unit; 0 turns it off."
             }
           }
         }
@@ -337,6 +341,9 @@
       },
       "temp_high": {
         "name": "Cooling threshold"
+      },
+      "temp_hysteresis": {
+        "name": "Threshold hysteresis"
       },
       "temp_low": {
         "name": "Heating threshold"
@@ -583,7 +590,8 @@
                 "irradiance_entity": "Irradiance sensor (optional)",
                 "irradiance_threshold": "Irradiance threshold",
                 "weather_entity": "Weather entity (optional)",
-                "weather_state": "Weather Conditions"
+                "weather_state": "Weather Conditions",
+                "temp_hysteresis": "Threshold hysteresis"
               },
               "data_description": {
                 "climate_mode": "Use temperature, presence and weather to decide between blocking the sun and letting it in.",
@@ -596,7 +604,8 @@
                 "irradiance_entity": "Use irradiance sensor to determine if cover should reduce glare in presence mode",
                 "irradiance_threshold": "Threshold for irradiance sensor, above this value glare should be reduced",
                 "weather_entity": "Monitors weather conditions, and outside temperature",
-                "weather_state": "Choose weather conditions that indicate the possibility of direct sunlight."
+                "weather_state": "Choose weather conditions that indicate the possibility of direct sunlight.",
+                "temp_hysteresis": "How far past a threshold the temperature must go before the season changes back. Stops the shades switching back and forth while the temperature hovers at a threshold. In Home Assistant's temperature unit; 0 turns it off."
               }
             }
           }
@@ -753,7 +762,8 @@
                 "irradiance_entity": "Irradiance sensor (optional)",
                 "irradiance_threshold": "Irradiance threshold",
                 "weather_entity": "Weather entity (optional)",
-                "weather_state": "Weather Conditions"
+                "weather_state": "Weather Conditions",
+                "temp_hysteresis": "Threshold hysteresis"
               },
               "data_description": {
                 "climate_mode": "Use temperature, presence and weather to decide between blocking the sun and letting it in.",
@@ -766,7 +776,8 @@
                 "irradiance_entity": "Use irradiance sensor to determine if cover should reduce glare in presence mode",
                 "irradiance_threshold": "Threshold for irradiance sensor, above this value glare should be reduced",
                 "weather_entity": "Monitors weather conditions, and outside temperature",
-                "weather_state": "Choose weather conditions that indicate the possibility of direct sunlight."
+                "weather_state": "Choose weather conditions that indicate the possibility of direct sunlight.",
+                "temp_hysteresis": "How far past a threshold the temperature must go before the season changes back. Stops the shades switching back and forth while the temperature hovers at a threshold. In Home Assistant's temperature unit; 0 turns it off."
               }
             }
           }

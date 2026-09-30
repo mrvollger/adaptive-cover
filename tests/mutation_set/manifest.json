@@ -292,11 +292,11 @@
  },
  {
   "id": "M34",
-  "file": "custom_components/adaptive_cover/calculation.py",
-  "function": "ClimateCoverData.is_summer",
+  "file": "custom_components/adaptive_cover/engine/season.py",
+  "function": "decide_season",
   "description": "summer test temp > temp_high -> temp > temp_low",
   "patch": "M34_season_boundary_low.patch",
-  "deviation": "roadmap filed this under engine/evaluate.py; the season threshold comparison actually lives in calculation.ClimateCoverData."
+  "deviation": "roadmap filed this under engine/evaluate.py; the season threshold comparison lived in calculation.ClimateCoverData until the temp_hysteresis option moved it to engine/season.decide_season."
  },
  {
   "id": "M35",
@@ -588,5 +588,26 @@
   "function": "initial_house_options",
   "description": "a fresh install's house stores nothing: its first window's values give way to the spec defaults",
   "patch": "M140_fresh_house_stores_nothing.patch"
+ },
+ {
+  "id": "M110",
+  "file": "custom_components/adaptive_cover/engine/season.py",
+  "function": "_margin",
+  "description": "the season's hysteresis is applied in the wrong direction: a season is left h before its threshold and entered h before it (it flips sooner, not later)",
+  "patch": "M110_season_hysteresis_wrong_direction.patch"
+ },
+ {
+  "id": "M111",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "AdaptiveDataUpdateCoordinator._climate_data",
+  "description": "the previous season is ignored: every climate decision uses the plain threshold rule, whatever the hysteresis",
+  "patch": "M111_season_previous_ignored.patch"
+ },
+ {
+  "id": "M120",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "async_check_cover_state_change",
+  "description": "a cover's first state (its integration started late) does not trigger a decision",
+  "patch": "M120_late_cover_waits_for_sun.patch"
  }
 ]

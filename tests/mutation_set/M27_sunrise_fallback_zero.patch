@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/runtime/shade_config.py b/custom_components/adaptive_cover/runtime/shade_config.py
 --- a/custom_components/adaptive_cover/runtime/shade_config.py
 +++ b/custom_components/adaptive_cover/runtime/shade_config.py
-@@ -202,7 +202,7 @@
+@@ -205,7 +205,7 @@
  
  def _sunrise_offset(options: Mapping[str, Any]) -> Any:
      """Read the sunrise offset: the sunset offset's value when unset."""

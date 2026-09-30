@@ -84,6 +84,7 @@ from ..const import (
     CONF_SUNSET_POS,
     CONF_TEMP_ENTITY,
     CONF_TEMP_HIGH,
+    CONF_TEMP_HYSTERESIS,
     CONF_TEMP_LOW,
     CONF_TILT_DEPTH,
     CONF_TILT_DISTANCE,
@@ -163,6 +164,8 @@ ABSENT: Final[Mapping[str, Any]] = MappingProxyType(
         CONF_TEMP_ENTITY: None,
         CONF_TEMP_LOW: None,
         CONF_TEMP_HIGH: None,
+        # 0: the plain threshold rule (the season has no hysteresis).
+        CONF_TEMP_HYSTERESIS: 0,
         CONF_PRESENCE_ENTITY: None,
         CONF_WEATHER_ENTITY: None,
         CONF_WEATHER_STATE: None,
@@ -314,6 +317,8 @@ class ClimateOptions:
     irradiance_threshold: Any
     temp_summer_outside: Any
     """The outside-temperature threshold."""
+    temp_hysteresis: Any
+    """How far past a threshold the season must go to flip (0: off)."""
 
     @classmethod
     def from_options(cls, options: Mapping[str, Any]) -> ClimateOptions:
@@ -332,6 +337,7 @@ class ClimateOptions:
             lux_threshold=_read(options, CONF_LUX_THRESHOLD),
             irradiance_threshold=_read(options, CONF_IRRADIANCE_THRESHOLD),
             temp_summer_outside=_read(options, CONF_OUTSIDE_THRESHOLD),
+            temp_hysteresis=_read(options, CONF_TEMP_HYSTERESIS),
         )
 
 

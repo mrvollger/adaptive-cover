@@ -97,6 +97,8 @@ def test_house_profile(lifted):
         "max_moves_hour": None,
         "temp_low": 72.0,
         "temp_high": 75.0,
+        # added after the snapshot: no window stores it, so the spec default
+        "temp_hysteresis": 0,
         "outside_temp": None,
         "outside_threshold": 0,
         "presence_entity": None,

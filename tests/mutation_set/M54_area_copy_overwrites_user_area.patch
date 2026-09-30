@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/entity_surface.py b/custom_components/adaptive_cover/entity_surface.py
 --- a/custom_components/adaptive_cover/entity_surface.py
 +++ b/custom_components/adaptive_cover/entity_surface.py
-@@ -144,7 +144,7 @@
+@@ -145,7 +145,7 @@
  
      dev_reg = dr.async_get(hass)
      device = window_device(hass, window)

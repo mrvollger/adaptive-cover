@@ -155,6 +155,7 @@ export const PROFILE_SETTINGS: readonly ProfileSetting[] = [
     climate_mode: { kind: 'bool', levels: HA_ },
     temp_low: { kind: 'temperature', levels: HFA, hub: 'number' },
     temp_high: { kind: 'temperature', levels: HFA, hub: 'number' },
+    temp_hysteresis: { kind: 'temperature', levels: HA_, hub: 'number' },
     temp_entity: {
       kind: 'entity',
       levels: ['floor', 'area'],
@@ -342,13 +343,16 @@ export function temperatureUnit(hass: HomeAssistant | undefined): string {
   return typeof unit === 'string' && unit ? unit : '°C';
 }
 
-/** Range and step of a temperature threshold in HA's unit (spec: `_TEMP_LOW`
- *  and `_TEMP_HIGH`, stored and compared in HA's unit). */
+/** Range and step of a temperature threshold, or of the thresholds'
+ *  hysteresis, in HA's unit (spec: `_TEMP_LOW`, `_TEMP_HIGH` and
+ *  `_TEMP_HYSTERESIS`, stored and compared in HA's unit). */
 export function temperatureShape(
   key: string,
   unit: string,
 ): { min: number; max: number; step: number } {
   const f = unit === '°F';
+  if (key === 'temp_hysteresis')
+    return f ? { min: 0, max: 5, step: 0.1 } : { min: 0, max: 3, step: 0.5 };
   if (key === 'temp_high')
     return f ? { min: 50, max: 100, step: 0.5 } : { min: 10, max: 40, step: 0.5 };
   return f ? { min: 40, max: 90, step: 0.5 } : { min: 5, max: 30, step: 0.5 };

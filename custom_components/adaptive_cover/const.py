@@ -53,6 +53,8 @@ CONF_PRESENCE_ENTITY = "presence_entity"
 CONF_WEATHER_ENTITY = "weather_entity"
 CONF_TEMP_LOW = "temp_low"
 CONF_TEMP_HIGH = "temp_high"
+# How far past a threshold the season must go before it flips (0: off).
+CONF_TEMP_HYSTERESIS = "temp_hysteresis"
 CONF_MODE = "mode"
 CONF_CLIMATE_MODE = "climate_mode"
 CONF_WEATHER_STATE = "weather_state"
