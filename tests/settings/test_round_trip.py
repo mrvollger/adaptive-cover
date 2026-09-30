@@ -27,12 +27,12 @@ from custom_components.adaptive_cover.const import (
     CONF_BLIND_SPOT_ELEVATION,
     CONF_BLIND_SPOT_LEFT,
     CONF_BLIND_SPOT_RIGHT,
-    CONF_CLIMATE_MODE,
     CONF_COVER_ENTITY,
     CONF_ENABLE_BLIND_SPOT,
     CONF_ENTITIES,
     CONF_FOV_LEFT,
     CONF_FOV_RIGHT,
+    CONF_IGNORE_CLIMATE,
     CONF_INTERP,
     CONF_INTERP_LIST,
     CONF_INTERP_LIST_NEW,
@@ -262,7 +262,7 @@ async def test_real_flows_round_trip(hass, seed, cover_type):
     values = draw_options(seed, cover_type, unit)
     # every feature on (the form shows every field either way)
     values.update({CONF_INTERP: True, CONF_ENABLE_BLIND_SPOT: True})
-    values[CONF_CLIMATE_MODE] = True
+    values[CONF_IGNORE_CLIMATE] = False
     values[CONF_WEATHER_ENTITY] = "weather.round_trip"
     entry = await _wizard(hass, cover_type, values)
     await hass.async_block_till_done()

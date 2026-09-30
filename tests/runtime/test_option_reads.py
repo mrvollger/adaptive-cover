@@ -15,10 +15,10 @@ import pytest
 
 from custom_components.adaptive_cover.const import (
     CONF_AZIMUTH,
-    CONF_CLIMATE_MODE,
     CONF_COVER_ENTITY,
     CONF_DELTA_POSITION,
     CONF_ENTITIES,
+    CONF_IGNORE_CLIMATE,
     CONF_MANUAL_OVERRIDE_DURATION,
     CONF_MODE,
     CONF_OUTSIDE_THRESHOLD,
@@ -106,13 +106,13 @@ def test_climate_options_land_in_their_fields():
 def test_setup_flags_use_the_coordinator_fallbacks():
     config = ShadeConfig.from_options({})
     assert (
-        config.climate_mode,
+        config.ignore_climate,
         config.inverse_state,
         config.interpolation,
         config.return_sunset,
         config.ignore_intermediate,
     ) == (False, False, False, None, False)
-    assert ShadeConfig.from_options({CONF_CLIMATE_MODE: True}).climate_mode is True
+    assert ShadeConfig.from_options({CONF_IGNORE_CLIMATE: True}).ignore_climate is True
 
 
 def test_absent_options_fill_only_missing_keys():

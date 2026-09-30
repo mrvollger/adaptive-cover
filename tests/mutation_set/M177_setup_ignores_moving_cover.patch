@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -234,7 +234,7 @@
+@@ -240,7 +240,7 @@
          # is not a manual move.
          for cover in self.entities:
              if (current := hass.states.get(cover)) is not None:

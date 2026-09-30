@@ -42,7 +42,12 @@ from .runtime.manual_detector import ManualDetector
 from .runtime.mode import ModeControl
 from .runtime.override_tracker import OverrideTracker
 from .runtime.schedule import Schedule
-from .runtime.shade_config import ControlState, ControlToggle, ShadeConfig
+from .runtime.shade_config import (
+    ControlState,
+    ControlToggle,
+    ShadeConfig,
+    climate_capable,
+)
 
 from .calculation import (
     ClimateCoverData,
@@ -56,7 +61,6 @@ from .const import (
     _LOGGER,
     ATTR_POSITION,
     ATTR_TILT_POSITION,
-    CONF_CLIMATE_MODE,
     CONF_CLIMATE_ON,
     CONF_INTERP,
     CONF_INVERSE_STATE,
@@ -191,8 +195,10 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # Read once: they decide the window's entities and listeners; a
         # change reloads the window (SETUP_KEYS).
         self._setup_values = {key: self.options.get(key) for key in SETUP_KEYS}
-        self._climate_mode = self.options.get(CONF_CLIMATE_MODE, False)
-        self.controls = ControlState(climate=True if self._climate_mode else False)
+        # Whether the window can run climate control (3.2: derived from its
+        # temperature sources and its ignore_climate opt-out, all SETUP_KEYS).
+        self._climate_capable = climate_capable(self.options)
+        self.controls = ControlState(climate=self._climate_capable)
         self._apply_toggles(self.options)
         self.decider = Decider(
             self.options.get(CONF_INTERP, False),
@@ -304,11 +310,12 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     def _apply_toggles(self, options: Mapping[str, Any]) -> None:
         """Set the switch-era toggles from the resolved settings (P5 flip).
 
-        Climate needs climate mode as well: a window without it had no
-        Climate Mode switch, and its toggle followed the option.
+        Climate runs while the Climate switch (``climate_on``) is on and
+        the window can run it (3.2: ``climate_capable``: a temperature
+        source and no ``ignore_climate``).
         """
         self.controls.climate = bool(
-            options.get(CONF_CLIMATE_MODE) and options.get(CONF_CLIMATE_ON)
+            climate_capable(options) and options.get(CONF_CLIMATE_ON)
         )
         self.controls.outside_temp = bool(options.get(CONF_USE_OUTSIDE_TEMP))
         self.controls.lux = bool(options.get(CONF_USE_LUX))
@@ -594,8 +601,8 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # Update manager with covers
         self._update_manager_and_covers()
 
-        # Access climate data if climate mode is enabled
-        if self._climate_mode:
+        # Access climate data if the window can run climate control
+        if self._climate_capable:
             self.climate_mode_data(options, cover_data)
         else:
             self.logger.debug("Control method is %s", self.control_method)
@@ -639,7 +646,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         # Climate snapshot used for reasons, forecasting, and trace: the one
         # the climate decision used (built once, in climate_mode_data).
         climate_data_for_reason = None
-        if self._climate_mode and self.controls.climate:
+        if self._climate_capable and self.controls.climate:
             climate_data_for_reason = self._climate
 
         # Run the solar_times method in a separate thread.
@@ -1095,7 +1102,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         """
         if getattr(self, "_threshold_unit_warned", False):
             return
-        if not options.get(CONF_CLIMATE_MODE):
+        if not climate_capable(options):
             return
         units = getattr(getattr(self.hass, "config", None), "units", None)
         unit = getattr(units, "temperature_unit", None)
@@ -1247,7 +1254,7 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     # The toggles by their historical names; the state lives in
     # self.controls (set from the resolved settings and the Mode).
     switch_mode = ControlToggle[bool]("climate")
-    """Climate mode on (climate_mode and climate_on)."""
+    """Climate control runs (climate_capable and climate_on)."""
     temp_toggle = ControlToggle[bool | None]("outside_temp")
     """Use the outside temperature (use_outside_temp)."""
     control_toggle = ControlToggle[bool | None]("control")

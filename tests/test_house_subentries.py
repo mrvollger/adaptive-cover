@@ -1,6 +1,6 @@
 """The house entry with window subentries (P7, P8, ADR 0001), through public surfaces.
 
-A fresh install creates the house entry (the hub, 3.1) with the window as
+A fresh install creates the house entry (the hub, 3.2) with the window as
 its first ``window`` subentry, storing only what the window uses (its
 name, cover, cover type, geometry and overrides); the house options are
 lifted from it. The integration has one config entry. Each
@@ -170,7 +170,7 @@ async def test_fresh_install_creates_the_house_with_the_window_as_subentry(
     (house,) = hass.config_entries.async_entries(DOMAIN)
     assert house.data["is_hub"] is True
     assert house.unique_id == HUB_UNIQUE_ID
-    assert (house.version, house.minor_version) == (3, 1)
+    assert (house.version, house.minor_version) == (3, 2)
     assert house.state is ConfigEntryState.LOADED
     (subentry,) = house.subentries.values()
     assert subentry.subentry_type == "window"

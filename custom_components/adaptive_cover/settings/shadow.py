@@ -39,6 +39,7 @@ from dataclasses import dataclass
 from typing import Any, Final, cast
 
 from ..const import (
+    CONF_CLIMATE_MODE,
     CONF_CLIMATE_ON,
     CONF_MANUAL_DETECTION,
     CONF_USE_IRRADIANCE,
@@ -65,8 +66,9 @@ from .spec import OPTS, Group, Kind, Level, Opt, Scope
 
 # fmt: off
 TOGGLE_OPTS: Final[tuple[Opt, ...]] = (
-    # The "Climate Mode" switch: climate control on or off (with the
-    # climate_mode option; the switch exists only when that option is on).
+    # The house's Climate switch: climate control on or off (3.2: the one
+    # climate setting; a window runs it when a temperature source resolves
+    # for it and it does not opt out with ignore_climate).
     Opt(CONF_CLIMATE_ON, Kind.INTERNAL, Group.NONE, Scope.RECURRING,
         Level.HOUSE, (Level.AREA,), default=True),
     # The "Outside Temperature" switch: the season follows the outside
@@ -139,6 +141,19 @@ def _mapping(value: Any) -> Mapping[str, Any]:
     return {}
 
 
+RETIRED: Final = frozenset({CONF_CLIMATE_MODE})
+"""Keys a stored layer can still hold from before house 3.2, read as absent.
+
+Migration 3.2 removes ``climate_mode`` (upgrade.py); the upgrade from
+v1.19.x plans and verifies the windows before it runs (consolidate.py),
+while the house layers and the moved windows' overrides still hold it.
+"""
+
+
+def _current(values: Any) -> dict[str, Any]:
+    return {key: value for key, value in _mapping(values).items() if key not in RETIRED}
+
+
 def hub_options(lifted: Lifted) -> dict[str, Any]:
     """Return the hub entry's options keys that store the lifted layers."""
     return {
@@ -161,26 +176,29 @@ def stored_profiles(
 
     The layers come from the house's options, the window's recurring
     values from ``overrides``, and its one-time settings from ``legacy``
-    (its flat options: its geometry and its cover).
+    (its flat options: its geometry and its cover). ``RETIRED`` keys are
+    left out.
     """
     unit = hub.get(TEMPERATURE_UNIT)
     setup = {opt.key: legacy[opt.key] for opt in spec if opt.home is Level.WINDOW}
     return Profiles(
         house=HouseProfile(
-            _mapping(hub.get(HOUSE)),
+            _current(hub.get(HOUSE)),
             temperature_unit=unit if isinstance(unit, str) else None,
         ),
         floors={
-            str(key): FloorProfile(_mapping(values))
+            str(key): FloorProfile(_current(values))
             for key, values in _mapping(hub.get(FLOORS)).items()
         },
         areas={
-            str(key): AreaProfile(_mapping(values))
+            str(key): AreaProfile(_current(values))
             for key, values in _mapping(hub.get(AREAS)).items()
         },
         windows={
             window_key: WindowOverrides(
-                setup=setup, values=overrides.values, legacy=overrides.legacy
+                setup=setup,
+                values=_current(overrides.values),
+                legacy=_current(overrides.legacy),
             )
         },
         placement={window_key: placement},

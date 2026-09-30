@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/upgrade.py b/custom_components/adaptive_cover/upgrade.py
+--- a/custom_components/adaptive_cover/upgrade.py
++++ b/custom_components/adaptive_cover/upgrade.py
+@@ -340,8 +340,6 @@
+     ``ignore_climate`` opt-out; ``climate_mode`` leaves its overrides.
+     """
+     geometry = dict(record.geometry)
+-    if not climate_mode:
+-        geometry[CONF_IGNORE_CLIMATE] = True
+     return record.with_changes(
+         geometry=geometry,
+         overrides=WindowOverrides(

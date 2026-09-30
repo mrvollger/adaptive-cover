@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
+--- a/custom_components/adaptive_cover/consolidate.py
++++ b/custom_components/adaptive_cover/consolidate.py
+@@ -517,7 +517,7 @@
+             str(entry.data.get("name") or ""),
+             str(entry.data.get(CONF_SENSOR_TYPE) or SensorType.BLIND),
+             options,
+-            overrides=with_climate_mode(overrides, _climate(options)),
++            overrides=overrides,
+             window_key=key,
+         )
+     except (SettingsError, RecordError, KeyError, TypeError, ValueError) as err:

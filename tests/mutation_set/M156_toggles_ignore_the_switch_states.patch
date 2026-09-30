@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
 --- a/custom_components/adaptive_cover/consolidate.py
 +++ b/custom_components/adaptive_cover/consolidate.py
-@@ -238,7 +238,7 @@
+@@ -254,7 +254,7 @@
      state = hass.states.get(entity_id)
      if state is not None and state.state in (STATE_ON, STATE_OFF):
          return state.state == STATE_ON

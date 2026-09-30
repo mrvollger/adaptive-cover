@@ -10,10 +10,15 @@ builds and owns them, and the other runtime components read them.
 and what the climate adapter reads (:class:`ClimateOptions`), so every
 option has one read with one fallback: :data:`ABSENT`.
 
-The options read once at setup (climate mode, inverse state, interpolation,
+The options read once at setup (inverse state, interpolation,
 return-to-sunset, ignore intermediate states) are here too, with the same
 fallbacks, but the coordinator still reads them itself until the components
 that use them move out.
+
+**Climate capability** (3.2, one Climate switch): a window can run climate
+control when it does not opt out (``ignore_climate``) and a temperature
+source resolves for it (:func:`climate_capable`); it runs it while the
+Climate switch (``climate_on``) is on as well.
 """
 
 from __future__ import annotations
@@ -30,7 +35,6 @@ from ..const import (
     CONF_BLIND_SPOT_ELEVATION,
     CONF_BLIND_SPOT_LEFT,
     CONF_BLIND_SPOT_RIGHT,
-    CONF_CLIMATE_MODE,
     CONF_DEFAULT_HEIGHT,
     CONF_DELTA_POSITION,
     CONF_DELTA_TIME,
@@ -45,6 +49,7 @@ from ..const import (
     CONF_FOV_LEFT,
     CONF_FOV_RIGHT,
     CONF_HEIGHT_WIN,
+    CONF_IGNORE_CLIMATE,
     CONF_INTERP,
     CONF_INTERP_END,
     CONF_INTERP_LIST,
@@ -107,7 +112,7 @@ from ..const import (
 ABSENT: Final[Mapping[str, Any]] = MappingProxyType(
     {
         # setup-time reads (the coordinator reads these itself, same fallback)
-        CONF_CLIMATE_MODE: False,
+        CONF_IGNORE_CLIMATE: False,
         CONF_INVERSE_STATE: False,
         CONF_INTERP: False,
         CONF_RETURN_SUNSET: None,
@@ -340,6 +345,27 @@ class ClimateOptions:
             temp_hysteresis=_read(options, CONF_TEMP_HYSTERESIS),
         )
 
+    @property
+    def has_temperature_source(self) -> bool:
+        """Whether a temperature source resolves: what the season reads.
+
+        The indoor temperature entity, or the outside inputs: the outside
+        temperature sensor, and the weather entity whose temperature the
+        outside reading falls back to (``ClimateCoverData``).
+        """
+        return bool(self.temp_entity or self.outside_entity or self.weather_entity)
+
+
+def climate_capable(options: Mapping[str, Any]) -> bool:
+    """Whether the window can run climate control (3.2, see the module docstring).
+
+    Derived, never stored: the window does not opt out (``ignore_climate``)
+    and a temperature source resolves for it from its layers.
+    """
+    if _read(options, CONF_IGNORE_CLIMATE):
+        return False
+    return ClimateOptions.from_options(options).has_temperature_source
+
 
 @dataclass(frozen=True, slots=True)
 class ShadeConfig:
@@ -381,7 +407,8 @@ class ShadeConfig:
     """What the cover adapter reads."""
     climate: ClimateOptions
     """What the climate adapter reads."""
-    climate_mode: bool
+    ignore_climate: bool
+    """The window opts out of climate control (``climate_capable``)."""
     inverse_state: bool
     interpolation: bool
     return_sunset: bool | None
@@ -413,7 +440,7 @@ class ShadeConfig:
             privacy_position=_read(options, CONF_PRIVACY_POSITION),
             geometry=CoverGeometry.from_options(options),
             climate=ClimateOptions.from_options(options),
-            climate_mode=_read(options, CONF_CLIMATE_MODE),
+            ignore_climate=_read(options, CONF_IGNORE_CLIMATE),
             inverse_state=_read(options, CONF_INVERSE_STATE),
             interpolation=_read(options, CONF_INTERP),
             return_sunset=_read(options, CONF_RETURN_SUNSET),
@@ -435,7 +462,7 @@ class ControlState:
     manual: bool | None = None
     """Manual-override detection (``manual_detection``)."""
     climate: bool = False
-    """Climate mode (``climate_mode`` and ``climate_on``)."""
+    """Climate control runs (``climate_capable`` and ``climate_on``)."""
     outside_temp: bool | None = None
     """Use the outside temperature (``use_outside_temp``)."""
     lux: bool | None = None

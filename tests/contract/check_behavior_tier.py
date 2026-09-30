@@ -138,6 +138,14 @@ RULES: list[tuple[str, str]] = [
     ("tests/test_consolidation.py::*", BEHAVIOR),
     ("tests/test_upgrade_2_1.py::*", BEHAVIOR),  # P8 upgrade and nag (C8)
     ("tests/test_upgrade_from_1_19.py::*", BEHAVIOR),  # ADR 0008 upgrade (C8)
+    # House 3.2, one Climate switch (C6, C8): the runtime rule, the surfaces
+    # without climate_mode and migration 3.1 -> 3.2, through entity states,
+    # forms, services, subentries and the diagnostics. The migration's pure
+    # helpers are implementation tier.
+    ("tests/test_one_climate_switch.py::test_climate_mode_3_1_*", IMPLEMENTATION),
+    ("tests/test_one_climate_switch.py::test_record_3_2*", IMPLEMENTATION),
+    ("tests/test_one_climate_switch.py::test_house_options_3_2*", IMPLEMENTATION),
+    ("tests/test_one_climate_switch.py::*", BEHAVIOR),
     # P5 layered settings: `resolve` is a contract v2 seam (ADR 0004).
     # Precedence, provenance, the lift's rules and the P5 guarantee on the
     # live snapshot (resolve(w) == legacy_flat(w)) are behavior; the purity

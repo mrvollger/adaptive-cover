@@ -119,7 +119,7 @@ series:
 
   - Weather condition based operation
   - Presence based operation
-  - Switch to toggle climate mode
+  - One Climate switch for the house (rooms can turn it off; a window can ignore climate control)
   - Sensor for displaying the operation modus (`winter`,`intermediate`,`summer`)
 
 - **Adaptive Control**
@@ -236,6 +236,7 @@ This mode uses the calculated position when the sun is within the specified azim
 ### Climate mode
 
 This mode calculates the position based on extra parameters for presence, indoor temperature, minimal comfort temperature, maximum comfort temperature and weather (optional).
+A window uses it while the house's Climate switch is on (a room can turn it off), when it has a temperature source (an indoor temperature sensor from its window, room, floor or house, an outside temperature sensor or a weather entity) and when **Ignore climate control** (Change window, Advanced) is off.
 This mode is split up in two types of strategies; [Presence](https://github.com/mrvollger/adaptive-cover?tab=readme-ov-file#presence) and [No Presence](https://github.com/mrvollger/adaptive-cover?tab=readme-ov-file#no-presence).
 
 #### Climate strategies
@@ -331,6 +332,7 @@ This mode is split up in two types of strategies; [Presence](https://github.com/
 | Lux Threshold                 | `1000`  |       |                                               | "In non-summer, above threshold, use optimal position. Otherwise, default position or fully open in winter."                                         |
 | Irradiance Entity             | `None`  |       | `sensor.irradiance`                           | Returns measured irradiance                                                                                                                          |
 | Irradiance Threshold          | `300`   |       |                                               | "In non-summer, above threshold, use optimal position. Otherwise, default position or fully open in winter."                                         |
+| Ignore climate control        | `False` |       |                                               | A window setting (Change window, Advanced): the window follows the sun only, whatever the house's Climate switch says.                              |
 
 ### Blindspot
 

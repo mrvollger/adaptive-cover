@@ -33,6 +33,7 @@ from custom_components.adaptive_cover.runtime.shade_config import (
     ControlState,
     ControlToggle,
     ShadeConfig,
+    climate_capable,
 )
 
 
@@ -148,3 +149,40 @@ def test_control_toggle_reads_and_writes_the_state():
 
 def test_control_toggle_on_the_class_is_the_descriptor():
     assert isinstance(_Owner.manual_toggle, ControlToggle)
+
+
+# ------------------------------------------------ climate capability (3.2)
+
+_INDOOR = {"temp_entity": "sensor.indoor"}
+
+
+@pytest.mark.parametrize(
+    ("options", "capable"),
+    [
+        ({}, False),
+        (_INDOOR, True),
+        ({"outside_temp": "sensor.outside"}, True),
+        ({"weather_entity": "weather.home"}, True),
+        ({"temp_entity": None, "outside_temp": None, "weather_entity": None}, False),
+        ({"presence_entity": "device_tracker.me", "lux_entity": "sensor.lux"}, False),
+        ({**_INDOOR, "ignore_climate": True}, False),
+        ({**_INDOOR, "ignore_climate": False}, True),
+        ({"ignore_climate": False}, False),
+    ],
+    ids=[
+        "no_temperature_source",
+        "indoor_sensor",
+        "outside_sensor",
+        "weather_temperature",
+        "stored_unset",
+        "no_temperature_input",
+        "opted_out",
+        "not_opted_out",
+        "not_opted_out_without_a_source",
+    ],
+)
+def test_climate_capable(options, capable):
+    """Climate capability is derived: a temperature source and no opt-out."""
+    assert climate_capable(options) is capable
+    source = ShadeConfig.from_options(options).climate.has_temperature_source
+    assert source is (capable or bool(options.get("ignore_climate")))

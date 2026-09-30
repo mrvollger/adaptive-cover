@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
 --- a/custom_components/adaptive_cover/consolidate.py
 +++ b/custom_components/adaptive_cover/consolidate.py
-@@ -958,7 +958,7 @@
+@@ -974,7 +974,7 @@
              for window in plan.windows
              for problem in verify_window(hass, house, window, moved[window.window_key])
          ]

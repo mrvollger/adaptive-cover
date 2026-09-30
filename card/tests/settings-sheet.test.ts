@@ -394,10 +394,11 @@ describe('the house sheet', () => {
       'Windy',
       'Windy, cloudy',
     ]);
-    // climate_mode is the setup-level switch, next to Climate control.
-    expect(text(row(el, 'climate_mode').querySelector('.label'))).toBe(
-      'Use climate inputs Setup: whether these windows read the climate inputs at all (a change reloads them)',
+    // One Climate switch (house 3.2): no climate_mode row.
+    expect(text(row(el, 'climate_on').querySelector('.label'))).toBe(
+      'Climate control Temperature, presence and weather steer the shades (windows with a temperature sensor; a window can ignore climate in its setup)',
     );
+    expect(body(el).querySelector('.row[data-key="climate_mode"]')).toBeNull();
     // Optional values can be cleared; nothing is reset or inherited here.
     expect(row(el, 'weather_entity').querySelector('.clear')).toBeTruthy();
     expect(row(el, 'quiet_start').querySelector('.clear')).toBeNull();

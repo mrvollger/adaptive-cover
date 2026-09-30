@@ -192,11 +192,13 @@ async def test_rename_combines_with_option_changes(hass, entry, mock_sun_entity)
 async def test_regression_change_settings_enables_climate_mode(
     hass, entry, mock_sun_entity
 ):
-    """Climate mode + its sensors can be rolled out via the service.
+    """Climate control and its sensors can be rolled out via the service.
 
     Previously climate_mode / temp_entity / weather settings were not
     changeable, so enabling winter behavior on an existing entry required
-    walking the whole options wizard per window.
+    walking the whole options wizard per window. Since 3.2 (one Climate
+    switch) a temperature source is all a window needs: there is no
+    climate_mode to turn on.
     """
     from homeassistant.helpers import entity_registry as er
     from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
@@ -213,7 +215,6 @@ async def test_regression_change_settings_enables_climate_mode(
         "change_settings",
         {
             "config_entry": entry.entry_id,
-            "climate_mode": True,
             "temp_entity": "sensor.room_temp",
             "weather_entity": "weather.home",
             "weather_state": ["sunny", "clear"],
@@ -226,7 +227,8 @@ async def test_regression_change_settings_enables_climate_mode(
 
     # Recurring settings: the window's own values (P5 flip: overrides).
     settings = await window_settings(hass, entry.entry_id)
-    assert settings["climate_mode"] is True
+    assert "climate_mode" not in settings
+    assert settings["ignore_climate"] is False
     assert settings["temp_entity"] == "sensor.room_temp"
     assert settings["weather_state"] == ["sunny", "clear"]
     # The window was rebuilt in climate mode and the season resolves in the

@@ -19,7 +19,6 @@ from pytest_homeassistant_custom_component.common import (
 )
 
 from custom_components.adaptive_cover.const import (
-    CONF_CLIMATE_MODE,
     CONF_DEFAULT_HEIGHT,
     CONF_DISTANCE,
     CONF_ENTITIES,
@@ -81,7 +80,6 @@ async def _setup_climate_entry(hass, *, low, high, reading, unit):
             CONF_HEIGHT_WIN: 2.0,
             CONF_DISTANCE: 0.1,
             CONF_ENTITIES: [COVER],
-            CONF_CLIMATE_MODE: True,
             CONF_TEMP_ENTITY: TEMP,
             CONF_TEMP_LOW: low,
             CONF_TEMP_HIGH: high,

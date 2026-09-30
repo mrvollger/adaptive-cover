@@ -160,6 +160,22 @@ def _climate(options: Mapping[str, Any]) -> bool:
     return bool(options.get(CONF_CLIMATE_MODE))
 
 
+def with_climate_mode(
+    overrides: WindowOverrides, climate_mode: bool
+) -> WindowOverrides:
+    """Return ``overrides`` carrying the window's v1.19.x ``climate_mode`` (pure).
+
+    The spec has no ``climate_mode`` since 3.2, so the lift and the
+    adoption leave it out. Migration 3.2 reads it back from the window's
+    own overrides first (``upgrade.climate_mode_3_1``) and turns False into
+    the ``ignore_climate`` opt-out, so each window keeps what it ran.
+    """
+    return WindowOverrides(
+        values=overrides.values,
+        legacy={**overrides.legacy, CONF_CLIMATE_MODE: climate_mode},
+    )
+
+
 @dataclass(frozen=True)
 class ToggleSwitch:
     """The v1.19.x switch behind one toggle, and when a window has it."""
@@ -501,7 +517,7 @@ def _plan_window(
             str(entry.data.get("name") or ""),
             str(entry.data.get(CONF_SENSOR_TYPE) or SensorType.BLIND),
             options,
-            overrides=overrides,
+            overrides=with_climate_mode(overrides, _climate(options)),
             window_key=key,
         )
     except (SettingsError, RecordError, KeyError, TypeError, ValueError) as err:

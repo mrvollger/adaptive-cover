@@ -29,7 +29,6 @@ from pytest_homeassistant_custom_component.common import (
 )
 
 from custom_components.adaptive_cover.const import (
-    CONF_CLIMATE_MODE,
     CONF_DELTA_TIME,
     CONF_DISTANCE,
     CONF_ENTITIES,
@@ -65,7 +64,6 @@ def _entry(hass, *, climate: bool = False, **extra) -> MockConfigEntry:
     if climate:
         options.update(
             {
-                CONF_CLIMATE_MODE: True,
                 CONF_TEMP_ENTITY: "sensor.indoor",
                 CONF_TEMP_LOW: 21,
                 CONF_TEMP_HIGH: 25,

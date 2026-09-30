@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
 --- a/custom_components/adaptive_cover/consolidate.py
 +++ b/custom_components/adaptive_cover/consolidate.py
-@@ -671,7 +671,7 @@
+@@ -687,7 +687,7 @@
  ) -> ConfigSubentry:
      """Add (or bring up to date) the window's subentry, keyed by its old entry_id."""
      data = plan.record.as_data()

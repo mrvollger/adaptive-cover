@@ -1020,8 +1020,10 @@ MUTATIONS: list[Mutation] = [
         "async_migrate_house",
         "the migration leaves the house at major version 2: v2.0.x would load "
         "a house it cannot read",
-        "        version=HOUSE_ENTRY_VERSION,\n",
-        "        version=V2_0_HOUSE_VERSION,\n",
+        "        version=HOUSE_ENTRY_VERSION,\n"
+        "        minor_version=HOUSE_3_1_MINOR_VERSION,\n",
+        "        version=V2_0_HOUSE_VERSION,\n"
+        "        minor_version=HOUSE_3_1_MINOR_VERSION,\n",
     ),
     Mutation(
         "M137",
@@ -1357,6 +1359,49 @@ MUTATIONS: list[Mutation] = [
         "        self.wait_for_target[entity] = False\n"
         "        self._inherited.pop(entity, None)\n",
         "        self.wait_for_target[entity] = False\n",
+    ),
+    # ---- group M: one Climate switch (house 3.2; M190+) --------------------
+    Mutation(
+        "M190",
+        "ignore_climate_ignored",
+        SHADE_CONFIG,
+        "climate_capable",
+        "ignore_climate is ignored: a window that opts out of climate control "
+        "still runs it whenever a temperature source resolves for it",
+        "    if _read(options, CONF_IGNORE_CLIMATE):\n"
+        "        return False\n"
+        "    return ClimateOptions.from_options(options).has_temperature_source\n",
+        "    return ClimateOptions.from_options(options).has_temperature_source\n",
+    ),
+    Mutation(
+        "M191",
+        "migration_drops_climate_opt_out",
+        UPGRADE,
+        "record_3_2",
+        "migration 3.2 drops a window's climate opt-out: a window whose "
+        "climate_mode was off runs climate control after the upgrade",
+        "    if not climate_mode:\n        geometry[CONF_IGNORE_CLIMATE] = True\n",
+        "",
+    ),
+    Mutation(
+        "M193",
+        "retired_climate_mode_read",
+        "custom_components/adaptive_cover/settings/shadow.py",
+        "stored_profiles",
+        "a layer's leftover climate_mode is read as an option: the upgrade "
+        "from v1.19.x stops (\"'climate_mode' is not an option\")",
+        "RETIRED: Final = frozenset({CONF_CLIMATE_MODE})\n",
+        "RETIRED: Final = frozenset[str]()\n",
+    ),
+    Mutation(
+        "M192",
+        "upgrade_drops_climate_mode",
+        CONSOLIDATE,
+        "_plan_window",
+        "the upgrade from v1.19.x leaves each window's climate_mode behind: "
+        "migration 3.2 then opts every window out of climate control",
+        "            overrides=with_climate_mode(overrides, _climate(options)),\n",
+        "            overrides=overrides,\n",
     ),
 ]
 

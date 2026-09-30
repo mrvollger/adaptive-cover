@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
 --- a/custom_components/adaptive_cover/consolidate.py
 +++ b/custom_components/adaptive_cover/consolidate.py
-@@ -968,7 +968,7 @@
+@@ -984,7 +984,7 @@
              if isinstance(err, UpgradeStopped)
              else UpgradeStopped(f"Unexpected error while moving: {err!r}.")
          )

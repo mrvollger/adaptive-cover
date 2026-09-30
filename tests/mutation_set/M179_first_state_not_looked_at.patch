@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -392,7 +392,6 @@
+@@ -399,7 +399,6 @@
                  # after ours (boot) or it was just added. Decide now instead
                  # of waiting for the next sun update, which is slow at night;
                  # the usual gates still decide whether anything moves.

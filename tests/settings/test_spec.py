@@ -73,8 +73,9 @@ PLAN_TABLE: dict[str, tuple[Scope, Level | None, set[Level]]] = {
     "interp_list_new": (Scope.ONE_TIME, W, set()),
     "transparent_blind": (Scope.ONE_TIME, W, set()),
     "privacy_mode": (Scope.ONE_TIME, W, set()),
+    # one Climate switch (3.2): climate_on is the toggle; a window opts out
+    "ignore_climate": (Scope.ONE_TIME, W, set()),
     # recurring
-    "climate_mode": (Scope.RECURRING, H, {A}),
     "temp_low": (Scope.RECURRING, H, {F, A}),
     "temp_high": (Scope.RECURRING, H, {F, A}),
     "temp_hysteresis": (Scope.RECURRING, H, {A}),

@@ -207,7 +207,7 @@ async def _config_flow_forms(hass) -> list[dict[str, Any]]:
 
 
 def _house(hass):
-    """A house entry (3.1) with one window per type."""
+    """A house entry (3.2) with one window per type."""
     return mock_house(
         hass,
         [

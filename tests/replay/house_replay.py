@@ -9,13 +9,15 @@ position sensor (value and ``intent``), run-length encoded per step.
 The window runs the way the live house gets to v2.1 (ADR 0008): from
 v1.19.x, the hub at 1.5 holding the lift of this one window (its switch
 states included) and the window as its own config entry at 1.5 (options
-as migration 1.3 wrote them, and the overrides the lift gave it), with its
-switches restoring their live states. At setup, v2.1 moves the window
-into the house and migrates the house to 3.1 (``consolidate.py``,
-``upgrade.py``). ``UPGRADE_PATHS`` also has the path through v2.0.x: a
-house entry at 2.1 with the window as a ``window`` subentry storing the
-entry's data and options verbatim (ADR 0006), which migration 3.1
-rewrites at setup.
+as migration 1.3 wrote them, and the overrides the lift gave it), with
+its switches restoring their live states. At setup, v2.1 moves the
+window into the house and migrates the house to 3.1, then 3.2
+(``consolidate.py``, ``upgrade.py``). ``UPGRADE_PATHS`` also has the
+path through v2.0.x: a house entry at 2.1 with the window as a
+``window`` subentry storing the entry's data and options verbatim (ADR
+0006), which migrations 3.1 and 3.2 rewrite at setup. Either way the
+house's layers hold the window's ``climate_mode``, as the lift of
+v1.19.x and v2.0 stored it.
 
 Taken from the snapshot, verbatim:
 - the entry's ``entry_id`` (the window key), title, ``data`` and complete
@@ -89,6 +91,7 @@ from custom_components.adaptive_cover.runtime.shade_config import absent_options
 from custom_components.adaptive_cover.settings.lift import LegacyWindow
 from custom_components.adaptive_cover.settings.normalize import normalize_cover
 from custom_components.adaptive_cover.settings.shadow import (
+    HOUSE,
     hub_options,
     legacy_values,
     lift_house,
@@ -322,6 +325,10 @@ class ReplayHouse(SimHouse):
             temperature_unit=unit,
         )
         overrides = lifted.overrides[window.entry_id]
+        house_options = hub_options(lifted)
+        # v1.19.x's and v2.0's lift stored climate_mode in the house (its home); the lift
+        # of today's spec has no such option. Migration 3.2 reads it.
+        house_options[HOUSE][CONF_CLIMATE_MODE] = bool(options.get(CONF_CLIMATE_MODE))
         window_options = {
             **options,
             "overrides": {
@@ -336,7 +343,7 @@ class ReplayHouse(SimHouse):
                 title=HUB_ENTRY_NAME,
                 unique_id=HUB_UNIQUE_ID,
                 data={"name": HUB_ENTRY_NAME, CONF_IS_HUB: True},
-                options=hub_options(lifted),
+                options=house_options,
                 version=1,
                 minor_version=5,
             )
@@ -356,7 +363,7 @@ class ReplayHouse(SimHouse):
             title=HUB_ENTRY_NAME,
             unique_id=HUB_UNIQUE_ID,
             data={"name": HUB_ENTRY_NAME, CONF_IS_HUB: True},
-            options=hub_options(lifted),
+            options=house_options,
             version=V2_0_HOUSE_VERSION,
             minor_version=1,
             subentries_data=[

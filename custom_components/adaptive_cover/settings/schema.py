@@ -170,10 +170,11 @@ def _default_factory(value: Any) -> Any:
 # |                      |           | azimuth, field of view, the type's geometry   |
 # | sun_limits           | one-time  | min/max sun elevation, blind spot             |
 # | advanced             | one-time  | position limits, inverse, interpolation,      |
-# |                      |           | transparent blind, privacy opt-in             |
+# |                      |           | privacy opt-in, climate opt-out, transparent  |
+# |                      |           | blind                                         |
 # | exceptions_positions | recurring | glare band, default/sunset positions, offsets |
 # | exceptions_schedule  | recurring | deltas, times, manual moves, privacy, quiet   |
-# | exceptions_climate   | recurring | climate mode, sensors, thresholds, weather    |
+# | exceptions_climate   | recurring | sensors, thresholds, weather                  |
 #
 # Recurring settings belong to the house (plan: "One-time vs recurring
 # settings"); the window form shows them only in the collapsed exceptions
@@ -212,7 +213,6 @@ _EXCEPTIONS_BY_GROUP: Final = MappingProxyType(
         Group.COVER: "exceptions_positions",
         Group.SUN: "exceptions_positions",
         Group.AUTOMATION: "exceptions_schedule",
-        Group.CLIMATE_TOGGLE: "exceptions_climate",
         Group.CLIMATE: "exceptions_climate",
         Group.WEATHER: "exceptions_climate",
     }

@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -401,7 +401,6 @@
+@@ -408,7 +408,6 @@
              return
          if old_state.state in ("unknown", "unavailable"):
              self.logger.debug("Old state is %s, not processing", old_state.state)

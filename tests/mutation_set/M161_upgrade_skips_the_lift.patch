@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
 --- a/custom_components/adaptive_cover/consolidate.py
 +++ b/custom_components/adaptive_cover/consolidate.py
-@@ -434,7 +434,7 @@
+@@ -450,7 +450,7 @@
          if entry.minor_version < 3:
              _async_migrate_window_1_3(hass, entry)
              migrated.append(f"{entry.title} 1.3")

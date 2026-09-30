@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/upgrade.py b/custom_components/adaptive_cover/upgrade.py
 --- a/custom_components/adaptive_cover/upgrade.py
 +++ b/custom_components/adaptive_cover/upgrade.py
-@@ -167,7 +167,7 @@
+@@ -195,7 +195,7 @@
  
  def house_options_3_1(options: Mapping[str, Any]) -> dict[str, Any]:
      """Return the house options without the hub's leftovers (pure)."""

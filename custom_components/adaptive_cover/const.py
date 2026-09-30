@@ -15,9 +15,15 @@ DOMAIN = "adaptive_cover"
 #        it uses (settings/window_record.py), the switch aliases are gone
 #        and the house options keep only the layers. The major bump makes
 #        v2.0.x refuse the house instead of running windows it cannot read.
+#   3.2: one Climate switch (``climate_on``). ``climate_mode`` is gone
+#        from every layer; a window whose ``climate_mode`` resolved to False
+#        stores ``ignore_climate`` instead (upgrade.py). v2.1.0 loads a 3.2
+#        house as a newer minor but reads climate_mode as its default (off):
+#        roll back with the Home Assistant backup.
 V2_0_HOUSE_VERSION = 2
 HOUSE_ENTRY_VERSION = 3
-HOUSE_ENTRY_MINOR_VERSION = 1
+HOUSE_3_1_MINOR_VERSION = 1
+HOUSE_ENTRY_MINOR_VERSION = 2
 LOGGER = logging.getLogger(__package__)
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,7 +62,10 @@ CONF_TEMP_HIGH = "temp_high"
 # How far past a threshold the season must go before it flips (0: off).
 CONF_TEMP_HYSTERESIS = "temp_hysteresis"
 CONF_MODE = "mode"
+# Retired in 3.2 (one Climate switch): only migration 3.1 -> 3.2 reads it.
 CONF_CLIMATE_MODE = "climate_mode"
+# A window's one-time opt-out of climate control (3.2).
+CONF_IGNORE_CLIMATE = "ignore_climate"
 CONF_WEATHER_STATE = "weather_state"
 CONF_MAX_POSITION = "max_position"
 CONF_MIN_POSITION = "min_position"

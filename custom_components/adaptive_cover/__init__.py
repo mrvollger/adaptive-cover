@@ -4,10 +4,11 @@ One config entry, the house (the hub entry, 3.x), holds every window as a
 config subentry of type ``window`` (ADR 0001; windows.py, house.py). A
 fresh install creates it with its first window.
 
-Window config entries from 1.x do not run. At the first start of v2.1 a
-house below 3.x moves them into itself and migrates to 3.1 (upgrade.py,
-consolidate.py; ADR 0008). A window entry the house cannot take (a 3.x
-house, or no house) gets the ``consolidate_first`` nag (ADR 0007).
+Window config entries from 1.x do not run. At the first start of v2.1+ a
+house below 3.x moves them into itself and migrates to 3.1, then 3.2
+(one Climate switch) (upgrade.py, consolidate.py; ADR 0008, 0009). A
+window entry the house cannot take (a 3.x house, or no house) gets the
+``consolidate_first`` nag (ADR 0007).
 """
 
 from __future__ import annotations
@@ -284,9 +285,10 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     (consolidate.py: 1.x schema, snapshot, move, verify, then the entries
     go), then becomes 3.1: its window subentries store only what they use,
     the switch aliases go and the house options keep only the layers. A
-    window entry is left as it is (the house moves it). A newer MAJOR
-    version is refused by Home Assistant before this runs; a newer minor
-    loads as is.
+    3.1 house then becomes 3.2: one Climate switch (``climate_mode`` goes;
+    a window it was off for ignores climate control). A window entry is
+    left as it is (the house moves it). A newer MAJOR version is refused
+    by Home Assistant before this runs; a newer minor loads as is.
     """
     from .upgrade import async_migrate
 

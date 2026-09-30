@@ -1,4 +1,4 @@
-"""Build a house entry (3.1) with window subentries for a test (v2.1, P8).
+"""Build a house entry (3.2) with window subentries for a test (v2.1, P8).
 
 Since v2.1 the house entry is the integration's only running config entry
 and every window is a ``window`` subentry storing only what it uses
@@ -123,7 +123,7 @@ def mock_house(
     options: Mapping[str, Any] | None = None,
     add: bool = True,
 ) -> MockConfigEntry:
-    """Return a 3.1 house entry holding ``windows`` (added to hass, not set up).
+    """Return a current (3.2) house entry holding ``windows`` (added, not set up).
 
     ``options`` replace parts of the lifted house options.
     """

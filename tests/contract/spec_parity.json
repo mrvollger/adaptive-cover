@@ -3,7 +3,6 @@
  "forms": {
   "add_entry": [
    "angle",
-   "climate_mode",
    "copy_from",
    "cover",
    "covers",
@@ -15,6 +14,7 @@
    "eye_height",
    "fov_left",
    "fov_right",
+   "ignore_climate",
    "irradiance_threshold",
    "length_awning",
    "lux_threshold",
@@ -57,7 +57,6 @@
   ],
   "add_entry.baseline": [
    "blind_spot",
-   "climate_mode",
    "default_percentage",
    "delta_position",
    "delta_time",
@@ -83,7 +82,6 @@
   ],
   "change_settings": [
    "angle",
-   "climate_mode",
    "config_entry",
    "default_percentage",
    "delta_position",
@@ -93,6 +91,7 @@
    "eye_height",
    "fov_left",
    "fov_right",
+   "ignore_climate",
    "irradiance_threshold",
    "length_awning",
    "lux_threshold",
@@ -147,7 +146,6 @@
    "house_climate"
   ],
   "options.house.house_climate": [
-   "climate_mode",
    "temp_low",
    "temp_high",
    "temp_hysteresis",
@@ -208,7 +206,7 @@
    "occupied_distance",
    "privacy_mode",
    "privacy_offset",
-   "climate_mode",
+   "ignore_climate",
    "temp_entity",
    "presence_entity",
    "weather_entity",
@@ -237,10 +235,10 @@
    "interp_list",
    "interp_list_new",
    "privacy_mode",
+   "ignore_climate",
    "transparent_blind"
   ],
   "setup.first.exceptions_climate": [
-   "climate_mode",
    "temp_entity",
    "temp_low",
    "temp_high",
@@ -355,10 +353,10 @@
    "interp_list",
    "interp_list_new",
    "privacy_mode",
+   "ignore_climate",
    "transparent_blind"
   ],
   "setup.reconfigure.exceptions_climate": [
-   "climate_mode",
    "temp_entity",
    "temp_low",
    "temp_high",
@@ -476,10 +474,10 @@
    "interp_list",
    "interp_list_new",
    "privacy_mode",
+   "ignore_climate",
    "transparent_blind"
   ],
   "setup.user.exceptions_climate": [
-   "climate_mode",
    "temp_entity",
    "temp_low",
    "temp_high",
@@ -676,49 +674,6 @@
     "unit": "°",
     "required": true,
     "default": 1
-   }
-  ],
-  "climate_mode": [
-   {
-    "where": [
-     "add_entry",
-     "change_settings",
-     "services_yaml.change_settings"
-    ],
-    "kind": "boolean",
-    "required": false
-   },
-   {
-    "where": [
-     "add_entry.baseline"
-    ],
-    "default": false
-   },
-   {
-    "where": [
-     "options.house.house_climate"
-    ],
-    "kind": "boolean",
-    "required": false,
-    "suggested": true
-   },
-   {
-    "where": [
-     "setup.first.exceptions_climate",
-     "setup.user.exceptions_climate"
-    ],
-    "kind": "boolean",
-    "required": false,
-    "default": false
-   },
-   {
-    "where": [
-     "setup.reconfigure.exceptions_climate"
-    ],
-    "kind": "boolean",
-    "required": false,
-    "default": false,
-    "suggested": true
    }
   ],
   "climate_on": [
@@ -1344,6 +1299,35 @@
     "unit": "°",
     "required": true,
     "default": 90
+   }
+  ],
+  "ignore_climate": [
+   {
+    "where": [
+     "add_entry",
+     "change_settings",
+     "services_yaml.change_settings"
+    ],
+    "kind": "boolean",
+    "required": false
+   },
+   {
+    "where": [
+     "setup.first.advanced",
+     "setup.user.advanced"
+    ],
+    "kind": "boolean",
+    "required": false,
+    "default": false
+   },
+   {
+    "where": [
+     "setup.reconfigure.advanced"
+    ],
+    "kind": "boolean",
+    "required": false,
+    "default": false,
+    "suggested": true
    }
   ],
   "interp": [

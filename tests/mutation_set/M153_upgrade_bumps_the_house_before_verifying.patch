@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
 --- a/custom_components/adaptive_cover/consolidate.py
 +++ b/custom_components/adaptive_cover/consolidate.py
-@@ -948,6 +948,9 @@
+@@ -964,6 +964,9 @@
          SNAPSHOT_KEY,
          "written" if written else "kept from the first try",
      )

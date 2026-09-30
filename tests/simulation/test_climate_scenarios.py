@@ -68,6 +68,41 @@ async def test_away_summer_closes(hass, freezer):
     await house.teardown()
 
 
+async def test_ignore_climate_tracks_the_sun_on_a_hot_empty_day(hass, freezer):
+    """A window that ignores climate control follows the sun alone (3.2).
+
+    The day of test_away_summer_closes (hot, nobody home, sunny): climate
+    control would close the shade fully. The window's one-time opt-out
+    (``ignore_climate``) keeps it on the sun logic, which tracks glare,
+    and no season is decided for it. Turning the opt-out off again (a
+    one-time edit: the window is rebuilt) hands it back to climate control.
+    """
+    house = await SimHouse.create(
+        hass,
+        freezer,
+        date=DATE,
+        options={"ignore_climate": True},
+        climate={"temp": 26.0, "presence": "not_home", "weather": "sunny"},
+    )
+    await house.advance_to("12:00")
+    assert _tracking(house.position(SHADE)), (
+        f"a window that ignores climate must track the sun; "
+        f"moves: {house.auto_moves(SHADE)}"
+    )
+    assert house.sensor_value("control_method") == "intermediate"
+    after_sunrise = house.auto_moves(SHADE, since="08:00")
+    assert [m for m in after_sunrise if m.position == 0] == []
+
+    await house.set_options(ignore_climate=False)
+    await house.advance_to("12:20")
+    assert house.position(SHADE) == 0, (
+        f"back under climate control, away+summer must close; "
+        f"moves: {house.auto_moves(SHADE, since='12:00')}"
+    )
+    assert house.sensor_value("control_method") == "summer"
+    await house.teardown()
+
+
 async def test_away_cloudy_default_then_sunset(hass, freezer):
     """Intermediate temp, nobody home: default all day, sunset position after dark."""
     house = await SimHouse.create(

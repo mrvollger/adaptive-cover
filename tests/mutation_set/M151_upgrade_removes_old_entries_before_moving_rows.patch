@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
 --- a/custom_components/adaptive_cover/consolidate.py
 +++ b/custom_components/adaptive_cover/consolidate.py
-@@ -951,6 +951,7 @@
+@@ -967,6 +967,7 @@
      moved: dict[str, str] = {}
      try:
          for window in plan.windows:

@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -437,7 +437,7 @@
+@@ -444,7 +444,7 @@
          if self.is_own_context(event.context):
              self.process_entity_state_change(own_context=True)
              return

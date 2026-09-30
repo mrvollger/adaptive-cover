@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -393,8 +393,7 @@
+@@ -400,8 +400,7 @@
                  # of waiting for the next sun update, which is slow at night;
                  # the usual gates still decide whether anything moves.
                  self.commands.first_sight(data["entity_id"], new_state.state)

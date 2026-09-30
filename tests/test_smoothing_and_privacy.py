@@ -204,7 +204,6 @@ async def test_privacy_beats_winter_open(hass, mock_sun_data, mock_sun_entity):
         data={"name": "Privacy Climate", CONF_SENSOR_TYPE: SensorType.BLIND},
         options={
             **COMMON_OPTIONS,
-            "climate_mode": True,
             "temp_entity": "sensor.indoor",
             "temp_low": 21,
             "temp_high": 25,

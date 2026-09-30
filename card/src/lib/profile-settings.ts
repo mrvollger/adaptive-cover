@@ -149,10 +149,9 @@ export const PROFILE_SETTINGS: readonly ProfileSetting[] = [
     },
   }),
   ...rows('climate', {
+    // The one Climate switch (house 3.2: climate_mode is gone; a window
+    // opts out with its one-time ignore_climate, set on the window).
     climate_on: { kind: 'bool', levels: HA_, hub: 'switch' },
-    // Pending an owner decision on folding it into climate_on: kept, with a
-    // hint that it is the setup-level switch.
-    climate_mode: { kind: 'bool', levels: HA_ },
     temp_low: { kind: 'temperature', levels: HFA, hub: 'number' },
     temp_high: { kind: 'temperature', levels: HFA, hub: 'number' },
     temp_hysteresis: { kind: 'temperature', levels: HA_, hub: 'number' },

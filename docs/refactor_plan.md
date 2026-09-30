@@ -46,7 +46,7 @@
 | Overhang depth/height, min/max elevation, blind spot | one-time | window (preset / copy-from) | — |
 | Min/max position and their enable flags, inverse, interpolation, transparent blind | one-time | window › Advanced | — |
 | Privacy opt-in (window faces the street) | one-time | window | — |
-| "Ignore climate" exception | one-time | window › Exceptions | — |
+| "Ignore climate" exception (`ignore_climate`; since 3.2 the only per-window climate setting: `climate_mode` is gone) | one-time | window › Advanced | — |
 | Mode Auto / Hold / Off; Return to auto; Hold N h; open/close/stop | recurring control | row, room, floor, house (`select.select_option`, `button.press`, `adaptive_cover.hold` targeted at an area or floor) | — |
 | House mode, Return all | recurring control | house | — |
 | Climate on/off | recurring | house switch | area |

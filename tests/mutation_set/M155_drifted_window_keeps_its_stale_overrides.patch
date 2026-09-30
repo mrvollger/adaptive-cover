@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
 --- a/custom_components/adaptive_cover/consolidate.py
 +++ b/custom_components/adaptive_cover/consolidate.py
-@@ -494,7 +494,7 @@
+@@ -510,7 +510,7 @@
          readopted = overrides is None or bool(
              compare(key, acts_on, house.options, overrides, placement).differing
          )

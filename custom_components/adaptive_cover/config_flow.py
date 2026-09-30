@@ -598,7 +598,7 @@ HOUSE_SECTIONS: Final[Mapping[str, tuple[Group, ...]]] = MappingProxyType(
     {
         "house_positions": (Group.COVER, Group.SUN),
         "house_schedule": (Group.AUTOMATION,),
-        "house_climate": (Group.CLIMATE_TOGGLE, Group.CLIMATE, Group.WEATHER),
+        "house_climate": (Group.CLIMATE, Group.WEATHER),
     }
 )
 HOUSE_TOGGLE_SECTIONS: Final[Mapping[str, str]] = MappingProxyType(

@@ -86,6 +86,17 @@ def _expected() -> dict[str, Any]:
     return fixture_json("expected.json")
 
 
+def _as_3_2(settings: dict[str, Any]) -> dict[str, Any]:
+    """v2.0's resolved settings as house 3.2 shows them (one Climate switch).
+
+    ``climate_mode`` is no setting; every live window had it on, so each
+    one reads ``ignore_climate`` False and acts on what it did.
+    """
+    assert settings["climate_mode"] is True
+    migrated = {k: v for k, v in settings.items() if k != "climate_mode"}
+    return {**migrated, "ignore_climate": False}
+
+
 def _jsonable(value: Any) -> Any:
     return json.loads(json.dumps(value))
 
@@ -210,9 +221,9 @@ async def _notifications(hass, hass_ws_client) -> dict[str, dict[str, Any]]:
 
 
 async def _assert_upgraded(hass, house, *, before, devices_before, held_until) -> None:
-    """The house is 3.1 and holds every window; nothing a person sees changed."""
+    """The house is 3.2 and holds every window; nothing a person sees changed."""
     assert house.state is ConfigEntryState.LOADED
-    assert (house.version, house.minor_version) == (3, 1)
+    assert (house.version, house.minor_version) == (3, 2)
     assert set(house.options) == LAYER_KEYS
     # Every window entry is gone; the disabled ones are left alone.
     left = [e for e in hass.config_entries.async_entries(DOMAIN) if e is not house]
@@ -250,9 +261,9 @@ async def _assert_upgraded(hass, house, *, before, devices_before, held_until) -
         handle = WindowHandle(hass, was["cover"])
         assert handle.window_key == key
         assert handle.available, was["title"]
-        assert _jsonable(await window_settings(hass, key)) == was["settings"], was[
-            "title"
-        ]
+        assert _jsonable(await window_settings(hass, key)) == _as_3_2(
+            was["settings"]
+        ), was["title"]
         assert handle.attributes.get("provenance") == was["provenance"], was["title"]
         if key == expected["held"]:
             assert handle.mode == "hold"
@@ -466,7 +477,7 @@ async def test_a_house_at_1_2_is_brought_to_1_5_then_moved(hass):
     await _start(hass, house)
 
     assert house.state is ConfigEntryState.LOADED
-    assert (house.version, house.minor_version) == (3, 1)
+    assert (house.version, house.minor_version) == (3, 2)
     assert len(house.subentries) == WINDOW_COUNT
     # Every window acts on what v2.0 showed for the same house (the edit
     # and the hold aside, which this house never had).
@@ -474,9 +485,9 @@ async def test_a_house_at_1_2_is_brought_to_1_5_then_moved(hass):
     for key, was in expected["windows"].items():
         if key == expected["edited"]:
             continue
-        assert _jsonable(await window_settings(hass, key)) == was["settings"], was[
-            "title"
-        ]
+        assert _jsonable(await window_settings(hass, key)) == _as_3_2(
+            was["settings"]
+        ), was["title"]
 
 
 async def test_a_switch_turned_off_in_v1_19_stays_off(hass):
@@ -502,9 +513,37 @@ async def test_a_switch_turned_off_in_v1_19_stays_off(hass):
 
     await _start(hass, hub)
 
-    assert (hub.version, hub.minor_version) == (3, 1)
+    assert (hub.version, hub.minor_version) == (3, 2)
     assert (await window_settings(hass, window.entry_id))["climate_on"] is False
     assert (await window_settings(hass, windows[1].entry_id))["climate_on"] is True
+
+
+async def test_regression_v1_19_climate_off_window_opts_out(hass):
+    """A window with climate_mode off in v1.19.x opts out after the upgrade.
+
+    v2.2.0 merge: the upgrade reads the house layers before migration 3.2
+    removes ``climate_mode`` from them (it stopped: "'climate_mode' is not
+    an option"), and each window's own value has to reach migration 3.2
+    (without it every window resolved to the house's value).
+    """
+    hub, windows = load_v1_19_house(hass)
+    window = windows[0]
+    assert window.options["climate_mode"]
+    options = dict(window.options)
+    options["climate_mode"] = False
+    overrides = dict(options["overrides"])
+    overrides["legacy"] = {**overrides["legacy"], "climate_mode": False}
+    options["overrides"] = overrides
+    hass.config_entries.async_update_entry(window, options=options)
+
+    await _start(hass, hub)
+
+    assert (hub.version, hub.minor_version) == (3, 2)
+    assert (await window_settings(hass, window.entry_id))["ignore_climate"] is True
+    for other in windows[1:]:
+        settings = await window_settings(hass, other.entry_id)
+        assert settings["ignore_climate"] is False, other.title
+        assert "climate_mode" not in settings
 
 
 async def test_a_house_older_than_1_2_stops_and_changes_nothing(hass):
@@ -529,7 +568,7 @@ async def test_a_window_entry_enabled_after_the_upgrade_gets_the_nag(hass):
     """ADR 0007 stands for a 3.x house: an old window entry enabled again."""
     hub, _windows = load_v1_19_house(hass)
     await _start(hass, hub)
-    assert (hub.version, hub.minor_version) == (3, 1)
+    assert (hub.version, hub.minor_version) == (3, 2)
     stored = _entries(hass)
     old = next(e for e in hass.config_entries.async_entries(DOMAIN) if e.disabled_by)
 

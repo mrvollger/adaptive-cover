@@ -7,7 +7,6 @@ import pytest
 from custom_components.adaptive_cover.const import (
     CONF_AWNING_ANGLE,
     CONF_AZIMUTH,
-    CONF_CLIMATE_MODE,
     CONF_DEFAULT_HEIGHT,
     CONF_DELTA_POSITION,
     CONF_DELTA_TIME,
@@ -47,7 +46,6 @@ COMMON_OPTIONS = {
     CONF_INVERSE_STATE: False,
     CONF_ENABLE_BLIND_SPOT: False,
     CONF_INTERP: False,
-    CONF_CLIMATE_MODE: False,
     CONF_ENTITIES: [],
     CONF_ENABLE_MAX_POSITION: False,
     CONF_ENABLE_MIN_POSITION: False,
