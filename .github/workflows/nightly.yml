@@ -18,9 +18,16 @@ env:
 
 jobs:
   mutations:
-    name: Mutation kill matrix
+    # The full per-tier matrix is ~9 CPU-hours: one 4-core runner hit the
+    # 90-minute timeout (2026-09-29). Eight interleaved shards run in
+    # parallel; each fails on its own survivors.
+    name: Mutation kill matrix (shard ${{ matrix.shard }}/8)
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@v7
         with:
@@ -35,12 +42,12 @@ jobs:
       - name: Run all mutations
         run: >-
           pixi run python tests/mutation_set/run_mutations.py
-          --jobs 4 --report mutation_report.json
+          --jobs 4 --shard ${{ matrix.shard }}/8 --report mutation_report.json
       - name: Upload the report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: mutation-report
+          name: mutation-report-${{ matrix.shard }}
           path: mutation_report.json
           if-no-files-found: error
 
