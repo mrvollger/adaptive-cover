@@ -100,6 +100,9 @@ TIER_XDIST: dict[str, bool] = {
     "engine": True,
     "entity": True,
 }
+# --first-kill runs tiers cheapest first (measured 2026-09-29: characterization
+# ~5 s, engine ~17 s, simulation ~60 s, entity ~4 min per mutation).
+FIRST_KILL_ORDER = ["characterization", "engine", "simulation", "entity"]
 DEFAULT_PYTEST_ARGS = ["-q", "-x", "-p", "no:cacheprovider"]
 
 # Top-level paths never copied into the per-mutation sandboxes: large and
@@ -297,8 +300,13 @@ def _run_one(
     tier_plan: dict,
     pytest_args: list[str],
     timeout: int,
+    first_kill: bool = False,
 ) -> dict:
     """Copy the template, apply ``patch_text`` (entry None = control), run tiers.
+
+    With ``first_kill`` a mutation stops at the first tier that catches it
+    (the release gate only needs "caught"); the control always runs every
+    tier. Tiers left unrun are recorded as skipped, not missed.
 
     The copy is always deleted before returning.
     """
@@ -333,15 +341,25 @@ def _run_one(
                 return result
             _git("apply", cwd=sandbox, env=env, stdin=patch_text)
         tier_results: dict[str, dict] = {}
+        skipped: list[str] = []
         for tier, (paths, extra) in tier_plan.items():
             if _stop.is_set():
                 raise KeyboardInterrupt
+            if (
+                first_kill
+                and entry is not None
+                and any(r["caught"] for r in tier_results.values())
+            ):
+                skipped.append(tier)
+                continue
             tier_results[tier] = _run_tier(
                 sandbox, env, paths, [*pytest_args, *extra], timeout
             )
         result["tiers"] = tier_results
         result["caught_by"] = [t for t, r in tier_results.items() if r["caught"]]
         result["missed_by"] = [t for t, r in tier_results.items() if not r["caught"]]
+        if skipped:
+            result["skipped"] = skipped
         result["seconds"] = round(time.monotonic() - started, 1)
         return result
     finally:
@@ -420,6 +438,41 @@ def _parse_xdist(value: str) -> str:
     raise argparse.ArgumentTypeError("expected auto, off or a worker count")
 
 
+def changed_mutations(manifest: list[dict], ref: str) -> list[dict]:
+    """Mutations that are new since ``ref`` or whose file/patch changed.
+
+    Compares ``ref`` with the working tree (committed and uncommitted
+    changes). A mutation whose target file is untouched keeps its earlier
+    verdict: the behavior-tier ledger guarantees its killing tests were not
+    removed, and the nightly CI run re-checks the whole matrix.
+    """
+    changed = set(
+        subprocess.run(
+            ["git", "diff", "--name-only", ref, "--"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.split()
+    )
+    old = subprocess.run(
+        ["git", "show", f"{ref}:tests/mutation_set/manifest.json"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    old_ids = (
+        {e["id"] for e in json.loads(old.stdout)} if old.returncode == 0 else set()
+    )
+    return [
+        e
+        for e in manifest
+        if e["id"] not in old_ids
+        or e["file"] in changed
+        or f"tests/mutation_set/{e['patch']}" in changed
+    ]
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI entry point; returns the process exit code."""
     parser = argparse.ArgumentParser(
@@ -466,6 +519,26 @@ def main(argv: list[str] | None = None) -> int:
         "when --jobs 1, else cpu//jobs), off, or a number",
     )
     parser.add_argument(
+        "--changed-since",
+        metavar="REF",
+        help="incremental gate: run only mutations that are new since REF or "
+        "whose target file or patch changed since REF (committed or not); "
+        "the full matrix runs nightly in CI",
+    )
+    parser.add_argument(
+        "--shard",
+        metavar="K/N",
+        help="run only the K-th of N interleaved slices of the mutations "
+        "(1-based; CI splits the nightly matrix across parallel jobs)",
+    )
+    parser.add_argument(
+        "--first-kill",
+        action="store_true",
+        help="release-gate mode: run tiers cheapest first and stop each "
+        "mutation at its first catch (the per-tier kill matrix needs the "
+        "default full run, e.g. nightly)",
+    )
+    parser.add_argument(
         "--no-control",
         action="store_true",
         help="skip the control run of the unmutated snapshot",
@@ -483,6 +556,17 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     manifest = json.loads((MUTATION_DIR / "manifest.json").read_text())
+    if args.shard:
+        k, n = (int(x) for x in args.shard.split("/"))
+        if not 1 <= k <= n:
+            parser.error("--shard must be K/N with 1 <= K <= N")
+        manifest = [e for i, e in enumerate(manifest) if i % n == k - 1]
+    if args.changed_since:
+        manifest = changed_mutations(manifest, args.changed_since)
+        _say(
+            f"--changed-since {args.changed_since}: {len(manifest)} mutation(s) "
+            "touch changed code: " + (", ".join(e["id"] for e in manifest) or "none")
+        )
     if args.mutations:
         wanted = {m.strip() for m in args.mutations.split(",")}
         unknown = wanted - {entry["id"] for entry in manifest}
@@ -505,6 +589,8 @@ def main(argv: list[str] | None = None) -> int:
     xdist_args = resolve_xdist(
         args.xdist, jobs, cpu_count, pytest_args, xdist_available
     )
+    if args.first_kill:
+        tier_names = sorted(tier_names, key=FIRST_KILL_ORDER.index)
     tier_plan = {
         tier: (TIERS[tier], xdist_args if TIER_XDIST[tier] else [])
         for tier in tier_names
@@ -565,6 +651,7 @@ def main(argv: list[str] | None = None) -> int:
                     tier_plan,
                     pytest_args,
                     args.timeout,
+                    args.first_kill,
                 ): entry
                 for entry in tasks
             }

@@ -45,4 +45,5 @@ lint = { cmd = "ruff check . && ruff format --check .", description = "Ruff lint
 format = { cmd = "ruff format . && ruff check --fix .", description = "Apply ruff format and autofixes" }
 typecheck = { cmd = "python .github/pyright/check_baseline.py", description = "pyright (standard mode; strict on engine/, runtime/ and settings/resolve.py, lift.py, shadow.py); the baseline is empty, so any error fails" }
 typecheck-baseline = { cmd = "python .github/pyright/check_baseline.py --write", description = "Rewrite the pyright baseline (after fixing errors or reformatting)" }
-mutations = { cmd = "python tests/mutation_set/run_mutations.py --jobs 4", description = "Run the mutation kill matrix" }
+mutations = { cmd = "python tests/mutation_set/run_mutations.py --jobs 4", description = "Run the full mutation kill matrix (every tier)" }
+mutations-gate = { cmd = "python tests/mutation_set/run_mutations.py --jobs 8 --first-kill --changed-since", description = "Release gate: mutations on code changed since the given ref (pixi run mutations-gate v1.19.1); stops at the first catch. The full matrix runs nightly in CI" }
