@@ -250,3 +250,32 @@ async def test_a_window_with_its_own_value_keeps_it(hass, mock_sun_entity):
     await hass.async_block_till_done()
     assert (await window_settings(hass, office.entry_id))[CONF_CLIMATE_ON] is False
     assert (await window_settings(hass, den.entry_id))[CONF_CLIMATE_ON] is True
+
+
+async def test_house_times_reach_every_window_without_a_reload(hass, mock_sun_entity):
+    """The end time and the quiet hours are hub time entities (CONFIG)."""
+    entries = await _house(hass)
+    registry = er.async_get(hass)
+    handles = [WindowHandle.by_key(hass, entry.entry_id) for entry in entries]
+    before = [handle.teardowns for handle in handles]
+    for key in ("end_time", "quiet_start", "quiet_end"):
+        row = registry.async_get(_hub_eid(hass, "time", key))
+        assert row.entity_category == EntityCategory.CONFIG, key
+    # No quiet hours yet: unknown.
+    assert hass.states.get(_hub_eid(hass, "time", "quiet_start")).state == "unknown"
+
+    await hass.services.async_call(
+        "time",
+        "set_value",
+        {"entity_id": _hub_eid(hass, "time", "quiet_start"), "time": "22:30:00"},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    assert _hub(hass).options["house"]["quiet_start"] == "22:30:00"
+    assert hass.states.get(_hub_eid(hass, "time", "quiet_start")).state == "22:30:00"
+    for entry, handle, teardowns in zip(entries, handles, before, strict=True):
+        assert (await window_settings(hass, entry.entry_id))[
+            "quiet_start"
+        ] == "22:30:00"
+        assert handle.teardowns == teardowns, entry.title

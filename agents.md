@@ -70,7 +70,9 @@ custom_components/adaptive_cover/
 ├── repairs.py               # Fix flow of the "split" issue (multi-cover entry -> one window per cover)
 ├── const.py                 # All config keys, defaults, enums
 ├── hub.py                   # "Adaptive Cover All" hub device (all-shades cover, house Mode select auto/hold/off/mixed, reset-all button)
-├── house_settings.py        # P5 flip: the house settings on the hub (Climate + toggle switches, threshold/duration/geometry numbers)
+├── house_settings.py        # P5 flip: the house settings on the hub (Climate + toggle switches, threshold/duration/geometry numbers, end/quiet times)
+├── profile_service.py       # adaptive_cover.get_profile: read-only, response-only view of the stored layers (any user)
+├── time.py                  # The hub's house times (end time, quiet hours start/end)
 ├── cover.py                 # Cover platform: only the hub's aggregate cover
 ├── sensor.py                # Position %, solar times, control method, next/last change
 ├── binary_sensor.py         # Sun in front, manual override active
@@ -85,7 +87,7 @@ custom_components/adaptive_cover/
 ├── helpers.py               # Utility functions (safe state access, datetime parsing)
 ├── config_context_adapter.py # Logger adapter that tags logs with config name
 ├── diagnostics.py           # HA diagnostics export (incl. the resolved settings a window acts on)
-├── services.yaml            # get_forecast, hold (entity service on the Mode selects), set_profile, change_settings, add_entry
+├── services.yaml            # get_forecast, hold (entity service on the Mode selects), get_profile, set_profile, change_settings, add_entry
 ├── manifest.json            # Integration metadata, version & requirements
 ├── strings.json             # English UI strings (source for translations/en.json)
 ├── icons.json               # MDI icon mappings
@@ -283,6 +285,7 @@ if it has none.
 | switch | Automatic control, Manual override detection, Climate mode, Outside temperature, Lux, Irradiance | config, hidden (enabled) | Aliases until P8: Automatic control writes/mirrors the Mode; the others still set the window's ControlState (house settings `manual_detection`, `climate_on`, `use_*` in the stored layers) |
 | hub switch | Climate (`climate_on`), Manual-move detection, Use outside temperature / lux / irradiance | primary (Climate), config | The house's settings (P5 flip); a change reaches every window without a reload |
 | hub number | Heating / cooling threshold, manual override duration (min), eye height, seat distance, privacy delay | config | The house's settings (P5 flip); the window numbers are gone (rows removed at setup) |
+| hub time | End time, quiet hours start, quiet hours end | config | The house's settings (P5 flip) |
 
 ## Manual Override Detection
 

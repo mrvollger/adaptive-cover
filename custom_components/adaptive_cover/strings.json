@@ -560,6 +560,17 @@
       "use_irradiance": {
         "name": "Use irradiance sensor"
       }
+    },
+    "time": {
+      "end_time": {
+        "name": "End time"
+      },
+      "quiet_start": {
+        "name": "Quiet hours start"
+      },
+      "quiet_end": {
+        "name": "Quiet hours end"
+      }
     }
   },
   "issues": {

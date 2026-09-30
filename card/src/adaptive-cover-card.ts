@@ -41,6 +41,7 @@ import './adaptive-cover-sky-compass-card';
 import './adaptive-cover-decision-card';
 import './adaptive-cover-house-card';
 import './adaptive-cover-strategy';
+import './adaptive-cover-mode-feature';
 
 const DEFAULT_SECTIONS: CardSection[] = [
   'sky',

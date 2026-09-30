@@ -127,6 +127,7 @@ RULES: list[tuple[str, str]] = [
     # P5 flip (C7): the house settings on the hub device, through entity
     # states, registries, the hub's config entry and the diagnostics.
     ("tests/test_house_settings.py::*", BEHAVIOR),
+    ("tests/test_get_profile.py::*", BEHAVIOR),  # get_profile responses (C6)
     # P5 layered settings: `resolve` is a contract v2 seam (ADR 0004).
     # Precedence, provenance, the lift's rules and the P5 guarantee on the
     # live snapshot (resolve(w) == legacy_flat(w)) are behavior; the purity
