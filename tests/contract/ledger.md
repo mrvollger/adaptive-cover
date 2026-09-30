@@ -1088,7 +1088,10 @@ The example below is inside an HTML comment. The checker ignores it.
   lost), M102 (`house.py` `HouseRuntime.async_sync`: the listener rebuilds
   every window; the plan's M49) and M103 (`consolidate.py`
   `async_reparent_window`: the device stays on the window entry; the plan's
-  M50). `--mutations M100,M101,M102,M103 --jobs 3`: see the P7 report.
+  M50). `--mutations M100,M101,M102,M103 --jobs 3`: 4/4 killed (the
+  entity tier; the control run passed). The re-anchored M54 (area copy)
+  and M59 (one-cover guard), whose functions changed around them:
+  `--mutations M54,M59 --jobs 2`: 2/2 killed.
 - **Contract change:** C8 (entries become house + subentries)
 - **Reason:** plan P7 and ADR 0001, as amended by ADR 0006 (proposed):
   - Two config models until P8. A window is a window entry (1.x) or a
