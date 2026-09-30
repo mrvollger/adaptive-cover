@@ -471,6 +471,34 @@ async def test_a_house_at_1_2_is_brought_to_1_5_then_moved(hass):
         ]
 
 
+async def test_a_switch_turned_off_in_v1_19_stays_off(hass):
+    """v1.19.x acts on a window's restored switch: the upgrade keeps its state.
+
+    One window's Climate Mode switch is off (the lift recorded that as the
+    window's own ``climate_on``); after the upgrade the window still acts
+    with climate control off, and the other windows keep it on.
+    """
+    hub, windows = load_v1_19_house(hass)
+    window = windows[0]
+    assert window.options["climate_mode"]
+    options = dict(window.options)
+    overrides = dict(options["overrides"])
+    overrides["legacy"] = {**overrides["legacy"], "climate_on": False}
+    options["overrides"] = overrides
+    hass.config_entries.async_update_entry(window, options=options)
+    switch = er.async_get(hass).async_get_entity_id(
+        "switch", DOMAIN, f"{window.entry_id}_Climate Mode"
+    )
+    assert switch is not None
+    mock_restore_cache(hass, [State(switch, "off")])
+
+    await _start(hass, hub)
+
+    assert (hub.version, hub.minor_version) == (3, 1)
+    assert (await window_settings(hass, window.entry_id))["climate_on"] is False
+    assert (await window_settings(hass, windows[1].entry_id))["climate_on"] is True
+
+
 async def test_a_house_older_than_1_2_stops_and_changes_nothing(hass):
     """Entries stored before 1.2: the upgrade stops before writing anything."""
     entries, _rows_1x, _areas = load_live_house(hass, disabled=True, floors=True)
