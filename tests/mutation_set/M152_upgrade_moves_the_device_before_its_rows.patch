@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
 --- a/custom_components/adaptive_cover/consolidate.py
 +++ b/custom_components/adaptive_cover/consolidate.py
-@@ -706,6 +706,14 @@
+@@ -707,6 +707,14 @@
      legacy = dev_reg.async_get_device_by_identifier(
          identifier, config_entry_id=window_key
      )

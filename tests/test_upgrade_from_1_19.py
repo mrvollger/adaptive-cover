@@ -30,7 +30,7 @@ from typing import Any
 from unittest.mock import patch
 
 import pytest
-from homeassistant.config_entries import ConfigEntryState
+from homeassistant.config_entries import ConfigEntryDisabler, ConfigEntryState
 from homeassistant.core import State
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -510,3 +510,52 @@ async def test_a_window_entry_enabled_after_the_upgrade_gets_the_nag(hass):
     assert {k: v for k, v in _entries(hass).items() if k != old.entry_id} == {
         k: v for k, v in stored.items() if k != old.entry_id
     }
+
+
+async def test_window_entries_of_a_disabled_house_get_the_nag(hass):
+    """No enabled house to move them into: ADR 0007's nag, nothing written."""
+    hub, windows = load_v1_19_house(hass)
+    await hass.config_entries.async_set_disabled_by(
+        hub.entry_id, ConfigEntryDisabler.USER
+    )
+    stored = _entries(hass)
+
+    assert await async_setup_component(hass, DOMAIN, {})
+    await hass.async_block_till_done()
+
+    assert windows[0].state is ConfigEntryState.SETUP_ERROR
+    assert "not in the house yet" in (windows[0].reason or "")
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, "consolidate_first")
+    assert issue is not None
+    assert issue.translation_placeholders["count"] == str(WINDOW_COUNT)
+    assert _entries(hass) == stored
+
+
+async def test_an_unexpected_error_while_moving_is_undone(hass, hass_storage):
+    """Home Assistant raises mid-move: the moves are undone, nothing removed."""
+    hub, windows = load_v1_19_house(hass)
+    before = _rows(hass)
+    placement = _placement(hass)
+    stored = _entries(hass)
+    victim = windows[4].entry_id
+    real_update = dr.DeviceRegistry.async_update_device
+
+    def raises_on_victim(self, device_id, **changes):
+        device = self.async_get(device_id)
+        if (
+            changes.get("new_config_entry_id") == hub.entry_id
+            and (DOMAIN, victim) in device.identifiers
+        ):
+            raise ValueError("registry refused")
+        return real_update(self, device_id, **changes)
+
+    with patch.object(dr.DeviceRegistry, "async_update_device", raises_on_victim):
+        await _start(hass, hub)
+
+    assert _entries(hass) == stored
+    assert _rows(hass) == before
+    assert _placement(hass) == placement
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, consolidate.STOPPED_ISSUE)
+    assert issue is not None
+    assert issue.translation_key == consolidate.STOPPED_ISSUE
+    assert "registry refused" in issue.translation_placeholders["reason"]

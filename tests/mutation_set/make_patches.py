@@ -1103,10 +1103,10 @@ MUTATIONS: list[Mutation] = [
         "_async_consolidate",
         "the upgrade skips its verification: a window that did not move "
         "intact is removed anyway",
-        "        if problems:\n            raise UpgradeStopped(\" \".join(problems))\n"
-        "    except UpgradeStopped as stop:\n",
-        "        if False:\n            raise UpgradeStopped(\" \".join(problems))\n"
-        "    except UpgradeStopped as stop:\n",
+        '        if problems:\n            raise UpgradeStopped(" ".join(problems))\n'
+        "    except Exception as err:\n",
+        '        if False:\n            raise UpgradeStopped(" ".join(problems))\n'
+        "    except Exception as err:\n",
     ),
     Mutation(
         "M151",
@@ -1183,16 +1183,14 @@ MUTATIONS: list[Mutation] = [
         "their restored states (a window with Climate Mode off turns it on)",
         "    stored = restore_state.async_get(hass).last_states.get(entity_id)\n"
         "    if stored is None:\n",
-        "    stored = None\n"
-        "    if stored is None:\n",
+        "    stored = None\n    if stored is None:\n",
     ),
     Mutation(
         "M157",
         "resumed_upgrade_adds_a_second_subentry",
         CONSOLIDATE,
         "_async_add_subentry",
-        "a start after a crash adds a second subentry for a window that "
-        "moved already",
+        "a start after a crash adds a second subentry for a window that moved already",
         "    if (subentry := subentry_for(house, plan.window_key)) is not None:\n",
         "    if (subentry := None) is not None:\n",
     ),

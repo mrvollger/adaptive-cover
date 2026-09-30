@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
 --- a/custom_components/adaptive_cover/consolidate.py
 +++ b/custom_components/adaptive_cover/consolidate.py
-@@ -1014,7 +1014,6 @@
+@@ -1024,7 +1024,6 @@
          _async_raise_stopped(hass, stop)
          return False
      ir.async_delete_issue(hass, DOMAIN, STOPPED_ISSUE)

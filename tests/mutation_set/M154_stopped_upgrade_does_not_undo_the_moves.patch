@@ -1,10 +1,10 @@
 diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
 --- a/custom_components/adaptive_cover/consolidate.py
 +++ b/custom_components/adaptive_cover/consolidate.py
-@@ -960,7 +960,7 @@
-         if problems:
-             raise UpgradeStopped(" ".join(problems))
-     except UpgradeStopped as stop:
+@@ -968,7 +968,7 @@
+             if isinstance(err, UpgradeStopped)
+             else UpgradeStopped(f"Unexpected error while moving: {err!r}.")
+         )
 -        left = await async_undo(hass, house, plan.windows)
 +        left: list[str] = []
          if left:

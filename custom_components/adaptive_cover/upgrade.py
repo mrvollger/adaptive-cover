@@ -105,11 +105,11 @@ class MigrationRefused(Exception):
 def needs_consolidation(hass: HomeAssistant) -> list[ConfigEntry]:
     """Return the enabled window entries the upgrade cannot move (the nag).
 
-    Those of a house that is 3.x already, or of no house. A house below
-    3.x moves its window entries itself at its first start.
+    Those of a house that is 3.x already, or of no (enabled) house. A
+    house below 3.x moves its window entries itself at its first start.
     """
     house = house_entry(hass)
-    if house is not None and not is_current_house(house):
+    if house is not None and house.disabled_by is None and not is_current_house(house):
         return []
     return legacy_window_entries(hass)
 

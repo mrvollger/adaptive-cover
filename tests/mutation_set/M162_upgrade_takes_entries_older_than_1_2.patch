@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
 --- a/custom_components/adaptive_cover/consolidate.py
 +++ b/custom_components/adaptive_cover/consolidate.py
-@@ -127,7 +127,7 @@
+@@ -128,7 +128,7 @@
  STOPPED_ISSUE: Final = "upgrade_stopped"
  """The repair issue of an upgrade that stopped (nothing removed)."""
  NOTIFICATION_ID: Final = f"{DOMAIN}_upgraded"

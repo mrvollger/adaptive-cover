@@ -43,9 +43,10 @@ One release, one restart (owner decision 2026-09-30).
 A persistent notification says what was done.
 
 **Failure.** Nothing is removed and no version changes before phase 5
-passes. When a phase fails, the moves are undone (rows back on their
-window entries, devices back, the subentries removed), so v1.19.x finds
-the house as it left it, and the ``upgrade_stopped`` repair says why. If
+passes. When a phase fails or raises, the moves are undone (rows back
+on their window entries, devices back, the subentries removed), so
+v1.19.x finds the house as it left it, and the ``upgrade_stopped`` repair
+says why. If
 the undo cannot restore a row (Home Assistant removed it), the repair
 says to restore the backup taken before the update. A crash (a restart
 part way) undoes nothing: the next start resumes where it stopped.
@@ -959,13 +960,22 @@ async def _async_consolidate(
         ]
         if problems:
             raise UpgradeStopped(" ".join(problems))
-    except UpgradeStopped as stop:
+    except Exception as err:
+        # Any failure while moving is undone (a crash, which runs no code,
+        # resumes at the next start instead).
+        stop = (
+            err
+            if isinstance(err, UpgradeStopped)
+            else UpgradeStopped(f"Unexpected error while moving: {err!r}.")
+        )
         left = await async_undo(hass, house, plan.windows)
         if left:
             raise UpgradeStopped(
                 f"{stop.reason} The undo left: {' '.join(left)}", restore_backup=True
-            ) from stop
-        raise
+            ) from err
+        if stop is err:
+            raise
+        raise stop from err
     _LOGGER.info("Upgrade phase 5 (verify): every window moved intact")
     hass.config_entries.async_update_entry(
         house, version=V2_0_HOUSE_VERSION, minor_version=1
