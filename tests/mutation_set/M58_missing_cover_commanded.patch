@@ -1,10 +1,10 @@
 diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
 --- a/custom_components/adaptive_cover/coordinator.py
 +++ b/custom_components/adaptive_cover/coordinator.py
-@@ -865,7 +865,7 @@
-         # raw state. "unknown" stays commandable - a shade that has not
-         # reported since a restart must still get the end-of-day close.
-         current = self.hass.states.get(entity)
+@@ -878,7 +878,7 @@
+             # boot): not an error. Command it when its first state arrives.
+             self.logger.debug("%s has no state yet; waiting for it", entity)
+             return False
 -        if current is None:
 +        if False:
              if entity not in self._missing_warned:

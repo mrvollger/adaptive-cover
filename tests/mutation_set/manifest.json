@@ -511,5 +511,12 @@
   "function": "WindowForm.submit",
   "description": "picking another cover type saves at once instead of showing its geometry",
   "patch": "M83_cover_type_switch_not_shown.patch"
+ },
+ {
+  "id": "M120",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "async_check_cover_state_change",
+  "description": "a cover's first state (its integration started late) does not trigger a decision",
+  "patch": "M120_late_cover_waits_for_sun.patch"
  }
 ]
