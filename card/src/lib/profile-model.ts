@@ -12,7 +12,6 @@ import {
   type ProfileLevel,
   type ProfileSetting,
 } from './profile-settings';
-import { getCachedRegistry } from './registry-store';
 
 /*
  * What the house, floor and room sheets show for each setting, and the
@@ -20,23 +19,26 @@ import { getCachedRegistry } from './registry-store';
  *
  * Reading (best source first):
  *
- * 1. The stored profiles: the house entry's `house`, `floors` and `areas`
- *    options. The integration has no read service for them yet; an admin
- *    card reads them from the house entry's diagnostics
- *    (`fetchStoredProfiles`). Exact for every setting.
- * 2. The house device's entities: the house value of the everyday
- *    settings (Climate, thresholds, override duration, ...).
- * 3. Provenance-aware reading of the windows. Each window's Position sensor
- *    has `provenance` = {option: "area" | "floor" | "window" | "legacy"} for
- *    every value that does not come from the house (or the spec default).
- *    So a room stores its own value for an option when one of its windows
- *    gets it from "area"; a window without an entry gets it from the house.
- *    A few resolved values are also attributes (`default`,
- *    `sunset_default`, `sunset_offset`), so for those the value is known too.
+ * 1. The house device's entities: the live house value of the settings
+ *    they show (Climate, thresholds, override duration, times, ...).
+ * 2. `adaptive_cover.get_profile` (response only, any user): with no scope
+ *    every stored profile (the house's values, each floor's and room's);
+ *    with `scope: window` a window's resolved settings, for the values of
+ *    its own exceptions. A house that is not lifted yet answers with a
+ *    validation error: the sheets then say the house settings are not
+ *    available yet.
+ * 3. Provenance-aware reading of the windows, for an integration without
+ *    get_profile. Each window's Position sensor has `provenance` = {option:
+ *    "area" | "floor" | "window" | "legacy"} for every value that does not
+ *    come from the house (or the spec default). So a room stores its own
+ *    value for an option when one of its windows gets it from "area"; a
+ *    window without an entry gets it from the house. A few resolved values
+ *    are attributes (`default`, `sunset_default`, `sunset_offset`).
  *
  * Writing: `adaptive_cover.set_profile` with scope area or floor and the id
- * (null removes the value: the room or floor uses the house's again); the
- * house sheet uses the house device's switch and number entities.
+ * (null removes the value: the room or floor uses the house's again). The
+ * house sheet uses the house device's switch, number and time entities, and
+ * `set_profile` for the house for every other house setting.
  */
 
 /** Where a window's value comes from (the Position `provenance` attribute). */
@@ -50,12 +52,24 @@ export interface ProfileScope {
   name: string;
 }
 
-/** The layered settings the house entry stores (hub options). */
+/** The layered settings the house stores (`get_profile` with no scope),
+ *  plus the resolved settings of the windows read so far. */
 export interface StoredProfiles {
   house: Record<string, unknown>;
   floors: Record<string, Record<string, unknown>>;
   areas: Record<string, Record<string, unknown>>;
+  /** Window key → its resolved settings (`get_profile` scope window). */
+  windows?: Record<string, Record<string, unknown>>;
 }
+
+/** What reading the stored profiles gave. */
+export type ProfilesRead =
+  | { status: 'ok'; stored: StoredProfiles }
+  /** The house has no layered settings yet (get_profile says so). */
+  | { status: 'not_lifted' }
+  /** No get_profile (an older integration) or another failure: the sheets
+   *  read the windows' provenance instead. */
+  | { status: 'unavailable' };
 
 /** This sheet's own writes since it opened: key → card value (null: removed). */
 export type ProfileOverlay = Record<string, unknown>;
@@ -115,8 +129,19 @@ export function windowProvenance(
   return out;
 }
 
-/** The window's resolved value of `setting`, when its Position sensor shows it. */
-function windowValue(hass: HomeAssistant, w: HouseWindow, setting: ProfileSetting): unknown {
+/** The window's resolved value of `setting`: from `get_profile` when read,
+ *  else when its Position sensor shows it. */
+function windowValue(
+  hass: HomeAssistant,
+  w: HouseWindow,
+  setting: ProfileSetting,
+  stored?: StoredProfiles | null,
+): unknown {
+  const resolved = stored?.windows?.[w.key];
+  if (resolved && has(resolved, setting.key)) {
+    const v = normalizeValue(setting, resolved[setting.key]);
+    return v === null ? undefined : v;
+  }
   if (!setting.attr) return undefined;
   const a = attrs(hass, w) as Record<string, unknown> | undefined;
   if (!a || !(setting.attr in a)) return undefined;
@@ -133,51 +158,91 @@ function hubValue(hass: HomeAssistant, model: HouseModel, setting: ProfileSettin
   return v === null ? undefined : v;
 }
 
-/** The stored profiles in a house entry's options, or null (not lifted). */
-export function parseStoredProfiles(options: unknown): StoredProfiles | null {
-  if (!options || typeof options !== 'object') return null;
-  const o = options as Record<string, unknown>;
-  const obj = (v: unknown): Record<string, unknown> =>
-    v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
-  if (!o.house || typeof o.house !== 'object') return null;
-  const nested = (v: unknown) =>
-    Object.fromEntries(Object.entries(obj(v)).map(([k, p]) => [k, obj(p)]));
-  return { house: obj(o.house), floors: nested(o.floors), areas: nested(o.areas) };
+/** Call `adaptive_cover.get_profile` and return its response. */
+async function getProfile(hass: HomeAssistant, data: Record<string, unknown>): Promise<unknown> {
+  const result = await hass.callWS<{ response?: unknown }>({
+    type: 'call_service',
+    domain: INTEGRATION_DOMAIN,
+    service: 'get_profile',
+    service_data: data,
+    return_response: true,
+  });
+  return result?.response;
 }
 
-async function hubEntryId(hass: HomeAssistant, entityId: string): Promise<string | null> {
-  const cached = getCachedRegistry()?.find((r) => r.entity_id === entityId)?.config_entry_id;
-  if (cached) return cached;
-  const row = await hass.callWS<{ config_entry_id?: string | null } | null>({
-    type: 'config/entity_registry/get',
-    entity_id: entityId,
-  });
-  return row?.config_entry_id ?? null;
+const obj = (v: unknown): Record<string, unknown> =>
+  v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
+
+/** The stored profiles in a `get_profile` response (no scope), or null. */
+export function parseProfiles(response: unknown): StoredProfiles | null {
+  const r = obj(response);
+  const house = obj(r.house);
+  if (!r.house || !house.values) return null;
+  const nested = (v: unknown) =>
+    Object.fromEntries(Object.entries(obj(v)).map(([k, p]) => [k, obj(p)]));
+  return { house: obj(house.values), floors: nested(r.floors), areas: nested(r.areas) };
+}
+
+/** Read every stored profile (see `ProfilesRead`). */
+export async function readProfiles(hass: HomeAssistant): Promise<ProfilesRead> {
+  try {
+    const stored = parseProfiles(await getProfile(hass, {}));
+    return stored ? { status: 'ok', stored } : { status: 'unavailable' };
+  } catch (err) {
+    // Without a scope the only validation error is a house not lifted yet.
+    const code = (err as { code?: unknown } | null)?.code;
+    return code === 'service_validation_error'
+      ? { status: 'not_lifted' }
+      : { status: 'unavailable' };
+  }
+}
+
+/** The resolved settings of `keys` (window keys), by window; a window that
+ *  cannot be read is left out. */
+export async function readWindowSettings(
+  hass: HomeAssistant,
+  keys: string[],
+): Promise<Record<string, Record<string, unknown>>> {
+  const out: Record<string, Record<string, unknown>> = {};
+  await Promise.all(
+    keys.map(async (key) => {
+      try {
+        const settings = obj(obj(await getProfile(hass, { scope: 'window', id: key })).settings);
+        if (Object.keys(settings).length > 0) out[key] = settings;
+      } catch {
+        /* keep what provenance and the attributes give */
+      }
+    }),
+  );
+  return out;
+}
+
+/** Windows of `windows` with their own value (window or legacy) for one of
+ *  `keys`: the ones whose resolved settings the sheet reads. */
+export function windowsToRead(
+  hass: HomeAssistant,
+  windows: HouseWindow[],
+  keys: Iterable<string>,
+): string[] {
+  const wanted = new Set(keys);
+  return windows
+    .filter((w) =>
+      Object.entries(windowProvenance(hass, w) ?? {}).some(
+        ([k, source]) => wanted.has(k) && (source === 'window' || source === 'legacy'),
+      ),
+    )
+    .map((w) => w.key);
 }
 
 /**
- * The house entry's stored profiles, read from its diagnostics (admins
- * only), or null when they cannot be read. A stopgap until the integration
- * offers a read path; the sheets work without it (provenance-aware reading).
+ * Whether the integration stores house, floor and room settings
+ * (`set_profile`, 1.20+). HA lists the services in `hass.services`; without
+ * that list, the house device's setting entities tell.
  */
-export async function fetchStoredProfiles(
-  hass: HomeAssistant,
-  hubEntityId: string | undefined,
-): Promise<StoredProfiles | null> {
-  if (!hubEntityId) return null;
-  const user = (hass as { user?: { is_admin?: boolean } }).user;
-  if (user && user.is_admin === false) return null;
-  try {
-    const entryId = await hubEntryId(hass, hubEntityId);
-    if (!entryId) return null;
-    const resp = await hass.callApi<{ data?: { config_options?: unknown } }>(
-      'GET',
-      `diagnostics/config_entry/${encodeURIComponent(entryId)}`,
-    );
-    return parseStoredProfiles(resp?.data?.config_options);
-  } catch {
-    return null;
-  }
+export function profilesSupported(hass: HomeAssistant, model: HouseModel): boolean {
+  const services = (hass as { services?: Record<string, Record<string, unknown>> }).services;
+  if (services) return !!services[INTEGRATION_DOMAIN]?.set_profile;
+  return Object.values(model.hubSettings ?? {}).some((id) => !!id);
 }
 
 function has(obj: Record<string, unknown> | undefined, key: string): boolean {
@@ -213,7 +278,7 @@ class Reader {
   valueFrom(infos: WindowInfo[], setting: ProfileSetting, source: ProvenanceSource): unknown {
     for (const i of infos) {
       if (i.prov?.[setting.key] !== source) continue;
-      const v = windowValue(this.hass, i.w, setting);
+      const v = windowValue(this.hass, i.w, setting, this.stored);
       if (v !== undefined) return v;
     }
     return undefined;
@@ -229,7 +294,7 @@ class Reader {
     // A window without a provenance entry resolves the house value.
     for (const i of this.infos) {
       if (!i.prov || setting.key in i.prov) continue;
-      const v = windowValue(this.hass, i.w, setting);
+      const v = windowValue(this.hass, i.w, setting, this.stored);
       if (v !== undefined) return v;
     }
     return undefined;
@@ -285,7 +350,7 @@ class Reader {
         level: 'window',
         id: i.w.key,
         name: i.w.deviceName,
-        value: windowValue(this.hass, i.w, setting),
+        value: windowValue(this.hass, i.w, setting, this.stored),
         legacy: source === 'legacy',
       });
     }
@@ -305,9 +370,8 @@ function roomFloor(model: HouseModel, areaId: string): { id: string; name: strin
 
 /**
  * The rows of a settings sheet for `scope`: one per setting the scope may
- * store (the house sheet: the everyday settings that have a house entity).
- * `overlay` holds this sheet's own writes, which win over what the house
- * reports until the sheet closes.
+ * store. `overlay` holds this sheet's own writes, which win over what the
+ * house reports until the sheet closes.
  */
 export function settingRows(
   hass: HomeAssistant,
@@ -317,10 +381,7 @@ export function settingRows(
   overlay: ProfileOverlay = {},
 ): SettingRow[] {
   const r = new Reader(hass, model, stored);
-  const settings = settingsAt(scope.level).filter(
-    (s) => scope.level !== 'house' || !!model.hubSettings?.[s.key],
-  );
-  return settings.map((setting) => {
+  return settingsAt(scope.level).map((setting) => {
     const key = setting.key;
     const houseValue = r.houseValue(setting);
     const exceptions = r.exceptions(scope, setting);
@@ -377,18 +438,23 @@ export function planSetProfile(scope: ProfileScope, key: string, value: unknown)
   return { domain: INTEGRATION_DOMAIN, service: 'set_profile', data };
 }
 
-/** Change a house setting: its entity on the house device (switch or
- *  number; durations in minutes), else `set_profile` for the house. */
+/** Change a house setting: its entity on the house device (switch, number
+ *  or time; durations in minutes), else `set_profile` for the house (also
+ *  to clear a value, which no entity can). */
 export function planHouseSetting(model: HouseModel, key: string, value: unknown): ServiceCall[] {
   const id = model.hubSettings?.[key];
   const setting = SETTINGS_BY_KEY.get(key);
-  if (!id || !setting || value === null) {
+  if (!id || !setting?.hub || value === null) {
     return [planSetProfile({ level: 'house', id: null, name: '' }, key, value)];
   }
-  if (setting.kind === 'bool') {
+  if (setting.hub === 'switch') {
     return [
       { domain: 'switch', service: value ? 'turn_on' : 'turn_off', data: { entity_id: [id] } },
     ];
+  }
+  if (setting.hub === 'time') {
+    const time = storedValue(setting, value);
+    return [{ domain: 'time', service: 'set_value', data: { entity_id: [id], time } }];
   }
   return [{ domain: 'number', service: 'set_value', data: { entity_id: [id], value } }];
 }

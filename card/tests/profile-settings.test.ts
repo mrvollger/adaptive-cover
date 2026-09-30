@@ -6,7 +6,6 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
-  HOUSE_SHEET_KEYS,
   PROFILE_SETTINGS,
   SETTINGS_BY_KEY,
   durationMinutes,
@@ -71,11 +70,9 @@ describe('the settings table follows the option spec', () => {
     );
   });
 
-  it('lists every setting a floor or room may store, at the spec levels', () => {
+  it('lists every recurring setting, at the spec levels', () => {
     for (const row of spec) {
-      const narrow = row.levels.has('floor') || row.levels.has('area');
       const mine = SETTINGS_BY_KEY.get(row.key);
-      if (!narrow && !mine) continue;
       expect(mine, `${row.key} is missing from PROFILE_SETTINGS`).toBeTruthy();
       const levels = new Set([...row.levels].filter((l) => l !== 'window'));
       expect(new Set(mine!.levels), row.key).toEqual(levels);
@@ -92,6 +89,10 @@ describe('the settings table follows the option spec', () => {
     const source = read('house_settings.py');
     const switches = /HOUSE_SWITCHES[^=]*=\s*\(([^)]*)\)/.exec(source)![1];
     const numbers = [...source.matchAll(/HouseNumberSpec\((CONF_\w+),/g)].map((m) => m[1]);
+    const times = [
+      .../HOUSE_TIMES[^=]*=\s*\{([^}]*)\}/.exec(source)![1].matchAll(/(CONF_\w+):/g),
+    ].map((m) => m[1]);
+    expect(times).toHaveLength(3);
     const consts = Object.fromEntries(
       [...read('const.py').matchAll(/^(CONF_\w+)\s*=\s*"([^"]+)"/gm)].map((m) => [m[1], m[2]]),
     );
@@ -111,7 +112,18 @@ describe('the settings table follows the option spec', () => {
         .map((s) => s.key)
         .sort(),
     ).toEqual([...hubNumbers].sort());
-    for (const key of HOUSE_SHEET_KEYS) expect(SETTINGS_BY_KEY.get(key)?.hub, key).toBeTruthy();
+    expect(
+      PROFILE_SETTINGS.filter((s) => s.hub === 'time')
+        .map((s) => s.key)
+        .sort(),
+    ).toEqual(times.map((c) => consts[c]).sort());
+  });
+
+  it('a list setting offers the spec’s weather conditions', () => {
+    const block = /WEATHER_CONDITIONS: Final = \(([^)]*)\)/.exec(read('settings/spec.py'))![1];
+    const conditions = [...block.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+    expect(SETTINGS_BY_KEY.get('weather_state')!.options).toEqual(conditions);
+    for (const c of conditions) expect(t(`settings.weather.${c}`), c).not.toMatch(/^settings\./);
   });
 
   it('every recurring key has a label', () => {
@@ -140,8 +152,14 @@ describe('settingsAt', () => {
     expect(keys).toContain('temp_entity');
   });
 
-  it('the house sheet has the everyday settings', () => {
-    expect(settingsAt('house').map((s) => s.key)).toEqual([...HOUSE_SHEET_KEYS]);
+  it('the house sheet has every house setting, rare sections last', () => {
+    const house = settingsAt('house');
+    expect(house).toHaveLength(PROFILE_SETTINGS.length - 1);
+    expect(house.map((s) => s.key)).not.toContain('temp_entity');
+    expect(house.slice(-8).map((s) => s.section)).toEqual(Array(8).fill('sensors'));
+    // climate_mode sits with Climate, after the day-to-day switch.
+    const climate = house.filter((s) => s.section === 'climate').map((s) => s.key);
+    expect(climate.slice(0, 2)).toEqual(['climate_on', 'climate_mode']);
   });
 });
 
@@ -188,6 +206,11 @@ describe('values', () => {
       'Upstairs',
     );
     expect(formatValue(hass, s('privacy_position'), null)).toBe('Not set');
+    expect(formatValue(hass, s('quiet_start'), null)).toBe('None');
+    expect(formatValue(hass, s('weather_state'), ['sunny', 'partlycloudy'])).toBe(
+      'Sunny, Partly cloudy',
+    );
+    expect(formatValue(hass, s('lux_threshold'), 1000)).toBe('1000 lx');
   });
 
   it('threshold ranges follow HA’s unit', () => {

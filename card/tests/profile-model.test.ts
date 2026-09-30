@@ -5,25 +5,27 @@ import { describe, expect, it } from 'vitest';
 
 import { discoverHouse } from '../src/lib/house-model';
 import {
-  fetchStoredProfiles,
-  parseStoredProfiles,
+  parseProfiles,
   planHouseSetting,
   planSetProfile,
+  profilesSupported,
+  readProfiles,
+  readWindowSettings,
   settingRows,
   windowExceptions,
   windowProvenance,
+  windowsToRead,
   type ProfileScope,
   type SettingRow,
   type StoredProfiles,
 } from '../src/lib/profile-model';
+import { settingsAt } from '../src/lib/profile-settings';
 import {
-  HUB_ENTRY,
-  HUB_MODE_SELECT,
   HUB_SETTINGS,
   LIVE_LAYERS,
   houseFixture,
   layeredHouse,
-  type HouseTestHass,
+  type LayeredOptions,
 } from './fixtures/house-hass';
 
 const UP = 'sensor.upstairs_indoor_temperature';
@@ -32,13 +34,13 @@ const MASTER: ProfileScope = { level: 'area', id: 'master_bedroom', name: 'Maste
 const UPSTAIRS: ProfileScope = { level: 'floor', id: 'upstairs', name: 'Upstairs' };
 const HOUSE: ProfileScope = { level: 'house', id: null, name: '' };
 
-const STORED: StoredProfiles = parseStoredProfiles({
-  house: LIVE_LAYERS.house,
+const STORED: StoredProfiles = parseProfiles({
+  house: { values: LIVE_LAYERS.house, temperature_unit: '°F' },
   floors: LIVE_LAYERS.floors,
   areas: LIVE_LAYERS.areas,
 })!;
 
-function setup(opts: { stored?: boolean } = {}) {
+function setup(opts: LayeredOptions = {}) {
   const fx = houseFixture();
   const hass = layeredHouse(fx, undefined, opts);
   const model = discoverHouse(hass, null);
@@ -164,19 +166,38 @@ describe('a floor sheet', () => {
 });
 
 describe('the house sheet', () => {
-  it('has the everyday settings, valued by the house device', () => {
+  it('has every house setting, valued by the house device, else the stored house', () => {
+    const { rows } = setup();
+    const r = rows(HOUSE, STORED);
+    expect(Object.keys(r)).toEqual(settingsAt('house').map((s) => s.key));
+    // House device entities (live), including the times.
+    expect(r.climate_on.value).toBe(true);
+    expect(r.temp_low.value).toBe(72);
+    expect(r.manual_override_duration.value).toBe(120);
+    expect(r.privacy_offset.value).toBe(30);
+    expect(r.end_time.value).toBe('00:00:00');
+    // No quiet hours: the time is unknown and the house stores none.
+    expect(r.quiet_start.value).toBeNull();
+    // Only in the stored house profile (set_profile for the house).
+    expect(r.delta_position.value).toBe(1);
+    expect(r.weather_state.value).toEqual([
+      'sunny',
+      'partlycloudy',
+      'clear',
+      'windy',
+      'windy-variant',
+    ]);
+    expect(r.weather_entity.value).toBe('weather.forecast_home_2');
+    expect(r.max_moves_hour.value).toBeNull();
+    expect(r.temp_low.exceptions).toEqual([]);
+  });
+
+  it('without the stored house, only the device entities and attributes are known', () => {
     const { rows } = setup();
     const r = rows(HOUSE, null);
-    expect(Object.keys(r)).toEqual([
-      'climate_on',
-      'temp_low',
-      'temp_high',
-      'manual_override_duration',
-      'eye_height',
-      'occupied_distance',
-    ]);
-    expect(Object.values(r).map((x) => x.value)).toEqual([true, 72, 75, 120, 1.2, 2]);
-    expect(r.temp_low.exceptions).toEqual([]);
+    expect(r.temp_low.value).toBe(72);
+    expect(r.default_percentage.value).toBe(99);
+    expect(r.delta_position.value).toBeUndefined();
   });
 
   it('shows the floors and rooms that set their own value', () => {
@@ -229,6 +250,28 @@ describe('service calls', () => {
         data: { entity_id: [HUB_SETTINGS.manual_override_duration], value: 90 },
       },
     ]);
+    expect(planHouseSetting(model, 'end_time', '21:30')).toEqual([
+      {
+        domain: 'time',
+        service: 'set_value',
+        data: { entity_id: [HUB_SETTINGS.end_time], time: '21:30:00' },
+      },
+    ]);
+    // No entity, or clearing a value: set_profile for the house.
+    expect(planHouseSetting(model, 'delta_position', 2)).toEqual([
+      {
+        domain: 'adaptive_cover',
+        service: 'set_profile',
+        data: { scope: 'house', delta_position: 2 },
+      },
+    ]);
+    expect(planHouseSetting(model, 'quiet_start', null)).toEqual([
+      {
+        domain: 'adaptive_cover',
+        service: 'set_profile',
+        data: { scope: 'house', quiet_start: null },
+      },
+    ]);
     expect(planHouseSetting({ ...model, hubSettings: {} }, 'eye_height', 1.1)).toEqual([
       {
         domain: 'adaptive_cover',
@@ -239,33 +282,66 @@ describe('service calls', () => {
   });
 });
 
-describe('fetchStoredProfiles', () => {
-  it('reads the house entry’s diagnostics', async () => {
+describe('reading with get_profile', () => {
+  const call = (data: Record<string, unknown>) => ({
+    type: 'call_service',
+    domain: 'adaptive_cover',
+    service: 'get_profile',
+    service_data: data,
+    return_response: true,
+  });
+
+  it('reads every stored profile with one response-only call', async () => {
     const { hass } = setup();
-    const stored = await fetchStoredProfiles(hass, HUB_MODE_SELECT);
-    expect(hass.callWS).toHaveBeenCalledWith({
-      type: 'config/entity_registry/get',
-      entity_id: HUB_MODE_SELECT,
+    expect(await readProfiles(hass)).toEqual({ status: 'ok', stored: STORED });
+    expect(hass.callWS).toHaveBeenCalledWith(call({}));
+  });
+
+  it('a house not lifted yet is not_lifted; no service falls back to provenance', async () => {
+    expect(await readProfiles(setup({ profiles: 'not_lifted' }).hass)).toEqual({
+      status: 'not_lifted',
     });
-    expect(hass.callApi).toHaveBeenCalledWith(
-      'GET',
-      `diagnostics/config_entry/${HUB_ENTRY.entry_id}`,
-    );
-    expect(stored).toEqual(STORED);
+    expect(await readProfiles(setup({ profiles: 'missing' }).hass)).toEqual({
+      status: 'unavailable',
+    });
   });
 
-  it('is null for a non-admin (no request) or when the read fails', async () => {
-    const fx = houseFixture();
-    const viewer = layeredHouse(fx, undefined, { admin: false });
-    expect(await fetchStoredProfiles(viewer, HUB_MODE_SELECT)).toBeNull();
-    expect(viewer.callApi).not.toHaveBeenCalled();
-    const failing: HouseTestHass = layeredHouse(fx, undefined, { stored: false });
-    expect(await fetchStoredProfiles(failing, HUB_MODE_SELECT)).toBeNull();
-    expect(await fetchStoredProfiles(failing, undefined)).toBeNull();
+  it('reads the windows that have their own values for the sheet’s settings', async () => {
+    const { hass, model } = setup();
+    const master = model.windows.filter((w) => w.areaId === 'master_bedroom');
+    const keys = windowsToRead(hass, master, ['sunset_offset', 'privacy_offset']);
+    const names = (ks: string[]) =>
+      ks.map((k) => model.windows.find((w) => w.key === k)!.deviceName).sort();
+    expect(names(keys)).toEqual(['Master south', 'Master trap']);
+    const windows = await readWindowSettings(hass, keys);
+    expect(hass.callWS).toHaveBeenCalledWith(call({ scope: 'window', id: keys[0] }));
+    const trap = model.windows.find((w) => w.deviceName === 'Master trap')!;
+    expect(windows[trap.key]).toMatchObject({ sunset_offset: 15, sunrise_offset: 0 });
+    // Their values show on the exception chips.
+    const r = settingRows(hass, model, MASTER, { ...STORED, windows }, {});
+    const privacy = r.find((x) => x.setting.key === 'privacy_offset')!;
+    expect(privacy.exceptions).toEqual([
+      expect.objectContaining({ name: 'Master south', value: 30, legacy: true }),
+    ]);
+    expect(await readWindowSettings(setup({ profiles: 'missing' }).hass, keys)).toEqual({});
   });
 
-  it('is null before the house is lifted', () => {
-    expect(parseStoredProfiles({ temperature_unit: '°F' })).toBeNull();
-    expect(parseStoredProfiles(null)).toBeNull();
+  it('knows whether the integration stores profiles', () => {
+    const { hass, model } = setup();
+    expect(profilesSupported(hass, model)).toBe(true);
+    const services = (set: boolean) =>
+      ({
+        ...hass,
+        services: { adaptive_cover: set ? { set_profile: {}, hold: {} } : { hold: {} } },
+      }) as unknown as typeof hass;
+    expect(profilesSupported(services(true), model)).toBe(true);
+    expect(profilesSupported(services(false), model)).toBe(false);
+    const old = houseFixture();
+    expect(profilesSupported(old.hass, discoverHouse(old.hass, null))).toBe(false);
+  });
+
+  it('is null for a response without the house', () => {
+    expect(parseProfiles({ scope: 'house' })).toBeNull();
+    expect(parseProfiles(null)).toBeNull();
   });
 });

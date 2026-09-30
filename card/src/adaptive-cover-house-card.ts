@@ -54,16 +54,19 @@ import {
   whyText,
 } from './lib/house-format';
 import {
-  fetchStoredProfiles,
+  profilesSupported,
+  readProfiles,
+  readWindowSettings,
   planHouseSetting,
   planSetProfile,
   settingRows,
   windowExceptions,
   type ProfileOverlay,
   type ProfileScope,
-  type StoredProfiles,
+  type ProfilesRead,
+  windowsToRead,
 } from './lib/profile-model';
-import { HOUSE_SHEET_KEYS } from './lib/profile-settings';
+import { settingsAt } from './lib/profile-settings';
 import type { AdaptiveCoverHouseCardConfig } from './types';
 
 /*
@@ -73,10 +76,11 @@ import type { AdaptiveCoverHouseCardConfig } from './types';
  * column, collapsible rooms).
  *
  * Settings sheets (P6): a room's or floor's menu opens its sheet, and "House
- * settings" opens the house sheet (the house device's everyday entities,
- * with a link to the device for the rest). The sheet body is
- * components/settings-sheet.ts; what it shows and the calls it makes come
- * from lib/profile-model.ts (room and floor: adaptive_cover.set_profile).
+ * settings" opens the house sheet (every house setting: the house device's
+ * entities where it has one, else set_profile for the house). The sheet body
+ * is components/settings-sheet.ts; what it shows (read with
+ * adaptive_cover.get_profile) and the calls it makes come from
+ * lib/profile-model.ts (room and floor: adaptive_cover.set_profile).
  *
  * Discovery and the mode mapping live in lib/house-model.ts and
  * lib/house-actions.ts; this file only renders and dispatches.
@@ -170,8 +174,8 @@ export class AdaptiveCoverHouseCard extends LitElement {
   @state() private _settings: ProfileScope | null = null;
   /** The open room or floor menu (`area:<id>` / `floor:<id>`). */
   @state() private _menu: string | null = null;
-  /** The house entry's stored profiles, when the card could read them. */
-  @state() private _stored: StoredProfiles | null = null;
+  /** The stored profiles (adaptive_cover.get_profile), once read. */
+  @state() private _profiles: ProfilesRead | null = null;
   /** The open sheet's own writes (they win until it closes). */
   @state() private _overlay: ProfileOverlay = {};
   @state() private _saving = false;
@@ -403,9 +407,9 @@ export class AdaptiveCoverHouseCard extends LitElement {
     this._menu = null;
     this._selected = null;
     this._overlay = {};
-    this._stored = null;
+    this._profiles = null;
     this._settings = scope;
-    void this._loadStored();
+    void this._loadProfiles();
   }
 
   private _closeSettings(): void {
@@ -414,18 +418,35 @@ export class AdaptiveCoverHouseCard extends LitElement {
     this._storedToken += 1;
   }
 
-  /** Read the stored profiles (see fetchStoredProfiles); the sheet works
-   *  without them. */
-  private async _loadStored(): Promise<void> {
+  /** Read the stored profiles and, for the open sheet, the resolved
+   *  settings of its windows with their own values (see profile-model). */
+  private async _loadProfiles(): Promise<void> {
     const model = this._house;
-    if (!model) return;
+    const scope = this._settings;
+    if (!model || !scope) return;
     const token = ++this._storedToken;
-    const hubEntity =
-      model.hub.modeSelect ??
-      model.hub.cover ??
-      Object.values(model.hubSettings).find((id): id is string => !!id);
-    const stored = await fetchStoredProfiles(this.hass, hubEntity);
-    if (token === this._storedToken) this._stored = stored;
+    const read = await readProfiles(this.hass);
+    if (token !== this._storedToken) return;
+    this._profiles = read;
+    if (read.status !== 'ok') return;
+    const keys = windowsToRead(
+      this.hass,
+      this._scopeWindows(model, scope),
+      settingsAt(scope.level).map((s) => s.key),
+    );
+    if (keys.length === 0) return;
+    const windows = await readWindowSettings(this.hass, keys);
+    if (token === this._storedToken) {
+      this._profiles = { status: 'ok', stored: { ...read.stored, windows } };
+    }
+  }
+
+  /** The windows a sheet covers (every window for the house). */
+  private _scopeWindows(model: HouseModel, scope: ProfileScope): HouseWindow[] {
+    if (scope.level === 'house') return model.windows;
+    return model.windows.filter(
+      (w) => (scope.level === 'area' ? w.areaId : w.floorId) === scope.id,
+    );
   }
 
   /** Store one setting of the open sheet (null: remove a room or floor value). */
@@ -442,19 +463,22 @@ export class AdaptiveCoverHouseCard extends LitElement {
     this._saving = false;
     if (!ok || this._settings !== scope) return;
     this._overlay = { ...this._overlay, [key]: value };
-    void this._loadStored();
+    void this._loadProfiles();
   }
 
-  /** The house sheet needs the house device's everyday setting entities. */
+  /** The house sheet: the whole house shown, on an integration with
+   *  layered settings. */
   private _houseSheetAvailable(model: HouseModel): boolean {
-    return !this._filtered() && HOUSE_SHEET_KEYS.some((k) => !!model.hubSettings[k]);
+    return !this._filtered() && profilesSupported(this.hass, model);
   }
 
   private _areaScope(room: HouseRoom): ProfileScope | null {
+    if (!this._house || !profilesSupported(this.hass, this._house)) return null;
     return room.id ? { level: 'area', id: room.id, name: room.name } : null;
   }
 
   private _floorScope(floor: HouseFloor): ProfileScope | null {
+    if (!this._house || !profilesSupported(this.hass, this._house)) return null;
     return floor.id ? { level: 'floor', id: floor.id, name: floor.name } : null;
   }
 
@@ -916,7 +940,7 @@ export class AdaptiveCoverHouseCard extends LitElement {
       ${expanded
         ? html`<div class="room-body">
             ${this._roomSegments(r, 'lg')} ${r.all.map((v) => this._renderRow(v, now))}
-            ${r.room.id
+            ${this._areaScope(r.room)
               ? html`<button
                   type="button"
                   class="btn room-settings"
@@ -1008,15 +1032,11 @@ export class AdaptiveCoverHouseCard extends LitElement {
     scope: ProfileScope,
     narrow: boolean,
   ): TemplateResult {
-    const rows = settingRows(this.hass, model, scope, this._stored, this._overlay);
-    const inScope = model.windows.filter((w) =>
-      scope.level === 'area'
-        ? w.areaId === scope.id
-        : scope.level === 'floor'
-          ? w.floorId === scope.id
-          : false,
-    );
-    const windows = windowExceptions(this.hass, inScope);
+    const stored = this._profiles?.status === 'ok' ? this._profiles.stored : null;
+    const locked = this._profiles?.status === 'not_lifted';
+    const rows = settingRows(this.hass, model, scope, stored, this._overlay);
+    const windows =
+      scope.level === 'house' ? [] : windowExceptions(this.hass, this._scopeWindows(model, scope));
     const title = t(`settings.title.${scope.level}`, { name: scope.name });
     const devicePath = model.hubDeviceId
       ? `/config/devices/device/${encodeURIComponent(model.hubDeviceId)}`
@@ -1045,12 +1065,14 @@ export class AdaptiveCoverHouseCard extends LitElement {
           </button>
         </div>
         <p class="muted intro">${t(`settings.intro.${scope.level}`)}</p>
+        ${locked ? html`<p class="notice not-lifted">${t('settings.not_lifted')}</p>` : nothing}
         <acp-settings-sheet
           .hass=${this.hass}
           .scope=${scope}
           .rows=${rows}
           .windows=${windows}
           ?busy=${this._saving}
+          ?locked=${locked}
           @acp-setting-set=${(e: CustomEvent<{ key: string; value: unknown }>) =>
             void this._saveSetting(e.detail.key, e.detail.value)}
           @acp-setting-reset=${(e: CustomEvent<{ key: string }>) =>
@@ -1942,6 +1964,14 @@ export class AdaptiveCoverHouseCard extends LitElement {
     .settings-sheet .intro {
       margin: -8px 0 0;
       line-height: 1.45;
+    }
+    .settings-sheet .notice {
+      margin: 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      line-height: 1.45;
+      background: rgba(255, 166, 0, 0.2);
+      background: color-mix(in srgb, var(--acp-hold) 22%, transparent);
     }
   `;
 }

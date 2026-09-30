@@ -143,12 +143,18 @@ describe('the room sheet', () => {
     expect(sheet.getAttribute('data-level')).toBe('area');
     expect(sheet.getAttribute('data-id')).toBe('office');
     expect(text(sheet.querySelector('.sheet-title'))).toBe('Room settings Office');
-    expect(hass.callApi).toHaveBeenCalled();
+    expect(hass.callWS).toHaveBeenCalledWith({
+      type: 'call_service',
+      domain: 'adaptive_cover',
+      service: 'get_profile',
+      service_data: {},
+      return_response: true,
+    });
 
     const sections = Array.from(body(el).querySelectorAll('.section h3')).map((h) => text(h));
     expect(sections).toEqual([
       'Hand moves',
-      'Comfort',
+      'Climate',
       'Daily schedule',
       'Positions',
       'Glare',
@@ -243,16 +249,23 @@ describe('the room sheet', () => {
     expect(
       Array.from(row(el, 'sunset_offset').querySelectorAll('.exc')).map((c) => text(c)),
     ).toEqual(['Master trap · 15 min after sunset (kept from before)']);
+    // Values the Position sensor does not show come from get_profile (window).
+    expect(
+      Array.from(row(el, 'privacy_offset').querySelectorAll('.exc')).map((c) => text(c)),
+    ).toEqual(['Master south · 30 min (kept from before)']);
+    expect(
+      Array.from(row(el, 'sunrise_offset').querySelectorAll('.exc')).map((c) => text(c)),
+    ).toEqual(['Master trap · At sunrise (kept from before)']);
     await click(el, wins[0]);
     expect($(el, '.settings-sheet')).toBeNull();
     expect(text($(el, '.sheet .sheet-title h2'))).toBe('Door');
   });
 
-  it('without the stored profiles: provenance still says what the room sets', async () => {
-    const viewer = layeredHouse(fx, undefined, { admin: false });
-    const el = await mount(viewer);
+  it('without get_profile: provenance still says what the room sets', async () => {
+    const older = layeredHouse(fx, undefined, { profiles: 'missing' });
+    const el = await mount(older);
     await openRoom(el, 'office');
-    expect(viewer.callApi).not.toHaveBeenCalled();
+    expect($(el, '.settings-sheet .not-lifted')).toBeNull();
     const start = row(el, 'start_time');
     expect(text(start.querySelector('.state'))).toBe('Set for this room');
     expect(start.querySelector<HTMLInputElement>('input')!.value).toBe('');
@@ -262,6 +275,21 @@ describe('the room sheet', () => {
     expect(text(row(el, 'default_percentage').querySelector('.house'))).toBe('House: 99%');
     await type(el, 'start_time', '08:00');
     expect(start.querySelector<HTMLButtonElement>('.save')!.disabled).toBe(false);
+  });
+
+  it('a house without layered settings yet: a notice, and nothing can be stored', async () => {
+    const early = layeredHouse(fx, undefined, { profiles: 'not_lifted' });
+    const el = await mount(early);
+    await openRoom(el, 'office');
+    expect(text($(el, '.settings-sheet .not-lifted'))).toMatch(
+      /^House settings are not available yet/,
+    );
+    const start = row(el, 'start_time');
+    expect(start.querySelector<HTMLButtonElement>('.save')!.disabled).toBe(true);
+    expect(start.querySelector<HTMLButtonElement>('.reset')!.disabled).toBe(true);
+    expect(start.querySelector<HTMLInputElement>('input')!.disabled).toBe(true);
+    const climate = row(el, 'climate_on').querySelector<HTMLButtonElement>('.seg-btn');
+    expect(climate!.disabled).toBe(true);
   });
 
   it('a failed save is a notification and changes nothing', async () => {
@@ -322,25 +350,57 @@ describe('the floor sheet', () => {
 });
 
 describe('the house sheet', () => {
-  it('House settings opens it: the everyday house entities and a link to the device', async () => {
+  const value = (el: CardLike, key: string) => {
+    const r = row(el, key);
+    const input = r.querySelector<HTMLInputElement>('input');
+    if (input) return input.value;
+    return Array.from(r.querySelectorAll('.seg-btn.on, .opt.on')).map((b) => text(b));
+  };
+
+  it('House settings opens it: every house setting, the rare ones folded, and the device link', async () => {
     const el = await mount(hass);
     await click(el, $(el, '.house-bar .settings'));
     const sheet = $(el, '.settings-sheet')!;
     expect(sheet.getAttribute('data-level')).toBe('house');
     expect(text(sheet.querySelector('h2'))).toBe('House settings');
     expect(
-      Array.from(body(el).querySelectorAll<HTMLElement>('.row')).map((r) => [
-        r.dataset.key,
-        r.querySelector('input')?.value ?? r.querySelector('.seg-btn.on')?.textContent?.trim(),
+      Array.from(body(el).querySelectorAll<HTMLElement>('.section')).map((x) => [
+        x.dataset.section,
+        x.tagName.toLowerCase(),
       ]),
     ).toEqual([
-      ['manual_override_duration', '120'],
-      ['climate_on', 'On'],
-      ['temp_low', '72'],
-      ['temp_high', '75'],
-      ['eye_height', '1.2'],
-      ['occupied_distance', '2'],
+      ['hand', 'section'],
+      ['climate', 'section'],
+      ['schedule', 'section'],
+      ['positions', 'section'],
+      ['glare', 'section'],
+      ['privacy', 'section'],
+      ['movement', 'details'],
+      ['sensors', 'details'],
     ]);
+    // The house device's entities, then the stored house profile.
+    expect(value(el, 'manual_override_duration')).toBe('120');
+    expect(value(el, 'climate_on')).toEqual(['On']);
+    expect(value(el, 'temp_low')).toBe('72');
+    expect(value(el, 'end_time')).toBe('00:00');
+    expect(value(el, 'quiet_start')).toBe('');
+    expect(value(el, 'delta_position')).toBe('1');
+    expect(value(el, 'default_percentage')).toBe('99');
+    expect(value(el, 'weather_entity')).toBe('weather.forecast_home_2');
+    expect(value(el, 'weather_state')).toEqual([
+      'Clear',
+      'Partly cloudy',
+      'Sunny',
+      'Windy',
+      'Windy, cloudy',
+    ]);
+    // climate_mode is the setup-level switch, next to Climate control.
+    expect(text(row(el, 'climate_mode').querySelector('.label'))).toBe(
+      'Use climate inputs Setup: whether these windows read the climate inputs at all (a change reloads them)',
+    );
+    // Optional values can be cleared; nothing is reset or inherited here.
+    expect(row(el, 'weather_entity').querySelector('.clear')).toBeTruthy();
+    expect(row(el, 'quiet_start').querySelector('.clear')).toBeNull();
     expect(body(el).querySelector('.reset')).toBeNull();
     expect(body(el).querySelector('.state')).toBeNull();
     expect(sheet.querySelector('.more')!.getAttribute('href')).toBe(
@@ -348,7 +408,7 @@ describe('the house sheet', () => {
     );
   });
 
-  it('edits go to the house device’s switch and numbers', async () => {
+  it('edits go to the house device’s entities, the rest to set_profile for the house', async () => {
     const el = await mount(hass);
     await click(el, $(el, '.house-bar .settings'));
     await click(el, row(el, 'climate_on').querySelector('.seg-btn[data-value="off"]'));
@@ -356,11 +416,33 @@ describe('the house sheet', () => {
     await click(el, row(el, 'temp_low').querySelector('.save'));
     await type(el, 'manual_override_duration', '90');
     await click(el, row(el, 'manual_override_duration').querySelector('.save'));
+    await type(el, 'end_time', '21:30');
+    await click(el, row(el, 'end_time').querySelector('.save'));
+    await type(el, 'quiet_start', '22:00');
+    await click(el, row(el, 'quiet_start').querySelector('.save'));
+    await type(el, 'delta_position', '2');
+    await click(el, row(el, 'delta_position').querySelector('.save'));
+    await click(el, row(el, 'weather_state').querySelector('.opt[data-option="windy-variant"]'));
+    await click(el, row(el, 'weather_state').querySelector('.save'));
+    await click(el, row(el, 'weather_entity').querySelector('.clear'));
     expect(hass.callService.mock.calls).toEqual([
       ['switch', 'turn_off', { entity_id: [HUB_SETTINGS.climate_on] }],
       ['number', 'set_value', { entity_id: [HUB_SETTINGS.temp_low], value: 71 }],
       ['number', 'set_value', { entity_id: [HUB_SETTINGS.manual_override_duration], value: 90 }],
+      ['time', 'set_value', { entity_id: [HUB_SETTINGS.end_time], time: '21:30:00' }],
+      ['time', 'set_value', { entity_id: [HUB_SETTINGS.quiet_start], time: '22:00:00' }],
+      ['adaptive_cover', 'set_profile', { scope: 'house', delta_position: 2 }],
+      [
+        'adaptive_cover',
+        'set_profile',
+        { scope: 'house', weather_state: ['sunny', 'partlycloudy', 'clear', 'windy'] },
+      ],
+      ['adaptive_cover', 'set_profile', { scope: 'house', weather_entity: null }],
     ]);
+    // The sheet shows what it stored.
+    expect(value(el, 'quiet_start')).toBe('22:00');
+    expect(row(el, 'quiet_start').querySelector('.clear')).toBeTruthy();
+    expect(row(el, 'weather_entity').querySelector('.clear')).toBeNull();
   });
 
   it('Save stays off until the value changes', async () => {
@@ -381,6 +463,20 @@ describe('the house sheet', () => {
     await click(el, $(el, '.settings-sheet .more'));
     expect(pushed).toHaveBeenCalledWith(null, '', `/config/devices/device/${HUB_DEVICE}`);
     expect($(el, '.settings-sheet')).toBeNull();
+    pushed.mockRestore();
+  });
+
+  it('an integration without set_profile has no settings menus and keeps the plain link', async () => {
+    const older = {
+      ...hass,
+      services: { adaptive_cover: { hold: {}, change_settings: {} } },
+    } as unknown as HouseTestHass;
+    const el = await mount(older);
+    expect($(el, '.menu-btn')).toBeNull();
+    const pushed = vi.spyOn(history, 'pushState');
+    await click(el, $(el, '.house-bar .settings'));
+    expect($(el, '.settings-sheet')).toBeNull();
+    expect(pushed).toHaveBeenCalledWith(null, '', `/config/devices/device/${HUB_DEVICE}`);
     pushed.mockRestore();
   });
 

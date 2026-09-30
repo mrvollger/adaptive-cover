@@ -128,7 +128,6 @@ const ROLE_DOMAIN: Record<keyof typeof ROLE_SUFFIX, string> = {
 export type HouseTestHass = HomeAssistant & {
   callService: Mock;
   callWS: Mock;
-  callApi: Mock;
   entities: Record<string, Record<string, unknown>>;
   devices: Record<string, Record<string, unknown>>;
   areas: Record<string, Record<string, unknown>>;
@@ -269,10 +268,6 @@ export function houseFixture(opts: FixtureOptions = {}): HouseFixture {
     callWS: vi.fn(async (msg: { type: string }) =>
       msg.type === 'config/entity_registry/list' ? activeRows.map((r) => ({ ...r })) : [],
     ),
-    // No REST reads before v1.20 (see layeredHouse).
-    callApi: vi.fn(async (_method: string, path: string) => {
-      throw new Error(`404: ${path}`);
-    }),
     connection: { subscribeEvents: vi.fn(async () => () => undefined) },
   } as unknown as HouseTestHass;
 
@@ -522,6 +517,9 @@ export const HUB_SETTINGS: Record<string, string> = {
   eye_height: 'number.adaptive_cover_all_eye_height',
   occupied_distance: 'number.adaptive_cover_all_seat_distance_from_window',
   privacy_offset: 'number.adaptive_cover_all_privacy_delay_after_sunset',
+  end_time: 'time.adaptive_cover_all_end_time',
+  quiet_start: 'time.adaptive_cover_all_quiet_hours_start',
+  quiet_end: 'time.adaptive_cover_all_quiet_hours_end',
 };
 
 // What each house number shows (house_settings.py: the thresholds in HA's
@@ -560,22 +558,28 @@ function resolveWindow(title: string): Record<string, [unknown, string]> {
 }
 
 export interface LayeredOptions {
-  /** The diagnostics read of the stored profiles succeeds (default true). */
-  stored?: boolean;
-  /** HA user is an admin (default true). */
-  admin?: boolean;
+  /**
+   * How `adaptive_cover.get_profile` answers: `ok` (default), `not_lifted`
+   * (a validation error: the house has no layered settings yet) or
+   * `missing` (an integration without the service).
+   */
+  profiles?: 'ok' | 'not_lifted' | 'missing';
 }
 
+type WsError = { code: string; message: string };
+const validation = (message: string): WsError => ({ code: 'service_validation_error', message });
+
 /**
- * The v1.20.0 entity surface projected onto the house (default: the P5
+ * The v1.20 entity surface projected onto the house (default: the P5
  * projection of the fixture):
  *
- * - the house device's setting entities (switches and numbers, °F);
+ * - the house device's setting entities (switches, numbers and times, °F;
+ *   no quiet hours: their times are unknown);
  * - each Position sensor's `provenance` ({option: area | floor | window |
  *   legacy}, like `provenance_summary`) and its resolved `default`,
  *   `sunset_default` and `sunset_offset`;
- * - `config/entity_registry/get` and the house entry's diagnostics
- *   (`callApi`), whose `config_options` hold the stored profiles.
+ * - `adaptive_cover.get_profile` over the websocket `call_service` with
+ *   `return_response`, answering like profile_service.py.
  */
 export function layeredHouse(
   fx: HouseFixture,
@@ -601,6 +605,9 @@ export function layeredHouse(
   for (const [key, id] of Object.entries(HUB_SETTINGS)) {
     if (id.startsWith('switch.')) {
       changes[id] = { state: LIVE_LAYERS.house[key] ? 'on' : 'off', attributes: {} };
+    } else if (id.startsWith('time.')) {
+      const value = LIVE_LAYERS.house[key];
+      changes[id] = { state: typeof value === 'string' ? value : 'unknown', attributes: {} };
     } else {
       const [state, unit] = HUB_NUMBER_STATES[key];
       changes[id] = { state, attributes: { unit_of_measurement: unit, mode: 'box' } };
@@ -617,47 +624,71 @@ export function layeredHouse(
       translation_key: key,
     };
   }
-  const hubEntity = new Set(Object.values(HUB_SETTINGS));
-  const baseWS = hass.callWS;
-  const callWS = vi.fn(async (msg: { type: string; entity_id?: string }) => {
-    if (msg.type === 'config/entity_registry/get') {
-      const row = fx.registry.find((r) => r.entity_id === msg.entity_id);
-      if (row) return { ...row };
-      if (msg.entity_id && hubEntity.has(msg.entity_id)) {
-        return { entity_id: msg.entity_id, config_entry_id: HUB_ENTRY.entry_id };
-      }
-      throw new Error('not found');
+
+  const mode = opts.profiles ?? 'ok';
+  const clone = <T>(v: T): T => structuredClone(v);
+  const getProfile = (data: { scope?: string; id?: string }): unknown => {
+    if (mode === 'missing') {
+      throw { code: 'not_found', message: 'Service adaptive_cover.get_profile not found.' };
     }
-    return baseWS(msg);
-  });
-  const stored = opts.stored ?? true;
-  const callApi = vi.fn(async (method: string, path: string) => {
-    if (!stored) throw new Error('403: Forbidden');
-    if (method === 'GET' && path === `diagnostics/config_entry/${HUB_ENTRY.entry_id}`) {
+    if (data.scope === 'window') {
+      const entry = WINDOW_ENTRIES.find(
+        (e) => e.entry_id === data.id || fx.eid(e.title, 'mode') === data.id,
+      );
+      if (!entry) throw validation(`No Adaptive Cover window '${data.id}'`);
+      const resolved = resolveWindow(entry.title);
+      const area = WINDOW_AREA[entry.title];
+      const [values, legacy] = LIVE_LAYERS.windows[entry.title];
       return {
-        home_assistant: {},
-        data: {
-          title: 'Adaptive Cover Configuration',
-          identifier: HUB_ENTRY.entry_id,
-          config_options: {
-            house: structuredClone(LIVE_LAYERS.house),
-            floors: structuredClone(LIVE_LAYERS.floors),
-            areas: structuredClone(LIVE_LAYERS.areas),
-            temperature_unit: '°F',
-          },
-          settings: null,
-          settings_provenance: null,
-        },
+        scope: 'window',
+        id: entry.entry_id,
+        title: entry.title,
+        area_id: area,
+        floor_id: FLOORS_AREAS.areas.find((a) => a.area_id === area)?.floor_id ?? null,
+        overrides: { values: clone(values), legacy: clone(legacy) },
+        settings: Object.fromEntries(Object.entries(resolved).map(([k, [v]]) => [k, clone(v)])),
+        provenance: Object.fromEntries(Object.entries(resolved).map(([k, [, src]]) => [k, src])),
       };
     }
-    throw new Error(`404: ${path}`);
-  });
+    if (mode === 'not_lifted') throw validation('the house has no layered settings yet');
+    const house = { values: clone(LIVE_LAYERS.house), temperature_unit: '°F' };
+    if (!data.scope) {
+      return { house, floors: clone(LIVE_LAYERS.floors), areas: clone(LIVE_LAYERS.areas) };
+    }
+    if (data.scope === 'house') return { scope: 'house', id: null, ...house };
+    const bucket = data.scope === 'floor' ? LIVE_LAYERS.floors : LIVE_LAYERS.areas;
+    const known =
+      data.scope === 'floor'
+        ? FLOORS_AREAS.floors.some((f) => f.floor_id === data.id)
+        : FLOORS_AREAS.areas.some((a) => a.area_id === data.id);
+    if (!known) throw validation(`no ${data.scope} '${data.id}'`);
+    return { scope: data.scope, id: data.id, values: clone(bucket[data.id!] ?? {}) };
+  };
+
+  const baseWS = hass.callWS;
+  const callWS = vi.fn(
+    async (msg: {
+      type: string;
+      domain?: string;
+      service?: string;
+      service_data?: { scope?: string; id?: string };
+      return_response?: boolean;
+    }) => {
+      if (
+        msg.type === 'call_service' &&
+        msg.domain === 'adaptive_cover' &&
+        msg.service === 'get_profile'
+      ) {
+        if (!msg.return_response) throw validation('get_profile only returns a response');
+        return { context: { id: 'ctx' }, response: getProfile(msg.service_data ?? {}) };
+      }
+      return baseWS(msg);
+    },
+  );
   return {
     ...out,
     entities,
     callWS,
-    callApi,
-    user: { id: 'u1', name: 'Owner', is_admin: opts.admin ?? true },
     config: { ...out.config, unit_system: { temperature: '°F', length: 'mi' } },
   } as unknown as HouseTestHass;
 }

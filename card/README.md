@@ -44,7 +44,7 @@ Discovery never uses the registry's `config_entry_id` to find a window, because 
 
 The dialog's settings button (the tune icon, "Window settings") opens the integration page with that window's config entry highlighted; its **Configure** button opens the window's options.
 
-All cover actions use standard Home Assistant services (`cover.set_cover_position`, `cover.stop_cover`, `cover.set_cover_tilt_position`, `switch.turn_on/off`, `button.press`, `select.select_option`, `number.set_value`). The house card and the Mode chips also call the integration's `adaptive_cover.hold` and `adaptive_cover.set_profile`. The cards make zero third-party network calls.
+All cover actions use standard Home Assistant services (`cover.set_cover_position`, `cover.stop_cover`, `cover.set_cover_tilt_position`, `switch.turn_on/off`, `button.press`, `select.select_option`, `number.set_value`, `time.set_value`). The house card and the Mode chips also call the integration's `adaptive_cover.hold`, `adaptive_cover.set_profile` and `adaptive_cover.get_profile`. The cards make zero third-party network calls.
 
 ### Known limitations
 
@@ -146,10 +146,10 @@ House controls use the "Adaptive Cover All" device: Auto / Hold / Off → its se
 **Settings sheets** (integration 1.20+). A room card's and a floor header's **⋮** menu opens that room's or floor's settings; **House settings** opens the house sheet. Each row shows whether the room or floor sets its own value or uses the floor's / house's, the house value, an editor, and the rooms, floors or windows that set their own value.
 
 - A room or floor lists every setting it may hold (the integration's option spec: a floor holds the heating and cooling thresholds and the indoor temperature sensor; a room also holds climate, hand-move handling, the daily schedule, the default and evening positions, eye height, seat distance and privacy). **Set for this room/floor** calls `adaptive_cover.set_profile` with `scope: area` / `floor`, the id and the one setting; **Reset to house** sends it as `null`.
-- The house sheet edits the house device's everyday entities (Climate, heating and cooling thresholds, override duration, eye height, seat distance) with `switch.turn_on/off` and `number.set_value`; **More house settings** opens the house device.
+- The house sheet lists every house setting (movement limits and weather/light sensors folded). A setting with an entity on the house device goes through it (`switch.turn_on/off`, `number.set_value`, `time.set_value` for the end time and quiet hours); every other one through `adaptive_cover.set_profile` with `scope: house`. Optional values (sensors, quiet hours, limits) have **Clear**. **More house settings** opens the house device.
 - A room or floor sheet also lists the windows with their own values (from the Position sensor's `provenance` attribute); picking one opens its window sheet.
 
-What a room or floor stores comes from the windows' `provenance` (a window whose value comes from `area` means the room sets it) and, for the default position, evening position and sunset offset, from the Position sensor's attributes. For an admin the card also reads the exact stored values from the house entry's diagnostics; without them a row can say "Set for this room" without the value.
+The stored values come from `adaptive_cover.get_profile` (response only, any user): one call for the house, every floor and every room, plus one `scope: window` call per window that sets its own value for a setting on the sheet. Before the house has layered settings the sheet says so and stores nothing. With an integration that has `set_profile` but no `get_profile`, the card reads the windows' `provenance` (a window whose value comes from `area` means the room sets it) and the Position sensor's `default`, `sunset_default` and `sunset_offset`; a row can then say "Set for this room" without the value. Without `set_profile` there are no settings menus.
 
 ### Mode chips on a tile card
 

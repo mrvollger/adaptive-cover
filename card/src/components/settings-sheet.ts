@@ -5,10 +5,12 @@ import type { HomeAssistant } from 'custom-card-helpers';
 import { t } from '../lib/i18n';
 import type { ProfileScope, SettingRow, WindowExceptions } from '../lib/profile-model';
 import {
+  FOLDED_SECTIONS,
   SECTIONS,
   formatValue,
   normalizeValue,
   numberShape,
+  optionLabel,
   sameValue,
   settingHint,
   settingLabel,
@@ -21,10 +23,13 @@ import {
  * whether this level sets its own value or uses a wider one, the house
  * value, an editor, and the narrower levels that set their own value.
  *
+ * The house sheet folds the rarely changed sections (movement limits,
+ * weather and light sensors) and offers Clear for optional values.
+ *
  * It only reports what the viewer does:
  *
  * - `acp-setting-set` {key, value}: store `value` (the card form: durations
- *   in minutes, times "HH:MM:SS") at this level;
+ *   in minutes, times "HH:MM:SS"; null clears a house value) at this level;
  * - `acp-setting-reset` {key}: remove this level's value (floor and room);
  * - `acp-open-window` {key}: the viewer picked a window exception.
  */
@@ -40,6 +45,8 @@ export class SettingsSheet extends LitElement {
   @property({ attribute: false }) public windows: WindowExceptions[] = [];
   /** A save is running: the editors wait. */
   @property({ type: Boolean }) public busy = false;
+  /** Nothing can be stored (the house has no layered settings yet). */
+  @property({ type: Boolean }) public locked = false;
 
   /** Typed but not saved values, by setting key. */
   @state() private _drafts: Record<string, string> = {};
@@ -64,6 +71,11 @@ export class SettingsSheet extends LitElement {
     return t(`settings.level.${this.scope.level}`);
   }
 
+  /** The editors wait (a save is running) or cannot store anything. */
+  private get _off(): boolean {
+    return this.busy || this.locked;
+  }
+
   /** The value in effect at this level (own, else inherited). */
   private _effective(row: SettingRow): unknown {
     if (this.scope.level === 'house' || row.own) return row.value;
@@ -76,12 +88,16 @@ export class SettingsSheet extends LitElement {
       rows: this.rows.filter((r) => r.setting.section === section),
     })).filter((s) => s.rows.length > 0);
     return html`${this.windows.length > 0 ? this._renderWindows() : nothing}
-    ${sections.map(
-      (s) =>
-        html`<section class="section" data-section=${s.section}>
-          <h3 class="eyebrow">${t(`settings.section.${s.section}`)}</h3>
-          ${s.rows.map((r) => this._renderRow(r))}
-        </section>`,
+    ${sections.map((s) =>
+      FOLDED_SECTIONS.has(s.section)
+        ? html`<details class="section folded" data-section=${s.section}>
+            <summary class="eyebrow">${t(`settings.section.${s.section}`)}</summary>
+            ${s.rows.map((r) => this._renderRow(r))}
+          </details>`
+        : html`<section class="section" data-section=${s.section}>
+            <h3 class="eyebrow">${t(`settings.section.${s.section}`)}</h3>
+            ${s.rows.map((r) => this._renderRow(r))}
+          </section>`,
     )}`;
   }
 
@@ -156,6 +172,12 @@ export class SettingsSheet extends LitElement {
     const s = row.setting;
     const hint = settingHint(s.key);
     const canReset = this.scope.level !== 'house' && row.own === true;
+    // The house may store "none" for an optional value (an entity, quiet hours).
+    const canClear =
+      this.scope.level === 'house' &&
+      !!s.clearable &&
+      row.value !== null &&
+      row.value !== undefined;
     const resetLabel =
       row.inherited?.level === 'floor'
         ? t('settings.reset_floor', { floor: row.inherited.name ?? '' })
@@ -175,10 +197,20 @@ export class SettingsSheet extends LitElement {
           ? html`<button
               type="button"
               class="btn reset"
-              ?disabled=${this.busy}
+              ?disabled=${this._off}
               @click=${() => this._emit('acp-setting-reset', { key: s.key })}
             >
               ${resetLabel}
+            </button>`
+          : nothing}
+        ${canClear
+          ? html`<button
+              type="button"
+              class="btn clear"
+              ?disabled=${this._off}
+              @click=${() => this._set(s.key, null)}
+            >
+              ${t('settings.clear')}
             </button>`
           : nothing}
       </div>
@@ -213,7 +245,7 @@ export class SettingsSheet extends LitElement {
             class="seg-btn ${pressed ? 'on' : ''}"
             data-value=${v}
             aria-pressed=${pressed ? 'true' : 'false'}
-            ?disabled=${this.busy}
+            ?disabled=${this._off}
             @click=${() => {
               const value = v === 'on';
               // Pressing the value in effect stores it here only when this
@@ -227,6 +259,7 @@ export class SettingsSheet extends LitElement {
         })}
       </div>`;
     }
+    if (s.kind === 'list') return this._renderList(row, effective);
     const draft = this._drafts[s.key];
     const shown =
       draft ?? (effective === undefined || effective === null ? '' : this._inputText(s, effective));
@@ -234,9 +267,9 @@ export class SettingsSheet extends LitElement {
     const valid = parsed !== undefined && parsed !== null;
     const unchanged =
       valid && (this.scope.level === 'house' || row.own) && sameValue(parsed, row.value);
-    const canSave = !this.busy && valid && !unchanged;
+    const canSave = !this._off && valid && !unchanged;
     // A room or floor that uses a wider value can store the shown value as is.
-    const pin = !this.busy && draft === undefined && this.scope.level !== 'house' && !row.own;
+    const pin = !this._off && draft === undefined && this.scope.level !== 'house' && !row.own;
     const save = () => {
       if (canSave) this._set(s.key, parsed);
       else if (pin && effective !== undefined && effective !== null) this._set(s.key, effective);
@@ -255,7 +288,7 @@ export class SettingsSheet extends LitElement {
         class="input"
         aria-label=${settingLabel(s.key)}
         .value=${shown}
-        ?disabled=${this.busy}
+        ?disabled=${this._off}
         @input=${onInput}
         @keydown=${onKey}
       />`;
@@ -268,7 +301,7 @@ export class SettingsSheet extends LitElement {
           aria-label=${settingLabel(s.key)}
           placeholder=${(s.domains ?? []).map((d) => `${d}.…`).join(' / ')}
           .value=${shown}
-          ?disabled=${this.busy}
+          ?disabled=${this._off}
           @input=${onInput}
           @keydown=${onKey}
         />
@@ -286,7 +319,7 @@ export class SettingsSheet extends LitElement {
           max=${shape.max ?? nothing}
           step=${shape.step ?? 'any'}
           .value=${shown}
-          ?disabled=${this.busy}
+          ?disabled=${this._off}
           @input=${onInput}
           @keydown=${onKey}
         />
@@ -300,6 +333,53 @@ export class SettingsSheet extends LitElement {
     return html`${input}
       <button type="button" class="btn save" ?disabled=${!saveEnabled} @click=${save}>
         ${saveLabel}
+      </button>`;
+  }
+
+  /** A `list` setting: one toggle per option, then Save. */
+  private _renderList(row: SettingRow, effective: unknown): TemplateResult {
+    const s = row.setting;
+    const draft = this._drafts[s.key];
+    const current: string[] =
+      draft !== undefined
+        ? draft.split('|').filter(Boolean)
+        : Array.isArray(effective)
+          ? effective.filter((x): x is string => typeof x === 'string')
+          : [];
+    const changed = draft !== undefined && !sameValue(current, row.value);
+    const pin =
+      draft === undefined && this.scope.level !== 'house' && !row.own && current.length > 0;
+    const saveEnabled = !this._off && (changed || pin);
+    const toggle = (option: string) => {
+      const next = current.includes(option)
+        ? current.filter((x) => x !== option)
+        : (s.options ?? []).filter((o) => o === option || current.includes(o));
+      this._drafts = { ...this._drafts, [s.key]: next.join('|') };
+    };
+    return html`<div class="options" role="group" aria-label=${settingLabel(s.key)}>
+        ${(s.options ?? []).map((option) => {
+          const on = current.includes(option);
+          return html`<button
+            type="button"
+            class="opt ${on ? 'on' : ''}"
+            data-option=${option}
+            aria-pressed=${on ? 'true' : 'false'}
+            ?disabled=${this._off}
+            @click=${() => toggle(option)}
+          >
+            ${optionLabel(option)}
+          </button>`;
+        })}
+      </div>
+      <button
+        type="button"
+        class="btn save"
+        ?disabled=${!saveEnabled}
+        @click=${() => this._set(s.key, current)}
+      >
+        ${this.scope.level === 'house'
+          ? t('settings.save')
+          : t('settings.save_here', { level: this._levelWord() })}
       </button>`;
   }
 
@@ -481,6 +561,32 @@ export class SettingsSheet extends LitElement {
     .seg-btn.on {
       background: var(--acp-auto, var(--primary-color));
       color: var(--acp-on-auto, #fff);
+    }
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .opt {
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--acp-line, var(--divider-color));
+      border-radius: 999px;
+      background: transparent;
+      color: var(--primary-text-color);
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .opt.on {
+      background: var(--acp-auto, var(--primary-color));
+      border-color: var(--acp-auto, var(--primary-color));
+      color: var(--acp-on-auto, #fff);
+    }
+    details.folded > summary {
+      cursor: pointer;
+      padding: 6px 0;
     }
     .exceptions {
       display: flex;

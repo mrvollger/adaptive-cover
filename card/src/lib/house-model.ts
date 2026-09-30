@@ -92,6 +92,9 @@ const HUB_SETTING_KEYS: Record<string, string> = {
   'number:eye_height': 'eye_height',
   'number:occupied_distance': 'occupied_distance',
   'number:privacy_offset': 'privacy_offset',
+  'time:end_time': 'end_time',
+  'time:quiet_start': 'quiet_start',
+  'time:quiet_end': 'quiet_end',
 };
 
 /** (domain, translation_key) of the house device's roles. HUB_SURFACE. */
