@@ -67,6 +67,7 @@ LAYERS = "custom_components/adaptive_cover/layers.py"
 HOUSE_SETTINGS = "custom_components/adaptive_cover/house_settings.py"
 CONSOLIDATE = "custom_components/adaptive_cover/consolidate.py"
 HOUSE = "custom_components/adaptive_cover/house.py"
+SEASON = "custom_components/adaptive_cover/engine/season.py"
 
 
 @dataclass
@@ -598,13 +599,14 @@ MUTATIONS: list[Mutation] = [
     Mutation(
         "M34",
         "season_boundary_low",
-        CALC,
-        "ClimateCoverData.is_summer",
+        SEASON,
+        "decide_season",
         "summer test temp > temp_high -> temp > temp_low",
-        "            is_it = self.get_current_temperature > self.temp_high and self.outside_high",
-        "            is_it = self.get_current_temperature > self.temp_low and self.outside_high",
+        "        and temperature > inputs.temp_high - _margin(hysteresis, was_summer)\n",
+        "        and temperature > inputs.temp_low - _margin(hysteresis, was_summer)\n",
         deviation="roadmap filed this under engine/evaluate.py; the season "
-        "threshold comparison actually lives in calculation.ClimateCoverData.",
+        "threshold comparison lived in calculation.ClimateCoverData until the "
+        "temp_hysteresis option moved it to engine/season.decide_season.",
     ),
     # ---- group F: output transforms & config ---------------------------
     Mutation(
@@ -996,6 +998,28 @@ MUTATIONS: list[Mutation] = [
         "window entry (plan M50)",
         "    if moved is None and legacy is not None:\n",
         "    if False:\n",
+    ),
+    # ---- group L: the season's hysteresis (temp_hysteresis; M110+) ---------
+    Mutation(
+        "M110",
+        "season_hysteresis_wrong_direction",
+        SEASON,
+        "_margin",
+        "the season's hysteresis is applied in the wrong direction: a season "
+        "is left h before its threshold and entered h before it (it flips "
+        "sooner, not later)",
+        "    return hysteresis if was_in else -hysteresis\n",
+        "    return -hysteresis if was_in else hysteresis\n",
+    ),
+    Mutation(
+        "M111",
+        "season_previous_ignored",
+        COORD,
+        "AdaptiveDataUpdateCoordinator._climate_data",
+        "the previous season is ignored: every climate decision uses the plain "
+        "threshold rule, whatever the hysteresis",
+        "            previous_season=self._season,\n",
+        "            previous_season=None,\n",
     ),
 ]
 

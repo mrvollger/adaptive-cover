@@ -39,7 +39,8 @@ custom_components/adaptive_cover/
 │   ├── models.py            # Typed inputs/outputs (CoverConfig, SunSnapshot, Decision, ...)
 │   ├── geometry.py          # Gamma/FOV/elevation, per-cover-type %, overhang, glare-safe height
 │   ├── numeric.py           # clip/interp: scalar stand-ins for np.clip/np.interp
-│   └── evaluate.py          # evaluate(config, sun, ctx, climate=None) -> Decision
+│   ├── evaluate.py          # evaluate(config, sun, ctx, climate=None) -> Decision
+│   └── season.py            # decide_season(inputs, previous) -> Season: thresholds + hysteresis
 ├── runtime/                 # Runtime building blocks (P2: the clock; P4: the coordinator split; pyright strict)
 │   ├── clock.py             # Clock protocol + HassClock: the only module that reads "now"
 │   ├── shade_config.py      # ShadeConfig (typed options incl. CoverGeometry/ClimateOptions, one fallback per key: ABSENT), ControlState
@@ -263,7 +264,12 @@ Two dimensions: **presence** (home/away) and **season** (winter/summer/intermedi
 | Away | Summer | Close fully (block heat gain) |
 | Away | Winter | Open fully (passive heating) |
 
-Season is determined by comparing current temperature against configurable low/high thresholds.
+Season is determined by comparing current temperature against configurable low/high thresholds
+(`engine/season.py`). The `temp_hysteresis` setting (house, area override; HA's temperature
+unit, default 0 = off) makes each season sticky: winter lasts until the temperature reaches
+low + h, summer until it falls to high − h, and the intermediate band is left only h past a
+threshold. The previous season is an input: each window's coordinator keeps the last one in
+memory only, so the first decision after a restart or reload uses the plain rule.
 
 ## Entity Inventory (per config entry)
 
@@ -300,7 +306,7 @@ if it has none.
 | sensor | Start sun, End sun, Next change, Last change | diagnostic, disabled by default | Solar times and the next/last change |
 | switch | Automatic control, Manual override detection, Climate mode, Outside temperature, Lux, Irradiance | config, hidden (enabled) | Aliases until P8: Automatic control writes/mirrors the Mode; the others still set the window's ControlState (house settings `manual_detection`, `climate_on`, `use_*` in the stored layers) |
 | hub switch | Climate (`climate_on`), Manual-move detection, Use outside temperature / lux / irradiance | primary (Climate), config | The house's settings (P5 flip); a change reaches every window without a reload |
-| hub number | Heating / cooling threshold, manual override duration (min), eye height, seat distance, privacy delay | config | The house's settings (P5 flip); the window numbers are gone (rows removed at setup) |
+| hub number | Heating / cooling threshold, threshold hysteresis, manual override duration (min), eye height, seat distance, privacy delay | config | The house's settings (P5 flip); the window numbers are gone (rows removed at setup) |
 | hub time | End time, quiet hours start, quiet hours end | config | The house's settings (P5 flip) |
 
 ## Manual Override Detection
@@ -495,6 +501,9 @@ scalar `math` (no numpy) and pyright-strict with zero errors
   profile angle, overhang shadow line (`sunlit_top`), glare-safe height
 - `evaluate.py` — `evaluate(config, sun, ctx, climate=None) -> Decision`;
   privacy runs first, then climate/basic strategy branches
+- `season.py` — `decide_season(SeasonInputs, previous) -> Season`: the
+  winter/summer thresholds with the `temp_hysteresis` margin; the previous
+  season comes in and the new one goes out (the coordinator keeps it)
 
 Key domain rule (sunlit-band asymmetry): position = f(sunlit_band, intent).
 ADMIT_NO_GLARE cares about the band's top vs eye height; BLOCK cares whether

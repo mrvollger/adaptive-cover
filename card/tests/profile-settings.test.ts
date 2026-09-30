@@ -142,7 +142,7 @@ describe('settingsAt', () => {
 
   it('a room sheet has every room setting, grouped by section', () => {
     const keys = settingsAt('area').map((s) => s.key);
-    expect(keys).toHaveLength(23);
+    expect(keys).toHaveLength(24);
     expect(keys.slice(0, 3)).toEqual([
       'manual_override_duration',
       'manual_override_reset',
@@ -216,5 +216,7 @@ describe('values', () => {
   it('threshold ranges follow HA’s unit', () => {
     expect(temperatureShape('temp_low', '°F')).toEqual({ min: 40, max: 90, step: 0.5 });
     expect(temperatureShape('temp_high', '°C')).toEqual({ min: 10, max: 40, step: 0.5 });
+    expect(temperatureShape('temp_hysteresis', '°F')).toEqual({ min: 0, max: 5, step: 0.1 });
+    expect(temperatureShape('temp_hysteresis', '°C')).toEqual({ min: 0, max: 3, step: 0.5 });
   });
 });

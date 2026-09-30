@@ -1149,3 +1149,60 @@ The example below is inside an HTML comment. The checker ignores it.
     Resumable at every step; the house is 2.x before the first move.
   - Goldens, truth table and the house replay unchanged; the replay also
     runs byte-identical through a consolidated house.
+
+## L0032 · 2026-09-29 · Season hysteresis: temp_hysteresis (C3, C6, C7)
+- **Removed:** none
+- **Renamed:** none
+- **Replacements:** none; new pins `tests/engine/test_season.py::*` (the
+  sticky rule on both thresholds in both directions, the band edges, a jump
+  across the band, the outside condition, missing thresholds, a missing
+  reading leaving no memory, and hysteresis 0 deciding exactly as the plain
+  rule for every previous season), `tests/simulation/test_season_hysteresis.py::*`
+  (a °F house whose indoor reading wobbles 71.9 <-> 72.1 °F flips the
+  season and the shade with every reading today and holds with 1 °F set on
+  the hub, without a reload; a °C house with 0.5 °C; the first decision
+  after a restart uses the plain rule) and
+  `tests/test_units_and_defaults.py::test_threshold_hysteresis_is_unit_aware_everywhere[*]`
+  (0-3 °C step 0.5 / 0-5 °F step 0.1, default 0, on the setup form, the
+  options form, the hub number, change_settings and set_profile).
+  Behavior-tier test bodies changed without changing their ids:
+  `tests/test_entity_surface_v2.py::test_live_house_upgrade` (the hub gains
+  15 house-setting rows: 5 switches, 7 numbers, 3 times),
+  `tests/test_migration_1_3.py::test_migration_only_adds_keys[*]` (1.3 also
+  writes the new option's runtime fallback, 0) and
+  `tests/settings/test_house_lift.py::test_house_profile` (the lifted house
+  stores `temp_hysteresis: 0`); implementation tier:
+  `tests/test_shadow_settings.py::test_live_house_lifts_into_house_floor_and_area_profiles`
+  (the same) and `tests/settings/test_spec.py` (the plan table row).
+  `tests/contract/spec_parity.json` regenerated: the new option on the
+  setup form's climate exceptions, the options form's climate section,
+  change_settings / add_entry (0-3 °C, 0-5 °F) and the house numbers.
+- **Mutations re-targeted:** M34 re-anchored (description unchanged): the
+  season comparison moved from `calculation.ClimateCoverData.is_summer`
+  to `engine/season.py` `decide_season`. Added M110 (`engine/season.py`
+  `_margin`: the hysteresis is applied in the wrong direction) and M111
+  (`coordinator.py` `_climate_data`: the previous season is ignored, every
+  decision uses the plain rule). `--mutations M34,M110,M111 --jobs 3`: 3/3
+  killed. The other patches are regenerated for line offsets only.
+- **Contract change:** C3 (a new spec row on every generated surface), C6
+  (a new recurring setting: house, with an area override) and C7 (a new
+  house number on the hub)
+- **Reason:** owner request. With the indoor temperature hovering at a
+  threshold (72 °F heating in the house) the season flipped with every
+  reading and the shades followed.
+  - `temp_hysteresis` (HA's temperature unit; default 0 = off): once
+    winter, the season stays winter until the temperature reaches low + h;
+    once summer, until it falls to high - h; the intermediate band is left
+    only h past a threshold (below low - h, above high + h). The rule is
+    pure (`engine/season.decide_season(inputs, previous) -> Season`): the
+    previous season is an input and the new one the output. Each window's
+    coordinator keeps the last season in memory only: after a restart or
+    reload, and after a decision without a temperature reading, the first
+    decision uses the plain rule (not restored, by design).
+  - The adapter (`ClimateCoverData.season`) decides the season once per
+    refresh, so the position, the reason, the Control method and the
+    forecast agree on it.
+  - Hysteresis 0 decides exactly as before whatever the previous season:
+    goldens, truth table and house replay unchanged.
+  - Card: the house and room sheets list the setting (the house number,
+    unit-aware range); bundle rebuilt.

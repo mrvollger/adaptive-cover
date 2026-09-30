@@ -110,6 +110,7 @@ HUB_SURFACE: dict[tuple[str, str], SurfaceSpec] = {
     ("switch", "use_irradiance"): SurfaceSpec("use_irradiance", _CONFIG),
     ("number", "temp_low"): SurfaceSpec("temp_low", _CONFIG),
     ("number", "temp_high"): SurfaceSpec("temp_high", _CONFIG),
+    ("number", "temp_hysteresis"): SurfaceSpec("temp_hysteresis", _CONFIG),
     ("number", "manual_override_duration"): SurfaceSpec(
         "manual_override_duration", _CONFIG
     ),

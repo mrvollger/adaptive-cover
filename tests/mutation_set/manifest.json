@@ -292,11 +292,11 @@
  },
  {
   "id": "M34",
-  "file": "custom_components/adaptive_cover/calculation.py",
-  "function": "ClimateCoverData.is_summer",
+  "file": "custom_components/adaptive_cover/engine/season.py",
+  "function": "decide_season",
   "description": "summer test temp > temp_high -> temp > temp_low",
   "patch": "M34_season_boundary_low.patch",
-  "deviation": "roadmap filed this under engine/evaluate.py; the season threshold comparison actually lives in calculation.ClimateCoverData."
+  "deviation": "roadmap filed this under engine/evaluate.py; the season threshold comparison lived in calculation.ClimateCoverData until the temp_hysteresis option moved it to engine/season.decide_season."
  },
  {
   "id": "M35",
@@ -546,5 +546,19 @@
   "function": "async_reparent_window",
   "description": "consolidation moves a window's entities but leaves its device on the window entry (plan M50)",
   "patch": "M103_consolidation_leaves_the_device_unmoved.patch"
+ },
+ {
+  "id": "M110",
+  "file": "custom_components/adaptive_cover/engine/season.py",
+  "function": "_margin",
+  "description": "the season's hysteresis is applied in the wrong direction: a season is left h before its threshold and entered h before it (it flips sooner, not later)",
+  "patch": "M110_season_hysteresis_wrong_direction.patch"
+ },
+ {
+  "id": "M111",
+  "file": "custom_components/adaptive_cover/coordinator.py",
+  "function": "AdaptiveDataUpdateCoordinator._climate_data",
+  "description": "the previous season is ignored: every climate decision uses the plain threshold rule, whatever the hysteresis",
+  "patch": "M111_season_previous_ignored.patch"
  }
 ]
