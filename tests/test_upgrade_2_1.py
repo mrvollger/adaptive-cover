@@ -4,7 +4,9 @@ From the live house as v2.0.x consolidated it (tests/fixtures/
 consolidated_v2_0: the house at 2.1 with its 15 window subentries stored
 verbatim, the hidden switch aliases, the hub's leftover options, one
 window held and one with an edit made after the P5 flip), the first start
-on v2.1 migrates the house to 3.1:
+on v2.1 migrates the house to 3.1, and on to 3.2 (one Climate switch:
+``climate_mode`` leaves the settings; every live window had it on, so
+none gets ``ignore_climate``):
 
 - nothing a person sees changes: every kept entity's registry row (entity
   id, unique_id, name, area, device, visibility, category, subentry),
@@ -176,6 +178,22 @@ def _jsonable(value: Any) -> Any:
     return json.loads(json.dumps(value))
 
 
+def _as_3_2(settings: dict[str, Any]) -> dict[str, Any]:
+    """v2.0's resolved settings as 3.2 shows them: one Climate switch.
+
+    ``climate_mode`` is no setting; every live window had it on, so each
+    one reads ``ignore_climate`` False and acts on what it did.
+    """
+    assert settings["climate_mode"] is True
+    migrated = {k: v for k, v in settings.items() if k != "climate_mode"}
+    return {**migrated, "ignore_climate": False}
+
+
+def _house_3_2(values: dict[str, Any]) -> dict[str, Any]:
+    """v2.0's house profile without ``climate_mode`` (migration 3.2)."""
+    return {k: v for k, v in values.items() if k != "climate_mode"}
+
+
 # ------------------------------------------------------------ the upgrade
 
 
@@ -195,12 +213,11 @@ async def test_consolidated_live_house_upgrades_with_nothing_a_person_sees_chang
     await _start(hass, house)
 
     assert house.state is ConfigEntryState.LOADED
-    assert (house.version, house.minor_version) == (3, 1)
-    # The house options keep only the layers.
+    assert (house.version, house.minor_version) == (3, 2)
+    # The house options keep only the layers (without climate_mode, 3.2).
     assert set(house.options) == {"house", "floors", "areas", "temperature_unit"}
-    assert (
-        house.options["house"]
-        == fixture_json("house.json")["house"]["options"]["house"]
+    assert house.options["house"] == _house_3_2(
+        fixture_json("house.json")["house"]["options"]["house"]
     )
     # Each window subentry stores only what it uses.
     assert len(house.subentries) == WINDOW_COUNT
@@ -229,9 +246,9 @@ async def test_consolidated_live_house_upgrades_with_nothing_a_person_sees_chang
         handle = WindowHandle(hass, was["cover"])
         assert handle.window_key == key
         assert handle.available, was["title"]
-        assert _jsonable(await window_settings(hass, key)) == was["settings"], was[
-            "title"
-        ]
+        assert _jsonable(await window_settings(hass, key)) == _as_3_2(
+            was["settings"]
+        ), was["title"]
         assert handle.attributes.get("provenance") == was["provenance"]
         if key == expected["held"]:
             assert handle.mode == "hold"
@@ -275,10 +292,10 @@ async def test_a_migration_that_stopped_part_way_finishes(hass):
             house, subentry, data=record.as_data()
         )
     await _start(hass, house)
-    assert (house.version, house.minor_version) == (3, 1)
+    assert (house.version, house.minor_version) == (3, 2)
     expected = _expected()
     for key, was in expected["windows"].items():
-        assert _jsonable(await window_settings(hass, key)) == was["settings"]
+        assert _jsonable(await window_settings(hass, key)) == _as_3_2(was["settings"])
 
 
 # ------------------------------------------------------------ the nag

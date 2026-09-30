@@ -245,6 +245,14 @@ percentage = slat_angle / 90 * 100  # or /180 for bidirectional
 
 ## Climate Mode Logic
 
+When it runs (house 3.2, one Climate switch): `climate_on` (house, area
+override) is on, the window does not opt out (`ignore_climate`, a one-time
+window setting) and a temperature source resolves for it (`temp_entity`,
+`outside_temp` or `weather_entity`): `runtime/shade_config.climate_capable`.
+There is no `climate_mode` option any more; migration 3.1 -> 3.2
+(`upgrade.py`) turns a window whose `climate_mode` resolved to False into
+`ignore_climate: True`.
+
 Two dimensions: **presence** (home/away) and **season** (winter/summer/intermediate).
 
 | Presence | Season | Action |

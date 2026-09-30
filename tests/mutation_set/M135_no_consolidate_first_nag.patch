@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/upgrade.py b/custom_components/adaptive_cover/upgrade.py
 --- a/custom_components/adaptive_cover/upgrade.py
 +++ b/custom_components/adaptive_cover/upgrade.py
-@@ -105,7 +105,7 @@
+@@ -133,7 +133,7 @@
  def async_check_consolidate_issue(hass: HomeAssistant) -> bool:
      """Raise (or clear) the ``consolidate_first`` issue; return whether it is up."""
      windows = needs_consolidation(hass)

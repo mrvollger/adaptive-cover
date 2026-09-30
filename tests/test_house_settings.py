@@ -20,7 +20,6 @@ from homeassistant.util.unit_system import METRIC_SYSTEM, US_CUSTOMARY_SYSTEM
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.adaptive_cover.const import (
-    CONF_CLIMATE_MODE,
     CONF_CLIMATE_ON,
     CONF_DISTANCE,
     CONF_ENTITIES,
@@ -63,7 +62,6 @@ def _window(cover: str, toggles=None, **extra) -> Window:
             CONF_HEIGHT_WIN: 2.1,
             CONF_DISTANCE: 0.5,
             CONF_ENTITIES: [cover],
-            CONF_CLIMATE_MODE: True,
             CONF_TEMP_ENTITY: "sensor.indoor",
             **extra,
         },

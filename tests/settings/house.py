@@ -1,7 +1,9 @@
 """The live house snapshot as the settings lift reads it (plain JSON, no hass).
 
 A window's area is its physical cover's effective area (the window device
-copies it); its floor is that area's floor. The house runs in °F.
+copies it); its floor is that area's floor. The house runs in °F. Each
+window's ``climate_mode`` reads as migration 3.2 stores it (every live
+window had it on, so none ignores climate control).
 """
 
 from __future__ import annotations
@@ -47,6 +49,10 @@ def load_house() -> House:
         if entry["role"] != "window":
             continue
         options = {**(entry["data"] or {}), **entry["options"]}
+        # One Climate switch (3.2): climate_mode is no option; a window it
+        # was off for ignores climate control (as migration 3.2 stores it).
+        if not options.pop("climate_mode", False):
+            options["ignore_climate"] = True
         (cover,) = options["group"]  # every live window has one cover
         windows.append(
             LegacyWindow(

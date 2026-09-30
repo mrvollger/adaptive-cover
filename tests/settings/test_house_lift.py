@@ -72,7 +72,6 @@ def test_lifted_house_passes_the_spec_check(profiles):
 
 def test_house_profile(lifted):
     assert dict(lifted.house.values) == {
-        "climate_mode": True,
         "eye_height": 1.2,
         "occupied_distance": 2.0,
         "default_percentage": 99.0,

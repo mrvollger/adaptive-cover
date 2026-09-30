@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/runtime/shade_config.py b/custom_components/adaptive_cover/runtime/shade_config.py
+--- a/custom_components/adaptive_cover/runtime/shade_config.py
++++ b/custom_components/adaptive_cover/runtime/shade_config.py
+@@ -362,8 +362,6 @@
+     Derived, never stored: the window does not opt out (``ignore_climate``)
+     and a temperature source resolves for it from its layers.
+     """
+-    if _read(options, CONF_IGNORE_CLIMATE):
+-        return False
+     return ClimateOptions.from_options(options).has_temperature_source
+ 
+ 

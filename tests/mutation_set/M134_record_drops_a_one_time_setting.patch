@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/settings/window_record.py b/custom_components/adaptive_cover/settings/window_record.py
 --- a/custom_components/adaptive_cover/settings/window_record.py
 +++ b/custom_components/adaptive_cover/settings/window_record.py
-@@ -73,7 +73,10 @@
+@@ -74,7 +74,10 @@
  """The cover keys of the flat options: stored as ``cover_entity_id`` only."""
  
  GEOMETRY_KEYS: Final[tuple[str, ...]] = tuple(

@@ -6,7 +6,8 @@ fresh install creates it with its first window.
 
 Window config entries from 1.x, and a house that still has them, do not
 run: they must be consolidated on v2.0.x first (upgrade.py). A house
-consolidated on v2.0.x (2.1) migrates to 3.1 at its first start.
+consolidated on v2.0.x (2.1) migrates to 3.1 at its first start, and a
+3.1 house to 3.2 (one Climate switch).
 """
 
 from __future__ import annotations
@@ -280,7 +281,9 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     A house consolidated on v2.0.x (2.1) becomes 3.1: its window
     subentries store only what they use, the switch aliases go and the
-    house options keep only the layers. Window entries (1.x), a 1.x house
+    house options keep only the layers. A 3.1 house becomes 3.2: one
+    Climate switch (``climate_mode`` goes; a window it was off for
+    ignores climate control). Window entries (1.x), a 1.x house
     and a house that still has window entries are left as they are (their
     setup then fails with the ``consolidate_first`` message; v2.0.x
     consolidates them). A newer MAJOR version is refused by Home Assistant

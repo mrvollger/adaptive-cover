@@ -65,8 +65,9 @@ from .spec import OPTS, Group, Kind, Level, Opt, Scope
 
 # fmt: off
 TOGGLE_OPTS: Final[tuple[Opt, ...]] = (
-    # The "Climate Mode" switch: climate control on or off (with the
-    # climate_mode option; the switch exists only when that option is on).
+    # The house's Climate switch: climate control on or off (3.2: the one
+    # climate setting; a window runs it when a temperature source resolves
+    # for it and it does not opt out with ignore_climate).
     Opt(CONF_CLIMATE_ON, Kind.INTERNAL, Group.NONE, Scope.RECURRING,
         Level.HOUSE, (Level.AREA,), default=True),
     # The "Outside Temperature" switch: the season follows the outside

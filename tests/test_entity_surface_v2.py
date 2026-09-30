@@ -37,7 +37,6 @@ from pytest_homeassistant_custom_component.common import (
 )
 
 from custom_components.adaptive_cover.const import (
-    CONF_CLIMATE_MODE,
     CONF_DELTA_TIME,
     CONF_DISTANCE,
     CONF_ENTITIES,
@@ -113,7 +112,6 @@ HUB_SURFACE = {
 
 # Every aux entity present (before P5 every switch and number existed).
 FULL_CLIMATE = {
-    CONF_CLIMATE_MODE: True,
     CONF_TEMP_ENTITY: "sensor.indoor",
     CONF_TEMP_LOW: 21,
     CONF_TEMP_HIGH: 25,

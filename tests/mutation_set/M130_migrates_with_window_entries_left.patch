@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/upgrade.py b/custom_components/adaptive_cover/upgrade.py
 --- a/custom_components/adaptive_cover/upgrade.py
 +++ b/custom_components/adaptive_cover/upgrade.py
-@@ -212,7 +212,7 @@
+@@ -240,7 +240,7 @@
          written.
  
      """

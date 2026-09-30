@@ -44,7 +44,6 @@ from pytest_homeassistant_custom_component.common import (
 )
 
 from custom_components.adaptive_cover.const import (
-    CONF_CLIMATE_MODE,
     CONF_DISTANCE,
     CONF_ENTITIES,
     CONF_HEIGHT_WIN,
@@ -427,7 +426,6 @@ class SimHouse:
             )
             hass.states.async_set(self.WEATHER_ENTITY, climate.get("weather", "sunny"))
             climate_opts = {
-                CONF_CLIMATE_MODE: True,
                 CONF_TEMP_ENTITY: self.TEMP_SENSOR,
                 CONF_PRESENCE_ENTITY: self.presence_entity,
                 CONF_WEATHER_ENTITY: self.WEATHER_ENTITY,
@@ -483,7 +481,7 @@ class SimHouse:
         windows: list[tuple[str | None, dict, dict]],
         window_keys: list[str] | None = None,
     ) -> None:
-        """One house entry (3.1), a window subentry per cover (tests/house_model.py)."""
+        """One house entry (3.2), a window subentry per cover (tests/house_model.py)."""
         specs = [
             Window(
                 name=data["name"],

@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/layers.py b/custom_components/adaptive_cover/layers.py
 --- a/custom_components/adaptive_cover/layers.py
 +++ b/custom_components/adaptive_cover/layers.py
-@@ -329,7 +329,7 @@
+@@ -331,7 +331,7 @@
      placement = _placement(hass, cover_area_id(hass, record.covers))
      legacy = _setup_values(hass, runtime_options(options))
      overrides = adopt(_NEW_WINDOW, legacy, house.options, placement)

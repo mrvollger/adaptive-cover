@@ -22,7 +22,8 @@ Since v2.1 a window subentry stores only what the window uses::
   ``cover_type`` how it moves.
 - ``geometry`` holds every one-time setting the window stores (the spec's
   options whose home is the window: azimuth, field of view, heights,
-  limits, interpolation, blind spot, privacy opt-in, ...).
+  limits, interpolation, blind spot, privacy opt-in, the climate opt-out
+  ``ignore_climate`` (3.2), ...).
 - ``overrides`` holds the window's own recurring values, sparsely:
   ``values`` where the spec lets a window override the option, ``legacy``
   for a per-window value no allowed level can hold (see ``lift.py``).

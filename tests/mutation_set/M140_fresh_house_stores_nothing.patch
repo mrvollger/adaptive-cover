@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/layers.py b/custom_components/adaptive_cover/layers.py
 --- a/custom_components/adaptive_cover/layers.py
 +++ b/custom_components/adaptive_cover/layers.py
-@@ -354,7 +354,7 @@
+@@ -356,7 +356,7 @@
          floors,
          temperature_unit=_unit(hass),
      )

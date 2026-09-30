@@ -609,5 +609,19 @@
   "function": "async_check_cover_state_change",
   "description": "a cover's first state (its integration started late) does not trigger a decision",
   "patch": "M120_late_cover_waits_for_sun.patch"
+ },
+ {
+  "id": "M160",
+  "file": "custom_components/adaptive_cover/runtime/shade_config.py",
+  "function": "climate_capable",
+  "description": "ignore_climate is ignored: a window that opts out of climate control still runs it whenever a temperature source resolves for it",
+  "patch": "M160_ignore_climate_ignored.patch"
+ },
+ {
+  "id": "M161",
+  "file": "custom_components/adaptive_cover/upgrade.py",
+  "function": "record_3_2",
+  "description": "migration 3.2 drops a window's climate opt-out: a window whose climate_mode was off runs climate control after the upgrade",
+  "patch": "M161_migration_drops_climate_opt_out.patch"
  }
 ]

@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/upgrade.py b/custom_components/adaptive_cover/upgrade.py
 --- a/custom_components/adaptive_cover/upgrade.py
 +++ b/custom_components/adaptive_cover/upgrade.py
-@@ -146,7 +146,7 @@
+@@ -174,7 +174,7 @@
          if suffix == row.unique_id:
              continue
          if row.domain == "switch" and suffix in SWITCH_ALIASES:

@@ -38,7 +38,6 @@ from ..const import (
     CONF_BLIND_SPOT_ELEVATION,
     CONF_BLIND_SPOT_LEFT,
     CONF_BLIND_SPOT_RIGHT,
-    CONF_CLIMATE_MODE,
     CONF_COVER_ENTITY,
     CONF_DEFAULT_HEIGHT,
     CONF_DELTA_POSITION,
@@ -54,6 +53,7 @@ from ..const import (
     CONF_FOV_LEFT,
     CONF_FOV_RIGHT,
     CONF_HEIGHT_WIN,
+    CONF_IGNORE_CLIMATE,
     CONF_INTERP,
     CONF_INTERP_END,
     CONF_INTERP_LIST,
@@ -132,7 +132,6 @@ class Group(StrEnum):
 
     | Group          | Wizard page           | Options section   |
     |----------------|-----------------------|-------------------|
-    | CLIMATE_TOGGLE | cover-type page, top  | climate, top      |
     | COVER          | cover-type page       | covers_geometry   |
     | SUN            | cover-type page       | sun_behavior      |
     | BLIND_SPOT     | blind_spot            | sun_behavior      |
@@ -141,9 +140,13 @@ class Group(StrEnum):
     | CLIMATE        | climate               | climate (when on) |
     | WEATHER        | weather               | climate (when on) |
     | NONE           | -                     | -                 |
+
+    The climate toggle group went with ``climate_mode`` (3.2): climate
+    control is the house's Climate switch (``climate_on``), and a window
+    can run it when a temperature source resolves for it and it does not
+    opt out (``ignore_climate``).
     """
 
-    CLIMATE_TOGGLE = "climate_toggle"
     COVER = "cover"
     SUN = "sun"
     BLIND_SPOT = "blind_spot"
@@ -385,9 +388,6 @@ WEATHER_CONDITIONS: Final = (
 # section list the options in this order.
 # fmt: off
 OPTS: Final[tuple[Opt, ...]] = (
-    # ---------------------------------------------------- climate toggle
-    Opt(CONF_CLIMATE_MODE, Kind.SWITCH, Group.CLIMATE_TOGGLE, REC, H, (A,),
-        default=False, baseline=True, service=_BOOL),
     # ---------------------------------------------------- cover geometry
     Opt(CONF_LENGTH_AWNING, Kind.NUMBER, Group.COVER, ONE, W,
         cover_types=AWNING_ONLY, default=2.1, min=0.3, max=6, step=0.01,
@@ -571,6 +571,10 @@ OPTS: Final[tuple[Opt, ...]] = (
         domains=("sensor",), device_class="irradiance", clearable=True),
     Opt(CONF_IRRADIANCE_THRESHOLD, Kind.NUMBER, Group.CLIMATE, REC, H,
         default=300, step=1, unit="W/m²", service=_FLOAT_OPTIONAL),
+    # The window's opt-out of climate control (3.2): with it, the window
+    # runs the sun logic alone whatever the Climate switch says.
+    Opt(CONF_IGNORE_CLIMATE, Kind.BOOL, Group.CLIMATE, ONE, W,
+        default=False, service=_BOOL),
     Opt(CONF_TRANSPARENT_BLIND, Kind.SWITCH, Group.CLIMATE, ONE, W,
         default=False),
     Opt(CONF_WEATHER_ENTITY, Kind.ENTITY, Group.CLIMATE, REC, H,

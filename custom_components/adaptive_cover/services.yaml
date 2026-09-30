@@ -182,8 +182,9 @@ change_settings:
     privacy_offset:
       name: Privacy delay after sunset (min)
       selector: { number: { min: 0, max: 180, step: 5, mode: box } }
-    climate_mode:
-      name: Climate mode
+    ignore_climate:
+      name: Ignore climate control
+      description: This window follows the sun only; the house's Climate switch does not steer it.
       selector: { boolean: }
     temp_entity:
       name: Indoor temperature sensor

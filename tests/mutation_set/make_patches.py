@@ -1019,8 +1019,10 @@ MUTATIONS: list[Mutation] = [
         "async_migrate_house",
         "the migration leaves the house at major version 2: v2.0.x would load "
         "a house it cannot read",
-        "        version=HOUSE_ENTRY_VERSION,\n",
-        "        version=V2_0_HOUSE_VERSION,\n",
+        "        version=HOUSE_ENTRY_VERSION,\n"
+        "        minor_version=HOUSE_3_1_MINOR_VERSION,\n",
+        "        version=V2_0_HOUSE_VERSION,\n"
+        "        minor_version=HOUSE_3_1_MINOR_VERSION,\n",
     ),
     Mutation(
         "M137",
@@ -1093,6 +1095,29 @@ MUTATIONS: list[Mutation] = [
         "a cover's first state (its integration started late) does not trigger a decision",
         "                self.events.push(RefreshEvent.ENTITY_CHANGED)\n                await self.async_refresh()\n",
         "                pass\n",
+    ),
+    # ---- group M: one Climate switch (house 3.2; M160+) --------------------
+    Mutation(
+        "M160",
+        "ignore_climate_ignored",
+        SHADE_CONFIG,
+        "climate_capable",
+        "ignore_climate is ignored: a window that opts out of climate control "
+        "still runs it whenever a temperature source resolves for it",
+        "    if _read(options, CONF_IGNORE_CLIMATE):\n"
+        "        return False\n"
+        "    return ClimateOptions.from_options(options).has_temperature_source\n",
+        "    return ClimateOptions.from_options(options).has_temperature_source\n",
+    ),
+    Mutation(
+        "M161",
+        "migration_drops_climate_opt_out",
+        UPGRADE,
+        "record_3_2",
+        "migration 3.2 drops a window's climate opt-out: a window whose "
+        "climate_mode was off runs climate control after the upgrade",
+        "    if not climate_mode:\n        geometry[CONF_IGNORE_CLIMATE] = True\n",
+        "",
     ),
 ]
 

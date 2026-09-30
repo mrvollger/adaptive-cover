@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/layers.py b/custom_components/adaptive_cover/layers.py
 --- a/custom_components/adaptive_cover/layers.py
 +++ b/custom_components/adaptive_cover/layers.py
-@@ -260,7 +260,7 @@
+@@ -262,7 +262,7 @@
          place = where(key) if key in SPEC else Where.OPTIONS
          if place is Where.OPTIONS:
              if key in GEOMETRY_KEYS:

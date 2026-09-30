@@ -52,10 +52,10 @@ from homeassistant.helpers.dispatcher import async_dispatcher_send
 
 from .const import (
     _LOGGER,
-    CONF_CLIMATE_MODE,
     CONF_COVER_ENTITY,
     CONF_END_ENTITY,
     CONF_ENTITIES,
+    CONF_IGNORE_CLIMATE,
     CONF_IRRADIANCE_ENTITY,
     CONF_LUX_ENTITY,
     CONF_OUTSIDETEMP_ENTITY,
@@ -98,9 +98,11 @@ SIGNAL_SETTINGS_CHANGED: Final = f"{DOMAIN}_settings_changed"
 SPEC: Final[Mapping[str, Opt]] = spec_by_key(SHADOW_SPEC)
 
 # Options a window reads only when it sets up: the entities it listens to
-# and the ones that decide which entities it has. A change rebuilds it.
+# and the ones that decide which entities it has, or whether it can run
+# climate control (the temperature sources and ignore_climate). A change
+# rebuilds it.
 SETUP_KEYS: Final = (
-    CONF_CLIMATE_MODE,
+    CONF_IGNORE_CLIMATE,
     CONF_TEMP_ENTITY,
     CONF_PRESENCE_ENTITY,
     CONF_WEATHER_ENTITY,

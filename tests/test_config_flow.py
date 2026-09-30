@@ -12,7 +12,6 @@ import pytest
 from custom_components.adaptive_cover.const import (
     CONF_AWNING_ANGLE,
     CONF_AZIMUTH,
-    CONF_CLIMATE_MODE,
     CONF_COVER_ENTITY,
     CONF_DEFAULT_HEIGHT,
     CONF_DELTA_POSITION,
@@ -74,7 +73,6 @@ from .window_handle import window_settings
 # What a user enters for a vertical blind (flat; tests/window_form.py puts
 # each field in its section). The form has a default for everything else.
 VERTICAL_STEP_INPUT = {
-    CONF_CLIMATE_MODE: False,
     CONF_COVER_ENTITY: "cover.test_window",
     CONF_HEIGHT_WIN: 2.1,
     CONF_DISTANCE: 0.5,
@@ -97,7 +95,6 @@ HORIZONTAL_STEP_INPUT = {
 }
 
 TILT_STEP_INPUT = {
-    CONF_CLIMATE_MODE: False,
     CONF_COVER_ENTITY: "cover.test_window",
     CONF_TILT_DEPTH: 3,
     CONF_TILT_DISTANCE: 2,

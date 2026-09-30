@@ -10,9 +10,10 @@ The window runs the way the live house holds it after it is consolidated
 on v2.0.x and updated to v2.1 (P8): a house entry at 2.1 with the window
 as a ``window`` subentry storing the entry's data and options verbatim
 (ADR 0006; options as migration 1.3 wrote them, and the overrides the lift
-gave it), which migration 3.1 rewrites at setup (``upgrade.py``). The
-house's layers are the lift of this one window (its switch states
-included), as the hub a v2.0 window entry bootstrapped stored them.
+gave it), which migrations 3.1 and 3.2 rewrite at setup (``upgrade.py``).
+The house's layers are the lift of this one window (its switch states
+included, and its ``climate_mode``, which v2.0 stored in the house), as
+the hub a v2.0 window entry bootstrapped stored them.
 
 Taken from the snapshot, verbatim:
 - the entry's ``entry_id`` (the window key), title, ``data`` and complete
@@ -85,6 +86,7 @@ from custom_components.adaptive_cover.runtime.shade_config import absent_options
 from custom_components.adaptive_cover.settings.lift import LegacyWindow
 from custom_components.adaptive_cover.settings.normalize import normalize_cover
 from custom_components.adaptive_cover.settings.shadow import (
+    HOUSE,
     hub_options,
     legacy_values,
     lift_house,
@@ -311,12 +313,16 @@ class ReplayHouse(SimHouse):
             temperature_unit=unit,
         )
         overrides = lifted.overrides[window.entry_id]
+        house_options = hub_options(lifted)
+        # v2.0's lift stored climate_mode in the house (its home); the lift
+        # of today's spec has no such option. Migration 3.2 reads it.
+        house_options[HOUSE][CONF_CLIMATE_MODE] = bool(options.get(CONF_CLIMATE_MODE))
         house = MockConfigEntry(
             domain=DOMAIN,
             title=HUB_ENTRY_NAME,
             unique_id=HUB_UNIQUE_ID,
             data={"name": HUB_ENTRY_NAME, CONF_IS_HUB: True},
-            options=hub_options(lifted),
+            options=house_options,
             version=V2_0_HOUSE_VERSION,
             minor_version=1,
             subentries_data=[

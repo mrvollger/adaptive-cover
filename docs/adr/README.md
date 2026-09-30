@@ -11,6 +11,7 @@ An ADR records one design decision: the problem, the choice, and what follows fr
 | [0005](0005-drop-pandas-numpy-pytz.md) | Drop pandas, numpy and pytz | Accepted | 2026-09-28 | P2 (v1.15.x) |
 | [0006](0006-window-subentries-in-v2.md) | Window subentries in v2.0: storage, versions and the move order (amends 0001) | Proposed | 2026-09-29 | P7 (v2.0.0) |
 | [0007](0007-house-only-in-v2-1.md) | The house is the only runtime in v2.1: the window record, the nag and version 3 (amends 0001, 0006) | Proposed | 2026-09-29 | P8 (v2.1.0) |
+| [0008](0008-one-climate-switch.md) | One Climate switch: climate capability is derived, a window opts out, house 3.2 (amends 0003, 0007) | Proposed | 2026-09-30 | after v2.1.0 (house 3.2) |
 
 ## Writing a new ADR
 
