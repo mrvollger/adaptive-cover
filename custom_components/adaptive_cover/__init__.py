@@ -49,6 +49,7 @@ HUB_PLATFORMS = [
     Platform.BUTTON,
     Platform.SWITCH,
     Platform.NUMBER,
+    Platform.TIME,
 ]
 CONF_SUN = ["sun.sun"]
 
@@ -281,6 +282,9 @@ def _async_register_services(hass: HomeAssistant) -> None:
         schema=set_profile_schema(SHADOW_SPEC, temperature_unit),
         supports_response=SupportsResponse.OPTIONAL,
     )
+    from .profile_service import async_register_get_profile
+
+    async_register_get_profile(hass)
 
     # hold(duration?, position?) on a window's Mode select (area and floor
     # targets resolve to those), or on the house select (every window).

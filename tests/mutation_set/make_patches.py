@@ -801,6 +801,18 @@ MUTATIONS: list[Mutation] = [
         "        await async_settings_changed(self.hass)\n",
         "        pass\n",
     ),
+    Mutation(
+        "M93",
+        "get_profile_reads_the_wrong_level",
+        LAYERS,
+        "profile_values",
+        "a floor's stored values are read from the area of that id and an "
+        "area's from the floor (get_profile answers with the wrong profile)",
+        "    bucket = FLOORS if level is Level.FLOOR else AREAS\n"
+        '    return dict((hub_options.get(bucket) or {}).get(scope_id or "", {}))\n',
+        "    bucket = AREAS if level is Level.FLOOR else FLOORS\n"
+        '    return dict((hub_options.get(bucket) or {}).get(scope_id or "", {}))\n',
+    ),
     # P5 shadow release (v1.18.0): the diff repair and the switch capture.
     Mutation(
         "M70",

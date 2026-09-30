@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/layers.py b/custom_components/adaptive_cover/layers.py
 --- a/custom_components/adaptive_cover/layers.py
 +++ b/custom_components/adaptive_cover/layers.py
-@@ -181,7 +181,7 @@
+@@ -184,7 +184,7 @@
              stored_profiles(
                  entry.entry_id,
                  hub.options,

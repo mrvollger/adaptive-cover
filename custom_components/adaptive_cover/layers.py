@@ -160,6 +160,9 @@ class Effective:
     """The Position attribute: options from an area, a floor, a window
     override or a legacy value (``provenance_summary``); None before the
     house is lifted."""
+    sources: dict[str, str] | None = None
+    """Where every option comes from (``window``, ``legacy``, ``area``,
+    ``floor``, ``house``, ``default``); None before the house is lifted."""
 
 
 def effective_settings(hass: HomeAssistant, entry: ConfigEntry) -> Effective:
@@ -196,7 +199,9 @@ def effective_settings(hass: HomeAssistant, entry: ConfigEntry) -> Effective:
         )
         return Effective(_legacy_effective(hass, entry), None)
     return Effective(
-        {**options, **resolution.values}, provenance_summary(resolution, SHADOW_SPEC)
+        {**options, **resolution.values},
+        provenance_summary(resolution, SHADOW_SPEC),
+        {key: source.value for key, source in resolution.provenance.items()},
     )
 
 
@@ -316,7 +321,12 @@ class ProfileError(ValueError):
     """A profile write the spec or the registries do not allow."""
 
 
-def _check_scope(hass: HomeAssistant, level: Level, scope_id: str | None) -> None:
+def check_scope(hass: HomeAssistant, level: Level, scope_id: str | None) -> None:
+    """Raise ``ProfileError`` unless ``scope_id`` names a profile of ``level``.
+
+    The house takes no id; a floor or an area needs one that HA's
+    registries know.
+    """
     if level is Level.HOUSE:
         if scope_id is not None:
             raise ProfileError("the house takes no id")
@@ -381,7 +391,7 @@ def async_set_profile(
     hub = lifted_hub(hass)
     if hub is None:
         raise ProfileError("the house has no layered settings yet")
-    _check_scope(hass, level, scope_id)
+    check_scope(hass, level, scope_id)
     check_profile_keys(level, changes)
     if level is Level.HOUSE:
         empty = sorted(
