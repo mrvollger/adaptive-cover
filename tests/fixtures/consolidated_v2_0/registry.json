@@ -1,0 +1,5026 @@
+{
+ "devices": [
+  {
+   "area_id": "master_bedroom",
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMSZZ98CC7SGVMZW4CF",
+   "entry_type": "service",
+   "identifier": [
+    "adaptive_cover",
+    "01KAA8FJRH4VKCWPDMFA1JSHBT"
+   ],
+   "name": "Master trap",
+   "name_by_user": "Master trap",
+   "via": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ]
+  },
+  {
+   "area_id": "office",
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SNFCFPYRJRC3SMSB47M",
+   "entry_type": "service",
+   "identifier": [
+    "adaptive_cover",
+    "01KAD4XDDT8YPF97FN3095Y9C3"
+   ],
+   "name": "Office north",
+   "name_by_user": "Office north",
+   "via": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ]
+  },
+  {
+   "area_id": "office",
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN8DZQB4R1G3VTGW3R7",
+   "entry_type": "service",
+   "identifier": [
+    "adaptive_cover",
+    "01KAD50Y5394DV5VKX96T6R9JZ"
+   ],
+   "name": "Office east",
+   "name_by_user": "Office east",
+   "via": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ]
+  },
+  {
+   "area_id": "office",
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN1WYRDE5J5TAQ8RRRP",
+   "entry_type": "service",
+   "identifier": [
+    "adaptive_cover",
+    "01KGZNRGJ39Q0S8GH12BW15QY3"
+   ],
+   "name": "Office door",
+   "name_by_user": "Office door",
+   "via": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ]
+  },
+  {
+   "area_id": "sw_bedroom",
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKG7PFCPE30TNT78XQA",
+   "entry_type": "service",
+   "identifier": [
+    "adaptive_cover",
+    "01KSBFBK88WRN0NYVSHNR37QJX"
+   ],
+   "name": "Leanne's west",
+   "name_by_user": "Leanne's door",
+   "via": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ]
+  },
+  {
+   "area_id": "sw_bedroom",
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKQ5SJ8272WMCCE6P8H",
+   "entry_type": "service",
+   "identifier": [
+    "adaptive_cover",
+    "01KSBFGWN5RBTYPB2XNR700ZTD"
+   ],
+   "name": "Leanne's south",
+   "name_by_user": "Leanne's south",
+   "via": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ]
+  },
+  {
+   "area_id": "den",
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SHXAR0B3AX79H7NN1QJ",
+   "entry_type": "service",
+   "identifier": [
+    "adaptive_cover",
+    "01KWHKT5SWNSNC9QD4QC2SQMTR"
+   ],
+   "name": "Den south",
+   "name_by_user": null,
+   "via": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ]
+  },
+  {
+   "area_id": "den",
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJ8PQQ40TG1VC4A43K2",
+   "entry_type": "service",
+   "identifier": [
+    "adaptive_cover",
+    "01KWHKTS0C0HTDDQTW75W04HKZ"
+   ],
+   "name": "Den southwest",
+   "name_by_user": null,
+   "via": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ]
+  },
+  {
+   "area_id": "den",
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJKGEX6YW6WD3KTH29Q",
+   "entry_type": "service",
+   "identifier": [
+    "adaptive_cover",
+    "01KWHKV52MF7T5N16XVXRR11C1"
+   ],
+   "name": "Den west",
+   "name_by_user": null,
+   "via": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ]
+  },
+  {
+   "area_id": "master_bedroom",
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SM5SRT74K2XF0DVCR7F",
+   "entry_type": "service",
+   "identifier": [
+    "adaptive_cover",
+    "01KWP1JY50D79YNJ6A6MG5RC15"
+   ],
+   "name": "Master east",
+   "name_by_user": null,
+   "via": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ]
+  },
+  {
+   "area_id": "family_room",
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK2G59P4DSF91G04XN9",
+   "entry_type": "service",
+   "identifier": [
+    "adaptive_cover",
+    "01KWP1K4XH1C9J89HP8ME35CNZ"
+   ],
+   "name": "Family east",
+   "name_by_user": null,
+   "via": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ]
+  },
+  {
+   "area_id": "master_bedroom",
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKY5G4MCQWQRP5FNR91",
+   "entry_type": "service",
+   "identifier": [
+    "adaptive_cover",
+    "01KWP1KBER8D63ZW8C5326F7AC"
+   ],
+   "name": "Master door",
+   "name_by_user": null,
+   "via": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ]
+  },
+  {
+   "area_id": "family_room",
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJW9R7XW59JWE1VYG83",
+   "entry_type": "service",
+   "identifier": [
+    "adaptive_cover",
+    "01KWP2H31Q4F3BYTR9JP9W4K9C"
+   ],
+   "name": "Family door",
+   "name_by_user": null,
+   "via": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ]
+  },
+  {
+   "area_id": "master_bedroom",
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMHVHQ1H59B8E6R50EM",
+   "entry_type": "service",
+   "identifier": [
+    "adaptive_cover",
+    "01KWQEPAFBRZQ463CW35SKE8GH"
+   ],
+   "name": "Master south",
+   "name_by_user": null,
+   "via": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ]
+  },
+  {
+   "area_id": "family_room",
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK9DTZ9M05WP4FF8BZE",
+   "entry_type": "service",
+   "identifier": [
+    "adaptive_cover",
+    "01KWQEPHPX2QRC9BQ0NNZ9857Z"
+   ],
+   "name": "Family south",
+   "name_by_user": null,
+   "via": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ]
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "entry_type": "service",
+   "identifier": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "name": "Adaptive Cover All",
+   "name_by_user": null,
+   "via": null
+  }
+ ],
+ "entities": [
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMSZZ98CC7SGVMZW4CF",
+   "device": [
+    "adaptive_cover",
+    "01KAA8FJRH4VKCWPDMFA1JSHBT"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.master_trap_climate_mode_master_trap",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Climate mode",
+   "translation_key": "switch_mode",
+   "unique_id": "01KAA8FJRH4VKCWPDMFA1JSHBT_Climate Mode"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMSZZ98CC7SGVMZW4CF",
+   "device": [
+    "adaptive_cover",
+    "01KAA8FJRH4VKCWPDMFA1JSHBT"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_trap_control_method_master_trap",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Control method",
+   "translation_key": "control",
+   "unique_id": "01KAA8FJRH4VKCWPDMFA1JSHBT_Control Method"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMSZZ98CC7SGVMZW4CF",
+   "device": [
+    "adaptive_cover",
+    "01KAA8FJRH4VKCWPDMFA1JSHBT"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": null,
+   "entity_id": "sensor.master_trap_cover_position_master_trap",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Position",
+   "translation_key": "target_position",
+   "unique_id": "01KAA8FJRH4VKCWPDMFA1JSHBT_Cover Position"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMSZZ98CC7SGVMZW4CF",
+   "device": [
+    "adaptive_cover",
+    "01KAA8FJRH4VKCWPDMFA1JSHBT"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_trap_end_sun_master_trap",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "End sun",
+   "translation_key": "end_sun",
+   "unique_id": "01KAA8FJRH4VKCWPDMFA1JSHBT_End Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMSZZ98CC7SGVMZW4CF",
+   "device": [
+    "adaptive_cover",
+    "01KAA8FJRH4VKCWPDMFA1JSHBT"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_trap_shade_last_state_change_master_trap",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Last change",
+   "translation_key": "last_change",
+   "unique_id": "01KAA8FJRH4VKCWPDMFA1JSHBT_Last State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMSZZ98CC7SGVMZW4CF",
+   "device": [
+    "adaptive_cover",
+    "01KAA8FJRH4VKCWPDMFA1JSHBT"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.master_trap_manual_override_master_trap",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override",
+   "translation_key": "manual_override",
+   "unique_id": "01KAA8FJRH4VKCWPDMFA1JSHBT_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMSZZ98CC7SGVMZW4CF",
+   "device": [
+    "adaptive_cover",
+    "01KAA8FJRH4VKCWPDMFA1JSHBT"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.master_trap_manual_override_master_trap",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override detection",
+   "translation_key": "manual_toggle",
+   "unique_id": "01KAA8FJRH4VKCWPDMFA1JSHBT_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMSZZ98CC7SGVMZW4CF",
+   "device": [
+    "adaptive_cover",
+    "01KAA8FJRH4VKCWPDMFA1JSHBT"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_trap_shade_next_state_change_master_trap",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Next change",
+   "translation_key": "next_change",
+   "unique_id": "01KAA8FJRH4VKCWPDMFA1JSHBT_Next State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMSZZ98CC7SGVMZW4CF",
+   "device": [
+    "adaptive_cover",
+    "01KAA8FJRH4VKCWPDMFA1JSHBT"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.master_trap_outside_temperature_master_trap",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Outside temperature",
+   "translation_key": "temp_toggle",
+   "unique_id": "01KAA8FJRH4VKCWPDMFA1JSHBT_Outside Temperature"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMSZZ98CC7SGVMZW4CF",
+   "device": [
+    "adaptive_cover",
+    "01KAA8FJRH4VKCWPDMFA1JSHBT"
+   ],
+   "disabled_by": null,
+   "domain": "button",
+   "entity_category": null,
+   "entity_id": "button.master_trap_reset_manual_override_master_trap",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Return to auto",
+   "translation_key": "return_to_auto",
+   "unique_id": "01KAA8FJRH4VKCWPDMFA1JSHBT_Reset Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMSZZ98CC7SGVMZW4CF",
+   "device": [
+    "adaptive_cover",
+    "01KAA8FJRH4VKCWPDMFA1JSHBT"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_trap_start_sun_master_trap",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Start sun",
+   "translation_key": "start_sun",
+   "unique_id": "01KAA8FJRH4VKCWPDMFA1JSHBT_Start Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMSZZ98CC7SGVMZW4CF",
+   "device": [
+    "adaptive_cover",
+    "01KAA8FJRH4VKCWPDMFA1JSHBT"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.master_trap_sun_infront_master_trap",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Sun in front",
+   "translation_key": "sun_motion",
+   "unique_id": "01KAA8FJRH4VKCWPDMFA1JSHBT_Sun Infront"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMSZZ98CC7SGVMZW4CF",
+   "device": [
+    "adaptive_cover",
+    "01KAA8FJRH4VKCWPDMFA1JSHBT"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.master_trap_toggle_control_master_trap",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Automatic control",
+   "translation_key": "control_toggle",
+   "unique_id": "01KAA8FJRH4VKCWPDMFA1JSHBT_Toggle Control"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMSZZ98CC7SGVMZW4CF",
+   "device": [
+    "adaptive_cover",
+    "01KAA8FJRH4VKCWPDMFA1JSHBT"
+   ],
+   "disabled_by": null,
+   "domain": "select",
+   "entity_category": null,
+   "entity_id": "select.master_master_trap_shade_mode_master_trap",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Mode",
+   "translation_key": "mode",
+   "unique_id": "01KAA8FJRH4VKCWPDMFA1JSHBT_mode_select"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SNFCFPYRJRC3SMSB47M",
+   "device": [
+    "adaptive_cover",
+    "01KAD4XDDT8YPF97FN3095Y9C3"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.office_north_shade_climate_mode_office_north_shade",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Climate mode",
+   "translation_key": "switch_mode",
+   "unique_id": "01KAD4XDDT8YPF97FN3095Y9C3_Climate Mode"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SNFCFPYRJRC3SMSB47M",
+   "device": [
+    "adaptive_cover",
+    "01KAD4XDDT8YPF97FN3095Y9C3"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.office_north_shades_control_method_office_north_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Control method",
+   "translation_key": "control",
+   "unique_id": "01KAD4XDDT8YPF97FN3095Y9C3_Control Method"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SNFCFPYRJRC3SMSB47M",
+   "device": [
+    "adaptive_cover",
+    "01KAD4XDDT8YPF97FN3095Y9C3"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": null,
+   "entity_id": "sensor.office_north_shades_cover_position_office_north_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Position",
+   "translation_key": "target_position",
+   "unique_id": "01KAD4XDDT8YPF97FN3095Y9C3_Cover Position"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SNFCFPYRJRC3SMSB47M",
+   "device": [
+    "adaptive_cover",
+    "01KAD4XDDT8YPF97FN3095Y9C3"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.office_north_shades_end_sun_office_north_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "End sun",
+   "translation_key": "end_sun",
+   "unique_id": "01KAD4XDDT8YPF97FN3095Y9C3_End Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SNFCFPYRJRC3SMSB47M",
+   "device": [
+    "adaptive_cover",
+    "01KAD4XDDT8YPF97FN3095Y9C3"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.office_north_shade_last_state_change_office_north_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Last change",
+   "translation_key": "last_change",
+   "unique_id": "01KAD4XDDT8YPF97FN3095Y9C3_Last State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SNFCFPYRJRC3SMSB47M",
+   "device": [
+    "adaptive_cover",
+    "01KAD4XDDT8YPF97FN3095Y9C3"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.office_north_shades_manual_override_office_north_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override",
+   "translation_key": "manual_override",
+   "unique_id": "01KAD4XDDT8YPF97FN3095Y9C3_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SNFCFPYRJRC3SMSB47M",
+   "device": [
+    "adaptive_cover",
+    "01KAD4XDDT8YPF97FN3095Y9C3"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.office_north_shades_manual_override_office_north_shade",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override detection",
+   "translation_key": "manual_toggle",
+   "unique_id": "01KAD4XDDT8YPF97FN3095Y9C3_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SNFCFPYRJRC3SMSB47M",
+   "device": [
+    "adaptive_cover",
+    "01KAD4XDDT8YPF97FN3095Y9C3"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.office_north_shade_next_state_change_office_north_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Next change",
+   "translation_key": "next_change",
+   "unique_id": "01KAD4XDDT8YPF97FN3095Y9C3_Next State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SNFCFPYRJRC3SMSB47M",
+   "device": [
+    "adaptive_cover",
+    "01KAD4XDDT8YPF97FN3095Y9C3"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.office_north_shade_outside_temperature_office_north_shade",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Outside temperature",
+   "translation_key": "temp_toggle",
+   "unique_id": "01KAD4XDDT8YPF97FN3095Y9C3_Outside Temperature"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SNFCFPYRJRC3SMSB47M",
+   "device": [
+    "adaptive_cover",
+    "01KAD4XDDT8YPF97FN3095Y9C3"
+   ],
+   "disabled_by": null,
+   "domain": "button",
+   "entity_category": null,
+   "entity_id": "button.office_north_shades_reset_manual_override_office_north_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Return to auto",
+   "translation_key": "return_to_auto",
+   "unique_id": "01KAD4XDDT8YPF97FN3095Y9C3_Reset Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SNFCFPYRJRC3SMSB47M",
+   "device": [
+    "adaptive_cover",
+    "01KAD4XDDT8YPF97FN3095Y9C3"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.office_north_shades_start_sun_office_north_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Start sun",
+   "translation_key": "start_sun",
+   "unique_id": "01KAD4XDDT8YPF97FN3095Y9C3_Start Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SNFCFPYRJRC3SMSB47M",
+   "device": [
+    "adaptive_cover",
+    "01KAD4XDDT8YPF97FN3095Y9C3"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.office_north_shades_sun_infront_office_north_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Sun in front",
+   "translation_key": "sun_motion",
+   "unique_id": "01KAD4XDDT8YPF97FN3095Y9C3_Sun Infront"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SNFCFPYRJRC3SMSB47M",
+   "device": [
+    "adaptive_cover",
+    "01KAD4XDDT8YPF97FN3095Y9C3"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.office_north_shades_toggle_control_office_north_shade",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Automatic control",
+   "translation_key": "control_toggle",
+   "unique_id": "01KAD4XDDT8YPF97FN3095Y9C3_Toggle Control"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SNFCFPYRJRC3SMSB47M",
+   "device": [
+    "adaptive_cover",
+    "01KAD4XDDT8YPF97FN3095Y9C3"
+   ],
+   "disabled_by": null,
+   "domain": "select",
+   "entity_category": null,
+   "entity_id": "select.office_office_north_shade_mode_office_north_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Mode",
+   "translation_key": "mode",
+   "unique_id": "01KAD4XDDT8YPF97FN3095Y9C3_mode_select"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN8DZQB4R1G3VTGW3R7",
+   "device": [
+    "adaptive_cover",
+    "01KAD50Y5394DV5VKX96T6R9JZ"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.office_east_shade_climate_mode_office_east_shade",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Climate mode",
+   "translation_key": "switch_mode",
+   "unique_id": "01KAD50Y5394DV5VKX96T6R9JZ_Climate Mode"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN8DZQB4R1G3VTGW3R7",
+   "device": [
+    "adaptive_cover",
+    "01KAD50Y5394DV5VKX96T6R9JZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.office_east_shade_control_method_office_east_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Control method",
+   "translation_key": "control",
+   "unique_id": "01KAD50Y5394DV5VKX96T6R9JZ_Control Method"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN8DZQB4R1G3VTGW3R7",
+   "device": [
+    "adaptive_cover",
+    "01KAD50Y5394DV5VKX96T6R9JZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": null,
+   "entity_id": "sensor.office_east_shade_cover_position_office_east_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Position",
+   "translation_key": "target_position",
+   "unique_id": "01KAD50Y5394DV5VKX96T6R9JZ_Cover Position"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN8DZQB4R1G3VTGW3R7",
+   "device": [
+    "adaptive_cover",
+    "01KAD50Y5394DV5VKX96T6R9JZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.office_east_shade_end_sun_office_east_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "End sun",
+   "translation_key": "end_sun",
+   "unique_id": "01KAD50Y5394DV5VKX96T6R9JZ_End Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN8DZQB4R1G3VTGW3R7",
+   "device": [
+    "adaptive_cover",
+    "01KAD50Y5394DV5VKX96T6R9JZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.office_east_shade_last_state_change_office_east_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Last change",
+   "translation_key": "last_change",
+   "unique_id": "01KAD50Y5394DV5VKX96T6R9JZ_Last State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN8DZQB4R1G3VTGW3R7",
+   "device": [
+    "adaptive_cover",
+    "01KAD50Y5394DV5VKX96T6R9JZ"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.office_east_shade_manual_override_office_east_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override",
+   "translation_key": "manual_override",
+   "unique_id": "01KAD50Y5394DV5VKX96T6R9JZ_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN8DZQB4R1G3VTGW3R7",
+   "device": [
+    "adaptive_cover",
+    "01KAD50Y5394DV5VKX96T6R9JZ"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.office_east_shade_manual_override_office_east_shade",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override detection",
+   "translation_key": "manual_toggle",
+   "unique_id": "01KAD50Y5394DV5VKX96T6R9JZ_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN8DZQB4R1G3VTGW3R7",
+   "device": [
+    "adaptive_cover",
+    "01KAD50Y5394DV5VKX96T6R9JZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.office_east_shade_next_state_change_office_east_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Next change",
+   "translation_key": "next_change",
+   "unique_id": "01KAD50Y5394DV5VKX96T6R9JZ_Next State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN8DZQB4R1G3VTGW3R7",
+   "device": [
+    "adaptive_cover",
+    "01KAD50Y5394DV5VKX96T6R9JZ"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.office_east_shade_outside_temperature_office_east_shade",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Outside temperature",
+   "translation_key": "temp_toggle",
+   "unique_id": "01KAD50Y5394DV5VKX96T6R9JZ_Outside Temperature"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN8DZQB4R1G3VTGW3R7",
+   "device": [
+    "adaptive_cover",
+    "01KAD50Y5394DV5VKX96T6R9JZ"
+   ],
+   "disabled_by": null,
+   "domain": "button",
+   "entity_category": null,
+   "entity_id": "button.office_east_shade_reset_manual_override_office_east_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Return to auto",
+   "translation_key": "return_to_auto",
+   "unique_id": "01KAD50Y5394DV5VKX96T6R9JZ_Reset Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN8DZQB4R1G3VTGW3R7",
+   "device": [
+    "adaptive_cover",
+    "01KAD50Y5394DV5VKX96T6R9JZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.office_east_shade_start_sun_office_east_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Start sun",
+   "translation_key": "start_sun",
+   "unique_id": "01KAD50Y5394DV5VKX96T6R9JZ_Start Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN8DZQB4R1G3VTGW3R7",
+   "device": [
+    "adaptive_cover",
+    "01KAD50Y5394DV5VKX96T6R9JZ"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.office_east_shade_sun_infront_office_east_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Sun in front",
+   "translation_key": "sun_motion",
+   "unique_id": "01KAD50Y5394DV5VKX96T6R9JZ_Sun Infront"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN8DZQB4R1G3VTGW3R7",
+   "device": [
+    "adaptive_cover",
+    "01KAD50Y5394DV5VKX96T6R9JZ"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.office_east_shade_toggle_control_office_east_shade",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Automatic control",
+   "translation_key": "control_toggle",
+   "unique_id": "01KAD50Y5394DV5VKX96T6R9JZ_Toggle Control"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN8DZQB4R1G3VTGW3R7",
+   "device": [
+    "adaptive_cover",
+    "01KAD50Y5394DV5VKX96T6R9JZ"
+   ],
+   "disabled_by": null,
+   "domain": "select",
+   "entity_category": null,
+   "entity_id": "select.office_office_east_shade_mode_office_east_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Mode",
+   "translation_key": "mode",
+   "unique_id": "01KAD50Y5394DV5VKX96T6R9JZ_mode_select"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN1WYRDE5J5TAQ8RRRP",
+   "device": [
+    "adaptive_cover",
+    "01KGZNRGJ39Q0S8GH12BW15QY3"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.ne_door_shades_climate_mode_ne_door_shades",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Climate mode",
+   "translation_key": "switch_mode",
+   "unique_id": "01KGZNRGJ39Q0S8GH12BW15QY3_Climate Mode"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN1WYRDE5J5TAQ8RRRP",
+   "device": [
+    "adaptive_cover",
+    "01KGZNRGJ39Q0S8GH12BW15QY3"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.ne_door_shades_control_method_ne_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Control method",
+   "translation_key": "control",
+   "unique_id": "01KGZNRGJ39Q0S8GH12BW15QY3_Control Method"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN1WYRDE5J5TAQ8RRRP",
+   "device": [
+    "adaptive_cover",
+    "01KGZNRGJ39Q0S8GH12BW15QY3"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": null,
+   "entity_id": "sensor.ne_door_shades_cover_position_ne_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Position",
+   "translation_key": "target_position",
+   "unique_id": "01KGZNRGJ39Q0S8GH12BW15QY3_Cover Position"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN1WYRDE5J5TAQ8RRRP",
+   "device": [
+    "adaptive_cover",
+    "01KGZNRGJ39Q0S8GH12BW15QY3"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.ne_door_shades_end_sun_ne_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "End sun",
+   "translation_key": "end_sun",
+   "unique_id": "01KGZNRGJ39Q0S8GH12BW15QY3_End Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN1WYRDE5J5TAQ8RRRP",
+   "device": [
+    "adaptive_cover",
+    "01KGZNRGJ39Q0S8GH12BW15QY3"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.ne_door_shades_last_state_change_ne_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Last change",
+   "translation_key": "last_change",
+   "unique_id": "01KGZNRGJ39Q0S8GH12BW15QY3_Last State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN1WYRDE5J5TAQ8RRRP",
+   "device": [
+    "adaptive_cover",
+    "01KGZNRGJ39Q0S8GH12BW15QY3"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.ne_door_shades_manual_override_ne_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override",
+   "translation_key": "manual_override",
+   "unique_id": "01KGZNRGJ39Q0S8GH12BW15QY3_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN1WYRDE5J5TAQ8RRRP",
+   "device": [
+    "adaptive_cover",
+    "01KGZNRGJ39Q0S8GH12BW15QY3"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.ne_door_shades_manual_override_ne_door_shades",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override detection",
+   "translation_key": "manual_toggle",
+   "unique_id": "01KGZNRGJ39Q0S8GH12BW15QY3_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN1WYRDE5J5TAQ8RRRP",
+   "device": [
+    "adaptive_cover",
+    "01KGZNRGJ39Q0S8GH12BW15QY3"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.ne_door_shades_next_state_change_ne_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Next change",
+   "translation_key": "next_change",
+   "unique_id": "01KGZNRGJ39Q0S8GH12BW15QY3_Next State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN1WYRDE5J5TAQ8RRRP",
+   "device": [
+    "adaptive_cover",
+    "01KGZNRGJ39Q0S8GH12BW15QY3"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.ne_door_shades_outside_temperature_ne_door_shades",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Outside temperature",
+   "translation_key": "temp_toggle",
+   "unique_id": "01KGZNRGJ39Q0S8GH12BW15QY3_Outside Temperature"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN1WYRDE5J5TAQ8RRRP",
+   "device": [
+    "adaptive_cover",
+    "01KGZNRGJ39Q0S8GH12BW15QY3"
+   ],
+   "disabled_by": null,
+   "domain": "button",
+   "entity_category": null,
+   "entity_id": "button.ne_door_shades_reset_manual_override_ne_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Return to auto",
+   "translation_key": "return_to_auto",
+   "unique_id": "01KGZNRGJ39Q0S8GH12BW15QY3_Reset Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN1WYRDE5J5TAQ8RRRP",
+   "device": [
+    "adaptive_cover",
+    "01KGZNRGJ39Q0S8GH12BW15QY3"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.ne_door_shades_start_sun_ne_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Start sun",
+   "translation_key": "start_sun",
+   "unique_id": "01KGZNRGJ39Q0S8GH12BW15QY3_Start Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN1WYRDE5J5TAQ8RRRP",
+   "device": [
+    "adaptive_cover",
+    "01KGZNRGJ39Q0S8GH12BW15QY3"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.ne_door_shades_sun_infront_ne_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Sun in front",
+   "translation_key": "sun_motion",
+   "unique_id": "01KGZNRGJ39Q0S8GH12BW15QY3_Sun Infront"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN1WYRDE5J5TAQ8RRRP",
+   "device": [
+    "adaptive_cover",
+    "01KGZNRGJ39Q0S8GH12BW15QY3"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.ne_door_shades_toggle_control_ne_door_shades",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Automatic control",
+   "translation_key": "control_toggle",
+   "unique_id": "01KGZNRGJ39Q0S8GH12BW15QY3_Toggle Control"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SN1WYRDE5J5TAQ8RRRP",
+   "device": [
+    "adaptive_cover",
+    "01KGZNRGJ39Q0S8GH12BW15QY3"
+   ],
+   "disabled_by": null,
+   "domain": "select",
+   "entity_category": null,
+   "entity_id": "select.ne_door_shades_mode_ne_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Mode",
+   "translation_key": "mode",
+   "unique_id": "01KGZNRGJ39Q0S8GH12BW15QY3_mode_select"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKG7PFCPE30TNT78XQA",
+   "device": [
+    "adaptive_cover",
+    "01KSBFBK88WRN0NYVSHNR37QJX"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.leanne_s_door_climate_mode",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Climate mode",
+   "translation_key": "switch_mode",
+   "unique_id": "01KSBFBK88WRN0NYVSHNR37QJX_Climate Mode"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKG7PFCPE30TNT78XQA",
+   "device": [
+    "adaptive_cover",
+    "01KSBFBK88WRN0NYVSHNR37QJX"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.sw_door_shade_control_method_sw_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Control method",
+   "translation_key": "control",
+   "unique_id": "01KSBFBK88WRN0NYVSHNR37QJX_Control Method"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKG7PFCPE30TNT78XQA",
+   "device": [
+    "adaptive_cover",
+    "01KSBFBK88WRN0NYVSHNR37QJX"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": null,
+   "entity_id": "sensor.sw_door_shade_cover_position_sw_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Position",
+   "translation_key": "target_position",
+   "unique_id": "01KSBFBK88WRN0NYVSHNR37QJX_Cover Position"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKG7PFCPE30TNT78XQA",
+   "device": [
+    "adaptive_cover",
+    "01KSBFBK88WRN0NYVSHNR37QJX"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.sw_door_shade_end_sun_sw_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "End sun",
+   "translation_key": "end_sun",
+   "unique_id": "01KSBFBK88WRN0NYVSHNR37QJX_End Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKG7PFCPE30TNT78XQA",
+   "device": [
+    "adaptive_cover",
+    "01KSBFBK88WRN0NYVSHNR37QJX"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.sw_door_shade_last_state_change_sw_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Last change",
+   "translation_key": "last_change",
+   "unique_id": "01KSBFBK88WRN0NYVSHNR37QJX_Last State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKG7PFCPE30TNT78XQA",
+   "device": [
+    "adaptive_cover",
+    "01KSBFBK88WRN0NYVSHNR37QJX"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.sw_door_shade_manual_override_sw_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override",
+   "translation_key": "manual_override",
+   "unique_id": "01KSBFBK88WRN0NYVSHNR37QJX_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKG7PFCPE30TNT78XQA",
+   "device": [
+    "adaptive_cover",
+    "01KSBFBK88WRN0NYVSHNR37QJX"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.sw_door_shade_manual_override_sw_door_shades",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override detection",
+   "translation_key": "manual_toggle",
+   "unique_id": "01KSBFBK88WRN0NYVSHNR37QJX_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKG7PFCPE30TNT78XQA",
+   "device": [
+    "adaptive_cover",
+    "01KSBFBK88WRN0NYVSHNR37QJX"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.sw_door_shade_next_state_change_sw_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Next change",
+   "translation_key": "next_change",
+   "unique_id": "01KSBFBK88WRN0NYVSHNR37QJX_Next State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKG7PFCPE30TNT78XQA",
+   "device": [
+    "adaptive_cover",
+    "01KSBFBK88WRN0NYVSHNR37QJX"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.leanne_s_door_outside_temperature",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Outside temperature",
+   "translation_key": "temp_toggle",
+   "unique_id": "01KSBFBK88WRN0NYVSHNR37QJX_Outside Temperature"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKG7PFCPE30TNT78XQA",
+   "device": [
+    "adaptive_cover",
+    "01KSBFBK88WRN0NYVSHNR37QJX"
+   ],
+   "disabled_by": null,
+   "domain": "button",
+   "entity_category": null,
+   "entity_id": "button.sw_door_shade_reset_manual_override_sw_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Return to auto",
+   "translation_key": "return_to_auto",
+   "unique_id": "01KSBFBK88WRN0NYVSHNR37QJX_Reset Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKG7PFCPE30TNT78XQA",
+   "device": [
+    "adaptive_cover",
+    "01KSBFBK88WRN0NYVSHNR37QJX"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.sw_door_shade_start_sun_sw_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Start sun",
+   "translation_key": "start_sun",
+   "unique_id": "01KSBFBK88WRN0NYVSHNR37QJX_Start Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKG7PFCPE30TNT78XQA",
+   "device": [
+    "adaptive_cover",
+    "01KSBFBK88WRN0NYVSHNR37QJX"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.sw_door_shade_sun_infront_sw_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Sun in front",
+   "translation_key": "sun_motion",
+   "unique_id": "01KSBFBK88WRN0NYVSHNR37QJX_Sun Infront"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKG7PFCPE30TNT78XQA",
+   "device": [
+    "adaptive_cover",
+    "01KSBFBK88WRN0NYVSHNR37QJX"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.sw_door_shade_toggle_control_sw_door_shades",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Automatic control",
+   "translation_key": "control_toggle",
+   "unique_id": "01KSBFBK88WRN0NYVSHNR37QJX_Toggle Control"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKG7PFCPE30TNT78XQA",
+   "device": [
+    "adaptive_cover",
+    "01KSBFBK88WRN0NYVSHNR37QJX"
+   ],
+   "disabled_by": null,
+   "domain": "select",
+   "entity_category": null,
+   "entity_id": "select.sw_door_shade_mode_sw_door_shades",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Mode",
+   "translation_key": "mode",
+   "unique_id": "01KSBFBK88WRN0NYVSHNR37QJX_mode_select"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKQ5SJ8272WMCCE6P8H",
+   "device": [
+    "adaptive_cover",
+    "01KSBFGWN5RBTYPB2XNR700ZTD"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.leanne_s_south_climate_mode",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Climate mode",
+   "translation_key": "switch_mode",
+   "unique_id": "01KSBFGWN5RBTYPB2XNR700ZTD_Climate Mode"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKQ5SJ8272WMCCE6P8H",
+   "device": [
+    "adaptive_cover",
+    "01KSBFGWN5RBTYPB2XNR700ZTD"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.sw_south_shade_control_method_sw_south_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Control method",
+   "translation_key": "control",
+   "unique_id": "01KSBFGWN5RBTYPB2XNR700ZTD_Control Method"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKQ5SJ8272WMCCE6P8H",
+   "device": [
+    "adaptive_cover",
+    "01KSBFGWN5RBTYPB2XNR700ZTD"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": null,
+   "entity_id": "sensor.sw_south_shade_cover_position_sw_south_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Position",
+   "translation_key": "target_position",
+   "unique_id": "01KSBFGWN5RBTYPB2XNR700ZTD_Cover Position"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKQ5SJ8272WMCCE6P8H",
+   "device": [
+    "adaptive_cover",
+    "01KSBFGWN5RBTYPB2XNR700ZTD"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.sw_south_shade_end_sun_sw_south_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "End sun",
+   "translation_key": "end_sun",
+   "unique_id": "01KSBFGWN5RBTYPB2XNR700ZTD_End Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKQ5SJ8272WMCCE6P8H",
+   "device": [
+    "adaptive_cover",
+    "01KSBFGWN5RBTYPB2XNR700ZTD"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.sw_south_shade_last_state_change_sw_south_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Last change",
+   "translation_key": "last_change",
+   "unique_id": "01KSBFGWN5RBTYPB2XNR700ZTD_Last State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKQ5SJ8272WMCCE6P8H",
+   "device": [
+    "adaptive_cover",
+    "01KSBFGWN5RBTYPB2XNR700ZTD"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.sw_south_shade_manual_override_sw_south_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override",
+   "translation_key": "manual_override",
+   "unique_id": "01KSBFGWN5RBTYPB2XNR700ZTD_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKQ5SJ8272WMCCE6P8H",
+   "device": [
+    "adaptive_cover",
+    "01KSBFGWN5RBTYPB2XNR700ZTD"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.sw_south_shade_manual_override_sw_south_shade",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override detection",
+   "translation_key": "manual_toggle",
+   "unique_id": "01KSBFGWN5RBTYPB2XNR700ZTD_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKQ5SJ8272WMCCE6P8H",
+   "device": [
+    "adaptive_cover",
+    "01KSBFGWN5RBTYPB2XNR700ZTD"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.sw_south_shade_next_state_change_sw_south_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Next change",
+   "translation_key": "next_change",
+   "unique_id": "01KSBFGWN5RBTYPB2XNR700ZTD_Next State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKQ5SJ8272WMCCE6P8H",
+   "device": [
+    "adaptive_cover",
+    "01KSBFGWN5RBTYPB2XNR700ZTD"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.leanne_s_south_outside_temperature",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Outside temperature",
+   "translation_key": "temp_toggle",
+   "unique_id": "01KSBFGWN5RBTYPB2XNR700ZTD_Outside Temperature"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKQ5SJ8272WMCCE6P8H",
+   "device": [
+    "adaptive_cover",
+    "01KSBFGWN5RBTYPB2XNR700ZTD"
+   ],
+   "disabled_by": null,
+   "domain": "button",
+   "entity_category": null,
+   "entity_id": "button.sw_south_shade_reset_manual_override_sw_south_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Return to auto",
+   "translation_key": "return_to_auto",
+   "unique_id": "01KSBFGWN5RBTYPB2XNR700ZTD_Reset Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKQ5SJ8272WMCCE6P8H",
+   "device": [
+    "adaptive_cover",
+    "01KSBFGWN5RBTYPB2XNR700ZTD"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.sw_south_shade_start_sun_sw_south_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Start sun",
+   "translation_key": "start_sun",
+   "unique_id": "01KSBFGWN5RBTYPB2XNR700ZTD_Start Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKQ5SJ8272WMCCE6P8H",
+   "device": [
+    "adaptive_cover",
+    "01KSBFGWN5RBTYPB2XNR700ZTD"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.sw_south_shade_sun_infront_sw_south_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Sun in front",
+   "translation_key": "sun_motion",
+   "unique_id": "01KSBFGWN5RBTYPB2XNR700ZTD_Sun Infront"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKQ5SJ8272WMCCE6P8H",
+   "device": [
+    "adaptive_cover",
+    "01KSBFGWN5RBTYPB2XNR700ZTD"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.sw_south_shade_toggle_control_sw_south_shade",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Automatic control",
+   "translation_key": "control_toggle",
+   "unique_id": "01KSBFGWN5RBTYPB2XNR700ZTD_Toggle Control"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKQ5SJ8272WMCCE6P8H",
+   "device": [
+    "adaptive_cover",
+    "01KSBFGWN5RBTYPB2XNR700ZTD"
+   ],
+   "disabled_by": null,
+   "domain": "select",
+   "entity_category": null,
+   "entity_id": "select.sw_south_shade_mode_sw_south_shade",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Mode",
+   "translation_key": "mode",
+   "unique_id": "01KSBFGWN5RBTYPB2XNR700ZTD_mode_select"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SHXAR0B3AX79H7NN1QJ",
+   "device": [
+    "adaptive_cover",
+    "01KWHKT5SWNSNC9QD4QC2SQMTR"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.den_south_climate_mode",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Climate mode",
+   "translation_key": "switch_mode",
+   "unique_id": "01KWHKT5SWNSNC9QD4QC2SQMTR_Climate Mode"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SHXAR0B3AX79H7NN1QJ",
+   "device": [
+    "adaptive_cover",
+    "01KWHKT5SWNSNC9QD4QC2SQMTR"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.den_south_control_method",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Control method",
+   "translation_key": "control",
+   "unique_id": "01KWHKT5SWNSNC9QD4QC2SQMTR_Control Method"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SHXAR0B3AX79H7NN1QJ",
+   "device": [
+    "adaptive_cover",
+    "01KWHKT5SWNSNC9QD4QC2SQMTR"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": null,
+   "entity_id": "sensor.den_south_cover_position",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Position",
+   "translation_key": "target_position",
+   "unique_id": "01KWHKT5SWNSNC9QD4QC2SQMTR_Cover Position"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SHXAR0B3AX79H7NN1QJ",
+   "device": [
+    "adaptive_cover",
+    "01KWHKT5SWNSNC9QD4QC2SQMTR"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.den_south_end_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "End sun",
+   "translation_key": "end_sun",
+   "unique_id": "01KWHKT5SWNSNC9QD4QC2SQMTR_End Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SHXAR0B3AX79H7NN1QJ",
+   "device": [
+    "adaptive_cover",
+    "01KWHKT5SWNSNC9QD4QC2SQMTR"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.den_south_last_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Last change",
+   "translation_key": "last_change",
+   "unique_id": "01KWHKT5SWNSNC9QD4QC2SQMTR_Last State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SHXAR0B3AX79H7NN1QJ",
+   "device": [
+    "adaptive_cover",
+    "01KWHKT5SWNSNC9QD4QC2SQMTR"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.den_south_manual_override",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override",
+   "translation_key": "manual_override",
+   "unique_id": "01KWHKT5SWNSNC9QD4QC2SQMTR_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SHXAR0B3AX79H7NN1QJ",
+   "device": [
+    "adaptive_cover",
+    "01KWHKT5SWNSNC9QD4QC2SQMTR"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.den_south_manual_override",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override detection",
+   "translation_key": "manual_toggle",
+   "unique_id": "01KWHKT5SWNSNC9QD4QC2SQMTR_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SHXAR0B3AX79H7NN1QJ",
+   "device": [
+    "adaptive_cover",
+    "01KWHKT5SWNSNC9QD4QC2SQMTR"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.den_south_next_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Next change",
+   "translation_key": "next_change",
+   "unique_id": "01KWHKT5SWNSNC9QD4QC2SQMTR_Next State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SHXAR0B3AX79H7NN1QJ",
+   "device": [
+    "adaptive_cover",
+    "01KWHKT5SWNSNC9QD4QC2SQMTR"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.den_south_outside_temperature",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Outside temperature",
+   "translation_key": "temp_toggle",
+   "unique_id": "01KWHKT5SWNSNC9QD4QC2SQMTR_Outside Temperature"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SHXAR0B3AX79H7NN1QJ",
+   "device": [
+    "adaptive_cover",
+    "01KWHKT5SWNSNC9QD4QC2SQMTR"
+   ],
+   "disabled_by": null,
+   "domain": "button",
+   "entity_category": null,
+   "entity_id": "button.den_south_reset_manual_override",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Return to auto",
+   "translation_key": "return_to_auto",
+   "unique_id": "01KWHKT5SWNSNC9QD4QC2SQMTR_Reset Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SHXAR0B3AX79H7NN1QJ",
+   "device": [
+    "adaptive_cover",
+    "01KWHKT5SWNSNC9QD4QC2SQMTR"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.den_south_start_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Start sun",
+   "translation_key": "start_sun",
+   "unique_id": "01KWHKT5SWNSNC9QD4QC2SQMTR_Start Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SHXAR0B3AX79H7NN1QJ",
+   "device": [
+    "adaptive_cover",
+    "01KWHKT5SWNSNC9QD4QC2SQMTR"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.den_south_sun_infront",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Sun in front",
+   "translation_key": "sun_motion",
+   "unique_id": "01KWHKT5SWNSNC9QD4QC2SQMTR_Sun Infront"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SHXAR0B3AX79H7NN1QJ",
+   "device": [
+    "adaptive_cover",
+    "01KWHKT5SWNSNC9QD4QC2SQMTR"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.den_south_toggle_control",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Automatic control",
+   "translation_key": "control_toggle",
+   "unique_id": "01KWHKT5SWNSNC9QD4QC2SQMTR_Toggle Control"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SHXAR0B3AX79H7NN1QJ",
+   "device": [
+    "adaptive_cover",
+    "01KWHKT5SWNSNC9QD4QC2SQMTR"
+   ],
+   "disabled_by": null,
+   "domain": "select",
+   "entity_category": null,
+   "entity_id": "select.den_south_mode",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Mode",
+   "translation_key": "mode",
+   "unique_id": "01KWHKT5SWNSNC9QD4QC2SQMTR_mode_select"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJ8PQQ40TG1VC4A43K2",
+   "device": [
+    "adaptive_cover",
+    "01KWHKTS0C0HTDDQTW75W04HKZ"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.den_southwest_climate_mode",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Climate mode",
+   "translation_key": "switch_mode",
+   "unique_id": "01KWHKTS0C0HTDDQTW75W04HKZ_Climate Mode"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJ8PQQ40TG1VC4A43K2",
+   "device": [
+    "adaptive_cover",
+    "01KWHKTS0C0HTDDQTW75W04HKZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.den_southwest_control_method",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Control method",
+   "translation_key": "control",
+   "unique_id": "01KWHKTS0C0HTDDQTW75W04HKZ_Control Method"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJ8PQQ40TG1VC4A43K2",
+   "device": [
+    "adaptive_cover",
+    "01KWHKTS0C0HTDDQTW75W04HKZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": null,
+   "entity_id": "sensor.den_southwest_cover_position",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Position",
+   "translation_key": "target_position",
+   "unique_id": "01KWHKTS0C0HTDDQTW75W04HKZ_Cover Position"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJ8PQQ40TG1VC4A43K2",
+   "device": [
+    "adaptive_cover",
+    "01KWHKTS0C0HTDDQTW75W04HKZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.den_southwest_end_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "End sun",
+   "translation_key": "end_sun",
+   "unique_id": "01KWHKTS0C0HTDDQTW75W04HKZ_End Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJ8PQQ40TG1VC4A43K2",
+   "device": [
+    "adaptive_cover",
+    "01KWHKTS0C0HTDDQTW75W04HKZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.den_southwest_last_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Last change",
+   "translation_key": "last_change",
+   "unique_id": "01KWHKTS0C0HTDDQTW75W04HKZ_Last State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJ8PQQ40TG1VC4A43K2",
+   "device": [
+    "adaptive_cover",
+    "01KWHKTS0C0HTDDQTW75W04HKZ"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.den_southwest_manual_override",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override",
+   "translation_key": "manual_override",
+   "unique_id": "01KWHKTS0C0HTDDQTW75W04HKZ_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJ8PQQ40TG1VC4A43K2",
+   "device": [
+    "adaptive_cover",
+    "01KWHKTS0C0HTDDQTW75W04HKZ"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.den_southwest_manual_override",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override detection",
+   "translation_key": "manual_toggle",
+   "unique_id": "01KWHKTS0C0HTDDQTW75W04HKZ_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJ8PQQ40TG1VC4A43K2",
+   "device": [
+    "adaptive_cover",
+    "01KWHKTS0C0HTDDQTW75W04HKZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.den_southwest_next_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Next change",
+   "translation_key": "next_change",
+   "unique_id": "01KWHKTS0C0HTDDQTW75W04HKZ_Next State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJ8PQQ40TG1VC4A43K2",
+   "device": [
+    "adaptive_cover",
+    "01KWHKTS0C0HTDDQTW75W04HKZ"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.den_southwest_outside_temperature",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Outside temperature",
+   "translation_key": "temp_toggle",
+   "unique_id": "01KWHKTS0C0HTDDQTW75W04HKZ_Outside Temperature"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJ8PQQ40TG1VC4A43K2",
+   "device": [
+    "adaptive_cover",
+    "01KWHKTS0C0HTDDQTW75W04HKZ"
+   ],
+   "disabled_by": null,
+   "domain": "button",
+   "entity_category": null,
+   "entity_id": "button.den_southwest_reset_manual_override",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Return to auto",
+   "translation_key": "return_to_auto",
+   "unique_id": "01KWHKTS0C0HTDDQTW75W04HKZ_Reset Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJ8PQQ40TG1VC4A43K2",
+   "device": [
+    "adaptive_cover",
+    "01KWHKTS0C0HTDDQTW75W04HKZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.den_southwest_start_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Start sun",
+   "translation_key": "start_sun",
+   "unique_id": "01KWHKTS0C0HTDDQTW75W04HKZ_Start Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJ8PQQ40TG1VC4A43K2",
+   "device": [
+    "adaptive_cover",
+    "01KWHKTS0C0HTDDQTW75W04HKZ"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.den_southwest_sun_infront",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Sun in front",
+   "translation_key": "sun_motion",
+   "unique_id": "01KWHKTS0C0HTDDQTW75W04HKZ_Sun Infront"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJ8PQQ40TG1VC4A43K2",
+   "device": [
+    "adaptive_cover",
+    "01KWHKTS0C0HTDDQTW75W04HKZ"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.den_southwest_toggle_control",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Automatic control",
+   "translation_key": "control_toggle",
+   "unique_id": "01KWHKTS0C0HTDDQTW75W04HKZ_Toggle Control"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJ8PQQ40TG1VC4A43K2",
+   "device": [
+    "adaptive_cover",
+    "01KWHKTS0C0HTDDQTW75W04HKZ"
+   ],
+   "disabled_by": null,
+   "domain": "select",
+   "entity_category": null,
+   "entity_id": "select.den_southwest_mode",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Mode",
+   "translation_key": "mode",
+   "unique_id": "01KWHKTS0C0HTDDQTW75W04HKZ_mode_select"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJKGEX6YW6WD3KTH29Q",
+   "device": [
+    "adaptive_cover",
+    "01KWHKV52MF7T5N16XVXRR11C1"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.den_west_climate_mode",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Climate mode",
+   "translation_key": "switch_mode",
+   "unique_id": "01KWHKV52MF7T5N16XVXRR11C1_Climate Mode"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJKGEX6YW6WD3KTH29Q",
+   "device": [
+    "adaptive_cover",
+    "01KWHKV52MF7T5N16XVXRR11C1"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.den_west_control_method",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Control method",
+   "translation_key": "control",
+   "unique_id": "01KWHKV52MF7T5N16XVXRR11C1_Control Method"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJKGEX6YW6WD3KTH29Q",
+   "device": [
+    "adaptive_cover",
+    "01KWHKV52MF7T5N16XVXRR11C1"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": null,
+   "entity_id": "sensor.den_west_cover_position",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Position",
+   "translation_key": "target_position",
+   "unique_id": "01KWHKV52MF7T5N16XVXRR11C1_Cover Position"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJKGEX6YW6WD3KTH29Q",
+   "device": [
+    "adaptive_cover",
+    "01KWHKV52MF7T5N16XVXRR11C1"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.den_west_end_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "End sun",
+   "translation_key": "end_sun",
+   "unique_id": "01KWHKV52MF7T5N16XVXRR11C1_End Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJKGEX6YW6WD3KTH29Q",
+   "device": [
+    "adaptive_cover",
+    "01KWHKV52MF7T5N16XVXRR11C1"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.den_west_last_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Last change",
+   "translation_key": "last_change",
+   "unique_id": "01KWHKV52MF7T5N16XVXRR11C1_Last State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJKGEX6YW6WD3KTH29Q",
+   "device": [
+    "adaptive_cover",
+    "01KWHKV52MF7T5N16XVXRR11C1"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.den_west_manual_override",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override",
+   "translation_key": "manual_override",
+   "unique_id": "01KWHKV52MF7T5N16XVXRR11C1_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJKGEX6YW6WD3KTH29Q",
+   "device": [
+    "adaptive_cover",
+    "01KWHKV52MF7T5N16XVXRR11C1"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.den_west_manual_override",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override detection",
+   "translation_key": "manual_toggle",
+   "unique_id": "01KWHKV52MF7T5N16XVXRR11C1_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJKGEX6YW6WD3KTH29Q",
+   "device": [
+    "adaptive_cover",
+    "01KWHKV52MF7T5N16XVXRR11C1"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.den_west_next_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Next change",
+   "translation_key": "next_change",
+   "unique_id": "01KWHKV52MF7T5N16XVXRR11C1_Next State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJKGEX6YW6WD3KTH29Q",
+   "device": [
+    "adaptive_cover",
+    "01KWHKV52MF7T5N16XVXRR11C1"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.den_west_outside_temperature",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Outside temperature",
+   "translation_key": "temp_toggle",
+   "unique_id": "01KWHKV52MF7T5N16XVXRR11C1_Outside Temperature"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJKGEX6YW6WD3KTH29Q",
+   "device": [
+    "adaptive_cover",
+    "01KWHKV52MF7T5N16XVXRR11C1"
+   ],
+   "disabled_by": null,
+   "domain": "button",
+   "entity_category": null,
+   "entity_id": "button.den_west_reset_manual_override",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Return to auto",
+   "translation_key": "return_to_auto",
+   "unique_id": "01KWHKV52MF7T5N16XVXRR11C1_Reset Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJKGEX6YW6WD3KTH29Q",
+   "device": [
+    "adaptive_cover",
+    "01KWHKV52MF7T5N16XVXRR11C1"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.den_west_start_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Start sun",
+   "translation_key": "start_sun",
+   "unique_id": "01KWHKV52MF7T5N16XVXRR11C1_Start Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJKGEX6YW6WD3KTH29Q",
+   "device": [
+    "adaptive_cover",
+    "01KWHKV52MF7T5N16XVXRR11C1"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.den_west_sun_infront",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Sun in front",
+   "translation_key": "sun_motion",
+   "unique_id": "01KWHKV52MF7T5N16XVXRR11C1_Sun Infront"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJKGEX6YW6WD3KTH29Q",
+   "device": [
+    "adaptive_cover",
+    "01KWHKV52MF7T5N16XVXRR11C1"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.den_west_toggle_control",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Automatic control",
+   "translation_key": "control_toggle",
+   "unique_id": "01KWHKV52MF7T5N16XVXRR11C1_Toggle Control"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJKGEX6YW6WD3KTH29Q",
+   "device": [
+    "adaptive_cover",
+    "01KWHKV52MF7T5N16XVXRR11C1"
+   ],
+   "disabled_by": null,
+   "domain": "select",
+   "entity_category": null,
+   "entity_id": "select.den_west_mode",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Mode",
+   "translation_key": "mode",
+   "unique_id": "01KWHKV52MF7T5N16XVXRR11C1_mode_select"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SM5SRT74K2XF0DVCR7F",
+   "device": [
+    "adaptive_cover",
+    "01KWP1JY50D79YNJ6A6MG5RC15"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.master_east_climate_mode",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Climate mode",
+   "translation_key": "switch_mode",
+   "unique_id": "01KWP1JY50D79YNJ6A6MG5RC15_Climate Mode"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SM5SRT74K2XF0DVCR7F",
+   "device": [
+    "adaptive_cover",
+    "01KWP1JY50D79YNJ6A6MG5RC15"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_east_control_method",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Control method",
+   "translation_key": "control",
+   "unique_id": "01KWP1JY50D79YNJ6A6MG5RC15_Control Method"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SM5SRT74K2XF0DVCR7F",
+   "device": [
+    "adaptive_cover",
+    "01KWP1JY50D79YNJ6A6MG5RC15"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": null,
+   "entity_id": "sensor.master_east_cover_position",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Position",
+   "translation_key": "target_position",
+   "unique_id": "01KWP1JY50D79YNJ6A6MG5RC15_Cover Position"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SM5SRT74K2XF0DVCR7F",
+   "device": [
+    "adaptive_cover",
+    "01KWP1JY50D79YNJ6A6MG5RC15"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_east_end_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "End sun",
+   "translation_key": "end_sun",
+   "unique_id": "01KWP1JY50D79YNJ6A6MG5RC15_End Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SM5SRT74K2XF0DVCR7F",
+   "device": [
+    "adaptive_cover",
+    "01KWP1JY50D79YNJ6A6MG5RC15"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_east_last_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Last change",
+   "translation_key": "last_change",
+   "unique_id": "01KWP1JY50D79YNJ6A6MG5RC15_Last State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SM5SRT74K2XF0DVCR7F",
+   "device": [
+    "adaptive_cover",
+    "01KWP1JY50D79YNJ6A6MG5RC15"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.master_east_manual_override",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override",
+   "translation_key": "manual_override",
+   "unique_id": "01KWP1JY50D79YNJ6A6MG5RC15_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SM5SRT74K2XF0DVCR7F",
+   "device": [
+    "adaptive_cover",
+    "01KWP1JY50D79YNJ6A6MG5RC15"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.master_east_manual_override",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override detection",
+   "translation_key": "manual_toggle",
+   "unique_id": "01KWP1JY50D79YNJ6A6MG5RC15_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SM5SRT74K2XF0DVCR7F",
+   "device": [
+    "adaptive_cover",
+    "01KWP1JY50D79YNJ6A6MG5RC15"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_east_next_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Next change",
+   "translation_key": "next_change",
+   "unique_id": "01KWP1JY50D79YNJ6A6MG5RC15_Next State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SM5SRT74K2XF0DVCR7F",
+   "device": [
+    "adaptive_cover",
+    "01KWP1JY50D79YNJ6A6MG5RC15"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.master_east_outside_temperature",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Outside temperature",
+   "translation_key": "temp_toggle",
+   "unique_id": "01KWP1JY50D79YNJ6A6MG5RC15_Outside Temperature"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SM5SRT74K2XF0DVCR7F",
+   "device": [
+    "adaptive_cover",
+    "01KWP1JY50D79YNJ6A6MG5RC15"
+   ],
+   "disabled_by": null,
+   "domain": "button",
+   "entity_category": null,
+   "entity_id": "button.master_east_return_to_auto",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Return to auto",
+   "translation_key": "return_to_auto",
+   "unique_id": "01KWP1JY50D79YNJ6A6MG5RC15_Reset Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SM5SRT74K2XF0DVCR7F",
+   "device": [
+    "adaptive_cover",
+    "01KWP1JY50D79YNJ6A6MG5RC15"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_east_start_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Start sun",
+   "translation_key": "start_sun",
+   "unique_id": "01KWP1JY50D79YNJ6A6MG5RC15_Start Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SM5SRT74K2XF0DVCR7F",
+   "device": [
+    "adaptive_cover",
+    "01KWP1JY50D79YNJ6A6MG5RC15"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.master_east_sun_infront",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Sun in front",
+   "translation_key": "sun_motion",
+   "unique_id": "01KWP1JY50D79YNJ6A6MG5RC15_Sun Infront"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SM5SRT74K2XF0DVCR7F",
+   "device": [
+    "adaptive_cover",
+    "01KWP1JY50D79YNJ6A6MG5RC15"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.master_east_toggle_control",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Automatic control",
+   "translation_key": "control_toggle",
+   "unique_id": "01KWP1JY50D79YNJ6A6MG5RC15_Toggle Control"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SM5SRT74K2XF0DVCR7F",
+   "device": [
+    "adaptive_cover",
+    "01KWP1JY50D79YNJ6A6MG5RC15"
+   ],
+   "disabled_by": null,
+   "domain": "select",
+   "entity_category": null,
+   "entity_id": "select.master_east_mode",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Mode",
+   "translation_key": "mode",
+   "unique_id": "01KWP1JY50D79YNJ6A6MG5RC15_mode_select"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK2G59P4DSF91G04XN9",
+   "device": [
+    "adaptive_cover",
+    "01KWP1K4XH1C9J89HP8ME35CNZ"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.family_east_climate_mode",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Climate mode",
+   "translation_key": "switch_mode",
+   "unique_id": "01KWP1K4XH1C9J89HP8ME35CNZ_Climate Mode"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK2G59P4DSF91G04XN9",
+   "device": [
+    "adaptive_cover",
+    "01KWP1K4XH1C9J89HP8ME35CNZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.family_east_control_method",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Control method",
+   "translation_key": "control",
+   "unique_id": "01KWP1K4XH1C9J89HP8ME35CNZ_Control Method"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK2G59P4DSF91G04XN9",
+   "device": [
+    "adaptive_cover",
+    "01KWP1K4XH1C9J89HP8ME35CNZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": null,
+   "entity_id": "sensor.family_east_cover_position",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Position",
+   "translation_key": "target_position",
+   "unique_id": "01KWP1K4XH1C9J89HP8ME35CNZ_Cover Position"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK2G59P4DSF91G04XN9",
+   "device": [
+    "adaptive_cover",
+    "01KWP1K4XH1C9J89HP8ME35CNZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.family_east_end_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "End sun",
+   "translation_key": "end_sun",
+   "unique_id": "01KWP1K4XH1C9J89HP8ME35CNZ_End Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK2G59P4DSF91G04XN9",
+   "device": [
+    "adaptive_cover",
+    "01KWP1K4XH1C9J89HP8ME35CNZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.family_east_last_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Last change",
+   "translation_key": "last_change",
+   "unique_id": "01KWP1K4XH1C9J89HP8ME35CNZ_Last State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK2G59P4DSF91G04XN9",
+   "device": [
+    "adaptive_cover",
+    "01KWP1K4XH1C9J89HP8ME35CNZ"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.family_east_manual_override",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override",
+   "translation_key": "manual_override",
+   "unique_id": "01KWP1K4XH1C9J89HP8ME35CNZ_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK2G59P4DSF91G04XN9",
+   "device": [
+    "adaptive_cover",
+    "01KWP1K4XH1C9J89HP8ME35CNZ"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.family_east_manual_override",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override detection",
+   "translation_key": "manual_toggle",
+   "unique_id": "01KWP1K4XH1C9J89HP8ME35CNZ_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK2G59P4DSF91G04XN9",
+   "device": [
+    "adaptive_cover",
+    "01KWP1K4XH1C9J89HP8ME35CNZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.family_east_next_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Next change",
+   "translation_key": "next_change",
+   "unique_id": "01KWP1K4XH1C9J89HP8ME35CNZ_Next State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK2G59P4DSF91G04XN9",
+   "device": [
+    "adaptive_cover",
+    "01KWP1K4XH1C9J89HP8ME35CNZ"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.family_east_outside_temperature",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Outside temperature",
+   "translation_key": "temp_toggle",
+   "unique_id": "01KWP1K4XH1C9J89HP8ME35CNZ_Outside Temperature"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK2G59P4DSF91G04XN9",
+   "device": [
+    "adaptive_cover",
+    "01KWP1K4XH1C9J89HP8ME35CNZ"
+   ],
+   "disabled_by": null,
+   "domain": "button",
+   "entity_category": null,
+   "entity_id": "button.family_east_return_to_auto",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Return to auto",
+   "translation_key": "return_to_auto",
+   "unique_id": "01KWP1K4XH1C9J89HP8ME35CNZ_Reset Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK2G59P4DSF91G04XN9",
+   "device": [
+    "adaptive_cover",
+    "01KWP1K4XH1C9J89HP8ME35CNZ"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.family_east_start_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Start sun",
+   "translation_key": "start_sun",
+   "unique_id": "01KWP1K4XH1C9J89HP8ME35CNZ_Start Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK2G59P4DSF91G04XN9",
+   "device": [
+    "adaptive_cover",
+    "01KWP1K4XH1C9J89HP8ME35CNZ"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.family_east_sun_infront",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Sun in front",
+   "translation_key": "sun_motion",
+   "unique_id": "01KWP1K4XH1C9J89HP8ME35CNZ_Sun Infront"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK2G59P4DSF91G04XN9",
+   "device": [
+    "adaptive_cover",
+    "01KWP1K4XH1C9J89HP8ME35CNZ"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.family_east_toggle_control",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Automatic control",
+   "translation_key": "control_toggle",
+   "unique_id": "01KWP1K4XH1C9J89HP8ME35CNZ_Toggle Control"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK2G59P4DSF91G04XN9",
+   "device": [
+    "adaptive_cover",
+    "01KWP1K4XH1C9J89HP8ME35CNZ"
+   ],
+   "disabled_by": null,
+   "domain": "select",
+   "entity_category": null,
+   "entity_id": "select.family_east_mode",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Mode",
+   "translation_key": "mode",
+   "unique_id": "01KWP1K4XH1C9J89HP8ME35CNZ_mode_select"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKY5G4MCQWQRP5FNR91",
+   "device": [
+    "adaptive_cover",
+    "01KWP1KBER8D63ZW8C5326F7AC"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.master_door_climate_mode",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Climate mode",
+   "translation_key": "switch_mode",
+   "unique_id": "01KWP1KBER8D63ZW8C5326F7AC_Climate Mode"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKY5G4MCQWQRP5FNR91",
+   "device": [
+    "adaptive_cover",
+    "01KWP1KBER8D63ZW8C5326F7AC"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_door_control_method",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Control method",
+   "translation_key": "control",
+   "unique_id": "01KWP1KBER8D63ZW8C5326F7AC_Control Method"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKY5G4MCQWQRP5FNR91",
+   "device": [
+    "adaptive_cover",
+    "01KWP1KBER8D63ZW8C5326F7AC"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": null,
+   "entity_id": "sensor.master_door_cover_position",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Position",
+   "translation_key": "target_position",
+   "unique_id": "01KWP1KBER8D63ZW8C5326F7AC_Cover Position"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKY5G4MCQWQRP5FNR91",
+   "device": [
+    "adaptive_cover",
+    "01KWP1KBER8D63ZW8C5326F7AC"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_door_end_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "End sun",
+   "translation_key": "end_sun",
+   "unique_id": "01KWP1KBER8D63ZW8C5326F7AC_End Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKY5G4MCQWQRP5FNR91",
+   "device": [
+    "adaptive_cover",
+    "01KWP1KBER8D63ZW8C5326F7AC"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_door_last_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Last change",
+   "translation_key": "last_change",
+   "unique_id": "01KWP1KBER8D63ZW8C5326F7AC_Last State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKY5G4MCQWQRP5FNR91",
+   "device": [
+    "adaptive_cover",
+    "01KWP1KBER8D63ZW8C5326F7AC"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.master_door_manual_override",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override",
+   "translation_key": "manual_override",
+   "unique_id": "01KWP1KBER8D63ZW8C5326F7AC_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKY5G4MCQWQRP5FNR91",
+   "device": [
+    "adaptive_cover",
+    "01KWP1KBER8D63ZW8C5326F7AC"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.master_door_manual_override",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override detection",
+   "translation_key": "manual_toggle",
+   "unique_id": "01KWP1KBER8D63ZW8C5326F7AC_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKY5G4MCQWQRP5FNR91",
+   "device": [
+    "adaptive_cover",
+    "01KWP1KBER8D63ZW8C5326F7AC"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_door_next_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Next change",
+   "translation_key": "next_change",
+   "unique_id": "01KWP1KBER8D63ZW8C5326F7AC_Next State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKY5G4MCQWQRP5FNR91",
+   "device": [
+    "adaptive_cover",
+    "01KWP1KBER8D63ZW8C5326F7AC"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.master_door_outside_temperature",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Outside temperature",
+   "translation_key": "temp_toggle",
+   "unique_id": "01KWP1KBER8D63ZW8C5326F7AC_Outside Temperature"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKY5G4MCQWQRP5FNR91",
+   "device": [
+    "adaptive_cover",
+    "01KWP1KBER8D63ZW8C5326F7AC"
+   ],
+   "disabled_by": null,
+   "domain": "button",
+   "entity_category": null,
+   "entity_id": "button.master_door_return_to_auto",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Return to auto",
+   "translation_key": "return_to_auto",
+   "unique_id": "01KWP1KBER8D63ZW8C5326F7AC_Reset Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKY5G4MCQWQRP5FNR91",
+   "device": [
+    "adaptive_cover",
+    "01KWP1KBER8D63ZW8C5326F7AC"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_door_start_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Start sun",
+   "translation_key": "start_sun",
+   "unique_id": "01KWP1KBER8D63ZW8C5326F7AC_Start Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKY5G4MCQWQRP5FNR91",
+   "device": [
+    "adaptive_cover",
+    "01KWP1KBER8D63ZW8C5326F7AC"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.master_door_sun_infront",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Sun in front",
+   "translation_key": "sun_motion",
+   "unique_id": "01KWP1KBER8D63ZW8C5326F7AC_Sun Infront"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKY5G4MCQWQRP5FNR91",
+   "device": [
+    "adaptive_cover",
+    "01KWP1KBER8D63ZW8C5326F7AC"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.master_door_toggle_control",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Automatic control",
+   "translation_key": "control_toggle",
+   "unique_id": "01KWP1KBER8D63ZW8C5326F7AC_Toggle Control"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SKY5G4MCQWQRP5FNR91",
+   "device": [
+    "adaptive_cover",
+    "01KWP1KBER8D63ZW8C5326F7AC"
+   ],
+   "disabled_by": null,
+   "domain": "select",
+   "entity_category": null,
+   "entity_id": "select.master_door_mode",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Mode",
+   "translation_key": "mode",
+   "unique_id": "01KWP1KBER8D63ZW8C5326F7AC_mode_select"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJW9R7XW59JWE1VYG83",
+   "device": [
+    "adaptive_cover",
+    "01KWP2H31Q4F3BYTR9JP9W4K9C"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.family_door_climate_mode",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Climate mode",
+   "translation_key": "switch_mode",
+   "unique_id": "01KWP2H31Q4F3BYTR9JP9W4K9C_Climate Mode"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJW9R7XW59JWE1VYG83",
+   "device": [
+    "adaptive_cover",
+    "01KWP2H31Q4F3BYTR9JP9W4K9C"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.family_door_control_method",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Control method",
+   "translation_key": "control",
+   "unique_id": "01KWP2H31Q4F3BYTR9JP9W4K9C_Control Method"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJW9R7XW59JWE1VYG83",
+   "device": [
+    "adaptive_cover",
+    "01KWP2H31Q4F3BYTR9JP9W4K9C"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": null,
+   "entity_id": "sensor.family_door_cover_position",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Position",
+   "translation_key": "target_position",
+   "unique_id": "01KWP2H31Q4F3BYTR9JP9W4K9C_Cover Position"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJW9R7XW59JWE1VYG83",
+   "device": [
+    "adaptive_cover",
+    "01KWP2H31Q4F3BYTR9JP9W4K9C"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.family_door_end_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "End sun",
+   "translation_key": "end_sun",
+   "unique_id": "01KWP2H31Q4F3BYTR9JP9W4K9C_End Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJW9R7XW59JWE1VYG83",
+   "device": [
+    "adaptive_cover",
+    "01KWP2H31Q4F3BYTR9JP9W4K9C"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.family_door_last_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Last change",
+   "translation_key": "last_change",
+   "unique_id": "01KWP2H31Q4F3BYTR9JP9W4K9C_Last State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJW9R7XW59JWE1VYG83",
+   "device": [
+    "adaptive_cover",
+    "01KWP2H31Q4F3BYTR9JP9W4K9C"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.family_door_manual_override",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override",
+   "translation_key": "manual_override",
+   "unique_id": "01KWP2H31Q4F3BYTR9JP9W4K9C_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJW9R7XW59JWE1VYG83",
+   "device": [
+    "adaptive_cover",
+    "01KWP2H31Q4F3BYTR9JP9W4K9C"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.family_door_manual_override",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override detection",
+   "translation_key": "manual_toggle",
+   "unique_id": "01KWP2H31Q4F3BYTR9JP9W4K9C_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJW9R7XW59JWE1VYG83",
+   "device": [
+    "adaptive_cover",
+    "01KWP2H31Q4F3BYTR9JP9W4K9C"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.family_door_next_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Next change",
+   "translation_key": "next_change",
+   "unique_id": "01KWP2H31Q4F3BYTR9JP9W4K9C_Next State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJW9R7XW59JWE1VYG83",
+   "device": [
+    "adaptive_cover",
+    "01KWP2H31Q4F3BYTR9JP9W4K9C"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.family_door_outside_temperature",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Outside temperature",
+   "translation_key": "temp_toggle",
+   "unique_id": "01KWP2H31Q4F3BYTR9JP9W4K9C_Outside Temperature"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJW9R7XW59JWE1VYG83",
+   "device": [
+    "adaptive_cover",
+    "01KWP2H31Q4F3BYTR9JP9W4K9C"
+   ],
+   "disabled_by": null,
+   "domain": "button",
+   "entity_category": null,
+   "entity_id": "button.family_door_return_to_auto",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Return to auto",
+   "translation_key": "return_to_auto",
+   "unique_id": "01KWP2H31Q4F3BYTR9JP9W4K9C_Reset Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJW9R7XW59JWE1VYG83",
+   "device": [
+    "adaptive_cover",
+    "01KWP2H31Q4F3BYTR9JP9W4K9C"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.family_door_start_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Start sun",
+   "translation_key": "start_sun",
+   "unique_id": "01KWP2H31Q4F3BYTR9JP9W4K9C_Start Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJW9R7XW59JWE1VYG83",
+   "device": [
+    "adaptive_cover",
+    "01KWP2H31Q4F3BYTR9JP9W4K9C"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.family_door_sun_infront",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Sun in front",
+   "translation_key": "sun_motion",
+   "unique_id": "01KWP2H31Q4F3BYTR9JP9W4K9C_Sun Infront"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJW9R7XW59JWE1VYG83",
+   "device": [
+    "adaptive_cover",
+    "01KWP2H31Q4F3BYTR9JP9W4K9C"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.family_door_toggle_control",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Automatic control",
+   "translation_key": "control_toggle",
+   "unique_id": "01KWP2H31Q4F3BYTR9JP9W4K9C_Toggle Control"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SJW9R7XW59JWE1VYG83",
+   "device": [
+    "adaptive_cover",
+    "01KWP2H31Q4F3BYTR9JP9W4K9C"
+   ],
+   "disabled_by": null,
+   "domain": "select",
+   "entity_category": null,
+   "entity_id": "select.family_door_mode",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Mode",
+   "translation_key": "mode",
+   "unique_id": "01KWP2H31Q4F3BYTR9JP9W4K9C_mode_select"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMHVHQ1H59B8E6R50EM",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPAFBRZQ463CW35SKE8GH"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.master_south_climate_mode",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Climate mode",
+   "translation_key": "switch_mode",
+   "unique_id": "01KWQEPAFBRZQ463CW35SKE8GH_Climate Mode"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMHVHQ1H59B8E6R50EM",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPAFBRZQ463CW35SKE8GH"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_south_control_method",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Control method",
+   "translation_key": "control",
+   "unique_id": "01KWQEPAFBRZQ463CW35SKE8GH_Control Method"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMHVHQ1H59B8E6R50EM",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPAFBRZQ463CW35SKE8GH"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": null,
+   "entity_id": "sensor.master_south_cover_position",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Position",
+   "translation_key": "target_position",
+   "unique_id": "01KWQEPAFBRZQ463CW35SKE8GH_Cover Position"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMHVHQ1H59B8E6R50EM",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPAFBRZQ463CW35SKE8GH"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_south_end_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "End sun",
+   "translation_key": "end_sun",
+   "unique_id": "01KWQEPAFBRZQ463CW35SKE8GH_End Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMHVHQ1H59B8E6R50EM",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPAFBRZQ463CW35SKE8GH"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_south_last_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Last change",
+   "translation_key": "last_change",
+   "unique_id": "01KWQEPAFBRZQ463CW35SKE8GH_Last State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMHVHQ1H59B8E6R50EM",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPAFBRZQ463CW35SKE8GH"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.master_south_manual_override",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override",
+   "translation_key": "manual_override",
+   "unique_id": "01KWQEPAFBRZQ463CW35SKE8GH_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMHVHQ1H59B8E6R50EM",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPAFBRZQ463CW35SKE8GH"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.master_south_manual_override",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override detection",
+   "translation_key": "manual_toggle",
+   "unique_id": "01KWQEPAFBRZQ463CW35SKE8GH_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMHVHQ1H59B8E6R50EM",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPAFBRZQ463CW35SKE8GH"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_south_next_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Next change",
+   "translation_key": "next_change",
+   "unique_id": "01KWQEPAFBRZQ463CW35SKE8GH_Next State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMHVHQ1H59B8E6R50EM",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPAFBRZQ463CW35SKE8GH"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.master_south_outside_temperature",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Outside temperature",
+   "translation_key": "temp_toggle",
+   "unique_id": "01KWQEPAFBRZQ463CW35SKE8GH_Outside Temperature"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMHVHQ1H59B8E6R50EM",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPAFBRZQ463CW35SKE8GH"
+   ],
+   "disabled_by": null,
+   "domain": "button",
+   "entity_category": null,
+   "entity_id": "button.master_south_return_to_auto",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Return to auto",
+   "translation_key": "return_to_auto",
+   "unique_id": "01KWQEPAFBRZQ463CW35SKE8GH_Reset Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMHVHQ1H59B8E6R50EM",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPAFBRZQ463CW35SKE8GH"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.master_south_start_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Start sun",
+   "translation_key": "start_sun",
+   "unique_id": "01KWQEPAFBRZQ463CW35SKE8GH_Start Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMHVHQ1H59B8E6R50EM",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPAFBRZQ463CW35SKE8GH"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.master_south_sun_infront",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Sun in front",
+   "translation_key": "sun_motion",
+   "unique_id": "01KWQEPAFBRZQ463CW35SKE8GH_Sun Infront"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMHVHQ1H59B8E6R50EM",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPAFBRZQ463CW35SKE8GH"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.master_south_toggle_control",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Automatic control",
+   "translation_key": "control_toggle",
+   "unique_id": "01KWQEPAFBRZQ463CW35SKE8GH_Toggle Control"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SMHVHQ1H59B8E6R50EM",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPAFBRZQ463CW35SKE8GH"
+   ],
+   "disabled_by": null,
+   "domain": "select",
+   "entity_category": null,
+   "entity_id": "select.master_south_mode",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Mode",
+   "translation_key": "mode",
+   "unique_id": "01KWQEPAFBRZQ463CW35SKE8GH_mode_select"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK9DTZ9M05WP4FF8BZE",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPHPX2QRC9BQ0NNZ9857Z"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.family_south_climate_mode",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Climate mode",
+   "translation_key": "switch_mode",
+   "unique_id": "01KWQEPHPX2QRC9BQ0NNZ9857Z_Climate Mode"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK9DTZ9M05WP4FF8BZE",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPHPX2QRC9BQ0NNZ9857Z"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.family_south_control_method",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Control method",
+   "translation_key": "control",
+   "unique_id": "01KWQEPHPX2QRC9BQ0NNZ9857Z_Control Method"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK9DTZ9M05WP4FF8BZE",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPHPX2QRC9BQ0NNZ9857Z"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": null,
+   "entity_id": "sensor.family_south_cover_position",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Position",
+   "translation_key": "target_position",
+   "unique_id": "01KWQEPHPX2QRC9BQ0NNZ9857Z_Cover Position"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK9DTZ9M05WP4FF8BZE",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPHPX2QRC9BQ0NNZ9857Z"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.family_south_end_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "End sun",
+   "translation_key": "end_sun",
+   "unique_id": "01KWQEPHPX2QRC9BQ0NNZ9857Z_End Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK9DTZ9M05WP4FF8BZE",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPHPX2QRC9BQ0NNZ9857Z"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.family_south_last_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Last change",
+   "translation_key": "last_change",
+   "unique_id": "01KWQEPHPX2QRC9BQ0NNZ9857Z_Last State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK9DTZ9M05WP4FF8BZE",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPHPX2QRC9BQ0NNZ9857Z"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.family_south_manual_override",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override",
+   "translation_key": "manual_override",
+   "unique_id": "01KWQEPHPX2QRC9BQ0NNZ9857Z_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK9DTZ9M05WP4FF8BZE",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPHPX2QRC9BQ0NNZ9857Z"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.family_south_manual_override",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override detection",
+   "translation_key": "manual_toggle",
+   "unique_id": "01KWQEPHPX2QRC9BQ0NNZ9857Z_Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK9DTZ9M05WP4FF8BZE",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPHPX2QRC9BQ0NNZ9857Z"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.family_south_next_state_change",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Next change",
+   "translation_key": "next_change",
+   "unique_id": "01KWQEPHPX2QRC9BQ0NNZ9857Z_Next State Change"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK9DTZ9M05WP4FF8BZE",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPHPX2QRC9BQ0NNZ9857Z"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.family_south_outside_temperature",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Outside temperature",
+   "translation_key": "temp_toggle",
+   "unique_id": "01KWQEPHPX2QRC9BQ0NNZ9857Z_Outside Temperature"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK9DTZ9M05WP4FF8BZE",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPHPX2QRC9BQ0NNZ9857Z"
+   ],
+   "disabled_by": null,
+   "domain": "button",
+   "entity_category": null,
+   "entity_id": "button.family_south_return_to_auto",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Return to auto",
+   "translation_key": "return_to_auto",
+   "unique_id": "01KWQEPHPX2QRC9BQ0NNZ9857Z_Reset Manual Override"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK9DTZ9M05WP4FF8BZE",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPHPX2QRC9BQ0NNZ9857Z"
+   ],
+   "disabled_by": null,
+   "domain": "sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "sensor.family_south_start_sun",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Start sun",
+   "translation_key": "start_sun",
+   "unique_id": "01KWQEPHPX2QRC9BQ0NNZ9857Z_Start Sun"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK9DTZ9M05WP4FF8BZE",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPHPX2QRC9BQ0NNZ9857Z"
+   ],
+   "disabled_by": null,
+   "domain": "binary_sensor",
+   "entity_category": "diagnostic",
+   "entity_id": "binary_sensor.family_south_sun_infront",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Sun in front",
+   "translation_key": "sun_motion",
+   "unique_id": "01KWQEPHPX2QRC9BQ0NNZ9857Z_Sun Infront"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK9DTZ9M05WP4FF8BZE",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPHPX2QRC9BQ0NNZ9857Z"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.family_south_toggle_control",
+   "has_entity_name": true,
+   "hidden_by": "integration",
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Automatic control",
+   "translation_key": "control_toggle",
+   "unique_id": "01KWQEPHPX2QRC9BQ0NNZ9857Z_Toggle Control"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": "01M3R05SK9DTZ9M05WP4FF8BZE",
+   "device": [
+    "adaptive_cover",
+    "01KWQEPHPX2QRC9BQ0NNZ9857Z"
+   ],
+   "disabled_by": null,
+   "domain": "select",
+   "entity_category": null,
+   "entity_id": "select.family_south_mode",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Mode",
+   "translation_key": "mode",
+   "unique_id": "01KWQEPHPX2QRC9BQ0NNZ9857Z_mode_select"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "device": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": null,
+   "entity_id": "switch.adaptive_cover_all_climate",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Climate",
+   "translation_key": "climate_on",
+   "unique_id": "adaptive_cover_hub_climate_on"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "device": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "disabled_by": null,
+   "domain": "cover",
+   "entity_category": null,
+   "entity_id": "cover.adaptive_cover_all",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": null,
+   "translation_key": null,
+   "unique_id": "adaptive_cover_hub_cover"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "device": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "disabled_by": null,
+   "domain": "time",
+   "entity_category": "config",
+   "entity_id": "time.adaptive_cover_all_end_time",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "End time",
+   "translation_key": "end_time",
+   "unique_id": "adaptive_cover_hub_end_time"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "device": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "disabled_by": null,
+   "domain": "number",
+   "entity_category": "config",
+   "entity_id": "number.adaptive_cover_all_eye_height",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Eye height",
+   "translation_key": "eye_height",
+   "unique_id": "adaptive_cover_hub_eye_height"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "device": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "disabled_by": null,
+   "domain": "select",
+   "entity_category": null,
+   "entity_id": "select.adaptive_cover_all_cover_control_mode",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Cover control mode",
+   "translation_key": "house_mode",
+   "unique_id": "adaptive_cover_hub_house_mode"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "device": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.adaptive_cover_all_manual_move_detection",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual-move detection",
+   "translation_key": "manual_detection",
+   "unique_id": "adaptive_cover_hub_manual_detection"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "device": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "disabled_by": null,
+   "domain": "number",
+   "entity_category": "config",
+   "entity_id": "number.adaptive_cover_all_manual_override_duration",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Manual override duration",
+   "translation_key": "manual_override_duration",
+   "unique_id": "adaptive_cover_hub_manual_override_duration"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "device": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "disabled_by": null,
+   "domain": "number",
+   "entity_category": "config",
+   "entity_id": "number.adaptive_cover_all_seat_distance_from_window",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Seat distance from window",
+   "translation_key": "occupied_distance",
+   "unique_id": "adaptive_cover_hub_occupied_distance"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "device": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "disabled_by": null,
+   "domain": "number",
+   "entity_category": "config",
+   "entity_id": "number.adaptive_cover_all_privacy_delay_after_sunset",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Privacy delay after sunset",
+   "translation_key": "privacy_offset",
+   "unique_id": "adaptive_cover_hub_privacy_offset"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "device": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "disabled_by": null,
+   "domain": "time",
+   "entity_category": "config",
+   "entity_id": "time.adaptive_cover_all_quiet_hours_end",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Quiet hours end",
+   "translation_key": "quiet_end",
+   "unique_id": "adaptive_cover_hub_quiet_end"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "device": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "disabled_by": null,
+   "domain": "time",
+   "entity_category": "config",
+   "entity_id": "time.adaptive_cover_all_quiet_hours_start",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Quiet hours start",
+   "translation_key": "quiet_start",
+   "unique_id": "adaptive_cover_hub_quiet_start"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "device": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "disabled_by": null,
+   "domain": "button",
+   "entity_category": null,
+   "entity_id": "button.adaptive_cover_all_reset_all_manual_overrides",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Return all shades to auto",
+   "translation_key": "return_all_to_auto",
+   "unique_id": "adaptive_cover_hub_reset_all"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "device": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "disabled_by": null,
+   "domain": "number",
+   "entity_category": "config",
+   "entity_id": "number.adaptive_cover_all_cooling_threshold",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Cooling threshold",
+   "translation_key": "temp_high",
+   "unique_id": "adaptive_cover_hub_temp_high"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "device": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "disabled_by": null,
+   "domain": "number",
+   "entity_category": "config",
+   "entity_id": "number.adaptive_cover_all_heating_threshold",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Heating threshold",
+   "translation_key": "temp_low",
+   "unique_id": "adaptive_cover_hub_temp_low"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "device": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.adaptive_cover_all_use_irradiance_sensor",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Use irradiance sensor",
+   "translation_key": "use_irradiance",
+   "unique_id": "adaptive_cover_hub_use_irradiance"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "device": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.adaptive_cover_all_use_lux_sensor",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Use lux sensor",
+   "translation_key": "use_lux",
+   "unique_id": "adaptive_cover_hub_use_lux"
+  },
+  {
+   "area_id": null,
+   "config_entry_id": "01KWGN2C5A971RHY27W3G8ERVX",
+   "config_subentry_id": null,
+   "device": [
+    "adaptive_cover",
+    "adaptive_cover_hub"
+   ],
+   "disabled_by": null,
+   "domain": "switch",
+   "entity_category": "config",
+   "entity_id": "switch.adaptive_cover_all_use_outside_temperature",
+   "has_entity_name": true,
+   "hidden_by": null,
+   "icon": null,
+   "labels": [],
+   "name": null,
+   "original_name": "Use outside temperature",
+   "translation_key": "use_outside_temp",
+   "unique_id": "adaptive_cover_hub_use_outside_temp"
+  }
+ ]
+}
