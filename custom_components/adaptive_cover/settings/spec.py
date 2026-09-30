@@ -94,6 +94,7 @@ from ..const import (
     CONF_SUNSET_POS,
     CONF_TEMP_ENTITY,
     CONF_TEMP_HIGH,
+    CONF_TEMP_HYSTERESIS,
     CONF_TEMP_LOW,
     CONF_TILT_DEPTH,
     CONF_TILT_DISTANCE,
@@ -364,6 +365,15 @@ _TEMP_HIGH: Final = MappingProxyType(
     }
 )  # fmt: skip
 
+# The season's hysteresis per HA temperature unit (engine/season.py):
+# 0 is off, the plain threshold rule.
+_TEMP_HYSTERESIS: Final = MappingProxyType(
+    {
+        "°C": UnitShape(min=0, max=3, step=0.5, default=0),
+        "°F": UnitShape(min=0, max=5, step=0.1, default=0),
+    }
+)
+
 WEATHER_CONDITIONS: Final = (
     "clear-night", "clear", "cloudy", "fog", "hail", "lightning",
     "lightning-rainy", "partlycloudy", "pouring", "rainy", "snowy",
@@ -542,6 +552,9 @@ OPTS: Final[tuple[Opt, ...]] = (
     Opt(CONF_TEMP_HIGH, Kind.NUMBER, Group.CLIMATE, REC, H, (F, A),
         unit=TEMPERATURE, by_temperature_unit=_TEMP_HIGH, wizard_required=True,
         service=_FLOAT_OPTIONAL, number=LiveNumber(shows_default=True)),
+    Opt(CONF_TEMP_HYSTERESIS, Kind.NUMBER, Group.CLIMATE, REC, H, (A,),
+        unit=TEMPERATURE, by_temperature_unit=_TEMP_HYSTERESIS, service=_FLOAT,
+        number=LiveNumber(shows_default=True)),
     Opt(CONF_OUTSIDETEMP_ENTITY, Kind.ENTITY, Group.CLIMATE, REC, H,
         domains=("sensor",), clearable=True, service=_ENTITY_ID),
     Opt(CONF_OUTSIDE_THRESHOLD, Kind.INT, Group.CLIMATE, REC, H,

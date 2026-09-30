@@ -146,6 +146,7 @@
               "temp_entity": "Inside temperature entity",
               "temp_low": "Low temperature threshold",
               "temp_high": "High temperature threshold",
+              "temp_hysteresis": "Threshold hysteresis",
               "outside_temp": "Outside temperature sensor (optional)",
               "outside_threshold": "Minimum outside temperature for summer mode",
               "presence_entity": "Presence entity (optional)",
@@ -160,6 +161,7 @@
               "climate_mode": "Use temperature, presence and weather to decide between blocking the sun and letting it in.",
               "temp_low": "Minimum comfortable temperature",
               "temp_high": "Maximum comfortable temperature",
+              "temp_hysteresis": "How far past a threshold the temperature must go before the season changes back. Stops the shades switching back and forth while the temperature hovers at a threshold. In Home Assistant's temperature unit; 0 turns it off.",
               "outside_temp": "Overrides outside temperature from weather entity if both are set",
               "presence_entity": "Entity representing room or home presence status",
               "lux_entity": "Use lux sensor to determine if cover should reduce glare in presence mode",
@@ -392,6 +394,7 @@
               "temp_entity": "Inside temperature entity",
               "temp_low": "Low temperature threshold",
               "temp_high": "High temperature threshold",
+              "temp_hysteresis": "Threshold hysteresis",
               "outside_temp": "Outside temperature sensor (optional)",
               "outside_threshold": "Minimum outside temperature for summer mode",
               "presence_entity": "Presence entity (optional)",
@@ -407,6 +410,7 @@
               "climate_mode": "Configure variables for climate mode",
               "temp_low": "Minimum comfortable temperature",
               "temp_high": "Maximum comfortable temperature",
+              "temp_hysteresis": "How far past a threshold the temperature must go before the season changes back. Stops the shades switching back and forth while the temperature hovers at a threshold. In Home Assistant's temperature unit; 0 turns it off.",
               "outside_temp": "Overrides outside temperature from weather entity if both are set",
               "presence_entity": "Entity representing room or home presence status",
               "lux_entity": "Use lux sensor to determine if cover should reduce glare in presence mode",
@@ -479,6 +483,9 @@
       },
       "temp_high": {
         "name": "Cooling threshold"
+      },
+      "temp_hysteresis": {
+        "name": "Threshold hysteresis"
       },
       "temp_low": {
         "name": "Heating threshold"

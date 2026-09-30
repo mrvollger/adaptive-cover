@@ -77,6 +77,7 @@ PLAN_TABLE: dict[str, tuple[Scope, Level | None, set[Level]]] = {
     "climate_mode": (Scope.RECURRING, H, {A}),
     "temp_low": (Scope.RECURRING, H, {F, A}),
     "temp_high": (Scope.RECURRING, H, {F, A}),
+    "temp_hysteresis": (Scope.RECURRING, H, {A}),
     "temp_entity": (Scope.RECURRING, F, {A}),
     "weather_entity": (Scope.RECURRING, H, set()),
     "weather_state": (Scope.RECURRING, H, set()),

@@ -31,6 +31,7 @@ from custom_components.adaptive_cover.const import (
     CONF_SENSOR_TYPE,
     CONF_TEMP_ENTITY,
     CONF_TEMP_HIGH,
+    CONF_TEMP_HYSTERESIS,
     CONF_TEMP_LOW,
     CONF_WEATHER_STATE,
     DOMAIN,
@@ -292,3 +293,72 @@ async def test_regression_thresholds_unit_aware_everywhere(
             blocking=True,
         )
     assert (await window_settings(hass, entry.entry_id))[CONF_TEMP_LOW] == inside
+
+
+# (min, max, step) of the season's hysteresis per HA temperature unit.
+HYSTERESIS_SHAPES = {"°C": (0, 3, 0.5), "°F": (0, 5, 0.1)}
+
+
+@pytest.mark.parametrize(
+    ("system", "unit", "inside", "outside"),
+    [(METRIC_SYSTEM, "°C", 2.5, 4), (US_CUSTOMARY_SYSTEM, "°F", 4.5, 6)],
+    ids=["celsius", "fahrenheit"],
+)
+@pytest.mark.usefixtures("stub_sun_integration")
+async def test_threshold_hysteresis_is_unit_aware_everywhere(
+    hass, system, unit, inside, outside
+):
+    """The season's hysteresis is in HA's temperature unit on every surface.
+
+    Like the thresholds it widens (stored and compared in HA's unit): 0-3 °C
+    in 0.5 steps or 0-5 °F in 0.1 steps, default 0 (off), on the setup
+    form, the options form, the hub's number, change_settings and
+    set_profile.
+    """
+    hass.config.units = system
+    low, high, step = HYSTERESIS_SHAPES[unit]
+
+    wizard = (await _wizard_forms(hass))["exceptions_climate"]
+    assert _selector_shape(wizard, CONF_TEMP_HYSTERESIS) == (low, high, step, unit)
+    assert _default_of(wizard, CONF_TEMP_HYSTERESIS) == 0
+
+    entry = await _setup_climate_entry(hass, low=None, high=None, reading=20, unit=unit)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    climate = result["data_schema"].schema["climate"].schema
+    hass.config_entries.options.async_abort(result["flow_id"])
+    assert _selector_shape(climate, CONF_TEMP_HYSTERESIS) == (low, high, step, unit)
+
+    number = er.async_get(hass).async_get_entity_id(
+        "number", DOMAIN, f"adaptive_cover_hub_{CONF_TEMP_HYSTERESIS}"
+    )
+    state = hass.states.get(number)
+    assert float(state.state) == 0
+    assert (
+        state.attributes["min"],
+        state.attributes["max"],
+        state.attributes["step"],
+        state.attributes["unit_of_measurement"],
+    ) == (low, high, step, unit)
+    assert (await window_settings(hass, entry.entry_id))[CONF_TEMP_HYSTERESIS] == 0
+
+    await hass.services.async_call(
+        DOMAIN,
+        "set_profile",
+        {"scope": "house", CONF_TEMP_HYSTERESIS: inside},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+    assert float(hass.states.get(number).state) == inside
+    assert (await window_settings(hass, entry.entry_id))[CONF_TEMP_HYSTERESIS] == inside
+    for service, data in (
+        ("set_profile", {"scope": "house"}),
+        ("change_settings", {"config_entry": entry.entry_id}),
+    ):
+        with pytest.raises(vol.Invalid):
+            await hass.services.async_call(
+                DOMAIN,
+                service,
+                {**data, CONF_TEMP_HYSTERESIS: outside},
+                blocking=True,
+            )
+    assert (await window_settings(hass, entry.entry_id))[CONF_TEMP_HYSTERESIS] == inside

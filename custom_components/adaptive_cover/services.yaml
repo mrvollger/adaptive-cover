@@ -102,6 +102,9 @@ set_profile:
     temp_high:
       name: Cooling threshold
       selector: { number: { mode: box, step: 0.5 } }
+    temp_hysteresis:
+      name: Threshold hysteresis
+      selector: { number: { min: 0, max: 5, step: 0.1, mode: box } }
     temp_entity:
       name: Indoor temperature sensor
       selector: { entity: { domain: [climate, sensor] } }
@@ -206,6 +209,13 @@ change_settings:
         Above this indoor temperature it is "summer". In Home Assistant's
         temperature unit: 10-40 °C or 50-100 °F.
       selector: { number: { min: 10, max: 100, step: 0.5, mode: box } }
+    temp_hysteresis:
+      name: Threshold hysteresis (Home Assistant's temperature unit)
+      description: >-
+        How far past a threshold the temperature must go before the season
+        changes back (0: off). In Home Assistant's temperature unit: 0-3 °C
+        or 0-5 °F.
+      selector: { number: { min: 0, max: 5, step: 0.1, mode: box } }
 
 add_entry:
   name: Add a window
