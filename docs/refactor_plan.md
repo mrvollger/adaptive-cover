@@ -321,6 +321,7 @@ services.py · diagnostics.py (per device) · frontend.py · <platform>.py
     - M49: the listener reloads every window.
     - M50: consolidation leaves an entity or device unmoved.
 - **Rollback:** before the click, downgrade. After the click, restore the backup.
+- **As built** ([ADR 0006](adr/0006-window-subentries-in-v2.md), proposed): the subentry stores the window entry's data and options verbatim until P8; the flow is at version 2 while window entries stay 1.x; the house becomes 2.x before the first window moves; each window's entity rows move **before** its device (HA drops the entities a moving device leaves on the old entry); a subentry's Reconfigure is the whole form, exceptions included (subentries have no options flow). Mutations M100–M103 stand for the plan's M49/M50 and the two consolidation guards; `ADAPTIVE_COVER_SIM_MODEL=house` (`pixi run test-house-model`) runs the simulation tier in the house model.
 
 ### P8: Cleanup (v2.1.0, S; the point of no return)
 
