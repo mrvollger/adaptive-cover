@@ -742,7 +742,7 @@ async def test_live_house_upgrade(hass, cover_calls):
 
     # Identity is frozen: the same (platform, unique_id) -> entity_id rows,
     # no more, but for the P5 flip: the 105 window number rows are gone and
-    # the hub gained its 14 house settings (5 switches, 6 numbers, 3 times).
+    # the hub gained its 15 house settings (5 switches, 7 numbers, 3 times).
     # ("X_Manual Override" is both a switch and a sensor.)
     ent_reg = er.async_get(hass)
     after = {
@@ -758,7 +758,7 @@ async def test_live_house_upgrade(hass, cover_calls):
     assert len(rows) - len(kept) == 105
     house_settings = {key for key in after if key not in kept}
     assert {domain for domain, _uid in house_settings} == {"switch", "number", "time"}
-    assert len(house_settings) == 14
+    assert len(house_settings) == 15
     assert all(uid.startswith("adaptive_cover_hub_") for _d, uid in house_settings)
     assert {key: after[key] for key in kept} == kept
     rows = [row for row in rows if row["domain"] != "number"]

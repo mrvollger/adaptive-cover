@@ -51,6 +51,7 @@
 | House mode, Return all | recurring control | house | — |
 | Climate on/off | recurring | house switch | area |
 | Heating / cooling thresholds | recurring | house | floor, area |
+| Threshold hysteresis (how far past a threshold before the season changes back) | recurring | house | area |
 | Indoor temperature sensor | recurring | floor | area |
 | Weather entity, sunny states, presence, outside temp / lux / irradiance entities, their use-flags and thresholds | recurring (rare) | house | — |
 | Manual-move detection; override duration; restart clock on later moves; ignore intermediate positions | recurring | house | area |
@@ -118,7 +119,7 @@ These defaults are the spec defaults for new installs. For the live house, a lif
   - `select.shades_mode`: Auto / Hold / Off, with a display-only Mixed. It changes each window's Mode directly.
   - `button.shades_return_to_auto`
   - Climate switch
-- CONFIG: detection switch; heating/cooling thresholds (unit-aware); eye height; seat distance; override duration; privacy delay; end / quiet start / quiet end (time entities).
+- CONFIG: detection switch; heating/cooling thresholds and their hysteresis (unit-aware); eye height; seat distance; override duration; privacy delay; end / quiet start / quiet end (time entities).
 
 **Services**
 - `adaptive_cover.hold(duration, position?)`. An entity service on Mode, so it can target an area or floor. `position` lets `automation.meeting` close the office covers and hold them in one call.

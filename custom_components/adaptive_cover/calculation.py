@@ -12,6 +12,7 @@ from abc import ABC
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
+from functools import cached_property
 from typing import Any, ClassVar, Self
 
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
@@ -33,6 +34,7 @@ from .engine.models import (
     SunSnapshot,
     TimeContext,
 )
+from .engine.season import Season, SeasonInputs, decide_season
 from .helpers import get_domain, get_safe_attr, get_safe_state
 from .runtime.clock import SYSTEM_CLOCK, Clock
 from .runtime.shade_config import ClimateOptions, ControlState, CoverGeometry
@@ -511,7 +513,10 @@ class NormalCoverState:
 class ClimateCoverData:
     """Resolve climate entity readings from HA (adapter for ClimateInputs).
 
-    Built from the window's options with :meth:`from_config`.
+    Built from the window's options with :meth:`from_config`, once per
+    decision. The season is decided once (:attr:`season`), from the
+    readings and the season the window's previous decision found
+    (``previous_season``, the hysteresis memory the coordinator keeps).
     """
 
     hass: HomeAssistant
@@ -533,6 +538,10 @@ class ClimateCoverData:
     temp_summer_outside: float
     _use_lux: bool | None
     _use_irradiance: bool | None
+    temp_hysteresis: float | None = 0
+    """How far past a threshold the season must go to flip (None, 0: off)."""
+    previous_season: Season | None = None
+    """The season the window's previous decision found (None: plain rule)."""
 
     @classmethod
     def from_config(
@@ -542,8 +551,13 @@ class ClimateCoverData:
         climate: ClimateOptions,
         controls: ControlState,
         blind_type: str | None,
+        previous_season: Season | None = None,
     ) -> Self:
-        """Build the adapter from the window's options and switch toggles."""
+        """Build the adapter from the window's options and switch toggles.
+
+        ``previous_season`` is the season the window's previous decision
+        found: the season is sticky by the hysteresis from there.
+        """
         return cls(
             hass=hass,
             logger=logger,
@@ -564,6 +578,8 @@ class ClimateCoverData:
             temp_summer_outside=climate.temp_summer_outside,
             _use_lux=controls.lux,
             _use_irradiance=controls.irradiance,
+            temp_hysteresis=climate.temp_hysteresis,
+            previous_season=previous_season,
         )
 
     @staticmethod
@@ -665,21 +681,40 @@ class ClimateCoverData:
                 return presence == "on"
         return True
 
-    @property
-    def is_winter(self) -> bool:
-        """Check if temperature is below threshold."""
-        if self.temp_low is not None and self.get_current_temperature is not None:
-            is_it = self.get_current_temperature < self.temp_low
-        else:
-            is_it = False
+    @cached_property
+    def season(self) -> Season:
+        """This decision's season, sticky by the hysteresis (engine/season.py).
 
+        Decided once per adapter (one per refresh), so the position, the
+        reason, the Control method and the forecast agree on it.
+        """
+        season = decide_season(
+            SeasonInputs(
+                temperature=self.get_current_temperature,
+                temp_low=self.temp_low,
+                temp_high=self.temp_high,
+                hysteresis=self._as_float(self.temp_hysteresis) or 0.0,
+                outside_high=self.outside_high,
+            ),
+            self.previous_season,
+        )
         self.logger.debug(
-            "is_winter(): current_temperature < temp_low: %s < %s = %s",
+            "season(): %s at %s (low %s, high %s, outside_high %s, "
+            "hysteresis %s, previous %s)",
+            season.name,
             self.get_current_temperature,
             self.temp_low,
-            is_it,
+            self.temp_high,
+            self.outside_high,
+            self.temp_hysteresis,
+            None if self.previous_season is None else self.previous_season.name,
         )
-        return is_it
+        return season
+
+    @property
+    def is_winter(self) -> bool:
+        """Check if temperature is below threshold (sticky by the hysteresis)."""
+        return self.season.winter
 
     @property
     def outside_high(self) -> bool:
@@ -691,20 +726,8 @@ class ClimateCoverData:
 
     @property
     def is_summer(self) -> bool:
-        """Check if temperature is over threshold."""
-        if self.temp_high is not None and self.get_current_temperature is not None:
-            is_it = self.get_current_temperature > self.temp_high and self.outside_high
-        else:
-            is_it = False
-
-        self.logger.debug(
-            "is_summer(): current_temp > temp_high and outside_high?: %s > %s and %s = %s",
-            self.get_current_temperature,
-            self.temp_high,
-            self.outside_high,
-            is_it,
-        )
-        return is_it
+        """Check if temperature is over threshold (sticky by the hysteresis)."""
+        return self.season.summer
 
     @property
     def is_sunny(self) -> bool:

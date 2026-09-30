@@ -28,6 +28,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
 from .config_context_adapter import ConfigContextAdapter
+from .engine.season import Season
 from .runtime.clock import SYSTEM_CLOCK, Clock
 from .runtime.command_tracker import CommandTracker
 from .runtime.decider import Decider
@@ -219,6 +220,10 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         self._climate_decision = None
         # This refresh's climate snapshot (climate_mode_data builds it once).
         self._climate: ClimateCoverData | None = None
+        # The season the last climate decision found: the temp_hysteresis
+        # memory (engine/season.py). In memory only: a restart or reload
+        # starts from None, so its first decision uses the plain rule.
+        self._season: Season | None = None
         self._gate_blocks: dict[str, str | None] = {}
         self.explainer = Explainer(self.logger)
 
@@ -1100,18 +1105,23 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         ]
 
     def _climate_data(self) -> ClimateCoverData:
-        """Build the climate adapter from the options and switch toggles."""
+        """Build the climate adapter from the options and switch toggles.
+
+        The season is sticky from the one the previous decision found.
+        """
         return ClimateCoverData.from_config(
             self.hass,
             self.logger,
             self.config.climate,
             self.controls,
             self._cover_type,
+            previous_season=self._season,
         )
 
     def climate_mode_data(self, options, cover_data):
         """Update climate mode data and control method."""
         climate = self._climate = self._climate_data()
+        self._season = climate.season
         self._climate_decision = ClimateCoverState(cover_data, climate).get_decision()
         self.climate_state = round(self._climate_decision.position)
         # Winter wins if both held (it was the later assignment); neither,

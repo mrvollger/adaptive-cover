@@ -87,6 +87,8 @@ HOUSE = {
     "max_moves_hour": None,
     "temp_low": 72,
     "temp_high": 75,
+    # Migration 1.3 stores the runtime's fallback, 0 (no hysteresis).
+    "temp_hysteresis": 0,
     "outside_temp": None,
     "outside_threshold": 0,
     "presence_entity": None,

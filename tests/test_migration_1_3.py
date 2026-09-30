@@ -28,6 +28,7 @@ from custom_components.adaptive_cover.const import (
     CONF_AZIMUTH,
     CONF_COVER_ENTITY,
     CONF_ENTITIES,
+    CONF_TEMP_HYSTERESIS,
     DOMAIN,
 )
 from custom_components.adaptive_cover.migration import options_1_3
@@ -114,6 +115,8 @@ def test_migration_only_adds_keys(window):
     assert after[CONF_COVER_ENTITY] == cover
     written = {key: after[key] for key in after.keys() - before.keys()}
     assert written.pop(CONF_COVER_ENTITY) == cover
+    # An option newer than the snapshot: its fallback, 0 (no hysteresis).
+    assert written.pop(CONF_TEMP_HYSTERESIS) == 0
     assert set(written) == WRITTEN[window["title"]]
     assert set(written.values()) == {None}
     # every spec option is now stored: nothing a later layer resolves

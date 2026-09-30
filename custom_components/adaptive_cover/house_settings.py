@@ -7,9 +7,9 @@ Each entity is one house-level value in the layered settings (the hub's
   (``manual_detection``) and the outside-temperature, lux and irradiance
   use-flags (``use_outside_temp``, ``use_lux``, ``use_irradiance``);
 - numbers: the heating and cooling thresholds (``temp_low``,
-  ``temp_high``; HA's temperature unit and ranges), the manual override
-  duration (minutes), the eye height, the seat distance and the privacy
-  delay after sunset;
+  ``temp_high``) and their hysteresis (``temp_hysteresis``; HA's
+  temperature unit and ranges), the manual override duration (minutes),
+  the eye height, the seat distance and the privacy delay after sunset;
 - times: the end time and the quiet hours' start and end (``end_time``,
   ``quiet_start``, ``quiet_end``; stored as "HH:MM:SS").
 
@@ -46,6 +46,7 @@ from .const import (
     CONF_QUIET_END,
     CONF_QUIET_START,
     CONF_TEMP_HIGH,
+    CONF_TEMP_HYSTERESIS,
     CONF_TEMP_LOW,
     CONF_USE_IRRADIANCE,
     CONF_USE_LUX,
@@ -92,6 +93,7 @@ class HouseNumberSpec:
 HOUSE_NUMBERS: tuple[HouseNumberSpec, ...] = (
     HouseNumberSpec(CONF_TEMP_LOW, "mdi:thermometer-chevron-down"),
     HouseNumberSpec(CONF_TEMP_HIGH, "mdi:thermometer-chevron-up"),
+    HouseNumberSpec(CONF_TEMP_HYSTERESIS, "mdi:thermometer-lines"),
     HouseNumberSpec(CONF_MANUAL_OVERRIDE_DURATION, "mdi:timer-outline"),
     HouseNumberSpec(CONF_EYE_HEIGHT, "mdi:eye-arrow-left-outline"),
     HouseNumberSpec(CONF_OCCUPIED_DISTANCE, "mdi:sofa-single-outline"),

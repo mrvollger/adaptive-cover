@@ -88,6 +88,7 @@ const HUB_SETTING_KEYS: Record<string, string> = {
   'switch:use_irradiance': 'use_irradiance',
   'number:temp_low': 'temp_low',
   'number:temp_high': 'temp_high',
+  'number:temp_hysteresis': 'temp_hysteresis',
   'number:manual_override_duration': 'manual_override_duration',
   'number:eye_height': 'eye_height',
   'number:occupied_distance': 'occupied_distance',
