@@ -11,7 +11,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from homeassistant.components.http import StaticPathConfig
+# Home Assistant re-exports it here without __all__ (pyright flags that).
+from homeassistant.components.http import (
+    StaticPathConfig,  # pyright: ignore[reportPrivateImportUsage]
+)
 from homeassistant.core import HomeAssistant
 
 from .const import _LOGGER
