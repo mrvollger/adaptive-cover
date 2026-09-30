@@ -526,6 +526,12 @@ def main(argv: list[str] | None = None) -> int:
         "the full matrix runs nightly in CI",
     )
     parser.add_argument(
+        "--shard",
+        metavar="K/N",
+        help="run only the K-th of N interleaved slices of the mutations "
+        "(1-based; CI splits the nightly matrix across parallel jobs)",
+    )
+    parser.add_argument(
         "--first-kill",
         action="store_true",
         help="release-gate mode: run tiers cheapest first and stop each "
@@ -550,6 +556,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     manifest = json.loads((MUTATION_DIR / "manifest.json").read_text())
+    if args.shard:
+        k, n = (int(x) for x in args.shard.split("/"))
+        if not 1 <= k <= n:
+            parser.error("--shard must be K/N with 1 <= K <= N")
+        manifest = [e for i, e in enumerate(manifest) if i % n == k - 1]
     if args.changed_since:
         manifest = changed_mutations(manifest, args.changed_since)
         _say(
