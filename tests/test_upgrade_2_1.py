@@ -15,11 +15,11 @@ on v2.1 migrates the house to 3.1:
 - a snapshot of what changed is written once; a second start changes
   nothing; a migration that stopped part way finishes.
 
-A house that is not consolidated (1.x, or part way) must go back to
-v2.0.x: every entry fails to set up with the ``consolidate_first``
-message, the ``consolidate_first`` repair issue says so, and nothing is
-written. A window v2.0 never ran (no layered settings of its own) refuses
-the migration the same way, without the nag.
+A house v2.0.x consolidated part way (a window entry left) finishes the
+move at the first start, then migrates (ADR 0008; the live house's own
+path from v1.19.x is tests/test_upgrade_from_1_19.py). A window v2.0 never
+ran (no layered settings of its own) refuses the migration: the house
+stays 2.1, nothing is written, and there is no nag.
 """
 
 from __future__ import annotations
@@ -48,7 +48,6 @@ from custom_components.adaptive_cover.settings.window_record import (
 )
 
 from .consolidated_house import fixture_json, load_consolidated_house
-from .live_house import load_live_house
 from .window_handle import WindowHandle, window_settings
 
 WINDOW_COUNT = 15
@@ -297,56 +296,42 @@ def _entries(hass) -> dict[str, tuple]:
     }
 
 
-async def test_a_1x_house_shows_the_nag_and_changes_nothing(hass):
-    """The live house as 1.x left it: nothing runs, nothing is written."""
-    entries, _rows_1x, _areas = load_live_house(hass, disabled=True, floors=True)
-    stored = _entries(hass)
-    rows = {row.entity_id for row in er.async_get(hass).entities.values()}
-    hub = next(e for e in entries if e["role"] == "hub")
-
-    # Setting up the integration sets up every entry.
-    await _start(hass, hass.config_entries.async_get_entry(hub["entry_id"]))
-
-    for entry in entries:
-        loaded = hass.config_entries.async_get_entry(entry["entry_id"])
-        assert loaded.state is ConfigEntryState.SETUP_ERROR, loaded.title
-        assert "not in the house yet" in (loaded.reason or ""), loaded.title
-    issue = ir.async_get(hass).async_get_issue(DOMAIN, "consolidate_first")
-    assert issue is not None
-    assert issue.severity is ir.IssueSeverity.ERROR
-    assert not issue.is_fixable
-    assert issue.translation_placeholders["count"] == str(WINDOW_COUNT)
-    # v2.0.x finds every entry and row as it was.
-    assert _entries(hass) == stored
-    assert {row.entity_id for row in er.async_get(hass).entities.values()} == rows
-    assert not hass.states.async_entity_ids("select")
-
-
-async def test_a_house_consolidated_part_way_stays_on_2_0(hass):
-    """A window entry is left next to a 2.1 house: the house does not migrate."""
+async def test_a_house_consolidated_part_way_on_2_0_finishes_at_the_first_start(
+    hass,
+):
+    """A window entry v2.0.x did not move yet: v2.1 moves it, then migrates."""
     house = load_consolidated_house(hass)
+    template = next(iter(house.subentries.values())).data
     left = MockConfigEntry(
         domain=DOMAIN,
         title="Left behind",
         data={"name": "Left behind", "sensor_type": "cover_blind"},
-        options={"group": ["cover.left_behind"]},
+        options={
+            **{k: v for k, v in template["options"].items() if k != "overrides"},
+            "group": ["cover.left_behind"],
+            "cover_entity_id": "cover.left_behind",
+        },
         version=1,
         minor_version=5,
     )
     left.add_to_hass(hass)
-    stored = _entries(hass)
+    hass.states.async_set("cover.left_behind", "open", {"current_position": 100})
+    v2_0_subentries = {sid: dict(s.data) for sid, s in house.subentries.items()}
 
     await _start(hass, house)
 
-    assert house.state is ConfigEntryState.SETUP_ERROR
-    assert left.state is ConfigEntryState.SETUP_ERROR
-    assert _entries(hass) == stored  # still 2.1, verbatim: v2.0.x resumes
-    issue = ir.async_get(hass).async_get_issue(DOMAIN, "consolidate_first")
-    assert issue is not None
-    assert issue.translation_placeholders["windows"] == "Left behind"
-    # Once the entry is gone, the nag goes.
-    await hass.config_entries.async_remove(left.entry_id)
-    await hass.async_block_till_done()
+    assert house.state is ConfigEntryState.LOADED
+    assert (house.version, house.minor_version) == (3, 1)
+    assert hass.config_entries.async_get_entry(left.entry_id) is None
+    assert len(house.subentries) == WINDOW_COUNT + 1
+    for subentry_id, data in v2_0_subentries.items():
+        assert (
+            house.subentries[subentry_id].data
+            == record_from_v2_0(data, subentry_id).as_data()
+        )
+    moved = WindowHandle(hass, "cover.left_behind")
+    assert moved.window_key == left.entry_id
+    assert moved.available
     assert ir.async_get(hass).async_get_issue(DOMAIN, "consolidate_first") is None
 
 

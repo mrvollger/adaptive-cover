@@ -148,13 +148,18 @@ Restart Home-Assistant and add the integration.
 
 ### Updating to 2.1
 
-Since 2.1 every window is part of one house entry. A house that still
-has windows as their own entries (1.x) must move them into the house on
-2.0.x first: install 2.0.x, take a backup, fix the "Move your windows
-into the house" repair, then update to 2.1. Until then 2.1 shows the
-"Consolidate the house on Adaptive Cover 2.0 first" repair and moves no
-shade; it changes nothing, so 2.0.x can still consolidate. To go back
-from 2.1 to 2.0.x, restore the backup.
+Since 2.1 every window is part of one house entry. Take a backup, then
+update from 1.19.x (or 2.0.x) straight to 2.1 and restart once: at its
+first start 2.1 moves every window entry into the house, checks that
+every entity, device, setting and Mode came through unchanged, then
+removes the old entries. A notification says what was done; the log has
+each step, and `.storage/adaptive_cover.v1_snapshot` keeps a copy of what
+was there.
+
+If a check fails, 2.1 removes nothing, puts every window back as 1.19.x
+left it and shows the "The Adaptive Cover upgrade stopped" repair with
+the reason; install 1.19.x again (or restore the backup) to run the house
+as before. To go back from 2.1 after the upgrade, restore the backup.
 
 ## Setup
 

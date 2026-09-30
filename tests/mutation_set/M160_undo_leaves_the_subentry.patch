@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
+--- a/custom_components/adaptive_cover/consolidate.py
++++ b/custom_components/adaptive_cover/consolidate.py
+@@ -849,7 +849,7 @@
+                 via_device_id=None,
+             )
+         if (subentry := subentry_for(house, key)) is not None:
+-            hass.config_entries.async_remove_subentry(house, subentry.subentry_id)
++            pass
+         if lost := _lost(hass, plan.entity_ids):
+             problems.append(
+                 f"{plan.title}: {', '.join(lost[:5])} could not be restored"

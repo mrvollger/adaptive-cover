@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
+--- a/custom_components/adaptive_cover/consolidate.py
++++ b/custom_components/adaptive_cover/consolidate.py
+@@ -968,7 +968,7 @@
+             if isinstance(err, UpgradeStopped)
+             else UpgradeStopped(f"Unexpected error while moving: {err!r}.")
+         )
+-        left = await async_undo(hass, house, plan.windows)
++        left: list[str] = []
+         if left:
+             raise UpgradeStopped(
+                 f"{stop.reason} The undo left: {' '.join(left)}", restore_backup=True

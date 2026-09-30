@@ -2,12 +2,15 @@
 
 Each case replays one live window (from the sanitized snapshot in
 ``tests/fixtures/house_snapshot/``) through the real integration for one
-scripted local day, the way the live house holds it on v2.1 (consolidated
-on v2.0.x, then migrated to 3.1), and compares the rendered outbound
-command timeline and position-sensor trace against
-``goldens/<window>__<date>.txt``. The goldens were recorded when each
-window was its own config entry: v2.1 must replay them byte for byte. See
-``house_replay.py`` for the script and the rendering.
+scripted local day, the way the live house gets to v2.1 (from v1.19.x:
+the window entry moved into the house at the first start, then migration
+3.1; ADR 0008), and compares the rendered outbound command timeline and
+position-sensor trace against ``goldens/<window>__<date>.txt``. The
+goldens were recorded when each window was its own config entry: v2.1
+must replay them byte for byte. ``test_house_replay_through_v2_0`` replays
+every window on one date through the other path (consolidated on v2.0.x,
+then migration 3.1). See ``house_replay.py`` for the script and the
+rendering.
 
 To regenerate after an INTENDED behavior change:
 
@@ -26,6 +29,7 @@ import pytest
 
 from .house_replay import (
     DATES,
+    FROM_V2_0,
     GOLDENS_DIR,
     golden_path,
     load_windows,
@@ -63,6 +67,16 @@ async def test_house_replay(hass, freezer, window, label):
         f"Missing golden {path.name}; run with UPDATE_GOLDENS=1 to create it"
     )
     _assert_matches_golden(rendered, window, label)
+
+
+V2_0_LABEL = "summer_solstice"
+
+
+@pytest.mark.parametrize("window", WINDOWS, ids=[window.slug for window in WINDOWS])
+async def test_house_replay_through_v2_0(hass, freezer, window):
+    """The same golden through the v2.0.x path (a 2.1 house, then migration 3.1)."""
+    replay = await run_replay(hass, freezer, window, V2_0_LABEL, FROM_V2_0)
+    _assert_matches_golden(render(replay), window, V2_0_LABEL)
 
 
 def _assert_matches_golden(rendered: str, window, label: str) -> None:

@@ -70,6 +70,7 @@ custom_components/adaptive_cover/
 ├── windows.py               # WindowEntry (a house "window" subentry: record, key, name, cover), lookups, async_update_window
 ├── house.py                 # HouseRuntime (house entry runtime_data): one coordinator per window subentry, isolated setup, subentry listener, window_coordinators
 ├── upgrade.py               # P8: migration 2.1 -> 3.1 (window records, switch alias rows, house options) + the consolidate_first nag
+├── consolidate.py           # ADR 0008: v1.19.x -> v2.1 in one start (1.x schema, plan, snapshot, move, verify, undo, commit)
 ├── const.py                 # All config keys, defaults, enums
 ├── hub.py                   # "Adaptive Cover All" hub device (all-shades cover, house Mode select auto/hold/off/mixed, reset-all button)
 ├── house_settings.py        # P5 flip: the house settings on the hub (Climate + toggle switches, threshold/duration/geometry numbers, end/quiet times)
@@ -124,8 +125,9 @@ tests/
   tier/mutation gate, 0005 drop pandas/numpy/pytz, 0006 (proposed, P7)
   window subentries in v2.0: verbatim storage, versions, move order, 0007
   (proposed, P8) the house is the only runtime in v2.1: the window record,
-  the consolidate_first nag, version 3. A new design decision gets a new
-  ADR; an accepted ADR is superseded, not rewritten.
+  the consolidate_first nag, version 3, 0008 (proposed) v2.1 upgrades a
+  v1.19.x house in one start. A new design decision gets a new ADR; an
+  accepted ADR is superseded, not rewritten.
 - `CONTRIBUTING.md` — the how-to for everything in "Development & Testing".
 
 ## Core Architecture
@@ -189,7 +191,7 @@ cover state change ────┘         ▼
 
 **`WindowEntry`** / **`HouseRuntime`** (windows.py, house.py; P7, P8, ADR 0001/0006/0007) — The house entry (the hub, 3.x) is the integration's one running config entry (`single_config_entry`); each window is a `window` config subentry storing its record (`settings/window_record.py`): `{window_key?, name, cover_entity_id, cover_type, geometry, overrides}` (one-time settings in `geometry`, sparse recurring values in `overrides`; nothing recurring is copied). `WindowEntry` reads one (`entry_id`/`window_key` = the old entry_id or a new window's subentry_id; `name`, `cover`, `covers`, `cover_type`, `geometry`, `overrides`, and `options`, the computed flat one-time options the runtime reads); edits go through `windows.async_update_window(hass, window, record)`. The house entry's `runtime_data` is a `HouseRuntime`: `async_build_window` per subentry, entities added per platform with `config_subentry_id`, window devices `via_device_id` → house device, a failing window gets a `window_setup_failed_<key>` repair issue and a retry, and the house update listener (`async_sync`) starts/stops/rebuilds only the subentries that changed (an `overrides`-only change re-resolves in place).
 
-**Upgrading to v2.1** (upgrade.py, P8, ADR 0007) — A house consolidated on v2.0.x (2.1, subentries verbatim) migrates at its first start to 3.1: snapshot `.storage/adaptive_cover.v2_0_snapshot`, every subentry rewritten to its record, the 6 switch alias rows per window removed, the house options cut to `house`/`floors`/`areas`/`temperature_unit`. A house with enabled window entries (1.x, or a consolidation that stopped part way) is not touched: every entry fails to set up with the `consolidate_first` message and the non-fixable `consolidate_first` repair says to consolidate on v2.0.x first.
+**Upgrading to v2.1** (upgrade.py, P8, ADR 0007) — A house consolidated on v2.0.x (2.1, subentries verbatim) migrates at its first start to 3.1: snapshot `.storage/adaptive_cover.v2_0_snapshot`, every subentry rewritten to its record, the 6 switch alias rows per window removed, the house options cut to `house`/`floors`/`areas`/`temperature_unit`. A house below 3.x with enabled window entries (the live house on v1.19.x, or a consolidation v2.0.x stopped part way) upgrades at its first start (consolidate.py, ADR 0008): 1.x schema (1.3, the lift if the hub has no layers, 1.5), plan (each window's record and what it acts on in v1.19.x, from its flat options and restored switch states; a window whose overrides disagree is adopted again), snapshot `.storage/adaptive_cover.v1_snapshot`, move (rows, then the device), verify (rows, devices, resolved settings and provenance through the v2.1 read path), then the house becomes 2.1, the entries are removed and migration 3.1 runs; a persistent notification says so. Nothing is removed and no version changes before the verification passes; a failed phase undoes the moves and raises the `upgrade_stopped` repair (`upgrade_stopped_restore_backup` when a row is lost); a crash resumes at the next start. Window entries next to a 3.x house, or with no house, get the non-fixable `consolidate_first` nag.
 
 ### Config Flow (config_flow.py)
 
@@ -274,8 +276,9 @@ the window record's `geometry`); edits store sparsely (Reconfigure,
 `change_settings`: recurring values as the window's `overrides`, one-time
 ones in its geometry). At setup the window device copies the physical
 cover's area if it has none. The 1.x entry migrations (1.2 surface, 1.3
-fallbacks, 1.4 lift, 1.5 hidden aliases) ran on v2.0.x and are gone in
-v2.1; migration 3.1 (`upgrade.py`) removes the switch aliases.
+fallbacks, 1.4 lift, 1.5 hidden aliases) run in v2.1 only as the first
+phase of the upgrade from v1.19.x (`consolidate.py`); migration 3.1
+(`upgrade.py`) removes the switch aliases.
 
 | Platform | Name (unique_id suffix) | Visibility | Purpose |
 |----------|-------------------------|------------|---------|
@@ -350,7 +353,7 @@ own npm toolchain in `card/` (`npm test`, `npm run typecheck`,
 | Runtime | `tests/runtime/` | runtime components called directly with fakes, no `hass` fixture (implementation tier); `test_no_hass.py` guards it |
 | Characterization | `tests/characterization/` | `climate_truth_table.json` (216 combos), golden day schedules in `goldens/`, outbound service calls |
 | Simulation | `tests/simulation/` | full-day SimHouse replays of the REAL integration (fake shades, real astral sun, stepped frozen clock) |
-| Entity surface | root `tests/test_*.py` | config flow, subentry flow, house options, services, entities, hub, restore, the v2.1 upgrade (`test_upgrade_2_1.py`) — through a real house entry (`tests/house_model.py`) |
+| Entity surface | root `tests/test_*.py` | config flow, subentry flow, house options, services, entities, hub, restore, the v2.1 upgrades (`test_upgrade_2_1.py`, `test_upgrade_from_1_19.py`) — through a real house entry (`tests/house_model.py`) |
 | House replay | `tests/replay/` | the real house configs on 6 dates (DST start/end, equinoxes, solstices): outbound command timeline |
 | Contract | `tests/contract/` | `behavior_tier_ids.txt` + `ledger.md`, checked by `check_behavior_tier.py` |
 | Card | `card/tests/` | vitest |

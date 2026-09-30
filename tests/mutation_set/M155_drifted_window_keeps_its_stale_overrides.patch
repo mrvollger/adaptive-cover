@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
+--- a/custom_components/adaptive_cover/consolidate.py
++++ b/custom_components/adaptive_cover/consolidate.py
+@@ -494,7 +494,7 @@
+         readopted = overrides is None or bool(
+             compare(key, acts_on, house.options, overrides, placement).differing
+         )
+-        if readopted or overrides is None:
++        if overrides is None:
+             overrides = adopt(key, acts_on, house.options, placement)
+         check = compare(key, acts_on, house.options, overrides, placement)
+         record = record_from_options(

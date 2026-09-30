@@ -1,0 +1,11 @@
+diff --git a/custom_components/adaptive_cover/consolidate.py b/custom_components/adaptive_cover/consolidate.py
+--- a/custom_components/adaptive_cover/consolidate.py
++++ b/custom_components/adaptive_cover/consolidate.py
+@@ -951,6 +951,7 @@
+     moved: dict[str, str] = {}
+     try:
+         for window in plan.windows:
++            await hass.config_entries.async_remove(window.window_key)
+             moved[window.window_key] = async_move_window(hass, house, window)
+         _LOGGER.info("Upgrade phase 4 (move): %s window(s) in the house", len(moved))
+         problems = [

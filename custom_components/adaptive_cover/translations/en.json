@@ -426,8 +426,16 @@
       "description": "The window {window} failed to set up ({error}). The rest of the house keeps running, and the window tries again every minute. Check its cover and its settings (Change window)."
     },
     "consolidate_first": {
-      "title": "Consolidate the house on Adaptive Cover 2.0 first",
-      "description": "Adaptive Cover 2.1 runs windows only inside the house entry, and {count} window entries are not in it yet: {windows}. Until they are, no shade moves.\n\n1. In HACS, open Adaptive Cover, select Redownload and pick version 2.0.x. Restart Home Assistant.\n2. Take a backup, then fix the \"Move your windows into the house\" repair (Settings > System > Repairs).\n3. Update to 2.1 again and restart.\n\nAdaptive Cover 2.1 changes nothing until then, so version 2.0.x finds every entry as it was."
+      "title": "Old Adaptive Cover window entries are not in the house",
+      "description": "Adaptive Cover 2.1 runs windows only inside the house entry. {count} window entries are outside it and do not run: {windows}.\n\n- If you enabled an old window entry again after the upgrade, delete it, then add the window with \"Add window\" on the house entry.\n- If there is no \"Adaptive Cover All\" house entry, install Adaptive Cover 1.19.x in HACS and restart Home Assistant, then update to 2.1 again: the update moves every window into the house.\n\nAdaptive Cover 2.1 changes nothing on these entries."
+    },
+    "upgrade_stopped": {
+      "title": "The Adaptive Cover upgrade stopped; nothing was removed",
+      "description": "Adaptive Cover 2.1 moves your window entries into the house entry at its first start. It stopped before it removed anything: {reason}\n\nYour window entries are as Adaptive Cover 1.19.x left them, and no shade moves until the upgrade finishes. Install Adaptive Cover 1.19.x again in HACS and restart Home Assistant to run the house as before, or restore the backup you took before the update. Then report the reason above. The log has each upgrade phase."
+    },
+    "upgrade_stopped_restore_backup": {
+      "title": "The Adaptive Cover upgrade stopped: restore your backup",
+      "description": "Adaptive Cover 2.1 moves your window entries into the house entry at its first start. It stopped, and it could not put everything back: {reason}\n\nRestore the Home Assistant backup you took before the update (Settings > System > Backups), then report the reason above. A copy of what was there is in `.storage/{snapshot}`. No shade moves until then."
     }
   },
   "config_subentries": {
@@ -799,10 +807,13 @@
   },
   "exceptions": {
     "consolidate_first": {
-      "message": "{count} window entries are not in the house yet. Install Adaptive Cover 2.0.x, fix its \"Move your windows into the house\" repair, then update again (see Settings > System > Repairs)."
+      "message": "{count} window entries are not in the house yet and do not run. Delete an old window entry you enabled again, or see Settings > System > Repairs."
     },
     "house_not_migrated": {
       "message": "The house entry (version {version}) could not be updated to 2.1; the log says why. Start Adaptive Cover 2.0.x once so every window is set up, then update again."
+    },
+    "upgrade_stopped": {
+      "message": "The upgrade into the house stopped and nothing was removed; see Settings > System > Repairs."
     }
   }
 }

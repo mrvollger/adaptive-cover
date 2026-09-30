@@ -504,22 +504,30 @@ async def test_flow_strings_cover_every_form(hass, strings: dict[str, Any]) -> N
 def test_issue_and_exception_strings_cover_the_code(strings: dict[str, Any]) -> None:
     """The repair issues and setup errors the code raises have their strings.
 
-    ``consolidate_first`` (a house that still has window entries, upgrade.py)
+    ``consolidate_first`` (window entries the house cannot take, upgrade.py)
     is both a repair issue and the setup error of its entries;
-    ``house_not_migrated`` is the setup error of a house whose migration to
-    3.1 was refused; ``window_setup_failed`` is one window's repair issue.
+    ``upgrade_stopped`` (and its ``_restore_backup`` form) is the repair
+    issue of an upgrade that stopped (consolidate.py) and the house's setup
+    error; ``house_not_migrated`` is the setup error of a house whose
+    migration to 3.1 was refused; ``window_setup_failed`` is one window's
+    repair issue.
     """
+    from custom_components.adaptive_cover.consolidate import STOPPED_ISSUE
     from custom_components.adaptive_cover.house import WINDOW_FAILED_ISSUE
     from custom_components.adaptive_cover.upgrade import ISSUE_ID
 
     issues = strings["issues"]
-    assert set(issues) == {ISSUE_ID, WINDOW_FAILED_ISSUE}
+    backup = f"{STOPPED_ISSUE}_restore_backup"
+    assert set(issues) == {ISSUE_ID, WINDOW_FAILED_ISSUE, STOPPED_ISSUE, backup}
     for key in issues:
         assert set(issues[key]) == {"title", "description"}, key
     assert "{count}" in issues[ISSUE_ID]["description"]
     assert "{windows}" in issues[ISSUE_ID]["description"]
+    assert "{reason}" in issues[STOPPED_ISSUE]["description"]
+    assert "{reason}" in issues[backup]["description"]
+    assert "{snapshot}" in issues[backup]["description"]
     exceptions = strings["exceptions"]
-    assert set(exceptions) == {ISSUE_ID, "house_not_migrated"}
+    assert set(exceptions) == {ISSUE_ID, STOPPED_ISSUE, "house_not_migrated"}
     assert "{count}" in exceptions[ISSUE_ID]["message"]
     assert "{version}" in exceptions["house_not_migrated"]["message"]
 

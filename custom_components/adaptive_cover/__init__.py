@@ -4,9 +4,10 @@ One config entry, the house (the hub entry, 3.x), holds every window as a
 config subentry of type ``window`` (ADR 0001; windows.py, house.py). A
 fresh install creates it with its first window.
 
-Window config entries from 1.x, and a house that still has them, do not
-run: they must be consolidated on v2.0.x first (upgrade.py). A house
-consolidated on v2.0.x (2.1) migrates to 3.1 at its first start.
+Window config entries from 1.x do not run. At the first start of v2.1 a
+house below 3.x moves them into itself and migrates to 3.1 (upgrade.py,
+consolidate.py; ADR 0008). A window entry the house cannot take (a 3.x
+house, or no house) gets the ``consolidate_first`` nag (ADR 0007).
 """
 
 from __future__ import annotations
@@ -278,13 +279,14 @@ def _async_register_services(hass: HomeAssistant) -> None:
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Migrate a config entry to the current version (upgrade.py).
 
-    A house consolidated on v2.0.x (2.1) becomes 3.1: its window
-    subentries store only what they use, the switch aliases go and the
-    house options keep only the layers. Window entries (1.x), a 1.x house
-    and a house that still has window entries are left as they are (their
-    setup then fails with the ``consolidate_first`` message; v2.0.x
-    consolidates them). A newer MAJOR version is refused by Home Assistant
-    before this runs; a newer minor loads as is.
+    A house below 3.x with window entries (the live house on v1.19.x, or a
+    consolidation v2.0.x stopped part way) moves them into itself first
+    (consolidate.py: 1.x schema, snapshot, move, verify, then the entries
+    go), then becomes 3.1: its window subentries store only what they use,
+    the switch aliases go and the house options keep only the layers. A
+    window entry is left as it is (the house moves it). A newer MAJOR
+    version is refused by Home Assistant before this runs; a newer minor
+    loads as is.
     """
     from .upgrade import async_migrate
 
@@ -304,16 +306,23 @@ async def _async_register_card(hass: HomeAssistant) -> None:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up the house (a window entry, or a house not at 3.x, refuses).
+    """Set up the house (a window entry, or a house not at 3.x, does not run).
+
+    A window entry the house moves in (a house below 3.x) returns False
+    without a message: the house's upgrade removes it, or its
+    ``upgrade_stopped`` repair says why it did not.
 
     Raises
     ------
     ConfigEntryError
-        A window entry, or a house that still has window entries
-        (``consolidate_first``: consolidate on v2.0.x first), or a house
-        whose migration to 3.1 was refused (``house_not_migrated``).
+        A window entry the house cannot take (``consolidate_first``), a
+        house whose upgrade stopped (``upgrade_stopped``) or whose
+        migration to 3.1 was refused (``house_not_migrated``).
 
     """
+    from homeassistant.helpers import issue_registry as ir
+
+    from .consolidate import STOPPED_ISSUE
     from .hub import is_hub_entry
     from .upgrade import (
         async_check_consolidate_issue,
@@ -322,11 +331,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     if not is_hub_entry(entry):
-        async_check_consolidate_issue(hass)
-        raise consolidate_first_error(hass)
+        if async_check_consolidate_issue(hass):
+            raise consolidate_first_error(hass)
+        return False
     if not is_current_house(entry):
         if async_check_consolidate_issue(hass):
             raise consolidate_first_error(hass)
+        if ir.async_get(hass).async_get_issue(DOMAIN, STOPPED_ISSUE) is not None:
+            raise ConfigEntryError(
+                translation_domain=DOMAIN, translation_key=STOPPED_ISSUE
+            )
         raise ConfigEntryError(
             translation_domain=DOMAIN,
             translation_key="house_not_migrated",

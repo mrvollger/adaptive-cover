@@ -137,6 +137,7 @@ RULES: list[tuple[str, str]] = [
     ("tests/test_house_subentries.py::*", BEHAVIOR),
     ("tests/test_consolidation.py::*", BEHAVIOR),
     ("tests/test_upgrade_2_1.py::*", BEHAVIOR),  # P8 upgrade and nag (C8)
+    ("tests/test_upgrade_from_1_19.py::*", BEHAVIOR),  # ADR 0008 upgrade (C8)
     # P5 layered settings: `resolve` is a contract v2 seam (ADR 0004).
     # Precedence, provenance, the lift's rules and the P5 guarantee on the
     # live snapshot (resolve(w) == legacy_flat(w)) are behavior; the purity
