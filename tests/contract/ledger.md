@@ -1069,7 +1069,7 @@ The example below is inside an HTML comment. The checker ignores it.
     numbers; a change reaches every window at once, without a reload.
   - Goldens, truth table and house replay unchanged.
 
-## L0032 · 2026-09-29 · One house entry with window subentries; the "Consolidate" repair (C8, P7)
+## L0033 · 2026-09-29 · One house entry with window subentries; the "Consolidate" repair (C8, P7)
 - **Removed:** none
 - **Renamed:** none
 - **Replacements:** none retired. New pins:
