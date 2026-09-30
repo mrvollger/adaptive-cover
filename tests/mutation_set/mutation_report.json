@@ -1,35 +1,119 @@
 {
- "generated": "2026-09-01T18:34:25+00:00",
+ "generated": "2026-09-30T01:31:02+00:00",
  "tiers": [
-  "engine"
+  "simulation",
+  "characterization",
+  "engine",
+  "entity"
  ],
  "aborted": false,
+ "timing": {
+  "started": "2026-09-30T01:29:09+00:00",
+  "jobs": 1,
+  "cpu_count": 16,
+  "xdist": {
+   "simulation": "-n auto",
+   "characterization": null,
+   "engine": "-n auto",
+   "entity": "-n auto"
+  },
+  "scheduled_longest_first": true,
+  "wall_seconds": 113.2
+ },
+ "control": {
+  "id": "CONTROL",
+  "tiers": {
+   "simulation": {
+    "caught": false,
+    "exit_code": 0,
+    "timeout": false,
+    "seconds": 12.0,
+    "tail": "........................................................................ [ 52%]\n..................................................................       [100%]\n138 passed in 10.64s"
+   },
+   "characterization": {
+    "caught": false,
+    "exit_code": 0,
+    "timeout": false,
+    "seconds": 2.7,
+    "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 1.80s"
+   },
+   "engine": {
+    "caught": false,
+    "exit_code": 0,
+    "timeout": false,
+    "seconds": 6.2,
+    "tail": "........................................................................ [ 96%]\n..............................................                           [100%]\n1414 passed in 4.89s"
+   },
+   "entity": {
+    "caught": false,
+    "exit_code": 0,
+    "timeout": false,
+    "seconds": 36.3,
+    "tail": "........................................................................ [ 99%]\n..                                                                       [100%]\n1874 passed in 34.92s"
+   }
+  },
+  "caught_by": [],
+  "missed_by": [
+   "simulation",
+   "characterization",
+   "engine",
+   "entity"
+  ],
+  "seconds": 57.2
+ },
  "results": {
-  "M33": {
-   "id": "M33",
-   "file": "custom_components/adaptive_cover/engine/geometry.py",
-   "function": "admit_no_glare_percentage",
-   "description": "ADMIT_NO_GLARE compares band non-empty instead of band-top vs eye height",
-   "patch": "M33_glare_band_nonempty_check.patch",
-   "deviation": "roadmap filed this under engine/evaluate.py; the comparison actually lives in geometry.admit_no_glare_percentage.",
+  "M120": {
+   "id": "M120",
+   "file": "custom_components/adaptive_cover/coordinator.py",
+   "function": "async_check_cover_state_change",
+   "description": "a cover's first state (its integration started late) does not trigger a decision",
+   "patch": "M120_late_cover_waits_for_sun.patch",
    "tiers": {
-    "engine": {
+    "simulation": {
      "caught": true,
-     "exit_code": 1,
+     "exit_code": 2,
      "timeout": false,
-     "seconds": 4.9,
-     "tail": "FAILED tests/engine/test_overhang_glare.py::TestAdmitNoGlareBandTopComparison::test_partial_band_below_safe_height_fully_open[42]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1253 passed in 3.81s"
+     "seconds": 9.3,
+     "tail": "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!! xdist.dsession.Interrupted: stopping after 1 failures !!!!!!!!!!!!!\n1 failed, 45 passed in 8.03s"
+    },
+    "characterization": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 2.7,
+     "tail": "........................................................................ [ 91%]\n.....................                                                    [100%]\n237 passed in 1.80s"
+    },
+    "engine": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 6.3,
+     "tail": "........................................................................ [ 96%]\n..............................................                           [100%]\n1414 passed in 4.97s"
+    },
+    "entity": {
+     "caught": false,
+     "exit_code": 0,
+     "timeout": false,
+     "seconds": 37.4,
+     "tail": "........................................................................ [ 99%]\n..                                                                       [100%]\n1874 passed in 36.00s"
     }
    },
    "caught_by": [
-    "engine"
+    "simulation"
    ],
-   "missed_by": []
+   "missed_by": [
+    "characterization",
+    "engine",
+    "entity"
+   ],
+   "seconds": 55.8
   }
  },
  "summary": {
   "run": 1,
   "killed": 1,
-  "survivors": []
+  "survivors": [],
+  "errors": [],
+  "control_failed": []
  }
 }

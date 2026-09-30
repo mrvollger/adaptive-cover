@@ -896,6 +896,15 @@ MUTATIONS: list[Mutation] = [
         "        if filled or cover_type != self.cover_type:\n",
         "        if filled:\n",
     ),
+    Mutation(
+        "M120",
+        "late_cover_waits_for_sun",
+        COORD,
+        "async_check_cover_state_change",
+        "a cover's first state (its integration started late) does not trigger a decision",
+        "                self.events.push(RefreshEvent.ENTITY_CHANGED)\n                await self.async_refresh()\n",
+        "                pass\n",
+    ),
 ]
 
 

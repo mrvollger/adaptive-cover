@@ -1,0 +1,13 @@
+diff --git a/custom_components/adaptive_cover/coordinator.py b/custom_components/adaptive_cover/coordinator.py
+--- a/custom_components/adaptive_cover/coordinator.py
++++ b/custom_components/adaptive_cover/coordinator.py
+@@ -265,8 +265,7 @@
+                 # after ours (boot) or it was just added. Decide now instead
+                 # of waiting for the next sun update, which is slow at night;
+                 # the usual gates still decide whether anything moves.
+-                self.events.push(RefreshEvent.ENTITY_CHANGED)
+-                await self.async_refresh()
++                pass
+             return
+         if data["new_state"] is None:
+             self.logger.debug("New state is None")
