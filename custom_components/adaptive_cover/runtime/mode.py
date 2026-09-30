@@ -155,7 +155,7 @@ class ModeWindow(Protocol):
 
 
 class ModeControl:
-    """Change a window's Mode: the select, its switch alias, the buttons, ``hold``."""
+    """Change a window's Mode: the selects, the buttons, ``hold``."""
 
     def __init__(
         self,
@@ -200,7 +200,7 @@ class ModeControl:
         await self.window.async_refresh()
 
     async def enable(self) -> None:
-        """Turn automatic control on (the Toggle Control alias's ``on``).
+        """Turn automatic control on (``auto`` from ``off``).
 
         The target position goes out now, bypassing the rate gates, to
         every cover that is not held; holds are kept.

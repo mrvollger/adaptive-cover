@@ -227,9 +227,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
             self.logger,
         )
         self.detector = ManualDetector(self.manager, self.commands, self.logger)
-        # The window's Mode (auto / hold / off): the Mode select, its
-        # Toggle Control alias, the Return to auto button and the hold
-        # service change it here.
+        # The window's Mode (auto / hold / off): the Mode select, the house
+        # select, the Return to auto buttons and the hold service change it
+        # here.
         self.modes = ModeControl(self, self.logger)
         self._sun_table = None
         self._missing_warned: set[str] = set()
@@ -799,11 +799,11 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
     async def async_handle_first_refresh(self, state: int):
         """Handle first refresh."""
         if self.control_toggle is None:
-            # The first refresh runs before the switch platform restores,
-            # so the toggle is not known yet. Consuming the one-shot flag
-            # here silently skipped startup positioning; keep it pending —
-            # the switch's restore triggers another refresh that lands
-            # here with the toggle resolved.
+            # The first refresh runs before the Mode select restores, so
+            # the control toggle is not known yet. Consuming the one-shot
+            # flag here silently skipped startup positioning; keep it
+            # pending: the Mode's restore triggers another refresh that
+            # lands here with the toggle resolved.
             self.logger.debug("First refresh deferred: control switch not restored yet")
             return
         if self.control_toggle:
@@ -831,9 +831,9 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         )
         if self.control_toggle is None:
             # Startup/reload race: the timed close (or its catch-up) fired
-            # before the switch platform restored the control toggle.
-            # Keep END_TIME and the catch-up flag pending — the
-            # switch's restore refresh completes the close.
+            # before the Mode select restored the control toggle. Keep
+            # END_TIME and the catch-up flag pending: the Mode's restore
+            # refresh completes the close.
             self.logger.debug("Timed refresh deferred: control switch not restored yet")
             return
         if self.control_toggle:
@@ -1211,12 +1211,12 @@ class AdaptiveDataUpdateCoordinator(DataUpdateCoordinator[AdaptiveCoverData]):
         """Apply interpolation / inversion output transforms."""
         return self.decider.transform(state, self.config)
 
-    # The switch platform sets these by name (setattr); the state lives in
-    # self.controls.
+    # The toggles by their historical names; the state lives in
+    # self.controls (set from the resolved settings and the Mode).
     switch_mode = ControlToggle[bool]("climate")
-    """Let switch toggle climate mode."""
+    """Climate mode on (climate_mode and climate_on)."""
     temp_toggle = ControlToggle[bool | None]("outside_temp")
-    """Let switch toggle between inside or outside temperature."""
+    """Use the outside temperature (use_outside_temp)."""
     control_toggle = ControlToggle[bool | None]("control")
     """Automatic control: False is Mode off (the Mode select sets it)."""
     manual_toggle = ControlToggle[bool | None]("manual")
