@@ -37,6 +37,44 @@ This integration builds upon the template sensor from this forum post [Automatic
     - [Blueprint (deprecated since v1.0.0)](#blueprint-deprecated-since-v100)
   - [License](#license)
 
+## New in v1.14–v1.19: the house redesign (this fork)
+
+**One screen for the whole house.** Add a dashboard with the bundled strategy and you get every window grouped by floor and room, with Auto / Hold / Off for the house, each room and each window, Open all / Close all, Return all to auto, and a detail sheet per window ("why this position", next move, hold chips):
+
+```yaml
+# Settings → Dashboards → Add dashboard → New dashboard from scratch → ⋮ → Raw configuration editor
+strategy:
+  type: custom:adaptive-cover
+views: []
+```
+
+Or drop `type: custom:adaptive-cover-house-card` into any dashboard (options: `floors`, `areas`, `title`). The card finds windows by themselves; rooms and floors come from Home Assistant's areas and floors, so give each window's device (or its cover) an area.
+
+**Auto / Hold / Off per window** (`select.<window>_mode`):
+
+- **Auto** — follows the sun (and climate, if on).
+- **Hold** — keeps the shade where it is until the hold ends; moving a shade by hand puts it on Hold for the override duration (2 h by default). Holds survive a Home Assistant restart.
+- **Off** — no moves and no manual-move detection.
+
+Hold a room from an automation — one call, any window, room or floor:
+
+```yaml
+action: adaptive_cover.hold
+target:
+  area_id: office
+data:
+  duration: "04:00:00"   # optional; default = the override duration
+  position: 0            # optional; move there first, then hold
+```
+
+`select.select_option` (auto / hold / off) and the Return-to-auto buttons also accept area and floor targets. The house device ("All shades") has a Mode select that sets every window at once and shows Mixed when windows differ.
+
+**Setup is one screen.** Adding a window asks for its cover (the only required field), then direction and size; everything else has sensible defaults in collapsed sections. Pick a preset (window, window under an overhang, glass door) or copy another window's settings. Each window has exactly one cover. A window's **Reconfigure** changes its cover, type and geometry; its **Configure** changes everything else.
+
+**Names are consistent**: `<window> Position`, `<window> Mode`, `<window> Return to auto`, … (entity ids like `sensor.office_door_position`). Diagnostic sensors (sun in front, control method, next/last change) are grouped under the device's Diagnostic section.
+
+**Coming next (v1.20+)**: house, floor and room settings — set a threshold, the override duration or a schedule once for the house and let a room differ only where it needs to — are already computed and shown in each Position sensor's `provenance` attribute; they become editable from the card and the house device in v1.20.
+
 ## New in v1.1.0 (this fork)
 
 **Physical model of your window, not just the sun:**
