@@ -31,7 +31,8 @@ pixi install          # create the environment from pixi.lock
 pixi run test         # the full pytest suite, in parallel (pytest -n auto)
 pixi run lint         # ruff lint and format checks
 pixi run typecheck    # pyright (basic with a baseline; strict and zero errors on engine/, runtime/, settings/resolve.py and settings/lift.py)
-pixi run mutations    # the mutation kill matrix (tests/mutation_set/)
+pixi run mutations-gate <ref>   # release gate: mutations on code changed since <ref>, first catch only (minutes)
+pixi run mutations    # the full per-tier kill matrix (tests/mutation_set/); nightly CI runs it
 ```
 
 - Run one tier or one file with `pixi run pytest <path>`, for example `pixi run pytest tests/simulation -q`.
@@ -175,7 +176,7 @@ The rationale is in [ADR 0004](docs/adr/0004-refactor-contract-v2.md).
 - [ ] `pixi run lint`, `pixi run typecheck` and `pixi run test` pass.
 - [ ] The goldens, the truth table and the house replay are unchanged, or the PR has a ledger entry for each diff.
 - [ ] Each fixed defect has a `test_regression_<slug>` and its own commit.
-- [ ] If you changed the engine, settings or runtime code: `pixi run mutations` shows 100% killed, and `make_patches.py --check` passes.
+- [ ] If you changed the engine, settings or runtime code: `pixi run mutations-gate <last release tag>` shows 100% killed, and `make_patches.py --check` passes. Don't run the full matrix locally for a release: it costs ~9 CPU-hours per run and the nightly CI job already runs it (`--first-kill` stops each mutation at its first catch; `--changed-since REF` selects only mutations on code changed since REF).
 - [ ] If you changed the card: vitest, typecheck and lint pass, and the rebuilt bundle is committed.
 - [ ] If you changed `strings.json`: `translations/en.json` has the same change.
 - [ ] If the change affects architecture or the dev workflow: `agents.md` is updated. A new design decision gets an ADR.
