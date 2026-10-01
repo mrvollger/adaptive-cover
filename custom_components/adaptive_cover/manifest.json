@@ -19,9 +19,7 @@
   "documentation": "https://github.com/mrvollger/adaptive-cover",
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/mrvollger/adaptive-cover/issues",
-  "requirements": [
-    "astral"
-  ],
+  "requirements": [],
   "single_config_entry": true,
   "version": "2.2.0"
 }

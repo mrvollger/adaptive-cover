@@ -410,7 +410,8 @@ own npm toolchain in `card/` (`npm test`, `npm run typecheck`,
 
 ## Dependencies
 
-- **astral** — solar position calculations; the only manifest requirement
+- **astral** — solar position calculations; ships with Home Assistant core,
+  so the manifest lists no requirements (hassfest refuses core packages)
 - **voluptuous** — config schema validation (ships with HA)
 - **python-dateutil** — time-string parsing in `helpers.py`; not declared,
   it ships with HA core (hass-nabucasa -> pycognito -> boto3 -> botocore)

@@ -41,7 +41,8 @@ DROPPED_PACKAGES = {"pandas", "numpy", "pytz"}
 # dateutil, which HA core brings via hass-nabucasa -> pycognito -> boto3 ->
 # botocore and which pandas used to bring too), and nothing else.
 ALLOWED_THIRD_PARTY = {"homeassistant", "voluptuous", "astral", "dateutil"}
-MANIFEST_REQUIREMENTS = ["astral"]
+MANIFEST_REQUIREMENTS: list[str] = []
+"""astral ships with Home Assistant core; hassfest refuses it in our manifest."""
 
 
 def test_engine_dir_exists():
@@ -160,7 +161,7 @@ def _third_party_imports(path: Path) -> list[tuple[str, int]]:
 
 
 def test_no_dropped_or_undeclared_dependencies():
-    """P2 dependency diet: no pandas/numpy/pytz; manifest requires only astral."""
+    """P2 dependency diet: no pandas/numpy/pytz; the manifest requires nothing."""
     manifest = json.loads((PACKAGE_DIR / "manifest.json").read_text())
     assert manifest["requirements"] == MANIFEST_REQUIREMENTS
     offenders = []

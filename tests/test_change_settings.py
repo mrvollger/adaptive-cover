@@ -223,7 +223,10 @@ async def test_regression_change_settings_enables_climate_mode(
         },
         blocking=True,
     )
-    await hass.async_block_till_done()
+    # A new temperature source needs new listeners: the window rebuilds in
+    # a background task, which plain async_block_till_done does not wait for
+    # (on a slow runner the read below then finds the window stopped).
+    await hass.async_block_till_done(wait_background_tasks=True)
 
     # Recurring settings: the window's own values (P5 flip: overrides).
     settings = await window_settings(hass, entry.entry_id)
