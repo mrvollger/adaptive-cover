@@ -2,6 +2,8 @@
 
 ## Summary
 
+**Status (2026-10-01): done.** Every phase shipped: P0 v1.14.0, P1 v1.15.x, P2/P3 v1.16.x, P4–P6 v1.17–v1.19, P7 v2.0.0, P8 v2.1.0. v2.1.0 also upgrades a v1.19.x house in one start (ADR 0008) and v2.2.0 folds `climate_mode` into the one Climate switch (ADR 0009, house 3.2). The live house runs v2.2.0. Where the text below says what *will* happen, the "As built" notes and the ADRs say what did.
+
 **What you will see at the end**
 
 - **One Shades dashboard** controls the whole house. HA builds it for you: New dashboard → Community → *Adaptive Cover*. It has three levels:
@@ -105,7 +107,7 @@ These defaults are the spec defaults for new installs. For the live house, a lif
 | select Mode `auto` / `hold` / `off` (`mode_select`). RestoreEntity; the source of truth for control state | primary |
 | button Return to auto (`Reset Manual Override`) | primary |
 | binary_sensor Manual override (attribute `until`); Sun in front; sensor Control method (climate only) | diagnostic, enabled (the card and M40–M42 use them) |
-| sensor Start sun, End sun, Next change, Last change | diagnostic, disabled by default |
+| sensor Start sun, End sun, Next change, Last change | diagnostic; as built enabled, because the card reads them |
 | 6 switches | hidden aliases from P5, removed in P8 |
 | 7 numbers | removed in P5. Thresholds and privacy move to the house. Eye height and seat distance become house settings with area/window overrides. Overhang becomes geometry |
 
@@ -322,7 +324,7 @@ services.py · diagnostics.py (per device) · frontend.py · <platform>.py
     - M49: the listener reloads every window.
     - M50: consolidation leaves an entity or device unmoved.
 - **Rollback:** before the click, downgrade. After the click, restore the backup.
-- **As built** ([ADR 0006](adr/0006-window-subentries-in-v2.md), proposed): the subentry stores the window entry's data and options verbatim until P8; the flow is at version 2 while window entries stay 1.x; the house becomes 2.x before the first window moves; each window's entity rows move **before** its device (HA drops the entities a moving device leaves on the old entry); a subentry's Reconfigure is the whole form, exceptions included (subentries have no options flow). Mutations M100–M103 stand for the plan's M49/M50 and the two consolidation guards; `ADAPTIVE_COVER_SIM_MODEL=house` (`pixi run test-house-model`) runs the simulation tier in the house model.
+- **As built** ([ADR 0006](adr/0006-window-subentries-in-v2.md), accepted): the subentry stores the window entry's data and options verbatim until P8; the flow is at version 2 while window entries stay 1.x; the house becomes 2.x before the first window moves; each window's entity rows move **before** its device (HA drops the entities a moving device leaves on the old entry); a subentry's Reconfigure is the whole form, exceptions included (subentries have no options flow). Mutations M100–M103 stand for the plan's M49/M50 and the two consolidation guards; `ADAPTIVE_COVER_SIM_MODEL=house` (`pixi run test-house-model`) runs the simulation tier in the house model.
 
 ### P8: Cleanup (v2.1.0, S; the point of no return)
 
@@ -333,7 +335,8 @@ services.py · diagnostics.py (per device) · frontend.py · <platform>.py
   - Remove the hub's leftover geometry and its reference to itself in `group`.
   - Run pyright in standard mode across the rest of the code.
 - **Rollback:** restore the backup and reinstall v2.0.x.
-- **As built** ([ADR 0007](adr/0007-house-only-in-v2-1.md), proposed): v2.1 has no consolidation; a house with enabled window entries fails to set up (every entry, with the `consolidate_first` message) and the non-fixable `consolidate_first` repair says to consolidate on v2.0.x first; nothing is written to it. A consolidated house (2.1) migrates at its first start to **3.1** (a major bump, so v2.0.x refuses it): a snapshot (`.storage/adaptive_cover.v2_0_snapshot`), each window subentry rewritten to the window record `{window_key?, name, cover_entity_id, cover_type, geometry, overrides}` (ADR 0001's shape plus the name), the 6 switch aliases per window removed from the entity registry, the hub's leftover geometry and `group` dropped from the house options. New windows get their overrides when they are created (the lift and the adoption at setup are gone). The coordinators are found through the house's `runtime_data`; `hass.data` keeps only the override store. The simulation tier runs in the house model only; the house replay runs through the 2.1 → 3.1 migration and matches the goldens. Pyright: standard mode on the whole integration, strict on engine/, runtime/ and the pure settings modules, empty baseline. Mutations M130–M140 are new; M51, M71 and M100–M103 are retired.
+- **As built** ([ADR 0007](adr/0007-house-only-in-v2-1.md), accepted): v2.1 has no consolidation; a house with enabled window entries fails to set up (every entry, with the `consolidate_first` message) and the non-fixable `consolidate_first` repair says to consolidate on v2.0.x first; nothing is written to it. A consolidated house (2.1) migrates at its first start to **3.1** (a major bump, so v2.0.x refuses it): a snapshot (`.storage/adaptive_cover.v2_0_snapshot`), each window subentry rewritten to the window record `{window_key?, name, cover_entity_id, cover_type, geometry, overrides}` (ADR 0001's shape plus the name), the 6 switch aliases per window removed from the entity registry, the hub's leftover geometry and `group` dropped from the house options. New windows get their overrides when they are created (the lift and the adoption at setup are gone). The coordinators are found through the house's `runtime_data`; `hass.data` keeps only the override store. The simulation tier runs in the house model only; the house replay runs through the 2.1 → 3.1 migration and matches the goldens. Pyright: standard mode on the whole integration, strict on engine/, runtime/ and the pure settings modules, empty baseline. Mutations M130–M140 are new; M51, M71 and M100–M103 are retired.
+- **Amended:** [ADR 0008](adr/0008-upgrade-from-1-19-in-one-start.md) (v2.1.0 as released): "v2.1 has no consolidation" no longer holds. A house below 3.x with window entries moves them in at its first start (`consolidate.py`), then migrates; the `consolidate_first` nag stays for window entries next to a 3.x house or with no house. [ADR 0009](adr/0009-one-climate-switch.md) (v2.2.0): the house then migrates on to 3.2.
 
 ## Migration of the live house
 
