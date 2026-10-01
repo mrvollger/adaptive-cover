@@ -1,6 +1,6 @@
 # ADR 0007: The house is the only runtime in v2.1: the window record, the nag and version 3
 
-- **Status:** Proposed (P8 branch; the owner accepts it at merge)
+- **Status:** Accepted 2026-09-30 by the owner (shipped in v2.1.0; amended by 0008, 0009)
 - **Date:** 2026-09-29
 - **Delivered in:** P8 (v2.1.0)
 - **Amends:** [ADR 0001](0001-house-entry-and-window-subentries.md) (the window subentry's data shape; the house's version after P8) and [ADR 0006](0006-window-subentries-in-v2.md) (it deferred the reshape to P8). The rest of both stands.

@@ -1,6 +1,6 @@
 # ADR 0008: v2.1 upgrades a v1.19.x house in one start
 
-- **Status:** Proposed (owner decision 2026-09-30; the owner accepts it at merge)
+- **Status:** Accepted 2026-09-30 by the owner (shipped in v2.1.0; house 3.2 since v2.2.0)
 - **Date:** 2026-09-30
 - **Delivered in:** v2.1.0
 - **Amends:** [ADR 0007](0007-house-only-in-v2-1.md) ("No consolidation in v2.1"; the `consolidate_first` nag now covers only what the upgrade cannot take). The rest of ADR 0007 stands, and so do [ADR 0006](0006-window-subentries-in-v2.md)'s move order and snapshot.

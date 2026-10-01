@@ -1,6 +1,6 @@
 # ADR 0006: Window subentries in v2.0: storage, versions and the move order
 
-- **Status:** Proposed (P7 branch; the owner accepts it at merge)
+- **Status:** Accepted 2026-09-30 by the owner (shipped in v2.0.0; amended by 0007)
 - **Date:** 2026-09-29
 - **Delivered in:** P7 (v2.0.0)
 - **Amends:** [ADR 0001](0001-house-entry-and-window-subentries.md) (the subentry data shape, when the house becomes 2.x, the order of the registry moves). The rest of ADR 0001 stands.

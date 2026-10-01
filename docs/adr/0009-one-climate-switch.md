@@ -1,6 +1,6 @@
 # ADR 0009: One Climate switch: climate capability is derived, a window opts out, house 3.2
 
-- **Status:** Proposed (the owner approved the change; accepted at merge)
+- **Status:** Accepted 2026-09-30 by the owner (shipped in v2.2.0)
 - **Date:** 2026-09-30
 - **Delivered in:** after v2.1.0 (house config entry 3.2)
 - **Amends:** [ADR 0003](0003-settings-precedence.md) (the settings table: `climate_mode` leaves it, `ignore_climate` joins the one-time window settings) and [ADR 0007](0007-house-only-in-v2-1.md) (the house version after it). The rest of both stands.

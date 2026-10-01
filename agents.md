@@ -122,12 +122,13 @@ tests/
   entry + window subentries, 0002 one cover per window, 0003 settings
   precedence (window override → area → floor → house → spec default) and
   the one-time vs recurring rule, 0004 refactor contract v2 + behavior
-  tier/mutation gate, 0005 drop pandas/numpy/pytz, 0006 (proposed, P7)
-  window subentries in v2.0: verbatim storage, versions, move order, 0007
-  (proposed, P8) the house is the only runtime in v2.1: the window record,
-  the consolidate_first nag, version 3, 0008 (proposed) v2.1 upgrades a
-  v1.19.x house in one start. A new design decision gets a new ADR; an
-  accepted ADR is superseded, not rewritten.
+  tier/mutation gate, 0005 drop pandas/numpy/pytz, 0006 window
+  subentries in v2.0: verbatim storage, versions, move order, 0007 the
+  house is the only runtime in v2.1: the window record, the
+  consolidate_first nag, version 3, 0008 v2.1 upgrades a v1.19.x house in
+  one start, 0009 one Climate switch (`ignore_climate`, house 3.2). A new
+  design decision gets a new ADR; an accepted ADR is superseded, not
+  rewritten.
 - `CONTRIBUTING.md` — the how-to for everything in "Development & Testing".
 
 ## Core Architecture
