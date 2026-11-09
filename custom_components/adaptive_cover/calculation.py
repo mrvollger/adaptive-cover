@@ -52,6 +52,8 @@ def get_state_reason(cover, climate_data=None):
     if climate_data is not None:
         return _get_climate_reason(cover, climate_data)
 
+    if cover.sun_entering:
+        return f"Sun enters window within {cover.sun_entry_lead:g} min: acting early"
     if cover.direct_sun_valid:
         return f"Sun in window (azi {cover.sol_azi:.0f}°, elev {cover.sol_elev:.0f}°)"
     if cover.sunset_valid or cover.dusk_lead_active:
@@ -69,6 +71,8 @@ def get_state_reason(cover, climate_data=None):
 
 def _get_climate_reason(cover, climate_data):
     """Return human-readable reason for climate mode position."""
+    if cover.sun_entering:
+        return f"Sun enters window within {cover.sun_entry_lead:g} min: acting early"
     if not climate_data.is_presence:
         if cover.valid:
             if climate_data.is_summer:
@@ -111,6 +115,7 @@ def build_day_forecast(cover, climate_data=None) -> list[dict]:
     sunset = sun_data.sunset().replace(tzinfo=None)
     sun_at_dusk_lead = cover.sun_at_dusk_lead(sunset)
     inputs = climate_data.to_inputs() if climate_data is not None else None
+    lead = cover.entry_lead
 
     entries: list[dict] = []
     last_key = None
@@ -121,6 +126,7 @@ def build_day_forecast(cover, climate_data=None) -> list[dict]:
             sunrise_utc=sunrise,
             sunset_utc=sunset,
             sun_at_dusk_lead=sun_at_dusk_lead,
+            sun_ahead=cover.sun_at(ts + lead) if lead else None,
         )
         decision = engine_evaluate(
             config,
@@ -173,6 +179,8 @@ class AdaptiveGeneralCover(ABC):
     blind_spot_on: bool
     min_elevation: int
     max_elevation: int
+    # Minutes before the sun enters the window that the cover acts (0: off).
+    sun_entry_lead: float = 0
     sun_data: SunData = field(init=False)
     # Extended config, assigned by from_config after construction.
     overhang: Overhang | None = field(init=False, default=None)
@@ -228,6 +236,7 @@ class AdaptiveGeneralCover(ABC):
             blind_spot_on=geometry.blind_spot_on,
             min_elevation=geometry.min_elevation,
             max_elevation=geometry.max_elevation,
+            sun_entry_lead=geometry.sun_entry_lead or 0,
             **cls._type_fields(geometry),
         )
         cover._attach_extended(geometry)
@@ -301,11 +310,43 @@ class AdaptiveGeneralCover(ABC):
     def time_context(self) -> TimeContext:
         """Time inputs (naive UTC, matching historical arithmetic)."""
         sunset_utc = self.sun_data.sunset().replace(tzinfo=None)
+        now = self.clock.utcnow()
+        lead = self.entry_lead
         return TimeContext(
-            now_utc=self.clock.utcnow().replace(tzinfo=None),
+            now_utc=now.replace(tzinfo=None),
             sunrise_utc=self.sun_data.sunrise().replace(tzinfo=None),
             sunset_utc=sunset_utc,
             sun_at_dusk_lead=self.sun_at_dusk_lead(sunset_utc),
+            sun_ahead=self.sun_at(now + lead) if lead else None,
+        )
+
+    @property
+    def entry_lead(self) -> timedelta:
+        """The sun entry lead (zero: off; a negative value counts as off)."""
+        return timedelta(minutes=max(float(self.sun_entry_lead or 0), 0))
+
+    def sun_at(self, when: datetime) -> SunSnapshot | None:
+        """Solar position at ``when`` (naive means UTC).
+
+        None when the sun provider cannot tell.
+        """
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=UTC)
+        try:
+            location = self.sun_data.location
+            elevation = getattr(self.sun_data, "elevation", 0) or 0
+            return SunSnapshot(
+                azimuth=location.solar_azimuth(when, elevation),
+                elevation=location.solar_elevation(when, elevation),
+            )
+        except (AttributeError, LookupError, ValueError):
+            return None
+
+    @property
+    def sun_entering(self) -> bool:
+        """Check whether the sun enters the window within the entry lead."""
+        return engine_geometry.sun_entering(
+            self.engine_config(), self.sun_snapshot(), self.time_context()
         )
 
     def sun_at_dusk_lead(self, sunset_utc: datetime) -> SunSnapshot | None:
@@ -319,15 +360,7 @@ class AdaptiveGeneralCover(ABC):
             + timedelta(minutes=self.sunset_off or 0)
             - engine_geometry.DUSK_LEAD
         ).replace(tzinfo=UTC)
-        try:
-            location = self.sun_data.location
-            elevation = getattr(self.sun_data, "elevation", 0) or 0
-            return SunSnapshot(
-                azimuth=location.solar_azimuth(when, elevation),
-                elevation=location.solar_elevation(when, elevation),
-            )
-        except (AttributeError, LookupError, ValueError):
-            return None
+        return self.sun_at(when)
 
     # --- solar day table ---
 

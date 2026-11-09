@@ -516,6 +516,12 @@ the band is non-empty. Same sun, cold vs hot day, opposite positions.
 - Privacy: `privacy_mode`, `privacy_offset`, `privacy_position`
 - Smoothing: `quiet_start`/`quiet_end`, `max_moves_hour` (snap positions
   bypass both gates)
+- Sun entry lead: `sun_entry_lead` (minutes, house, room or window; 0 =
+  off). `TimeContext.sun_ahead` is the sun one lead from now; when it is in
+  the window and the sun now is not (`geometry.sun_entering`), `evaluate`
+  decides on it, so the cover is in place when the beam arrives. Leaving
+  is not led. The forecast and the next-change event (moved one lead
+  earlier) follow it; the Start sun / End sun sensors stay the sun's times.
 - Position sensor attributes: `intent`, `decision_trace`, `forecast_today`
 - Service: `adaptive_cover.get_forecast` (entry id or title)
 

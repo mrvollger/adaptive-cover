@@ -107,6 +107,11 @@ class ExplainedCover(Protocol):
         """Sunrise offset (minutes)."""
         ...
 
+    @property
+    def sun_entry_lead(self) -> float:
+        """Minutes before the sun enters the window that the cover acts."""
+        ...
+
     def calculate_percentage_at(self, azi: float, elev: float) -> float:
         """Position for a sun at (azimuth, elevation), geometry only."""
         ...
@@ -199,14 +204,18 @@ class Explainer:
         location = cover_data.sun_data.location
         events: list[NextEvent] = []
 
-        # Sun enters FOV
+        # Sun enters FOV (the cover acts one entry lead before)
         if start is not None:
             start_utc = self._make_utc(start)
-            if start_utc > now:
+            lead = dt.timedelta(minutes=max(float(cover_data.sun_entry_lead or 0), 0))
+            if start_utc - lead > now:
                 predicted_pos = self._predict_position_at_time(
                     cover_data, start_utc, sun_table
                 )
-                events.append(("Sun enters window", start_utc, predicted_pos))
+                label = "Sun enters window"
+                if lead:
+                    label = f"Sun enters window in {lead.total_seconds() / 60:g} min"
+                events.append((label, start_utc - lead, predicted_pos))
 
         # Sun leaves FOV
         if end is not None:

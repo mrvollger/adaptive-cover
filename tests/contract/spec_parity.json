@@ -43,6 +43,7 @@
    "slat_depth",
    "slat_distance",
    "start_time",
+   "sun_entry_lead",
    "sunrise_offset",
    "sunset_offset",
    "sunset_position",
@@ -119,6 +120,7 @@
    "slat_depth",
    "slat_distance",
    "start_time",
+   "sun_entry_lead",
    "sunrise_offset",
    "sunset_offset",
    "sunset_position",
@@ -169,7 +171,8 @@
    "default_percentage",
    "sunset_position",
    "sunset_offset",
-   "sunrise_offset"
+   "sunrise_offset",
+   "sun_entry_lead"
   ],
   "options.house.house_schedule": [
    "delta_position",
@@ -259,13 +262,15 @@
    "default_percentage",
    "sunset_position",
    "sunset_offset",
-   "sunrise_offset"
+   "sunrise_offset",
+   "sun_entry_lead"
   ],
   "setup.first.exceptions_positions [types=cover_tilt]": [
    "default_percentage",
    "sunset_position",
    "sunset_offset",
-   "sunrise_offset"
+   "sunrise_offset",
+   "sun_entry_lead"
   ],
   "setup.first.exceptions_schedule": [
    "delta_position",
@@ -377,13 +382,15 @@
    "default_percentage",
    "sunset_position",
    "sunset_offset",
-   "sunrise_offset"
+   "sunrise_offset",
+   "sun_entry_lead"
   ],
   "setup.reconfigure.exceptions_positions [types=cover_tilt]": [
    "default_percentage",
    "sunset_position",
    "sunset_offset",
-   "sunrise_offset"
+   "sunrise_offset",
+   "sun_entry_lead"
   ],
   "setup.reconfigure.exceptions_schedule": [
    "delta_position",
@@ -498,13 +505,15 @@
    "default_percentage",
    "sunset_position",
    "sunset_offset",
-   "sunrise_offset"
+   "sunrise_offset",
+   "sun_entry_lead"
   ],
   "setup.user.exceptions_positions [types=cover_tilt]": [
    "default_percentage",
    "sunset_position",
    "sunset_offset",
-   "sunrise_offset"
+   "sunrise_offset",
+   "sun_entry_lead"
   ],
   "setup.user.exceptions_schedule": [
    "delta_position",
@@ -2781,6 +2790,59 @@
     "kind": "time",
     "required": false,
     "default": "00:00:00",
+    "suggested": true
+   }
+  ],
+  "sun_entry_lead": [
+   {
+    "where": [
+     "add_entry",
+     "change_settings"
+    ],
+    "kind": "float",
+    "min": 0,
+    "max": 60,
+    "required": false
+   },
+   {
+    "where": [
+     "options.house.house_positions"
+    ],
+    "kind": "number",
+    "max": 60,
+    "min": 0,
+    "mode": "box",
+    "step": 1,
+    "unit": "minutes",
+    "required": false,
+    "suggested": true
+   },
+   {
+    "where": [
+     "setup.first.exceptions_positions",
+     "setup.user.exceptions_positions"
+    ],
+    "kind": "number",
+    "max": 60,
+    "min": 0,
+    "mode": "box",
+    "step": 1,
+    "unit": "minutes",
+    "required": false,
+    "default": 0
+   },
+   {
+    "where": [
+     "setup.reconfigure.exceptions_positions"
+    ],
+    "kind": "number",
+    "max": 60,
+    "min": 0,
+    "mode": "box",
+    "step": 1,
+    "unit": "minutes",
+    "required": false,
+    "default": 0,
     "suggested": true
    }
   ],

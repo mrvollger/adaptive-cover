@@ -1403,6 +1403,45 @@ MUTATIONS: list[Mutation] = [
         "            overrides=with_climate_mode(overrides, _climate(options)),\n",
         "            overrides=overrides,\n",
     ),
+    # ---- sun entry lead (L0110) -----------------------------------------
+    Mutation(
+        "M200",
+        "entry_lead_ignored",
+        EVAL,
+        "evaluate",
+        "the engine ignores the sun entry lead: covers act only when the sun "
+        "is already in the window",
+        "    if geometry.sun_entering(config, sun, ctx) and ctx.sun_ahead is not None:\n",
+        "    if False and ctx.sun_ahead is not None:\n",
+    ),
+    Mutation(
+        "M201",
+        "entry_lead_leads_leaving",
+        GEOM,
+        "sun_entering",
+        "the entry lead fires on any sun ahead in the window, also a sun "
+        "already there (leaving is decided on the future sun)",
+        "    return (not sun_in_fov(config, sun)) and sun_in_fov(config, ctx.sun_ahead)\n",
+        "    return sun_in_fov(config, ctx.sun_ahead)\n",
+    ),
+    Mutation(
+        "M202",
+        "entry_lead_not_passed_live",
+        CALC,
+        "AdaptiveGeneralCover.time_context",
+        "the live decision gets no sun ahead: the lead only shows in the forecast",
+        "            sun_ahead=self.sun_at(now + lead) if lead else None,\n",
+        "            sun_ahead=None,\n",
+    ),
+    Mutation(
+        "M203",
+        "entry_event_not_led",
+        EXPLAINER,
+        "Explainer.next_event",
+        "the next-change event keeps the sun's entry time, not the cover's",
+        "                events.append((label, start_utc - lead, predicted_pos))\n",
+        "                events.append((label, start_utc, predicted_pos))\n",
+    ),
 ]
 
 

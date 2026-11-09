@@ -84,6 +84,7 @@ from ..const import (
     CONF_RETURN_SUNSET,
     CONF_START_ENTITY,
     CONF_START_TIME,
+    CONF_SUN_ENTRY_LEAD,
     CONF_SUNRISE_OFFSET,
     CONF_SUNSET_OFFSET,
     CONF_SUNSET_POS,
@@ -137,6 +138,8 @@ ABSENT: Final[Mapping[str, Any]] = MappingProxyType(
         # the cover adapter (CoverGeometry)
         CONF_SUNSET_POS: None,
         CONF_SUNSET_OFFSET: None,
+        # 0: no lead (covers act when the sun enters the window).
+        CONF_SUN_ENTRY_LEAD: 0,
         CONF_FOV_LEFT: None,
         CONF_FOV_RIGHT: None,
         CONF_AZIMUTH: None,
@@ -225,6 +228,8 @@ class CoverGeometry:
     sunset_off: Any
     sunrise_off: Any
     """Falls back to the sunset offset when unset."""
+    sun_entry_lead: Any
+    """Minutes before the sun enters the window that the cover acts (0: off)."""
     fov_left: Any
     fov_right: Any
     win_azi: Any
@@ -269,6 +274,7 @@ class CoverGeometry:
             sunset_pos=_read(options, CONF_SUNSET_POS),
             sunset_off=_read(options, CONF_SUNSET_OFFSET),
             sunrise_off=_sunrise_offset(options),
+            sun_entry_lead=_read(options, CONF_SUN_ENTRY_LEAD),
             fov_left=_read(options, CONF_FOV_LEFT),
             fov_right=_read(options, CONF_FOV_RIGHT),
             win_azi=_read(options, CONF_AZIMUTH),

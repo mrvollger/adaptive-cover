@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/calculation.py b/custom_components/adaptive_cover/calculation.py
+--- a/custom_components/adaptive_cover/calculation.py
++++ b/custom_components/adaptive_cover/calculation.py
+@@ -317,7 +317,7 @@
+             sunrise_utc=self.sun_data.sunrise().replace(tzinfo=None),
+             sunset_utc=sunset_utc,
+             sun_at_dusk_lead=self.sun_at_dusk_lead(sunset_utc),
+-            sun_ahead=self.sun_at(now + lead) if lead else None,
++            sun_ahead=None,
+         )
+ 
+     @property

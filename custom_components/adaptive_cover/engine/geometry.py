@@ -103,6 +103,17 @@ def sunset_valid(config: CoverConfig, ctx: TimeContext) -> bool:
     return after_sunset or before_sunrise
 
 
+def sun_entering(config: CoverConfig, sun: SunSnapshot, ctx: TimeContext) -> bool:
+    """Check whether the sun enters the window within the entry lead.
+
+    Not in the field of view now, but in it at ``ctx.sun_ahead`` (the sun
+    one ``sun_entry_lead`` from now). No lead (None) never engages.
+    """
+    if ctx.sun_ahead is None:
+        return False
+    return (not sun_in_fov(config, sun)) and sun_in_fov(config, ctx.sun_ahead)
+
+
 def direct_sun_valid(config: CoverConfig, sun: SunSnapshot, ctx: TimeContext) -> bool:
     """Check for actionable direct sun.
 

@@ -805,5 +805,33 @@
   "function": "_plan_window",
   "description": "the upgrade from v1.19.x leaves each window's climate_mode behind: migration 3.2 then opts every window out of climate control",
   "patch": "M192_upgrade_drops_climate_mode.patch"
+ },
+ {
+  "id": "M200",
+  "file": "custom_components/adaptive_cover/engine/evaluate.py",
+  "function": "evaluate",
+  "description": "the engine ignores the sun entry lead: covers act only when the sun is already in the window",
+  "patch": "M200_entry_lead_ignored.patch"
+ },
+ {
+  "id": "M201",
+  "file": "custom_components/adaptive_cover/engine/geometry.py",
+  "function": "sun_entering",
+  "description": "the entry lead fires on any sun ahead in the window, also a sun already there (leaving is decided on the future sun)",
+  "patch": "M201_entry_lead_leads_leaving.patch"
+ },
+ {
+  "id": "M202",
+  "file": "custom_components/adaptive_cover/calculation.py",
+  "function": "AdaptiveGeneralCover.time_context",
+  "description": "the live decision gets no sun ahead: the lead only shows in the forecast",
+  "patch": "M202_entry_lead_not_passed_live.patch"
+ },
+ {
+  "id": "M203",
+  "file": "custom_components/adaptive_cover/runtime/explainer.py",
+  "function": "Explainer.next_event",
+  "description": "the next-change event keeps the sun's entry time, not the cover's",
+  "patch": "M203_entry_event_not_led.patch"
  }
 ]

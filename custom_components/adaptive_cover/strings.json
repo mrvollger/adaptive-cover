@@ -97,13 +97,15 @@
               "default_percentage": "Default Position",
               "sunset_position": "Sunset Position",
               "sunset_offset": "Sunset Offset",
-              "sunrise_offset": "Sunrise Offset"
+              "sunrise_offset": "Sunrise Offset",
+              "sun_entry_lead": "Act before the sun arrives (minutes)"
             },
             "data_description": {
               "default_percentage": "Default cover position as a percentage",
               "sunset_position": "Position to switch to after sunset",
               "sunset_offset": "Offset (±) from sunset time in minutes",
-              "sunrise_offset": "Offset (±) from sunrise time in minutes"
+              "sunrise_offset": "Offset (±) from sunrise time in minutes",
+              "sun_entry_lead": "Move the cover this many minutes before the sun enters the window, so it is in place when the sun arrives. 0 is off."
             }
           },
           "exceptions_schedule": {
@@ -199,13 +201,15 @@
               "default_percentage": "Default Position",
               "sunset_position": "Sunset Position",
               "sunset_offset": "Sunset Offset",
-              "sunrise_offset": "Sunrise Offset"
+              "sunrise_offset": "Sunrise Offset",
+              "sun_entry_lead": "Act before the sun arrives (minutes)"
             },
             "data_description": {
               "default_percentage": "Default cover position as a percentage",
               "sunset_position": "Position to switch to after sunset",
               "sunset_offset": "Offset (±) from sunset time in minutes",
-              "sunrise_offset": "Offset (±) from sunrise time in minutes"
+              "sunrise_offset": "Offset (±) from sunrise time in minutes",
+              "sun_entry_lead": "Move the cover this many minutes before the sun enters the window, so it is in place when the sun arrives. 0 is off."
             }
           },
           "house_schedule": {
@@ -541,13 +545,15 @@
                 "default_percentage": "Default Position",
                 "sunset_position": "Sunset Position",
                 "sunset_offset": "Sunset Offset",
-                "sunrise_offset": "Sunrise Offset"
+                "sunrise_offset": "Sunrise Offset",
+                "sun_entry_lead": "Act before the sun arrives (minutes)"
               },
               "data_description": {
                 "default_percentage": "Default cover position as a percentage",
                 "sunset_position": "Position to switch to after sunset",
                 "sunset_offset": "Offset (±) from sunset time in minutes",
-                "sunrise_offset": "Offset (±) from sunrise time in minutes"
+                "sunrise_offset": "Offset (±) from sunrise time in minutes",
+                "sun_entry_lead": "Move the cover this many minutes before the sun enters the window, so it is in place when the sun arrives. 0 is off."
               }
             },
             "exceptions_schedule": {
@@ -713,13 +719,15 @@
                 "default_percentage": "Default Position",
                 "sunset_position": "Sunset Position",
                 "sunset_offset": "Sunset Offset",
-                "sunrise_offset": "Sunrise Offset"
+                "sunrise_offset": "Sunrise Offset",
+                "sun_entry_lead": "Act before the sun arrives (minutes)"
               },
               "data_description": {
                 "default_percentage": "Default cover position as a percentage",
                 "sunset_position": "Position to switch to after sunset",
                 "sunset_offset": "Offset (±) from sunset time in minutes",
-                "sunrise_offset": "Offset (±) from sunrise time in minutes"
+                "sunrise_offset": "Offset (±) from sunrise time in minutes",
+                "sun_entry_lead": "Move the cover this many minutes before the sun enters the window, so it is in place when the sun arrives. 0 is off."
               }
             },
             "exceptions_schedule": {

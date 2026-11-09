@@ -78,6 +78,8 @@ def test_house_profile(lifted):
         "sunset_position": 0.0,
         "sunset_offset": 20.0,
         "sunrise_offset": 0.0,
+        # added after the snapshot: no window stores it, so the spec default
+        "sun_entry_lead": 0,
         "delta_position": 1.0,
         "delta_time": 2.0,
         "start_time": "00:00:00",
