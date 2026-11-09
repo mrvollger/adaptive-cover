@@ -53,6 +53,7 @@ class FakeCover:
     sunset_pos: float = 0
     sunset_off: float = 0
     sunrise_off: float = 0
+    sun_entry_lead: float = 0
 
     def calculate_percentage_at(self, azi, elev):
         return 42
@@ -78,6 +79,25 @@ def next_event(cover=None, **kwargs):
 def test_the_earliest_event_wins():
     event = next_event(start=utc(19), end=utc(23))
     assert event == ("Sun enters window", utc(19), 42)
+
+
+def test_sun_entry_lead_moves_the_entry_event_earlier():
+    """The cover acts one entry lead before the sun enters: so does the event."""
+    event = next_event(FakeCover(sun_entry_lead=10), start=utc(19), end=utc(23))
+    assert event == (
+        "Sun enters window in 10 min",
+        utc(19) - dt.timedelta(minutes=10),
+        42,
+    )
+
+
+def test_sun_entry_lead_skips_an_entry_already_acted_on():
+    """Inside the lead the cover has moved: the next event is the leaving."""
+    cover = FakeCover(sun_entry_lead=10)
+    event = next_event(
+        cover, now=utc(19) - dt.timedelta(minutes=5), start=utc(19), end=utc(23)
+    )
+    assert event == ("Sun leaves window", utc(23), 60)
 
 
 def test_sun_leaving_takes_the_default_position():

@@ -182,7 +182,31 @@ def evaluate(
     ctx: TimeContext,
     climate: ClimateInputs | None = None,
 ) -> Decision:
-    """Compute the target position for one instant."""
+    """Compute the target position for one instant.
+
+    Entry lead: when the sun is outside the window now but inside it one
+    ``sun_entry_lead`` from now (``ctx.sun_ahead``), decide on that sun, so
+    the cover is in place when the beam arrives. Leaving is not led: a sun
+    still in the window is always decided on as it is now.
+    """
+    if geometry.sun_entering(config, sun, ctx) and ctx.sun_ahead is not None:
+        early = _evaluate_at(config, ctx.sun_ahead, ctx, climate)
+        return Decision(
+            position=early.position,
+            intent=early.intent,
+            trace=("sun enters the window within the entry lead: acting now",)
+            + early.trace,
+        )
+    return _evaluate_at(config, sun, ctx, climate)
+
+
+def _evaluate_at(
+    config: CoverConfig,
+    sun: SunSnapshot,
+    ctx: TimeContext,
+    climate: ClimateInputs | None,
+) -> Decision:
+    """Compute the target position for one instant and one solar position."""
     trace: list[str] = []
 
     # Privacy runs before everything: a lit room against a dark sky is

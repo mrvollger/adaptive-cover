@@ -89,6 +89,7 @@ from ..const import (
     CONF_RETURN_SUNSET,
     CONF_START_ENTITY,
     CONF_START_TIME,
+    CONF_SUN_ENTRY_LEAD,
     CONF_SUNRISE_OFFSET,
     CONF_SUNSET_OFFSET,
     CONF_SUNSET_POS,
@@ -473,6 +474,9 @@ OPTS: Final[tuple[Opt, ...]] = (
     Opt(CONF_SUNRISE_OFFSET, Kind.NUMBER, Group.SUN, REC, H, (A,),
         default=0, step=1, unit="minutes", wizard_required=True,
         baseline=True, service=_FLOAT),
+    # Act this many minutes before the sun enters the window (0: off).
+    Opt(CONF_SUN_ENTRY_LEAD, Kind.NUMBER, Group.SUN, REC, H, (A, W),
+        default=0, min=0, max=60, step=1, unit="minutes", service=_FLOAT),
     Opt(CONF_INVERSE_STATE, Kind.BOOL, Group.SUN, ONE, W,
         default=False, wizard_required=True, baseline=True),
     Opt(CONF_ENABLE_BLIND_SPOT, Kind.BOOL, Group.SUN, ONE, W,

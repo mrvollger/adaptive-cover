@@ -40,12 +40,18 @@ class TimeContext:
     ``sun_at_dusk_lead`` is the solar position DUSK_LEAD before the sunset
     position starts (sunset + sunset offset). None (unknown) never engages
     the dusk lead (see geometry.dusk_lead_active).
+
+    ``sun_ahead`` is the solar position one entry lead from now (the
+    window's ``sun_entry_lead``). When the sun is not in the window now but
+    is there then, the engine decides as if it already were (see
+    evaluate.evaluate). None (no lead) decides on the sun now only.
     """
 
     now_utc: datetime
     sunrise_utc: datetime
     sunset_utc: datetime
     sun_at_dusk_lead: SunSnapshot | None = None
+    sun_ahead: SunSnapshot | None = None
 
 
 @dataclass(frozen=True)

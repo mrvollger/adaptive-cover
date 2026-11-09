@@ -181,11 +181,12 @@ def _as_3_2(settings: dict[str, Any]) -> dict[str, Any]:
     """v2.0's resolved settings as 3.2 shows them: one Climate switch.
 
     ``climate_mode`` is no setting; every live window had it on, so each
-    one reads ``ignore_climate`` False and acts on what it did.
+    one reads ``ignore_climate`` False and acts on what it did. The sun
+    entry lead (added after the snapshot) resolves to its default, 0: off.
     """
     assert settings["climate_mode"] is True
     migrated = {k: v for k, v in settings.items() if k != "climate_mode"}
-    return {**migrated, "ignore_climate": False}
+    return {**migrated, "ignore_climate": False, "sun_entry_lead": 0}
 
 
 def _house_3_2(values: dict[str, Any]) -> dict[str, Any]:

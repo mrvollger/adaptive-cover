@@ -1600,6 +1600,14 @@ tests/engine/test_season.py::test_winter_stays_until_low_plus_hysteresis[72.0-wi
 tests/engine/test_season.py::test_winter_stays_until_low_plus_hysteresis[72.9-winter]
 tests/engine/test_season.py::test_winter_stays_until_low_plus_hysteresis[73.0-intermediate]
 tests/engine/test_season.py::test_winter_stays_until_low_plus_hysteresis[74.0-intermediate]
+tests/engine/test_sun_entry_lead.py::test_forecast_style_step_sees_entry_one_lead_early
+tests/engine/test_sun_entry_lead.py::test_lead_acts_on_the_arriving_sun
+tests/engine/test_sun_entry_lead.py::test_lead_engages_the_winter_glare_band_early
+tests/engine/test_sun_entry_lead.py::test_lead_still_respects_the_sunrise_offset
+tests/engine/test_sun_entry_lead.py::test_leaving_is_not_led[no_lead]
+tests/engine/test_sun_entry_lead.py::test_leaving_is_not_led[sun_ahead_out]
+tests/engine/test_sun_entry_lead.py::test_no_lead_keeps_the_default_until_the_sun_arrives
+tests/engine/test_sun_entry_lead.py::test_sun_entering_needs_sun_outside_now_and_inside_ahead
 tests/replay/test_house_replay.py::test_house_replay[den_south-autumn_equinox]
 tests/replay/test_house_replay.py::test_house_replay[den_south-dst_end]
 tests/replay/test_house_replay.py::test_house_replay[den_south-dst_start]
@@ -2023,6 +2031,7 @@ tests/simulation/test_season_hysteresis.py::test_a_celsius_house_holds_the_seaso
 tests/simulation/test_season_hysteresis.py::test_a_one_degree_hysteresis_holds_the_season
 tests/simulation/test_season_hysteresis.py::test_hovering_at_the_heating_threshold_flips_the_season_today
 tests/simulation/test_season_hysteresis.py::test_the_first_decision_after_a_restart_uses_the_plain_rule
+tests/simulation/test_sun_entry_lead.py::test_sun_entry_lead_moves_the_shade_early[20]
 tests/simulation/test_symptoms.py::test_dashboard_override_respected_for_duration
 tests/simulation/test_symptoms.py::test_end_time_close_fires
 tests/simulation/test_symptoms.py::test_end_time_close_fires_despite_manual_override

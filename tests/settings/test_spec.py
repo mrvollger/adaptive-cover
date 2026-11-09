@@ -98,6 +98,7 @@ PLAN_TABLE: dict[str, tuple[Scope, Level | None, set[Level]]] = {
     "start_time": (Scope.RECURRING, H, {A}),
     "start_entity": (Scope.RECURRING, H, {A}),
     "sunrise_offset": (Scope.RECURRING, H, {A}),
+    "sun_entry_lead": (Scope.RECURRING, H, {A, W}),
     "end_time": (Scope.RECURRING, H, {A}),
     "end_entity": (Scope.RECURRING, H, {A}),
     "sunset_offset": (Scope.RECURRING, H, {A}),

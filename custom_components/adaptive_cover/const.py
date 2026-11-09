@@ -54,6 +54,8 @@ CONF_TILT_MODE = "tilt_mode"
 CONF_SUNSET_POS = "sunset_position"
 CONF_SUNSET_OFFSET = "sunset_offset"
 CONF_SUNRISE_OFFSET = "sunrise_offset"
+# Minutes before the sun enters a window that its covers act on it (0: off).
+CONF_SUN_ENTRY_LEAD = "sun_entry_lead"
 CONF_TEMP_ENTITY = "temp_entity"
 CONF_PRESENCE_ENTITY = "presence_entity"
 CONF_WEATHER_ENTITY = "weather_entity"

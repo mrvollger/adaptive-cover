@@ -1,7 +1,7 @@
 diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_components/adaptive_cover/engine/geometry.py
 --- a/custom_components/adaptive_cover/engine/geometry.py
 +++ b/custom_components/adaptive_cover/engine/geometry.py
-@@ -238,7 +238,7 @@
+@@ -249,7 +249,7 @@
          raise _missing("distance_shaded_area")
      # np.clip semantics: no window_height means no upper bound.
      return clip(

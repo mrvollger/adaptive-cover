@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/engine/evaluate.py b/custom_components/adaptive_cover/engine/evaluate.py
+--- a/custom_components/adaptive_cover/engine/evaluate.py
++++ b/custom_components/adaptive_cover/engine/evaluate.py
+@@ -189,7 +189,7 @@
+     the cover is in place when the beam arrives. Leaving is not led: a sun
+     still in the window is always decided on as it is now.
+     """
+-    if geometry.sun_entering(config, sun, ctx) and ctx.sun_ahead is not None:
++    if False and ctx.sun_ahead is not None:
+         early = _evaluate_at(config, ctx.sun_ahead, ctx, climate)
+         return Decision(
+             position=early.position,

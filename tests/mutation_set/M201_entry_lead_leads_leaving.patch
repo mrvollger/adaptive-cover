@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/engine/geometry.py b/custom_components/adaptive_cover/engine/geometry.py
+--- a/custom_components/adaptive_cover/engine/geometry.py
++++ b/custom_components/adaptive_cover/engine/geometry.py
+@@ -111,7 +111,7 @@
+     """
+     if ctx.sun_ahead is None:
+         return False
+-    return (not sun_in_fov(config, sun)) and sun_in_fov(config, ctx.sun_ahead)
++    return sun_in_fov(config, ctx.sun_ahead)
+ 
+ 
+ def direct_sun_valid(config: CoverConfig, sun: SunSnapshot, ctx: TimeContext) -> bool:

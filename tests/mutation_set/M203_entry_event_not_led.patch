@@ -1,0 +1,12 @@
+diff --git a/custom_components/adaptive_cover/runtime/explainer.py b/custom_components/adaptive_cover/runtime/explainer.py
+--- a/custom_components/adaptive_cover/runtime/explainer.py
++++ b/custom_components/adaptive_cover/runtime/explainer.py
+@@ -215,7 +215,7 @@
+                 label = "Sun enters window"
+                 if lead:
+                     label = f"Sun enters window in {lead.total_seconds() / 60:g} min"
+-                events.append((label, start_utc - lead, predicted_pos))
++                events.append((label, start_utc, predicted_pos))
+ 
+         # Sun leaves FOV
+         if end is not None:
